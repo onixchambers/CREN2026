@@ -32,11 +32,14 @@ export default function LoginPage() {
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-blue-900 via-blue-700 to-blue-500 flex items-center justify-center p-4">
+    <div className="min-h-screen bg-[#0e2f44] flex items-center justify-center p-4">
       <div className="w-full max-w-md">
-        <div className="text-center mb-10 text-white">
-          <h1 className="text-4xl font-bold mb-2">CREN</h1>
-          <p className="opacity-80">Sistema Operativo-Financiero</p>
+        <div className="text-center mb-10 flex flex-col items-center">
+          <div className="w-32 h-32 bg-white rounded-full flex items-center justify-center mb-4 overflow-hidden shadow-xl p-2">
+             <img src="/logo.jpg" alt="CREN Logo" className="w-full h-full object-contain rounded-full" />
+          </div>
+          <h1 className="text-3xl font-bold text-white tracking-wide">CREN</h1>
+          <p className="text-[#a5c2d4] mt-2">Sistema Operativo-Financiero</p>
         </div>
 
         <div className="bg-white rounded-2xl p-8 shadow-2xl">
@@ -82,7 +85,7 @@ export default function LoginPage() {
             <button
               type="submit"
               disabled={loading}
-              className="w-full bg-blue-600 hover:bg-blue-700 text-white font-bold py-3 px-4 rounded-lg transition-colors disabled:opacity-50"
+              className="w-full bg-[#1a5276] hover:bg-[#0e2f44] text-white font-bold py-3 px-4 rounded-lg transition-colors disabled:opacity-50"
             >
               {loading ? "Iniciando..." : "Entrar al Sistema"}
             </button>
