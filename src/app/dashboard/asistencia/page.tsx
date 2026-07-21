@@ -294,6 +294,8 @@ export default function AsistenciaPage() {
                   <option value="Efectivo">Efectivo</option>
                   <option value="Transferencia">Transferencia</option>
                   <option value="Tarjeta">Tarjeta</option>
+                  <option value="Por definir">Por definir</option>
+                  <option value="Beca">Beca</option>
                 </select>
                 <div className="relative w-32">
                   <span className="absolute left-2 top-1.5 text-slate-500">$</span>
