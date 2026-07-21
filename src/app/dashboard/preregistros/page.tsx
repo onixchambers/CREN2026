@@ -137,15 +137,15 @@ export default function PreregistrosPage() {
               <div className="grid grid-cols-1 md:grid-cols-5 gap-4">
                 <div className="md:col-span-2">
                   <label className="block text-[10px] font-bold text-slate-500 uppercase mb-1">Nombre Completo</label>
-                  <input type="text" name="nombre" value={formData.nombre} onChange={handleInputChange} placeholder="Nombre completo" className="w-full text-sm p-2 border border-slate-300 rounded focus:border-[#2980b9] outline-none" />
+                  <input type="text" name="nombre" value={formData.nombre} onChange={handleInputChange} placeholder="Nombre completo" className="w-full text-sm p-2 border border-slate-300 rounded focus:border-[#2980b9] outline-none text-slate-900" />
                 </div>
                 <div>
                   <label className="block text-[10px] font-bold text-slate-500 uppercase mb-1">Fecha de Nacimiento</label>
-                  <input type="date" name="fechaNacimiento" value={formData.fechaNacimiento} onChange={handleInputChange} className="w-full text-sm p-2 border border-slate-300 rounded focus:border-[#2980b9] outline-none" />
+                  <input type="date" name="fechaNacimiento" value={formData.fechaNacimiento} onChange={handleInputChange} className="w-full text-sm p-2 border border-slate-300 rounded focus:border-[#2980b9] outline-none text-slate-900" />
                 </div>
                 <div>
                   <label className="block text-[10px] font-bold text-slate-500 uppercase mb-1">Sexo</label>
-                  <select name="sexo" value={formData.sexo} onChange={handleInputChange} className="w-full text-sm p-2 border border-slate-300 rounded focus:border-[#2980b9] outline-none">
+                  <select name="sexo" value={formData.sexo} onChange={handleInputChange} className="w-full text-sm p-2 border border-slate-300 rounded focus:border-[#2980b9] outline-none text-slate-900">
                     <option value="">Seleccionar...</option>
                     <option value="M">Masculino</option>
                     <option value="F">Femenino</option>
@@ -153,14 +153,14 @@ export default function PreregistrosPage() {
                 </div>
                 <div>
                   <label className="block text-[10px] font-bold text-slate-500 uppercase mb-1">Fecha de Ingreso</label>
-                  <input type="date" name="fechaIngreso" value={formData.fechaIngreso} onChange={handleInputChange} className="w-full text-sm p-2 border border-slate-300 rounded bg-slate-50 outline-none" />
+                  <input type="date" name="fechaIngreso" value={formData.fechaIngreso} onChange={handleInputChange} className="w-full text-sm p-2 border border-slate-300 rounded bg-slate-50 outline-none text-slate-900" />
                 </div>
               </div>
 
               <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
                 <div>
                   <label className="block text-[10px] font-bold text-slate-500 uppercase mb-1">Estatus de Paciente</label>
-                  <select name="estatus" value={formData.estatus} onChange={handleInputChange} className="w-full text-sm p-2 border border-slate-300 rounded focus:border-[#2980b9] outline-none">
+                  <select name="estatus" value={formData.estatus} onChange={handleInputChange} className="w-full text-sm p-2 border border-slate-300 rounded focus:border-[#2980b9] outline-none text-slate-900">
                     <option value="Activo">Activo</option>
                     <option value="Inactivo">Inactivo</option>
                     <option value="Baja">Baja</option>
@@ -168,7 +168,7 @@ export default function PreregistrosPage() {
                 </div>
                 <div>
                   <label className="block text-[10px] font-bold text-slate-500 uppercase mb-1">Origen del Paciente</label>
-                  <select name="origen" value={formData.origen} onChange={handleInputChange} className="w-full text-sm p-2 border border-slate-300 rounded focus:border-[#2980b9] outline-none">
+                  <select name="origen" value={formData.origen} onChange={handleInputChange} className="w-full text-sm p-2 border border-slate-300 rounded focus:border-[#2980b9] outline-none text-slate-900">
                     <option value="Google">Google</option>
                     <option value="Facebook">Facebook</option>
                     <option value="Recomendación">Recomendación</option>
@@ -177,11 +177,11 @@ export default function PreregistrosPage() {
                 </div>
                 <div>
                   <label className="block text-[10px] font-bold text-slate-500 uppercase mb-1">Médico Tratante</label>
-                  <input type="text" name="medicoTratante" value={formData.medicoTratante} onChange={handleInputChange} placeholder="Nombre de médico" className="w-full text-sm p-2 border border-slate-300 rounded focus:border-[#2980b9] outline-none" />
+                  <input type="text" name="medicoTratante" value={formData.medicoTratante} onChange={handleInputChange} placeholder="Nombre de médico" className="w-full text-sm p-2 border border-slate-300 rounded focus:border-[#2980b9] outline-none text-slate-900" />
                 </div>
                 <div>
                   <label className="block text-[10px] font-bold text-slate-500 uppercase mb-1">Escuela</label>
-                  <input type="text" name="escuela" value={formData.escuela} onChange={handleInputChange} placeholder="Nombre de escuela" className="w-full text-sm p-2 border border-slate-300 rounded focus:border-[#2980b9] outline-none" />
+                  <input type="text" name="escuela" value={formData.escuela} onChange={handleInputChange} placeholder="Nombre de escuela" className="w-full text-sm p-2 border border-slate-300 rounded focus:border-[#2980b9] outline-none text-slate-900" />
                 </div>
               </div>
             </div>
@@ -195,11 +195,11 @@ export default function PreregistrosPage() {
                 <div className="space-y-3">
                   <div>
                     <label className="block text-[10px] font-bold text-slate-500 uppercase mb-1">Madre (Nombre)</label>
-                    <input type="text" name="madreNombre" value={formData.madreNombre} onChange={handleInputChange} placeholder="Nombre de la madre" className="w-full text-sm p-2 border border-slate-300 rounded focus:border-[#2980b9] outline-none" />
+                    <input type="text" name="madreNombre" value={formData.madreNombre} onChange={handleInputChange} placeholder="Nombre de la madre" className="w-full text-sm p-2 border border-slate-300 rounded focus:border-[#2980b9] outline-none text-slate-900" />
                   </div>
                   <div>
                     <label className="block text-[10px] font-bold text-slate-500 uppercase mb-1">Número de Contacto</label>
-                    <input type="tel" name="madreContacto" value={formData.madreContacto} onChange={handleInputChange} placeholder="Contacto de la madre" className="w-full text-sm p-2 border border-slate-300 rounded focus:border-[#2980b9] outline-none" />
+                    <input type="tel" name="madreContacto" value={formData.madreContacto} onChange={handleInputChange} placeholder="Contacto de la madre" className="w-full text-sm p-2 border border-slate-300 rounded focus:border-[#2980b9] outline-none text-slate-900" />
                   </div>
                   <div className="flex items-center gap-2">
                     <input type="checkbox" name="principalMadre" checked={formData.principalMadre} onChange={handleInputChange} className="w-3 h-3" />
@@ -211,11 +211,11 @@ export default function PreregistrosPage() {
                 <div className="space-y-3">
                   <div>
                     <label className="block text-[10px] font-bold text-slate-500 uppercase mb-1">Padre (Nombre)</label>
-                    <input type="text" name="padreNombre" value={formData.padreNombre} onChange={handleInputChange} placeholder="Nombre del padre" className="w-full text-sm p-2 border border-slate-300 rounded focus:border-[#2980b9] outline-none" />
+                    <input type="text" name="padreNombre" value={formData.padreNombre} onChange={handleInputChange} placeholder="Nombre del padre" className="w-full text-sm p-2 border border-slate-300 rounded focus:border-[#2980b9] outline-none text-slate-900" />
                   </div>
                   <div>
                     <label className="block text-[10px] font-bold text-slate-500 uppercase mb-1">Número de Contacto</label>
-                    <input type="tel" name="padreContacto" value={formData.padreContacto} onChange={handleInputChange} placeholder="Contacto del padre" className="w-full text-sm p-2 border border-slate-300 rounded focus:border-[#2980b9] outline-none" />
+                    <input type="tel" name="padreContacto" value={formData.padreContacto} onChange={handleInputChange} placeholder="Contacto del padre" className="w-full text-sm p-2 border border-slate-300 rounded focus:border-[#2980b9] outline-none text-slate-900" />
                   </div>
                   <div className="flex items-center gap-2">
                     <input type="checkbox" name="principalPadre" checked={formData.principalPadre} onChange={handleInputChange} className="w-3 h-3" />
@@ -227,11 +227,11 @@ export default function PreregistrosPage() {
                 <div className="space-y-3">
                   <div>
                     <label className="block text-[10px] font-bold text-slate-500 uppercase mb-1">Otros (Nombre)</label>
-                    <input type="text" name="otrosNombre" value={formData.otrosNombre} onChange={handleInputChange} placeholder="Nombre del otro contacto" className="w-full text-sm p-2 border border-slate-300 rounded focus:border-[#2980b9] outline-none" />
+                    <input type="text" name="otrosNombre" value={formData.otrosNombre} onChange={handleInputChange} placeholder="Nombre del otro contacto" className="w-full text-sm p-2 border border-slate-300 rounded focus:border-[#2980b9] outline-none text-slate-900" />
                   </div>
                   <div>
                     <label className="block text-[10px] font-bold text-slate-500 uppercase mb-1">Número de Contacto</label>
-                    <input type="tel" name="otrosContacto" value={formData.otrosContacto} onChange={handleInputChange} placeholder="Otro contacto" className="w-full text-sm p-2 border border-slate-300 rounded focus:border-[#2980b9] outline-none" />
+                    <input type="tel" name="otrosContacto" value={formData.otrosContacto} onChange={handleInputChange} placeholder="Otro contacto" className="w-full text-sm p-2 border border-slate-300 rounded focus:border-[#2980b9] outline-none text-slate-900" />
                   </div>
                   <div className="flex items-center gap-2">
                     <input type="checkbox" name="principalOtros" checked={formData.principalOtros} onChange={handleInputChange} className="w-3 h-3" />
@@ -242,7 +242,7 @@ export default function PreregistrosPage() {
 
               <div className="w-full md:w-1/3 mt-2">
                 <label className="block text-[10px] font-bold text-slate-500 uppercase mb-1">Correo del Contacto Principal</label>
-                <input type="email" name="correoPrincipal" value={formData.correoPrincipal} onChange={handleInputChange} placeholder="ejemplo@correo.com" className="w-full text-sm p-2 border border-slate-300 rounded focus:border-[#2980b9] outline-none" />
+                <input type="email" name="correoPrincipal" value={formData.correoPrincipal} onChange={handleInputChange} placeholder="ejemplo@correo.com" className="w-full text-sm p-2 border border-slate-300 rounded focus:border-[#2980b9] outline-none text-slate-900" />
               </div>
             </div>
 
@@ -290,7 +290,7 @@ export default function PreregistrosPage() {
                 value={formData.observacionesAdmin}
                 onChange={handleInputChange}
                 rows={3} 
-                className="w-full p-3 border border-slate-300 rounded focus:border-[#2980b9] outline-none text-sm resize-y"
+                className="w-full p-3 border border-slate-300 rounded focus:border-[#2980b9] outline-none text-sm resize-y text-slate-900"
                 placeholder="Observaciones exclusivas del administrador..."
               ></textarea>
             </div>
