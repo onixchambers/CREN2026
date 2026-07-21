@@ -114,8 +114,8 @@ export async function saveSettings(data: {
 
     revalidatePath("/dashboard/configuracion");
     return { success: true };
-  } catch (error) {
+  } catch (error: any) {
     console.error("Error saving settings:", error);
-    return { success: false, error: "Failed to save settings" };
+    return { success: false, error: error?.message || "Failed to save settings" };
   }
 }
