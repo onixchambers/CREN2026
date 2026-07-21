@@ -32,15 +32,15 @@ export default function LoginPage() {
   };
 
   return (
-    <div className="min-h-screen bg-[#0e2f44] flex items-center justify-center p-4">
+    <div className="min-h-screen bg-slate-50 flex items-center justify-center p-4">
       <div className="w-full max-w-md">
         <div className="text-center mb-10 flex flex-col items-center">
-          <img src="/logo.jpg" alt="CREN Logo" className="w-40 h-auto mb-6 mix-blend-screen" />
-          <h1 className="text-3xl font-bold text-white tracking-wide">CREN</h1>
-          <p className="text-[#a5c2d4] mt-2">Sistema Operativo-Financiero</p>
+          <img src="/logo.jpg" alt="CREN Logo" className="w-40 h-auto mb-6" />
+          <h1 className="text-3xl font-bold text-slate-800 tracking-wide">CREN</h1>
+          <p className="text-slate-500 mt-2">Sistema Operativo-Financiero</p>
         </div>
 
-        <div className="bg-white rounded-2xl p-8 shadow-2xl">
+        <div className="bg-white rounded-2xl p-8 shadow-xl border border-slate-100">
           <h2 className="text-2xl font-bold text-center text-blue-900 mb-6">
             Iniciar Sesión
           </h2>
