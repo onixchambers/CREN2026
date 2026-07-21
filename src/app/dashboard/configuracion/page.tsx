@@ -51,24 +51,30 @@ export default function ConfiguracionPage() {
 
   const handleSave = async () => {
     setIsSaving(true);
-    const allExpenses = [
-      ...gastosCol1.map(g => ({ label: g.label, amount: parseFloat(g.val) || 0 })),
-      ...gastosCol2.map(g => ({ label: g.label, amount: parseFloat(g.val) || 0 }))
-    ];
+    try {
+      const allExpenses = [
+        ...gastosCol1.map(g => ({ label: g.label, amount: parseFloat(g.val) || 0 })),
+        ...gastosCol2.map(g => ({ label: g.label, amount: parseFloat(g.val) || 0 }))
+      ];
 
-    const res = await saveSettings({
-      users: usuarios,
-      allowTherapistEdit,
-      referenceKeys,
-      month,
-      expenses: allExpenses
-    });
+      const res = await saveSettings({
+        users: usuarios,
+        allowTherapistEdit,
+        referenceKeys,
+        month,
+        expenses: allExpenses
+      });
 
-    setIsSaving(false);
-    if (res.success) {
-      alert("¡Configuración guardada exitosamente!");
-    } else {
-      alert("Hubo un error al guardar.");
+      if (res.success) {
+        alert("¡Configuración guardada exitosamente!");
+      } else {
+        alert("Hubo un error al guardar: " + (res.error || "Error desconocido"));
+      }
+    } catch (e) {
+      console.error("Error saving settings:", e);
+      alert("Hubo un error de conexión al guardar los datos.");
+    } finally {
+      setIsSaving(false);
     }
   };
 
