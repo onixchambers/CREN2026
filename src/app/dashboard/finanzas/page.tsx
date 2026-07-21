@@ -10,10 +10,7 @@ type Movimiento = {
 };
 
 export default function FinanzasPage() {
-  const [movimientos, setMovimientos] = useState<Movimiento[]>([
-    { id: "1", fecha: "2026-07-21", descripcion: "Consulta Juan Pérez", tipo: "INGRESO", monto: 1500 },
-    { id: "2", fecha: "2026-07-20", descripcion: "Material de Oficina", tipo: "GASTO", monto: 350 },
-  ]);
+  const [movimientos, setMovimientos] = useState<Movimiento[]>([]);
 
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [modalType, setModalType] = useState<"INGRESO" | "GASTO">("INGRESO");

@@ -2,11 +2,11 @@
 
 export default function EstadoResultadosPage() {
   const datos = {
-    ingresosBrutos: 26000,
-    nomina: 15000,
-    gastosOperativos: 3000,
-    ivaHonorarios: 480,
-    utilidadNeta: 7520
+    ingresosBrutos: 0,
+    nomina: 0,
+    gastosOperativos: 0,
+    ivaHonorarios: 0,
+    utilidadNeta: 0
   };
 
   return (
