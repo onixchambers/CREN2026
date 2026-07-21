@@ -151,33 +151,6 @@ export default function ConfiguracionPage() {
         </div>
         <hr className="border-slate-100" />
 
-        {/* TARIFAS Y COMISIONES */}
-        <div className="p-6">
-          <h3 className="text-[#1a5276] font-bold flex items-center gap-2 mb-4">
-            <svg className="w-5 h-5 text-amber-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>
-            Tarifas y Comisiones
-          </h3>
-
-          <div className="space-y-3 max-w-sm">
-            <div className="flex items-center justify-between gap-4">
-              <label className="text-sm text-slate-600">% Honorarios Lourdes</label>
-              <input type="text" defaultValue="45" className="w-32 p-1.5 border border-slate-300 rounded text-sm text-slate-900 focus:border-blue-500 outline-none" />
-            </div>
-            <div className="flex items-center justify-between gap-4">
-              <label className="text-sm text-slate-600">% Honorarios Karla</label>
-              <input type="text" defaultValue="50" className="w-32 p-1.5 border border-slate-300 rounded text-sm text-slate-900 focus:border-blue-500 outline-none" />
-            </div>
-            <div className="flex items-center justify-between gap-4">
-              <label className="text-sm text-slate-600">Tarifa fija valoración</label>
-              <input type="text" defaultValue="425" className="w-32 p-1.5 border border-slate-300 rounded text-sm text-slate-900 focus:border-blue-500 outline-none" />
-            </div>
-            <div className="flex items-center justify-between gap-4">
-              <label className="text-sm text-slate-600">IVA (%)</label>
-              <input type="text" defaultValue="16" className="w-32 p-1.5 border border-slate-300 rounded text-sm text-slate-900 focus:border-blue-500 outline-none" />
-            </div>
-          </div>
-        </div>
-        <hr className="border-slate-100" />
 
         {/* GASTOS OPERATIVOS */}
         <div className="p-6">
