@@ -37,8 +37,12 @@ export default function ConfiguracionPage() {
           setGastos(defaultGastos.map((label, i) => ({ id: i, label, val: "" })));
         }
       } else {
-        console.error("Failed to load settings from server", res.error);
-        alert("Error al cargar configuración: " + (res.error || "Falta la conexión a la base de datos (DATABASE_URL en Vercel)"));
+        if (res.error === "FALTA_ENV_VAR") {
+          alert("¡ALERTA CRÍTICA! Vercel no tiene configurada la variable DATABASE_URL. Por favor ve al panel de Vercel -> Settings -> Environment Variables y agrega DATABASE_URL con el link de tu base de datos de Supabase.");
+        } else {
+          console.error("Failed to load settings from server", res.error);
+          alert("Error al cargar configuración: " + (res.error || "Falta la conexión a la base de datos (DATABASE_URL en Vercel)"));
+        }
       }
     } catch (e) {
       console.error("Error loading settings:", e);
@@ -63,11 +67,15 @@ export default function ConfiguracionPage() {
       if (res.success) {
         alert("¡Configuración guardada exitosamente!");
       } else {
-        alert("Hubo un error al guardar: " + (res.error || "Error desconocido"));
+        if (res.error === "FALTA_ENV_VAR") {
+          alert("¡ALERTA CRÍTICA! Vercel no tiene configurada la variable DATABASE_URL. Ve a Vercel -> Settings -> Environment Variables y agrégala.");
+        } else {
+          alert("Hubo un error al guardar: " + (res.error || "Error desconocido"));
+        }
       }
-    } catch (e) {
+    } catch (e: any) {
       console.error("Error saving settings:", e);
-      alert("Hubo un error de conexión al guardar los datos.");
+      alert("Hubo un error de conexión al guardar los datos: " + (e?.message || e?.toString()));
     } finally {
       setIsSaving(false);
     }

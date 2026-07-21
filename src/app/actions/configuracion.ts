@@ -5,6 +5,9 @@ import { revalidatePath } from "next/cache";
 
 export async function getSettings(month: string) {
   try {
+    if (!process.env.DATABASE_URL) {
+      return { success: false, error: "FALTA_ENV_VAR" };
+    }
     const [users, settings, expenses] = await Promise.all([
       prisma.user.findMany({
         orderBy: { createdAt: 'asc' },
@@ -42,6 +45,10 @@ export async function saveSettings(data: {
   expenses: { label: string; amount: number }[];
 }) {
   try {
+    if (!process.env.DATABASE_URL) {
+      return { success: false, error: "FALTA_ENV_VAR" };
+    }
+    
     // 1. Process Users
     // Get existing users
     const existingUsers = await prisma.user.findMany();
