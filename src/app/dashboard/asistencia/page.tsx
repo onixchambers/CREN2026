@@ -205,8 +205,11 @@ export default function AsistenciaPage() {
                 <select name="tipoSesion" value={formData.tipoSesion} onChange={handleChange} className="w-full text-sm p-2 border border-slate-300 rounded focus:border-[#2980b9] outline-none text-slate-900">
                   <option value="">Seleccionar...</option>
                   <option value="Individual">Individual</option>
-                  <option value="Grupal">Grupal</option>
-                  <option value="Taller">Taller</option>
+                  <option value="Escuela">Escuela</option>
+                  <option value="Reposicion">Reposición</option>
+                  <option value="Terapia Grupal">Terapia grupal</option>
+                  <option value="Orientacion Padres">Orientación padres</option>
+                  <option value="Otros">Otros</option>
                 </select>
               </div>
               <div>
