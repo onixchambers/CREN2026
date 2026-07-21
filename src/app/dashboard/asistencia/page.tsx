@@ -291,8 +291,11 @@ export default function AsistenciaPage() {
                 <select name="estadoAsistencia" value={formData.estadoAsistencia} onChange={handleChange} className="w-full text-sm p-2 border border-slate-300 rounded focus:border-[#2980b9] outline-none text-slate-900">
                   <option value="">Seleccionar...</option>
                   <option value="Asistio">Asistió</option>
-                  <option value="Falto">Faltó</option>
-                  <option value="Cancelado">Cancelado</option>
+                  <option value="Cancelo anticipadamente">Canceló anticipadamente</option>
+                  <option value="Cancelo sin anticipacion">Canceló sin anticipación</option>
+                  <option value="Cancelo el centro">Canceló el centro</option>
+                  <option value="Alta">Alta</option>
+                  <option value="Baja">Baja</option>
                 </select>
               </div>
             </div>
@@ -381,8 +384,11 @@ export default function AsistenciaPage() {
             <select value={filtroEstado} onChange={e => setFiltroEstado(e.target.value)} className="w-32 text-xs p-1.5 border border-slate-300 rounded outline-none text-slate-700 bg-white">
               <option value="Todos">Todos</option>
               <option value="Asistio">Asistió</option>
-              <option value="Falto">Faltó</option>
-              <option value="Cancelado">Cancelado</option>
+              <option value="Cancelo anticipadamente">Canceló anticipadamente</option>
+              <option value="Cancelo sin anticipacion">Canceló sin anticipación</option>
+              <option value="Cancelo el centro">Canceló el centro</option>
+              <option value="Alta">Alta</option>
+              <option value="Baja">Baja</option>
             </select>
           </div>
           <div className="flex items-center gap-2 ml-2">
@@ -427,8 +433,8 @@ export default function AsistenciaPage() {
                   <td className="px-2 py-3 text-slate-500">{a.edad}</td>
                   <td className="px-2 py-3 text-slate-500">{a.tipoSesion}</td>
                   <td className="px-2 py-3">
-                    <span className={`px-2 py-1 rounded text-[10px] font-bold ${a.estado === 'Asistio' ? 'bg-[#e6f4ea] text-[#1e8e3e]' : a.estado === 'Falto' ? 'bg-red-100 text-red-700' : 'bg-slate-100 text-slate-600'}`}>
-                      {a.estado === 'Asistio' ? 'Asistió' : a.estado === 'Falto' ? 'Faltó' : a.estado}
+                    <span className={`px-2 py-1 rounded text-[10px] font-bold ${a.estado === 'Asistio' ? 'bg-[#e6f4ea] text-[#1e8e3e]' : a.estado === 'Cancelo anticipadamente' || a.estado === 'Cancelo sin anticipacion' ? 'bg-orange-100 text-orange-700' : a.estado === 'Cancelo el centro' ? 'bg-red-100 text-red-700' : a.estado === 'Alta' ? 'bg-blue-100 text-blue-700' : 'bg-slate-100 text-slate-600'}`}>
+                      {a.estado}
                     </span>
                   </td>
                   <td className="px-2 py-3 text-slate-500">{a.sesiones}</td>
