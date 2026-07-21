@@ -48,9 +48,15 @@ export default function ConfiguracionPage() {
 
   return (
     <div className="space-y-6 animate-in fade-in duration-500 max-w-5xl mx-auto pb-12">
-      <div className="flex items-center gap-2 pb-2">
-        <svg className="w-6 h-6 text-[#1a5276]" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z" /><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" /></svg>
-        <h2 className="text-xl font-bold text-[#1a5276]">Configuración</h2>
+      <div className="flex items-center justify-between gap-2 pb-2">
+        <div className="flex items-center gap-2">
+          <svg className="w-6 h-6 text-[#1a5276]" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z" /><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" /></svg>
+          <h2 className="text-xl font-bold text-[#1a5276]">Configuración</h2>
+        </div>
+        <button onClick={() => alert("¡Configuración guardada exitosamente!")} className="bg-[#27ae60] hover:bg-[#219653] text-white px-5 py-2 rounded text-sm font-semibold flex items-center gap-2 transition-colors">
+          <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M5 13l4 4L19 7" /></svg>
+          Guardar Cambios
+        </button>
       </div>
 
       <div className="bg-white rounded-xl shadow-sm border border-slate-200 overflow-hidden">
@@ -200,10 +206,18 @@ export default function ConfiguracionPage() {
             <p className="text-sm">Configura las claves de validación para las terapeutas (separadas por comas).</p>
           </div>
 
-          <div className="flex items-center gap-4 max-w-xl">
+          <div className="flex items-center gap-4 max-w-xl mb-6">
             <label className="text-sm font-semibold text-slate-700 w-32">Claves de Referencia</label>
             <input type="text" placeholder="Ej: CREN2026, CLINICA10" className="flex-1 p-2 border border-slate-300 rounded text-sm text-slate-900 focus:border-blue-500 outline-none" />
           </div>
+        </div>
+
+        {/* BOTTOM ACTION BAR */}
+        <div className="bg-slate-50 p-4 border-t border-slate-200 flex justify-end">
+          <button onClick={() => alert("¡Configuración guardada exitosamente!")} className="bg-[#27ae60] hover:bg-[#219653] text-white px-6 py-2.5 rounded text-sm font-semibold flex items-center gap-2 transition-colors shadow-sm">
+            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M5 13l4 4L19 7" /></svg>
+            Guardar Cambios
+          </button>
         </div>
 
       </div>
