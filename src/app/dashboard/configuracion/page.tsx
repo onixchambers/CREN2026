@@ -67,7 +67,7 @@ export default function ConfiguracionPage() {
               <div key={u.id} className="flex flex-wrap items-center gap-4 py-2 border-b border-slate-50 last:border-0">
                 <div className="flex items-center gap-2 flex-1 min-w-[200px]">
                   <label className="text-sm text-slate-500 w-16">Usuario</label>
-                  <input type="text" value={u.usuario} className="flex-1 p-2 border border-slate-300 rounded text-sm focus:border-blue-500 outline-none" onChange={(e) => {
+                  <input type="text" value={u.usuario} className="flex-1 p-2 border border-slate-300 rounded text-sm text-slate-900 focus:border-blue-500 outline-none" onChange={(e) => {
                     const newU = [...usuarios];
                     const idx = newU.findIndex(x => x.id === u.id);
                     newU[idx].usuario = e.target.value;
@@ -78,7 +78,7 @@ export default function ConfiguracionPage() {
                 <div className="flex items-center gap-2 flex-1 min-w-[200px]">
                   <label className="text-sm text-slate-500 w-8">Rol</label>
                   <div className="relative flex-1">
-                    <select value={u.rol} className="w-full p-2 pl-8 border border-slate-300 rounded text-sm focus:border-blue-500 outline-none appearance-none bg-white" onChange={(e) => {
+                    <select value={u.rol} className="w-full p-2 pl-8 border border-slate-300 rounded text-sm text-slate-900 focus:border-blue-500 outline-none appearance-none bg-white" onChange={(e) => {
                       const newU = [...usuarios];
                       const idx = newU.findIndex(x => x.id === u.id);
                       newU[idx].rol = e.target.value;
@@ -97,7 +97,7 @@ export default function ConfiguracionPage() {
 
                 <div className="flex items-center gap-2 flex-1 min-w-[200px]">
                   <label className="text-sm text-slate-500 w-20">Contraseña</label>
-                  <input type="text" value={u.contrasena} className="flex-1 p-2 border border-slate-300 rounded text-sm focus:border-blue-500 outline-none" onChange={(e) => {
+                  <input type="text" value={u.contrasena} className="flex-1 p-2 border border-slate-300 rounded text-sm text-slate-900 focus:border-blue-500 outline-none" onChange={(e) => {
                     const newU = [...usuarios];
                     const idx = newU.findIndex(x => x.id === u.id);
                     newU[idx].contrasena = e.target.value;
@@ -161,19 +161,19 @@ export default function ConfiguracionPage() {
           <div className="space-y-3 max-w-sm">
             <div className="flex items-center justify-between gap-4">
               <label className="text-sm text-slate-600">% Honorarios Lourdes</label>
-              <input type="text" defaultValue="45" className="w-32 p-1.5 border border-slate-300 rounded text-sm focus:border-blue-500 outline-none" />
+              <input type="text" defaultValue="45" className="w-32 p-1.5 border border-slate-300 rounded text-sm text-slate-900 focus:border-blue-500 outline-none" />
             </div>
             <div className="flex items-center justify-between gap-4">
               <label className="text-sm text-slate-600">% Honorarios Karla</label>
-              <input type="text" defaultValue="50" className="w-32 p-1.5 border border-slate-300 rounded text-sm focus:border-blue-500 outline-none" />
+              <input type="text" defaultValue="50" className="w-32 p-1.5 border border-slate-300 rounded text-sm text-slate-900 focus:border-blue-500 outline-none" />
             </div>
             <div className="flex items-center justify-between gap-4">
               <label className="text-sm text-slate-600">Tarifa fija valoración</label>
-              <input type="text" defaultValue="425" className="w-32 p-1.5 border border-slate-300 rounded text-sm focus:border-blue-500 outline-none" />
+              <input type="text" defaultValue="425" className="w-32 p-1.5 border border-slate-300 rounded text-sm text-slate-900 focus:border-blue-500 outline-none" />
             </div>
             <div className="flex items-center justify-between gap-4">
               <label className="text-sm text-slate-600">IVA (%)</label>
-              <input type="text" defaultValue="16" className="w-32 p-1.5 border border-slate-300 rounded text-sm focus:border-blue-500 outline-none" />
+              <input type="text" defaultValue="16" className="w-32 p-1.5 border border-slate-300 rounded text-sm text-slate-900 focus:border-blue-500 outline-none" />
             </div>
           </div>
         </div>
@@ -197,7 +197,7 @@ export default function ConfiguracionPage() {
               {gastosCol1.map((gasto, i) => (
                 <div key={i} className="flex items-center gap-4">
                   <div className="w-1/2 p-2 bg-slate-50 border border-slate-200 rounded text-sm text-slate-600 font-medium">{gasto.label}</div>
-                  <input type="text" defaultValue={gasto.val} className="w-1/2 p-2 border border-slate-300 rounded text-sm focus:border-blue-500 outline-none" />
+                  <input type="text" defaultValue={gasto.val} className="w-1/2 p-2 border border-slate-300 rounded text-sm text-slate-900 focus:border-blue-500 outline-none" />
                 </div>
               ))}
             </div>
@@ -207,7 +207,7 @@ export default function ConfiguracionPage() {
               {gastosCol2.map((gasto, i) => (
                 <div key={i} className="flex items-center gap-4">
                   <div className="w-1/2 p-2 bg-slate-50 border border-slate-200 rounded text-sm text-slate-600 font-medium">{gasto.label}</div>
-                  <input type="text" defaultValue={gasto.val} className="w-1/2 p-2 border border-slate-300 rounded text-sm focus:border-blue-500 outline-none" />
+                  <input type="text" defaultValue={gasto.val} className="w-1/2 p-2 border border-slate-300 rounded text-sm text-slate-900 focus:border-blue-500 outline-none" />
                 </div>
               ))}
             </div>
@@ -229,7 +229,7 @@ export default function ConfiguracionPage() {
 
           <div className="flex items-center gap-4 max-w-xl">
             <label className="text-sm font-semibold text-slate-700 w-32">Claves de Referencia</label>
-            <input type="text" placeholder="Ej: CREN2026, CLINICA10" className="flex-1 p-2 border border-slate-300 rounded text-sm focus:border-blue-500 outline-none" />
+            <input type="text" placeholder="Ej: CREN2026, CLINICA10" className="flex-1 p-2 border border-slate-300 rounded text-sm text-slate-900 focus:border-blue-500 outline-none" />
           </div>
         </div>
 
