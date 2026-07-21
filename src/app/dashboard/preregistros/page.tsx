@@ -49,8 +49,14 @@ export default function PreregistrosPage() {
   const [fichas, setFichas] = useState<any[]>([]);
 
   useEffect(() => {
-    const saved = localStorage.getItem("pacientesData");
-    if (saved) setFichas(JSON.parse(saved));
+    async function loadPatients() {
+      const { getPatients } = await import('@/app/actions/pacientes');
+      const result = await getPatients();
+      if (result.success && result.data) {
+        setFichas(result.data);
+      }
+    }
+    loadPatients();
   }, []);
 
   const handleLimpiar = () => {
@@ -64,50 +70,27 @@ export default function PreregistrosPage() {
     });
   };
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!formData.nombre) {
       alert("El nombre es obligatorio");
       return;
     }
     
-    // Calcular edad
-    let edad = "—";
-    if (formData.fechaNacimiento) {
-      const birth = new Date(formData.fechaNacimiento);
-      const today = new Date();
-      let age = today.getFullYear() - birth.getFullYear();
-      const m = today.getMonth() - birth.getMonth();
-      if (m < 0 || (m === 0 && today.getDate() < birth.getDate())) {
-        age--;
-      }
-      edad = age.toString();
-    }
-
-    const nuevoPaciente = {
-      id: Date.now().toString(),
-      paciente: formData.nombre,
-      sexo: formData.sexo || "—",
-      nac: formData.fechaNacimiento || "—",
-      edad: edad,
-      asistencias: 0,
-      sesiones: "—",
-      valoraciones: 0,
-      totalPagado: "$0.00",
-      precio: "Por definir",
-      metodo: "Por definir",
-      ultima: "—",
-      estado: formData.estatus,
-      origen: formData.origen,
-      terapeuta: "Por asignar"
-    };
-
-    const nuevasFichas = [nuevoPaciente, ...fichas];
-    setFichas(nuevasFichas);
-    localStorage.setItem("pacientesData", JSON.stringify(nuevasFichas));
+    const { createPatient, getPatients } = await import('@/app/actions/pacientes');
+    const result = await createPatient(formData);
     
-    alert("¡Paciente registrado exitosamente!");
-    handleLimpiar();
+    if (result.success) {
+      alert("¡Paciente registrado exitosamente en la base de datos!");
+      handleLimpiar();
+      // Reload list
+      const updated = await getPatients();
+      if (updated.success && updated.data) {
+        setFichas(updated.data);
+      }
+    } else {
+      alert(result.error);
+    }
   };
 
   return (
@@ -337,15 +320,15 @@ export default function PreregistrosPage() {
               {fichas.length > 0 ? (
                 fichas.map(f => (
                   <tr key={f.id} className="border-b border-slate-100 hover:bg-slate-50 transition-colors">
-                    <td className="px-4 py-3 font-medium text-slate-700">{new Date(parseInt(f.id)).toLocaleDateString()}</td>
-                    <td className="px-4 py-3 font-bold text-[#1a5276]">{f.paciente}</td>
-                    <td className="px-4 py-3 text-slate-500">{f.edad}</td>
-                    <td className="px-4 py-3 text-slate-500">{f.sexo}</td>
+                    <td className="px-4 py-3 font-medium text-slate-700">{new Date(f.createdAt).toLocaleDateString()}</td>
+                    <td className="px-4 py-3 font-bold text-[#1a5276]">{f.name}</td>
+                    <td className="px-4 py-3 text-slate-500">{f.age || "—"}</td>
+                    <td className="px-4 py-3 text-slate-500">{f.sexo || "—"}</td>
                     <td className="px-4 py-3">
-                      <span className="bg-green-100 text-green-700 px-2 py-1 rounded text-xs font-bold">{f.estado}</span>
+                      <span className="bg-green-100 text-green-700 px-2 py-1 rounded text-xs font-bold">{f.estatus}</span>
                     </td>
                     <td className="px-4 py-3 text-slate-500">{f.origen}</td>
-                    <td className="px-4 py-3 text-slate-500">{f.terapeuta}</td>
+                    <td className="px-4 py-3 text-slate-500">{f.medicoTratante || "Por asignar"}</td>
                     <td className="px-4 py-3 text-center">
                       <button className="text-blue-500 hover:text-blue-700 font-medium">Ver</button>
                     </td>

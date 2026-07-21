@@ -31,13 +31,45 @@ model Patient {
   phone     String?
   age       Int?
   notes     String?
+  
+  fechaNacimiento String?
+  sexo            String?
+  fechaIngreso    String?
+  estatus         String? @default("Activo")
+  origen          String? @default("Google")
+  medicoTratante  String?
+  escuela         String?
+
+  madreNombre     String?
+  padreNombre     String?
+  otrosNombre     String?
+  madreContacto   String?
+  padreContacto   String?
+  otrosContacto   String?
+  principalMadre  Boolean @default(false)
+  principalPadre  Boolean @default(false)
+  principalOtros  Boolean @default(false)
+  correoPrincipal String?
+
+  alergias        Boolean @default(false)
+  crisis          Boolean @default(false)
+  convulsiones    Boolean @default(false)
+  sensibilidad    Boolean @default(false)
+  riesgoFuga      Boolean @default(false)
+  noSepara        Boolean @default(false)
+  otrasAlertas    Boolean @default(false)
+
+  reglamentoFirmado     Boolean @default(false)
+  consentimientoFirmado Boolean @default(false)
+
+  observacionesAdmin    String?
+
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
   sessions  Session[]
   payments  Payment[]
 }
-
 model Session {
   id          String   @id @default(cuid())
   date        DateTime

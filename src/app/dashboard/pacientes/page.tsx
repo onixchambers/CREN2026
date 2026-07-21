@@ -18,15 +18,19 @@ type Paciente = {
 };
 
 export default function PacientesPage() {
-  const [pacientes, setPacientes] = useState<Paciente[]>([]);
+  const [pacientes, setPacientes] = useState<any[]>([]);
   const [searchTerm, setSearchTerm] = useState("");
   const [monthTerm, setMonthTerm] = useState("");
 
   useEffect(() => {
-    const savedPacientes = localStorage.getItem("pacientesData");
-    if (savedPacientes) {
-      setPacientes(JSON.parse(savedPacientes));
+    async function loadPatients() {
+      const { getPatients } = await import('@/app/actions/pacientes');
+      const result = await getPatients();
+      if (result.success && result.data) {
+        setPacientes(result.data);
+      }
     }
+    loadPatients();
   }, []);
 
   const handleLimpiar = () => {
@@ -35,7 +39,7 @@ export default function PacientesPage() {
   };
 
   const pacientesFiltrados = pacientes.filter(p => 
-    p.paciente.toLowerCase().includes(searchTerm.toLowerCase())
+    p.name?.toLowerCase().includes(searchTerm.toLowerCase())
   );
 
   return (
@@ -106,35 +110,35 @@ export default function PacientesPage() {
               {pacientesFiltrados.length > 0 ? pacientesFiltrados.map((p) => (
                 <tr key={p.id} className="hover:bg-slate-50 transition-colors">
                   <td className="px-4 py-4 text-left font-bold text-slate-800">
-                    <div className="max-w-[150px] leading-tight">{p.paciente}</div>
+                    <div className="max-w-[150px] leading-tight">{p.name}</div>
                   </td>
                   <td className="px-2 py-4 text-slate-500">
-                    <span className="text-base">⚥</span>
+                    <span className="text-base">{p.sexo === 'M' ? '♂' : p.sexo === 'F' ? '♀' : '⚥'}</span>
                   </td>
-                  <td className="px-2 py-4 text-slate-400">{p.nac}</td>
-                  <td className="px-2 py-4 text-slate-400">{p.edad}</td>
+                  <td className="px-2 py-4 text-slate-400">{p.fechaNacimiento || "—"}</td>
+                  <td className="px-2 py-4 text-slate-400">{p.age || "—"}</td>
                   <td className="px-2 py-4">
                     <span className="bg-[#e6f4ea] text-[#1e8e3e] px-2.5 py-0.5 rounded text-[11px] font-bold">
-                      {p.asistencias}
+                      {p.asistencias || 0}
                     </span>
                   </td>
-                  <td className="px-2 py-4 text-slate-400">{p.sesiones}</td>
+                  <td className="px-2 py-4 text-slate-400">{p.sesiones || "—"}</td>
                   <td className="px-2 py-4">
                     <span className="bg-[#fce8f3] text-[#c5221f] px-2.5 py-0.5 rounded text-[11px] font-bold">
-                      {p.valoraciones}
+                      {p.valoraciones || 0}
                     </span>
                   </td>
-                  <td className="px-4 py-4 text-slate-600 font-medium">{p.totalPagado}</td>
-                  <td className="px-4 py-4 font-bold text-[#1a5276]">{p.precio}</td>
+                  <td className="px-4 py-4 text-slate-600 font-medium">{p.totalPagado || "$0.00"}</td>
+                  <td className="px-4 py-4 font-bold text-[#1a5276]">{p.precio || "Por definir"}</td>
                   <td className="px-4 py-4">
                     <span className="bg-blue-50 text-blue-600 border border-blue-100 px-3 py-1 rounded-full text-[10px] font-medium whitespace-nowrap">
-                      {p.metodo}
+                      {p.metodo || "Por definir"}
                     </span>
                   </td>
-                  <td className="px-4 py-4 text-slate-500 font-medium">{p.ultima}</td>
+                  <td className="px-4 py-4 text-slate-500 font-medium">{p.ultima || "—"}</td>
                   <td className="px-4 py-4">
-                    <span className={`text-[11px] font-semibold ${p.estado === 'Asistio' ? 'text-green-500' : 'text-blue-500'}`}>
-                      {p.estado}
+                    <span className={`text-[11px] font-semibold ${p.estatus === 'Activo' ? 'text-green-500' : 'text-slate-500'}`}>
+                      {p.estatus}
                     </span>
                   </td>
                   <td className="px-4 py-4">
