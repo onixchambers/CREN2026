@@ -1,0 +1,121 @@
+"use server";
+
+import { prisma } from "@/lib/prisma";
+import { revalidatePath } from "next/cache";
+
+export async function getSettings(month: string) {
+  try {
+    const [users, settings, expenses] = await Promise.all([
+      prisma.user.findMany({
+        orderBy: { createdAt: 'asc' },
+      }),
+      prisma.systemSettings.findUnique({
+        where: { id: 1 },
+      }),
+      prisma.operationalExpense.findMany({
+        where: { month },
+      }),
+    ]);
+
+    return {
+      success: true,
+      users: users.map(u => ({
+        id: u.id,
+        usuario: u.name || "",
+        rol: u.role,
+        contrasena: u.password || "",
+      })),
+      settings: settings || { allowTherapistEdit: true, referenceKeys: "" },
+      expenses: expenses,
+    };
+  } catch (error) {
+    console.error("Error fetching settings:", error);
+    return { success: false, error: "Failed to fetch settings" };
+  }
+}
+
+export async function saveSettings(data: {
+  users: any[];
+  allowTherapistEdit: boolean;
+  referenceKeys: string;
+  month: string;
+  expenses: { label: string; amount: number }[];
+}) {
+  try {
+    // 1. Process Users
+    // Get existing users
+    const existingUsers = await prisma.user.findMany();
+    const existingUserIds = existingUsers.map(u => u.id);
+    const incomingUserIds = data.users.filter(u => typeof u.id === 'string' && u.id.startsWith('c')).map(u => u.id);
+    
+    // Delete users that are no longer in the list (if we want to support deletion)
+    const usersToDelete = existingUserIds.filter(id => !incomingUserIds.includes(id));
+    if (usersToDelete.length > 0) {
+      await prisma.user.deleteMany({
+        where: { id: { in: usersToDelete } }
+      });
+    }
+
+    // Upsert users
+    for (const user of data.users) {
+      if (typeof user.id === 'string' && user.id.startsWith('c')) { // Assume existing CUID
+        await prisma.user.update({
+          where: { id: user.id },
+          data: {
+            name: user.usuario,
+            role: user.rol,
+            password: user.contrasena,
+          }
+        });
+      } else { // New user
+        await prisma.user.create({
+          data: {
+            name: user.usuario,
+            role: user.rol,
+            password: user.contrasena,
+          }
+        });
+      }
+    }
+
+    // 2. Save SystemSettings
+    await prisma.systemSettings.upsert({
+      where: { id: 1 },
+      update: {
+        allowTherapistEdit: data.allowTherapistEdit,
+        referenceKeys: data.referenceKeys,
+      },
+      create: {
+        id: 1,
+        allowTherapistEdit: data.allowTherapistEdit,
+        referenceKeys: data.referenceKeys,
+      }
+    });
+
+    // 3. Save Expenses for the given month
+    for (const exp of data.expenses) {
+      await prisma.operationalExpense.upsert({
+        where: {
+          month_label: {
+            month: data.month,
+            label: exp.label,
+          }
+        },
+        update: {
+          amount: exp.amount,
+        },
+        create: {
+          month: data.month,
+          label: exp.label,
+          amount: exp.amount,
+        }
+      });
+    }
+
+    revalidatePath("/dashboard/configuracion");
+    return { success: true };
+  } catch (error) {
+    console.error("Error saving settings:", error);
+    return { success: false, error: "Failed to save settings" };
+  }
+}

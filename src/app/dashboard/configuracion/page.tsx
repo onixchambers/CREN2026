@@ -1,50 +1,85 @@
 "use client";
-import { useState } from "react";
+import { useState, useEffect } from "react";
+import { getSettings, saveSettings } from "@/app/actions/configuracion";
 
 export default function ConfiguracionPage() {
-  const [usuarios, setUsuarios] = useState([
-    { id: 1, usuario: "Administrador", rol: "Admin", contrasena: "admin2026" },
-    { id: 2, usuario: "Elizabeth", rol: "Terapeuta", contrasena: "elizabeth123" },
-    { id: 3, usuario: "Fernanda", rol: "Terapeuta", contrasena: "fernanda123" },
-    { id: 4, usuario: "Karla", rol: "Terapeuta", contrasena: "karla123" },
-    { id: 5, usuario: "Lesly", rol: "Terapeuta", contrasena: "lesly123" },
-    { id: 6, usuario: "Lulú", rol: "Terapeuta", contrasena: "lulu123" },
-    { id: 7, usuario: "Sheribeth", rol: "Terapeuta", contrasena: "sheribeth123" },
-  ]);
+  const [usuarios, setUsuarios] = useState<any[]>([]);
+  const [allowTherapistEdit, setAllowTherapistEdit] = useState(true);
+  const [referenceKeys, setReferenceKeys] = useState("");
+  const [month, setMonth] = useState(new Date().toISOString().slice(0, 7));
+  
+  const [gastosCol1, setGastosCol1] = useState<any[]>([]);
+  const [gastosCol2, setGastosCol2] = useState<any[]>([]);
+  
+  const [isLoading, setIsLoading] = useState(true);
+  const [isSaving, setIsSaving] = useState(false);
+
+  const defaultCol1 = ["Contador", "Consultorio 7", "Consultorio 2", "Teléfono", "IMSS", "Celular", "Prest. Monterrey", "Hosting", "Material", "Google One"];
+  const defaultCol2 = ["Consultorio 5", "Consultorio 6", "Servicios prof.", "Limpieza", "4%", "Seguros", "Prest. Banamex", "Limpieza Prod.", "SAT", "Facturama"];
+
+  useEffect(() => {
+    loadSettings(month);
+  }, [month]);
+
+  async function loadSettings(m: string) {
+    setIsLoading(true);
+    const res = await getSettings(m);
+    if (res.success && res.users) {
+      setUsuarios(res.users.length > 0 ? res.users : [
+        { id: Date.now(), usuario: "Administrador", rol: "Admin", contrasena: "admin2026" }
+      ]);
+      setAllowTherapistEdit(res.settings?.allowTherapistEdit ?? true);
+      setReferenceKeys(res.settings?.referenceKeys ?? "");
+      
+      const exps = res.expenses || [];
+      setGastosCol1(defaultCol1.map(label => ({
+        label, val: exps.find((e: any) => e.label === label)?.amount?.toString() || ""
+      })));
+      setGastosCol2(defaultCol2.map(label => ({
+        label, val: exps.find((e: any) => e.label === label)?.amount?.toString() || ""
+      })));
+    }
+    setIsLoading(false);
+  }
+
+  const handleSave = async () => {
+    setIsSaving(true);
+    const allExpenses = [
+      ...gastosCol1.map(g => ({ label: g.label, amount: parseFloat(g.val) || 0 })),
+      ...gastosCol2.map(g => ({ label: g.label, amount: parseFloat(g.val) || 0 }))
+    ];
+
+    const res = await saveSettings({
+      users: usuarios,
+      allowTherapistEdit,
+      referenceKeys,
+      month,
+      expenses: allExpenses
+    });
+
+    setIsSaving(false);
+    if (res.success) {
+      alert("¡Configuración guardada exitosamente!");
+    } else {
+      alert("Hubo un error al guardar.");
+    }
+  };
 
   const addUsuario = () => {
     setUsuarios([...usuarios, { id: Date.now(), usuario: "", rol: "Terapeuta", contrasena: "" }]);
   };
 
-  const removeUsuario = (id: number) => {
+  const removeUsuario = (id: any) => {
     setUsuarios(usuarios.filter(u => u.id !== id));
   };
 
-  const gastosCol1 = [
-    { label: "Contador", val: "2170" },
-    { label: "Consultorio 7", val: "10788" },
-    { label: "Consultorio 2", val: "10788" },
-    { label: "Teléfono", val: "740" },
-    { label: "IMSS", val: "5769.89" },
-    { label: "Celular", val: "424" },
-    { label: "Prest. Monterrey", val: "3301.24" },
-    { label: "Hosting", val: "250" },
-    { label: "Material", val: "900" },
-    { label: "Google One", val: "90" },
-  ];
-
-  const gastosCol2 = [
-    { label: "Consultorio 5", val: "14964" },
-    { label: "Consultorio 6", val: "9860" },
-    { label: "Servicios prof.", val: "8000" },
-    { label: "Limpieza", val: "3200" },
-    { label: "4%", val: "620" },
-    { label: "Seguros", val: "327.17" },
-    { label: "Prest. Banamex", val: "298.73" },
-    { label: "Limpieza Prod.", val: "600" },
-    { label: "SAT", val: "8000" },
-    { label: "Facturama", val: "137.5" },
-  ];
+  if (isLoading) {
+    return (
+      <div className="flex items-center justify-center p-12">
+        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div>
+      </div>
+    );
+  }
 
   return (
     <div className="space-y-6 animate-in fade-in duration-500 max-w-5xl mx-auto pb-12">
@@ -53,9 +88,9 @@ export default function ConfiguracionPage() {
           <svg className="w-6 h-6 text-[#1a5276]" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z" /><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" /></svg>
           <h2 className="text-xl font-bold text-[#1a5276]">Configuración</h2>
         </div>
-        <button onClick={() => alert("¡Configuración guardada exitosamente!")} className="bg-[#27ae60] hover:bg-[#219653] text-white px-5 py-2 rounded text-sm font-semibold flex items-center gap-2 transition-colors">
+        <button onClick={handleSave} disabled={isSaving} className="bg-[#27ae60] hover:bg-[#219653] disabled:opacity-50 text-white px-5 py-2 rounded text-sm font-semibold flex items-center gap-2 transition-colors">
           <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M5 13l4 4L19 7" /></svg>
-          Guardar Cambios
+          {isSaving ? "Guardando..." : "Guardar Cambios"}
         </button>
       </div>
 
@@ -116,7 +151,7 @@ export default function ConfiguracionPage() {
                     <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" /></svg>
                   </button>
                 ) : (
-                  <div className="w-8 h-8"></div> // Spacer to keep layout aligned
+                  <div className="w-8 h-8"></div>
                 )}
               </div>
             ))}
@@ -126,18 +161,7 @@ export default function ConfiguracionPage() {
             <span className="text-lg leading-none">+</span> Usuario
           </button>
         </div>
-        <hr className="border-slate-100" />
 
-        {/* TERAPEUTAS */}
-        <div className="p-6">
-          <h3 className="text-[#1a5276] font-bold flex items-center gap-2 mb-4">
-            <svg className="w-5 h-5 text-slate-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z" /></svg>
-            Terapeutas
-          </h3>
-          <button className="bg-green-500 hover:bg-green-600 text-white px-4 py-1.5 rounded text-sm font-bold flex items-center gap-1 transition-colors">
-            <span className="text-lg leading-none">+</span> Terapeuta
-          </button>
-        </div>
         <hr className="border-slate-100" />
 
         {/* PERMISOS DEL SISTEMA */}
@@ -150,7 +174,7 @@ export default function ConfiguracionPage() {
           <div className="flex items-center gap-3">
             <span className="text-sm font-medium text-slate-700">Permitir a terapeutas editar Pacientes</span>
             <label className="flex items-center gap-2 cursor-pointer">
-              <input type="checkbox" defaultChecked className="w-4 h-4 text-blue-600 border-slate-300 rounded focus:ring-blue-500" />
+              <input type="checkbox" checked={allowTherapistEdit} onChange={(e) => setAllowTherapistEdit(e.target.checked)} className="w-4 h-4 text-blue-600 border-slate-300 rounded focus:ring-blue-500" />
               <span className="text-sm text-slate-600">Habilitado</span>
             </label>
           </div>
@@ -167,7 +191,7 @@ export default function ConfiguracionPage() {
 
           <div className="flex items-center gap-3 mb-6">
             <span className="text-sm text-slate-700">Mes a configurar:</span>
-            <input type="month" defaultValue="2026-07" className="p-1.5 border border-slate-300 rounded text-sm text-slate-700 focus:border-blue-500 outline-none" />
+            <input type="month" value={month} onChange={(e) => setMonth(e.target.value)} className="p-1.5 border border-slate-300 rounded text-sm text-slate-700 focus:border-blue-500 outline-none" />
           </div>
 
           <div className="grid grid-cols-1 md:grid-cols-2 gap-x-12 gap-y-4">
@@ -176,7 +200,11 @@ export default function ConfiguracionPage() {
               {gastosCol1.map((gasto, i) => (
                 <div key={i} className="flex items-center gap-4">
                   <div className="w-1/2 p-2 bg-slate-50 border border-slate-200 rounded text-sm text-slate-600 font-medium">{gasto.label}</div>
-                  <input type="text" defaultValue={gasto.val} className="w-1/2 p-2 border border-slate-300 rounded text-sm text-slate-900 focus:border-blue-500 outline-none" />
+                  <input type="text" value={gasto.val} onChange={(e) => {
+                    const newG = [...gastosCol1];
+                    newG[i].val = e.target.value;
+                    setGastosCol1(newG);
+                  }} className="w-1/2 p-2 border border-slate-300 rounded text-sm text-slate-900 focus:border-blue-500 outline-none" />
                 </div>
               ))}
             </div>
@@ -186,7 +214,11 @@ export default function ConfiguracionPage() {
               {gastosCol2.map((gasto, i) => (
                 <div key={i} className="flex items-center gap-4">
                   <div className="w-1/2 p-2 bg-slate-50 border border-slate-200 rounded text-sm text-slate-600 font-medium">{gasto.label}</div>
-                  <input type="text" defaultValue={gasto.val} className="w-1/2 p-2 border border-slate-300 rounded text-sm text-slate-900 focus:border-blue-500 outline-none" />
+                  <input type="text" value={gasto.val} onChange={(e) => {
+                    const newG = [...gastosCol2];
+                    newG[i].val = e.target.value;
+                    setGastosCol2(newG);
+                  }} className="w-1/2 p-2 border border-slate-300 rounded text-sm text-slate-900 focus:border-blue-500 outline-none" />
                 </div>
               ))}
             </div>
@@ -208,15 +240,15 @@ export default function ConfiguracionPage() {
 
           <div className="flex items-center gap-4 max-w-xl mb-6">
             <label className="text-sm font-semibold text-slate-700 w-32">Claves de Referencia</label>
-            <input type="text" placeholder="Ej: CREN2026, CLINICA10" className="flex-1 p-2 border border-slate-300 rounded text-sm text-slate-900 focus:border-blue-500 outline-none" />
+            <input type="text" value={referenceKeys} onChange={(e) => setReferenceKeys(e.target.value)} placeholder="Ej: CREN2026, CLINICA10" className="flex-1 p-2 border border-slate-300 rounded text-sm text-slate-900 focus:border-blue-500 outline-none" />
           </div>
         </div>
 
         {/* BOTTOM ACTION BAR */}
         <div className="bg-slate-50 p-4 border-t border-slate-200 flex justify-end">
-          <button onClick={() => alert("¡Configuración guardada exitosamente!")} className="bg-[#27ae60] hover:bg-[#219653] text-white px-6 py-2.5 rounded text-sm font-semibold flex items-center gap-2 transition-colors shadow-sm">
+          <button onClick={handleSave} disabled={isSaving} className="bg-[#27ae60] hover:bg-[#219653] disabled:opacity-50 text-white px-6 py-2.5 rounded text-sm font-semibold flex items-center gap-2 transition-colors shadow-sm">
             <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M5 13l4 4L19 7" /></svg>
-            Guardar Cambios
+            {isSaving ? "Guardando..." : "Guardar Cambios"}
           </button>
         </div>
 
