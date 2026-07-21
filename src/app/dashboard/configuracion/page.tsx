@@ -8,14 +8,12 @@ export default function ConfiguracionPage() {
   const [referenceKeys, setReferenceKeys] = useState("");
   const [month, setMonth] = useState(new Date().toISOString().slice(0, 7));
   
-  const [gastosCol1, setGastosCol1] = useState<any[]>([]);
-  const [gastosCol2, setGastosCol2] = useState<any[]>([]);
+  const [gastos, setGastos] = useState<any[]>([]);
   
   const [isLoading, setIsLoading] = useState(true);
   const [isSaving, setIsSaving] = useState(false);
 
-  const defaultCol1 = ["Contador", "Consultorio 7", "Consultorio 2", "Teléfono", "IMSS", "Celular", "Prest. Monterrey", "Hosting", "Material", "Google One"];
-  const defaultCol2 = ["Consultorio 5", "Consultorio 6", "Servicios prof.", "Limpieza", "4%", "Seguros", "Prest. Banamex", "Limpieza Prod.", "SAT", "Facturama"];
+  const defaultGastos = ["Contador", "Consultorio 7", "Consultorio 2", "Teléfono", "IMSS", "Celular", "Prest. Monterrey", "Hosting", "Material", "Google One", "Consultorio 5", "Consultorio 6", "Servicios prof.", "Limpieza", "4%", "Seguros", "Prest. Banamex", "Limpieza Prod.", "SAT", "Facturama"];
 
   useEffect(() => {
     loadSettings(month);
@@ -33,12 +31,11 @@ export default function ConfiguracionPage() {
         setReferenceKeys(res.settings?.referenceKeys ?? "");
         
         const exps = res.expenses || [];
-        setGastosCol1(defaultCol1.map(label => ({
-          label, val: exps.find((e: any) => e.label === label)?.amount?.toString() || ""
-        })));
-        setGastosCol2(defaultCol2.map(label => ({
-          label, val: exps.find((e: any) => e.label === label)?.amount?.toString() || ""
-        })));
+        if (exps.length > 0) {
+          setGastos(exps.map((e: any, i: number) => ({ id: i, label: e.label, val: e.amount?.toString() || "" })));
+        } else {
+          setGastos(defaultGastos.map((label, i) => ({ id: i, label, val: "" })));
+        }
       } else {
         console.error("Failed to load settings from server");
       }
@@ -52,10 +49,7 @@ export default function ConfiguracionPage() {
   const handleSave = async () => {
     setIsSaving(true);
     try {
-      const allExpenses = [
-        ...gastosCol1.map(g => ({ label: g.label, amount: parseFloat(g.val) || 0 })),
-        ...gastosCol2.map(g => ({ label: g.label, amount: parseFloat(g.val) || 0 }))
-      ];
+      const allExpenses = gastos.map(g => ({ label: g.label, amount: parseFloat(g.val) || 0 }));
 
       const res = await saveSettings({
         users: usuarios,
@@ -84,6 +78,14 @@ export default function ConfiguracionPage() {
 
   const removeUsuario = (id: any) => {
     setUsuarios(usuarios.filter(u => u.id !== id));
+  };
+
+  const addGasto = () => {
+    setGastos([...gastos, { id: Date.now(), label: "", val: "" }]);
+  };
+
+  const removeGasto = (id: any) => {
+    setGastos(gastos.filter(g => g.id !== id));
   };
 
   if (isLoading) {
@@ -207,35 +209,35 @@ export default function ConfiguracionPage() {
             <input type="month" value={month} onChange={(e) => setMonth(e.target.value)} className="p-1.5 border border-slate-300 rounded text-sm text-slate-700 focus:border-blue-500 outline-none" />
           </div>
 
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-x-12 gap-y-4">
-            {/* Col 1 */}
-            <div className="space-y-4">
-              {gastosCol1.map((gasto, i) => (
-                <div key={i} className="flex items-center gap-4">
-                  <div className="w-1/2 p-2 bg-slate-50 border border-slate-200 rounded text-sm text-slate-600 font-medium">{gasto.label}</div>
-                  <input type="text" value={gasto.val} onChange={(e) => {
-                    const newG = [...gastosCol1];
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-x-12 gap-y-4 mb-4">
+            {gastos.map((gasto, i) => (
+              <div key={gasto.id} className="flex items-center gap-2">
+                <input type="text" placeholder="Nombre del gasto" value={gasto.label} onChange={(e) => {
+                  const newG = [...gastos];
+                  newG[i].label = e.target.value;
+                  setGastos(newG);
+                }} className="flex-1 p-2 bg-slate-50 border border-slate-200 rounded text-sm text-slate-900 font-medium focus:border-blue-500 outline-none" />
+                
+                <div className="relative w-1/3">
+                  <span className="absolute left-2.5 top-2 text-slate-500 text-sm">$</span>
+                  <input type="text" placeholder="Monto" value={gasto.val} onChange={(e) => {
+                    const newG = [...gastos];
                     newG[i].val = e.target.value;
-                    setGastosCol1(newG);
-                  }} className="w-1/2 p-2 border border-slate-300 rounded text-sm text-slate-900 focus:border-blue-500 outline-none" />
+                    setGastos(newG);
+                  }} className="w-full p-2 pl-6 border border-slate-300 rounded text-sm text-slate-900 focus:border-blue-500 outline-none" />
                 </div>
-              ))}
-            </div>
-            
-            {/* Col 2 */}
-            <div className="space-y-4">
-              {gastosCol2.map((gasto, i) => (
-                <div key={i} className="flex items-center gap-4">
-                  <div className="w-1/2 p-2 bg-slate-50 border border-slate-200 rounded text-sm text-slate-600 font-medium">{gasto.label}</div>
-                  <input type="text" value={gasto.val} onChange={(e) => {
-                    const newG = [...gastosCol2];
-                    newG[i].val = e.target.value;
-                    setGastosCol2(newG);
-                  }} className="w-1/2 p-2 border border-slate-300 rounded text-sm text-slate-900 focus:border-blue-500 outline-none" />
-                </div>
-              ))}
-            </div>
+                
+                <button onClick={() => removeGasto(gasto.id)} className="p-2 bg-red-50 hover:bg-red-100 text-red-500 rounded transition-colors" title="Eliminar gasto">
+                  <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" /></svg>
+                </button>
+              </div>
+            ))}
           </div>
+          
+          <button onClick={addGasto} className="bg-blue-50 hover:bg-blue-100 text-blue-600 px-4 py-1.5 rounded text-sm font-semibold flex items-center gap-2 transition-colors">
+            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" /></svg>
+            Agregar Gasto
+          </button>
         </div>
         <hr className="border-slate-100" />
 

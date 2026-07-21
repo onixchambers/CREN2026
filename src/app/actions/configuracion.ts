@@ -93,7 +93,18 @@ export async function saveSettings(data: {
     });
 
     // 3. Save Expenses for the given month
+    // First, delete expenses that are no longer in the list for this month
+    const incomingExpenseLabels = data.expenses.map(e => e.label);
+    await prisma.operationalExpense.deleteMany({
+      where: {
+        month: data.month,
+        label: { notIn: incomingExpenseLabels }
+      }
+    });
+
+    // Then upsert the incoming ones
     for (const exp of data.expenses) {
+      if (!exp.label.trim()) continue; // Skip empty labels
       await prisma.operationalExpense.upsert({
         where: {
           month_label: {
