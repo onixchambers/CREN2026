@@ -220,7 +220,7 @@ export default function AsistenciaPage() {
               </div>
               <div>
                 <label className="block text-[10px] font-bold text-slate-400 uppercase mb-1">FECHA DE NACIMIENTO</label>
-                <input type="text" value={formData.pacienteNac} readOnly className="w-full text-sm p-2 border border-slate-300 rounded bg-slate-50 outline-none" />
+                <input type="text" name="pacienteNac" value={formData.pacienteNac} onChange={handleChange} className="w-full text-sm p-2 border border-slate-300 rounded focus:border-[#2980b9] outline-none text-slate-900" />
               </div>
             </div>
 
@@ -228,7 +228,7 @@ export default function AsistenciaPage() {
             <div className="grid grid-cols-1 md:grid-cols-5 gap-4">
               <div>
                 <label className="block text-[10px] font-bold text-slate-400 uppercase mb-1">SEXO DEL PACIENTE</label>
-                <select value={formData.pacienteSexo} disabled className="w-full text-sm p-2 border border-slate-300 rounded bg-slate-50 outline-none text-slate-500">
+                <select name="pacienteSexo" value={formData.pacienteSexo} onChange={handleChange} className="w-full text-sm p-2 border border-slate-300 rounded focus:border-[#2980b9] outline-none text-slate-900">
                   <option value="">Seleccionar...</option>
                   <option value="M">M</option>
                   <option value="F">F</option>
