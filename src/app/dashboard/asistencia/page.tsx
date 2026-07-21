@@ -242,9 +242,18 @@ export default function AsistenciaPage() {
                 <label className="block text-[10px] font-bold text-slate-400 uppercase mb-1">PRECIO DE TERAPIA</label>
                 <select name="precioTerapia" value={formData.precioTerapia} onChange={handleChange} className="w-full text-sm p-2 border border-slate-300 rounded focus:border-[#2980b9] outline-none text-slate-900">
                   <option value="">Seleccionar precio...</option>
+                  <option value="400">$400.00</option>
+                  <option value="450">$450.00</option>
                   <option value="500">$500.00</option>
+                  <option value="550">$550.00</option>
+                  <option value="600">$600.00</option>
+                  <option value="650">$650.00</option>
+                  <option value="700">$700.00</option>
+                  <option value="750">$750.00</option>
                   <option value="800">$800.00</option>
-                  <option value="1200">$1,200.00</option>
+                  <option value="850">$850.00</option>
+                  <option value="900">$900.00</option>
+                  <option value="950">$950.00</option>
                 </select>
               </div>
               <div>
