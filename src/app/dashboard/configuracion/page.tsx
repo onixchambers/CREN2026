@@ -37,7 +37,8 @@ export default function ConfiguracionPage() {
           setGastos(defaultGastos.map((label, i) => ({ id: i, label, val: "" })));
         }
       } else {
-        console.error("Failed to load settings from server");
+        console.error("Failed to load settings from server", res.error);
+        alert("Error al cargar configuración: " + (res.error || "Falta la conexión a la base de datos (DATABASE_URL en Vercel)"));
       }
     } catch (e) {
       console.error("Error loading settings:", e);

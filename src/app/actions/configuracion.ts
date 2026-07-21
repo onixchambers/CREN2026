@@ -28,9 +28,9 @@ export async function getSettings(month: string) {
       settings: settings || { allowTherapistEdit: true, referenceKeys: "" },
       expenses: expenses,
     };
-  } catch (error) {
+  } catch (error: any) {
     console.error("Error fetching settings:", error);
-    return { success: false, error: "Failed to fetch settings" };
+    return { success: false, error: error?.message || "Error desconocido" };
   }
 }
 
