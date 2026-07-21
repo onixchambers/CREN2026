@@ -23,23 +23,30 @@ export default function ConfiguracionPage() {
 
   async function loadSettings(m: string) {
     setIsLoading(true);
-    const res = await getSettings(m);
-    if (res.success && res.users) {
-      setUsuarios(res.users.length > 0 ? res.users : [
-        { id: Date.now(), usuario: "Administrador", rol: "Admin", contrasena: "admin2026" }
-      ]);
-      setAllowTherapistEdit(res.settings?.allowTherapistEdit ?? true);
-      setReferenceKeys(res.settings?.referenceKeys ?? "");
-      
-      const exps = res.expenses || [];
-      setGastosCol1(defaultCol1.map(label => ({
-        label, val: exps.find((e: any) => e.label === label)?.amount?.toString() || ""
-      })));
-      setGastosCol2(defaultCol2.map(label => ({
-        label, val: exps.find((e: any) => e.label === label)?.amount?.toString() || ""
-      })));
+    try {
+      const res = await getSettings(m);
+      if (res.success && res.users) {
+        setUsuarios(res.users.length > 0 ? res.users : [
+          { id: Date.now(), usuario: "Administrador", rol: "Admin", contrasena: "admin2026" }
+        ]);
+        setAllowTherapistEdit(res.settings?.allowTherapistEdit ?? true);
+        setReferenceKeys(res.settings?.referenceKeys ?? "");
+        
+        const exps = res.expenses || [];
+        setGastosCol1(defaultCol1.map(label => ({
+          label, val: exps.find((e: any) => e.label === label)?.amount?.toString() || ""
+        })));
+        setGastosCol2(defaultCol2.map(label => ({
+          label, val: exps.find((e: any) => e.label === label)?.amount?.toString() || ""
+        })));
+      } else {
+        console.error("Failed to load settings from server");
+      }
+    } catch (e) {
+      console.error("Error loading settings:", e);
+    } finally {
+      setIsLoading(false);
     }
-    setIsLoading(false);
   }
 
   const handleSave = async () => {
