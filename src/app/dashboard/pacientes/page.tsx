@@ -18,6 +18,12 @@ type Paciente = {
 };
 
 export default function PacientesPage() {
+  const formatDateStr = (dateStr: string) => {
+    if (!dateStr) return "-";
+    const parts = dateStr.split("-");
+    if (parts.length === 3) return `//`;
+    return dateStr;
+  };
   const [pacientes, setPacientes] = useState<any[]>([]);
   const [searchTerm, setSearchTerm] = useState("");
   const [monthTerm, setMonthTerm] = useState("");
@@ -259,3 +265,4 @@ export default function PacientesPage() {
     </div>
   );
 }
+

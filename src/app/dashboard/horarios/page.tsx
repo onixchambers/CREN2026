@@ -9,6 +9,12 @@ interface Horario {
 }
 
 export default function HorariosPage() {
+  const formatDateStr = (dateStr: string) => {
+    if (!dateStr) return "-";
+    const parts = dateStr.split("-");
+    if (parts.length === 3) return `//`;
+    return dateStr;
+  };
   const [horarios, setHorarios] = useState<Horario[]>([]);
   const [terapeutaSeleccionado, setTerapeutaSeleccionado] = useState("");
   const [horaActual, setHoraActual] = useState("");
@@ -79,7 +85,7 @@ export default function HorariosPage() {
           <div className="w-full space-y-2">
             <label className="text-sm font-medium text-slate-700">Terapeuta</label>
             <select 
-              className="w-full text-slate-900 font-medium p-2 border border-slate-300 rounded-md focus:ring-2 focus:ring-indigo-500 outline-none"
+              className="w-full text-slate-900 font-medium p-2 border border-slate-300 rounded-md focus:ring-2 focus:ring-indigo-500 outline-none text-slate-900"
               value={terapeutaSeleccionado}
               onChange={e => setTerapeutaSeleccionado(e.target.value)}
             >
@@ -142,3 +148,4 @@ export default function HorariosPage() {
     </div>
   );
 }
+

@@ -3,6 +3,12 @@ import { useState, useEffect } from "react";
 import { getSettings, saveSettings } from "@/app/actions/configuracion";
 
 export default function ConfiguracionPage() {
+  const formatDateStr = (dateStr: string) => {
+    if (!dateStr) return "-";
+    const parts = dateStr.split("-");
+    if (parts.length === 3) return `//`;
+    return dateStr;
+  };
   const [usuarios, setUsuarios] = useState<any[]>([]);
   const [allowTherapistEdit, setAllowTherapistEdit] = useState(true);
   const [referenceKeys, setReferenceKeys] = useState("");
@@ -124,7 +130,7 @@ export default function ConfiguracionPage() {
               <div key={u.id} className="flex flex-wrap items-center gap-4 py-2 border-b border-slate-50 last:border-0">
                 <div className="flex items-center gap-2 flex-1 min-w-[200px]">
                   <label className="text-sm text-slate-500 w-16">Usuario</label>
-                  <input type="text" value={u.usuario} className="flex-1 p-2 border border-slate-300 rounded text-sm text-slate-900 focus:border-blue-500 outline-none" onChange={(e) => {
+                  <input type="text" value={u.usuario} className="flex-1 p-2 border border-slate-300 rounded text-sm text-slate-900 focus:border-blue-500 outline-none text-slate-900" onChange={(e) => {
                     const newU = [...usuarios];
                     const idx = newU.findIndex(x => x.id === u.id);
                     newU[idx].usuario = e.target.value;
@@ -154,7 +160,7 @@ export default function ConfiguracionPage() {
 
                 <div className="flex items-center gap-2 flex-1 min-w-[200px]">
                   <label className="text-sm text-slate-500 w-20">Contraseña</label>
-                  <input type="text" value={u.contrasena} className="flex-1 p-2 border border-slate-300 rounded text-sm text-slate-900 focus:border-blue-500 outline-none" onChange={(e) => {
+                  <input type="text" value={u.contrasena} className="flex-1 p-2 border border-slate-300 rounded text-sm text-slate-900 focus:border-blue-500 outline-none text-slate-900" onChange={(e) => {
                     const newU = [...usuarios];
                     const idx = newU.findIndex(x => x.id === u.id);
                     newU[idx].contrasena = e.target.value;
@@ -207,7 +213,7 @@ export default function ConfiguracionPage() {
 
           <div className="flex items-center gap-3 mb-6">
             <span className="text-sm text-slate-700">Mes a configurar:</span>
-            <input type="month" value={month} onChange={(e) => setMonth(e.target.value)} className="p-1.5 border border-slate-300 rounded text-sm text-slate-700 focus:border-blue-500 outline-none" />
+            <input type="month" value={month} onChange={(e) => setMonth(e.target.value)} className="p-1.5 border border-slate-300 rounded text-sm text-slate-700 focus:border-blue-500 outline-none text-slate-900" />
           </div>
 
           <div className="grid grid-cols-1 md:grid-cols-2 gap-x-12 gap-y-4 mb-4">
@@ -217,7 +223,7 @@ export default function ConfiguracionPage() {
                   const newG = [...gastos];
                   newG[i].label = e.target.value;
                   setGastos(newG);
-                }} className="flex-1 p-2 bg-slate-50 border border-slate-200 rounded text-sm text-slate-900 font-medium focus:border-blue-500 outline-none" />
+                }} className="flex-1 p-2 bg-slate-50 border border-slate-200 rounded text-sm text-slate-900 font-medium focus:border-blue-500 outline-none text-slate-900" />
                 
                 <div className="relative w-1/3">
                   <span className="absolute left-2.5 top-2 text-slate-500 text-sm">$</span>
@@ -225,7 +231,7 @@ export default function ConfiguracionPage() {
                     const newG = [...gastos];
                     newG[i].val = e.target.value;
                     setGastos(newG);
-                  }} className="w-full p-2 pl-6 border border-slate-300 rounded text-sm text-slate-900 focus:border-blue-500 outline-none" />
+                  }} className="w-full p-2 pl-6 border border-slate-300 rounded text-sm text-slate-900 focus:border-blue-500 outline-none text-slate-900" />
                 </div>
                 
                 <button onClick={() => removeGasto(gasto.id)} className="p-2 bg-red-50 hover:bg-red-100 text-red-500 rounded transition-colors" title="Eliminar gasto">
@@ -256,7 +262,7 @@ export default function ConfiguracionPage() {
 
           <div className="flex items-center gap-4 max-w-xl mb-6">
             <label className="text-sm font-semibold text-slate-700 w-32">Claves de Referencia</label>
-            <input type="text" value={referenceKeys} onChange={(e) => setReferenceKeys(e.target.value)} placeholder="Ej: CREN2026, CLINICA10" className="flex-1 p-2 border border-slate-300 rounded text-sm text-slate-900 focus:border-blue-500 outline-none" />
+            <input type="text" value={referenceKeys} onChange={(e) => setReferenceKeys(e.target.value)} placeholder="Ej: CREN2026, CLINICA10" className="flex-1 p-2 border border-slate-300 rounded text-sm text-slate-900 focus:border-blue-500 outline-none text-slate-900" />
           </div>
         </div>
 
@@ -272,3 +278,4 @@ export default function ConfiguracionPage() {
     </div>
   );
 }
+

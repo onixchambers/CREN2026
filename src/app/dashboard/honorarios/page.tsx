@@ -3,6 +3,12 @@ import { useState, useEffect } from "react";
 import { getTerapeutasFull, updateTerapeutaConfig } from "@/app/actions/configuracion";
 
 export default function HonorariosPage() {
+  const formatDateStr = (dateStr: string) => {
+    if (!dateStr) return "-";
+    const parts = dateStr.split("-");
+    if (parts.length === 3) return `//`;
+    return dateStr;
+  };
   const [terapeutas, setTerapeutas] = useState<any[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   
@@ -210,3 +216,4 @@ export default function HonorariosPage() {
     </div>
   );
 }
+

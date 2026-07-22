@@ -10,6 +10,12 @@ type Movimiento = {
 };
 
 export default function FinanzasPage() {
+  const formatDateStr = (dateStr: string) => {
+    if (!dateStr) return "-";
+    const parts = dateStr.split("-");
+    if (parts.length === 3) return `//`;
+    return dateStr;
+  };
   const [movimientos, setMovimientos] = useState<Movimiento[]>([]);
 
   const [isModalOpen, setIsModalOpen] = useState(false);
@@ -78,7 +84,7 @@ export default function FinanzasPage() {
                 {movimientos.length > 0 ? (
                   movimientos.map((mov) => (
                     <tr key={mov.id}>
-                      <td className="py-3">{mov.fecha}</td>
+                      <td className="py-3">{formatDateStr(mov.fecha)}</td>
                       <td className="py-3 font-medium">{mov.descripcion}</td>
                       <td className="py-3">
                         <span className={`px-2 py-1 rounded text-xs font-bold ${mov.tipo === 'INGRESO' ? 'text-green-600 bg-green-50' : 'text-red-600 bg-red-50'}`}>
@@ -161,3 +167,4 @@ export default function FinanzasPage() {
     </div>
   );
 }
+

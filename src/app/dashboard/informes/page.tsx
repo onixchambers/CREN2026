@@ -16,6 +16,12 @@ type Paciente = {
 };
 
 export default function InformesPage() {
+  const formatDateStr = (dateStr: string) => {
+    if (!dateStr) return "-";
+    const parts = dateStr.split("-");
+    if (parts.length === 3) return `//`;
+    return dateStr;
+  };
   const [pacientes, setPacientes] = useState<Paciente[]>([]);
   const [informes, setInformes] = useState<Informe[]>([]);
   
@@ -259,7 +265,7 @@ export default function InformesPage() {
                 <tbody className="divide-y divide-slate-100">
                   {informesFiltrados.map(inf => (
                     <tr key={inf.id} className="hover:bg-slate-50">
-                      <td className="px-4 py-3 text-slate-600">{inf.fecha}</td>
+                      <td className="px-4 py-3 text-slate-600">{formatDateStr(inf.fecha)}</td>
                       <td className="px-4 py-3 font-bold text-[#1a5276]">{inf.paciente}</td>
                       <td className="px-4 py-3 text-slate-500">{inf.tipo}</td>
                       <td className="px-4 py-3 text-[#2980b9] font-medium flex items-center gap-2">
@@ -282,3 +288,4 @@ export default function InformesPage() {
     </div>
   );
 }
+

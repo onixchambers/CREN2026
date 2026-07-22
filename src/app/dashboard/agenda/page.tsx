@@ -20,6 +20,12 @@ const HORAS = [
 ];
 
 export default function AgendaPage() {
+  const formatDateStr = (dateStr: string) => {
+    if (!dateStr) return "-";
+    const parts = dateStr.split("-");
+    if (parts.length === 3) return `//`;
+    return dateStr;
+  };
   const hoy = new Date().toISOString().split("T")[0];
   const [fechaSeleccionada, setFechaSeleccionada] = useState(hoy);
   
@@ -252,3 +258,4 @@ export default function AgendaPage() {
     </div>
   );
 }
+

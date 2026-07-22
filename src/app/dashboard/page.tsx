@@ -2,6 +2,12 @@
 import { useState, useEffect } from "react";
 
 export default function DashboardPage() {
+  const formatDateStr = (dateStr: string) => {
+    if (!dateStr) return "-";
+    const parts = dateStr.split("-");
+    if (parts.length === 3) return `//`;
+    return dateStr;
+  };
   const [asistencias, setAsistencias] = useState<any[]>([]);
   const [pacientes, setPacientes] = useState<any[]>([]);
 
@@ -263,7 +269,7 @@ export default function DashboardPage() {
               <p className="text-xl font-extrabold text-[#0e2f44]">{pSemana}</p>
               <p className="text-[9px] text-slate-400 mt-1">Ninguno</p>
             </div>
-            <select className="mt-2 w-full text-[9px] border border-slate-200 rounded px-2 py-1 outline-none">
+            <select className="mt-2 w-full text-[9px] border border-slate-200 rounded px-2 py-1 outline-none text-slate-900">
               <option>Ninguno</option>
             </select>
           </div>
@@ -275,7 +281,7 @@ export default function DashboardPage() {
               <p className="text-xl font-extrabold text-[#0e2f44]">{pMes}</p>
               <p className="text-[9px] text-slate-400 mt-1">Ninguno</p>
             </div>
-            <select className="mt-2 w-full text-[9px] border border-slate-200 rounded px-2 py-1 outline-none">
+            <select className="mt-2 w-full text-[9px] border border-slate-200 rounded px-2 py-1 outline-none text-slate-900">
               <option>Ninguno</option>
             </select>
           </div>
@@ -287,3 +293,4 @@ export default function DashboardPage() {
     </div>
   );
 }
+

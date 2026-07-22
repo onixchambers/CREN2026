@@ -1,6 +1,12 @@
 "use client";
 
 export default function EstadoResultadosPage() {
+  const formatDateStr = (dateStr: string) => {
+    if (!dateStr) return "-";
+    const parts = dateStr.split("-");
+    if (parts.length === 3) return `//`;
+    return dateStr;
+  };
   const datos = {
     ingresosBrutos: 0,
     nomina: 0,
@@ -68,3 +74,4 @@ export default function EstadoResultadosPage() {
     </div>
   );
 }
+

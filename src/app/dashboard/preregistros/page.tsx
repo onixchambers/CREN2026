@@ -2,6 +2,12 @@
 import { useState, useEffect } from "react";
 
 export default function PreregistrosPage() {
+  const formatDateStr = (dateStr: string) => {
+    if (!dateStr) return "-";
+    const parts = dateStr.split("-");
+    if (parts.length === 3) return `//`;
+    return dateStr;
+  };
   const [formData, setFormData] = useState({
     nombre: "",
     fechaNacimiento: "",
@@ -349,3 +355,4 @@ export default function PreregistrosPage() {
     </div>
   );
 }
+

@@ -1,6 +1,12 @@
 "use client";
 
 export default function ReportesPage() {
+  const formatDateStr = (dateStr: string) => {
+    if (!dateStr) return "-";
+    const parts = dateStr.split("-");
+    if (parts.length === 3) return `//`;
+    return dateStr;
+  };
   return (
     <div className="space-y-6 animate-in fade-in duration-500">
       <div className="flex items-center justify-between border-b pb-4">
@@ -21,3 +27,4 @@ export default function ReportesPage() {
     </div>
   );
 }
+

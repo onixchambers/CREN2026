@@ -3,6 +3,12 @@ import { useState, useEffect } from "react";
 
 
 export default function TerapeutasPage() {
+  const formatDateStr = (dateStr: string) => {
+    if (!dateStr) return "-";
+    const parts = dateStr.split("-");
+    if (parts.length === 3) return `//`;
+    return dateStr;
+  };
   const [asistencias, setAsistencias] = useState<any[]>([]);
   const [terapeutasActivos, setTerapeutasActivos] = useState<string[]>([]);
   
@@ -211,3 +217,4 @@ export default function TerapeutasPage() {
     </div>
   );
 }
+

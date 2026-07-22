@@ -27,6 +27,12 @@ type Asistencia = {
 };
 
 export default function AsistenciaPage() {
+  const formatDateStr = (dateStr: string) => {
+    if (!dateStr) return "-";
+    const parts = dateStr.split("-");
+    if (parts.length === 3) return `//`;
+    return dateStr;
+  };
   const [pacientes, setPacientes] = useState<Paciente[]>([]);
   const [asistencias, setAsistencias] = useState<Asistencia[]>([]);
   
@@ -485,7 +491,7 @@ export default function AsistenciaPage() {
             <tbody className="divide-y divide-slate-100">
               {asistenciasFiltradas.length > 0 ? asistenciasFiltradas.map(a => (
                 <tr key={a.id} className="hover:bg-slate-50 transition-colors">
-                  <td className="px-2 py-3 text-slate-500 font-medium">{a.fecha}</td>
+                  <td className="px-2 py-3 text-slate-500 font-medium">{formatDateStr(a.fecha)}</td>
                   <td className="px-2 py-3 text-slate-500">{a.area}</td>
                   <td className="px-4 py-3 text-left font-bold text-[#1a5276] max-w-[150px] truncate" title={a.paciente}>{a.paciente}</td>
                   <td className="px-2 py-3 text-slate-500">{a.sexo}</td>
@@ -542,11 +548,11 @@ export default function AsistenciaPage() {
               <div className="grid grid-cols-2 gap-4">
                 <div>
                   <label className="block text-[10px] font-bold text-slate-500 uppercase mb-1">Fecha</label>
-                  <input type="date" name="fecha" value={editForm.fecha} onChange={handleEditChange} className="w-full text-sm p-2 border border-slate-300 rounded focus:border-[#2980b9] outline-none" />
+                  <input type="date" name="fecha" value={editForm.fecha} onChange={handleEditChange} className="w-full text-sm p-2 border border-slate-300 rounded focus:border-[#2980b9] outline-none text-slate-900" />
                 </div>
                 <div>
                   <label className="block text-[10px] font-bold text-slate-500 uppercase mb-1">Área</label>
-                  <select name="area" value={editForm.area} onChange={handleEditChange} className="w-full text-sm p-2 border border-slate-300 rounded focus:border-[#2980b9] outline-none">
+                  <select name="area" value={editForm.area} onChange={handleEditChange} className="w-full text-sm p-2 border border-slate-300 rounded focus:border-[#2980b9] outline-none text-slate-900">
                     <option value="Psicología">Psicología</option>
                     <option value="Lenguaje">Lenguaje</option>
                     <option value="Fisioterapia">Fisioterapia</option>
@@ -554,7 +560,7 @@ export default function AsistenciaPage() {
                 </div>
                 <div>
                   <label className="block text-[10px] font-bold text-slate-500 uppercase mb-1">Tipo de Sesión</label>
-                  <select name="tipoSesion" value={editForm.tipoSesion} onChange={handleEditChange} className="w-full text-sm p-2 border border-slate-300 rounded focus:border-[#2980b9] outline-none">
+                  <select name="tipoSesion" value={editForm.tipoSesion} onChange={handleEditChange} className="w-full text-sm p-2 border border-slate-300 rounded focus:border-[#2980b9] outline-none text-slate-900">
                     <option value="Individual">Individual</option>
                     <option value="Escuela">Escuela</option>
                     <option value="Reposicion">Reposición</option>
@@ -565,7 +571,7 @@ export default function AsistenciaPage() {
                 </div>
                 <div>
                   <label className="block text-[10px] font-bold text-slate-500 uppercase mb-1">Estado</label>
-                  <select name="estado" value={editForm.estado} onChange={handleEditChange} className="w-full text-sm p-2 border border-slate-300 rounded focus:border-[#2980b9] outline-none">
+                  <select name="estado" value={editForm.estado} onChange={handleEditChange} className="w-full text-sm p-2 border border-slate-300 rounded focus:border-[#2980b9] outline-none text-slate-900">
                     <option value="Asistio">Asistió</option>
                     <option value="Cancelo anticipadamente">Canceló anticipadamente</option>
                     <option value="Cancelo sin anticipacion">Canceló sin anticipación</option>
@@ -576,15 +582,15 @@ export default function AsistenciaPage() {
                 </div>
                 <div>
                   <label className="block text-[10px] font-bold text-slate-500 uppercase mb-1">Sesiones</label>
-                  <input type="number" name="sesiones" value={editForm.sesiones} onChange={handleEditChange} className="w-full text-sm p-2 border border-slate-300 rounded focus:border-[#2980b9] outline-none" />
+                  <input type="number" name="sesiones" value={editForm.sesiones} onChange={handleEditChange} className="w-full text-sm p-2 border border-slate-300 rounded focus:border-[#2980b9] outline-none text-slate-900" />
                 </div>
                 <div>
                   <label className="block text-[10px] font-bold text-slate-500 uppercase mb-1">Subtotal (Monto)</label>
-                  <input type="number" name="subtotal" value={editForm.subtotal} onChange={handleEditChange} className="w-full text-sm p-2 border border-slate-300 rounded focus:border-[#2980b9] outline-none" />
+                  <input type="number" name="subtotal" value={editForm.subtotal} onChange={handleEditChange} className="w-full text-sm p-2 border border-slate-300 rounded focus:border-[#2980b9] outline-none text-slate-900" />
                 </div>
                 <div>
                   <label className="block text-[10px] font-bold text-slate-500 uppercase mb-1">Método de Pago</label>
-                  <select name="pago" value={editForm.pago} onChange={handleEditChange} className="w-full text-sm p-2 border border-slate-300 rounded focus:border-[#2980b9] outline-none">
+                  <select name="pago" value={editForm.pago} onChange={handleEditChange} className="w-full text-sm p-2 border border-slate-300 rounded focus:border-[#2980b9] outline-none text-slate-900">
                     <option value="Efectivo">Efectivo</option>
                     <option value="Transferencia">Transferencia</option>
                     <option value="Tarjeta">Tarjeta</option>
@@ -598,7 +604,7 @@ export default function AsistenciaPage() {
                 </div>
                 <div className="col-span-2">
                   <label className="block text-[10px] font-bold text-slate-500 uppercase mb-1">Observaciones</label>
-                  <input type="text" name="obs" value={editForm.obs} onChange={handleEditChange} className="w-full text-sm p-2 border border-slate-300 rounded focus:border-[#2980b9] outline-none" />
+                  <input type="text" name="obs" value={editForm.obs} onChange={handleEditChange} className="w-full text-sm p-2 border border-slate-300 rounded focus:border-[#2980b9] outline-none text-slate-900" />
                 </div>
               </div>
             </div>
@@ -614,3 +620,4 @@ export default function AsistenciaPage() {
     </div>
   );
 }
+
