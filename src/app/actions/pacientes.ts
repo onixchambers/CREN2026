@@ -50,9 +50,9 @@ export async function createPatient(data: any) {
     revalidatePath("/dashboard/pacientes");
     
     return { success: true, data: patient };
-  } catch (error) {
+  } catch (error: any) {
     console.error("Error creating patient:", error);
-    return { success: false, error: "Error al guardar el paciente en la base de datos." };
+    return { success: false, error: "Error de DB: " + (error?.message || String(error)) };
   }
 }
 
