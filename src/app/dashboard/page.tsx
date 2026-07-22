@@ -45,7 +45,7 @@ export default function DashboardPage() {
   const asistHoy = asistencias.filter(a => isToday(a.fecha));
   const ingresosHoy = asistHoy.reduce((acc, curr) => acc + parseMoney(curr.total), 0);
   const sesionesHoy = asistHoy.reduce((acc, curr) => acc + parseInt(curr.sesiones || "1"), 0);
-  const cancelacionesHoy = asistHoy.filter(a => a.estado === "Cancelado").length;
+  const cancelacionesHoy = asistHoy.filter(a => (a.estado || "").includes("Cancelo")).length;
   const pendientesHoy = asistHoy.filter(a => a.estado === "Pendiente").length;
   const totalHoyCount = asistHoy.length;
 
@@ -53,7 +53,7 @@ export default function DashboardPage() {
   const asistSemana = asistencias.filter(a => isThisWeek(a.fecha));
   const ingresosSemana = asistSemana.reduce((acc, curr) => acc + parseMoney(curr.total), 0);
   const sesionesSemana = asistSemana.reduce((acc, curr) => acc + parseInt(curr.sesiones || "1"), 0);
-  const cancelacionesSemana = asistSemana.filter(a => a.estado === "Cancelado").length;
+  const cancelacionesSemana = asistSemana.filter(a => (a.estado || "").includes("Cancelo")).length;
   // terapeutas activos (mocked or extracted from terapeutas)
   const terapeutasSemana = new Set(asistSemana.map(a => a.terapeuta)).size;
 
@@ -70,6 +70,24 @@ export default function DashboardPage() {
   const pSemana = pacientes.filter(p => isThisWeek(p.id ? new Date(parseInt(p.id)).toISOString().split("T")[0] : "")).length;
   const pMes = pacientes.filter(p => isThisMonth(p.id ? new Date(parseInt(p.id)).toISOString().split("T")[0] : "")).length;
   const pTotal = pacientes.length;
+
+  // --- INGRESOS POR MÉTODO (MES) ---
+  const metodosStats = asistMes.reduce((acc, curr) => {
+    const metodo = curr.pago || "Por definir";
+    if (!acc[metodo]) {
+      acc[metodo] = { metodo, sesiones: 0, recibido: 0, esperado: 0 };
+    }
+    const val = parseMoney(curr.total);
+    acc[metodo].sesiones += parseInt(curr.sesiones || "1");
+    acc[metodo].esperado += val;
+    
+    // Considerar recibido si el estado indica que se pagó o asistió
+    if (curr.estado === "Asistio" || curr.estado === "Cancelo sin anticipacion") {
+      acc[metodo].recibido += val;
+    }
+    return acc;
+  }, {} as Record<string, any>);
+  const metodosList = Object.values(metodosStats);
 
   const KpiCard = ({ title, value, subtext, color }: any) => (
     <div className="bg-white rounded p-4 border border-slate-200 shadow-sm relative overflow-hidden">
@@ -159,7 +177,7 @@ export default function DashboardPage() {
             <h2 className="text-[13px] font-bold text-[#1a5276]">Resumen Mensual</h2>
           </div>
           <div className="bg-white border border-slate-200 rounded px-3 py-1 text-xs text-[#1a5276] font-semibold flex items-center gap-2">
-            julio de 2026
+            Mes Actual
             <svg className="w-3 h-3" fill="currentColor" viewBox="0 0 24 24"><path d="M7 10l5 5 5-5z"/></svg>
           </div>
         </div>
@@ -189,17 +207,34 @@ export default function DashboardPage() {
           <table className="w-full text-left text-[9px] uppercase">
             <thead className="bg-[#0e2f44] text-white font-semibold">
               <tr>
-                <th className="px-4 py-2">MÉTODO DE PAGO</th>
-                <th className="px-4 py-2">SESIONES</th>
-                <th className="px-4 py-2">MONTO RECIBIDO</th>
-                <th className="px-4 py-2">MONTO ESPERADO</th>
-                <th className="px-4 py-2">EFECTIVIDAD</th>
+                <th className="px-4 py-3">MÉTODO DE PAGO</th>
+                <th className="px-4 py-3">SESIONES</th>
+                <th className="px-4 py-3">MONTO RECIBIDO</th>
+                <th className="px-4 py-3">MONTO ESPERADO</th>
+                <th className="px-4 py-3">EFECTIVIDAD</th>
               </tr>
             </thead>
-            <tbody>
-              <tr>
-                <td colSpan={5} className="px-4 py-6 text-center text-slate-400 font-medium">No hay datos disponibles para este mes.</td>
-              </tr>
+            <tbody className="divide-y divide-slate-100">
+              {metodosList.length > 0 ? metodosList.map((m: any, idx) => (
+                <tr key={idx} className="hover:bg-slate-50">
+                  <td className="px-4 py-3 font-bold text-[#1a5276]">{m.metodo}</td>
+                  <td className="px-4 py-3 text-slate-500 font-medium">{m.sesiones}</td>
+                  <td className="px-4 py-3 font-bold text-[#27ae60]">{formatMoney(m.recibido)}</td>
+                  <td className="px-4 py-3 font-bold text-slate-600">{formatMoney(m.esperado)}</td>
+                  <td className="px-4 py-3">
+                    <div className="w-full bg-slate-200 rounded-full h-1.5 mt-1">
+                      <div className="bg-[#2ecc71] h-1.5 rounded-full" style={{ width: `${m.esperado > 0 ? (m.recibido / m.esperado) * 100 : 0}%` }}></div>
+                    </div>
+                    <span className="text-[10px] text-slate-500 font-bold mt-1 inline-block">
+                      {m.esperado > 0 ? Math.round((m.recibido / m.esperado) * 100) : 0}%
+                    </span>
+                  </td>
+                </tr>
+              )) : (
+                <tr>
+                  <td colSpan={5} className="px-4 py-6 text-center text-slate-400 font-medium">No hay datos disponibles para este mes.</td>
+                </tr>
+              )}
             </tbody>
           </table>
         </div>
