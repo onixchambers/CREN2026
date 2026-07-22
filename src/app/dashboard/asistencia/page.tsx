@@ -75,21 +75,26 @@ export default function AsistenciaPage() {
     if (aData) setAsistencias(JSON.parse(aData));
   }, []);
 
-  const handlePacienteChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
-    const id = e.target.value;
-    if (!id) {
-      setFormData({ ...formData, pacienteId: "", pacienteNombre: "", pacienteNac: "", pacienteSexo: "", pacienteEdad: "" });
-      return;
-    }
-    const p = pacientes.find(x => x.id === id);
+  const handlePacienteChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const val = e.target.value;
+    const p = pacientes.find(x => x.paciente === val);
     if (p) {
       setFormData({
         ...formData,
         pacienteId: p.id,
         pacienteNombre: p.paciente,
-        pacienteNac: p.nac !== "—" ? p.nac : "",
+        pacienteNac: p.nac !== "�" ? p.nac : "",
         pacienteSexo: p.sexo,
         pacienteEdad: p.edad
+      });
+    } else {
+      setFormData({
+        ...formData,
+        pacienteId: "",
+        pacienteNombre: val,
+        pacienteNac: "",
+        pacienteSexo: "",
+        pacienteEdad: ""
       });
     }
   };
@@ -279,12 +284,20 @@ export default function AsistenciaPage() {
               </div>
               <div>
                 <label className="block text-[10px] font-bold text-slate-400 uppercase mb-1">NOMBRE PACIENTE</label>
-                <select name="pacienteId" value={formData.pacienteId} onChange={handlePacienteChange} className="w-full text-sm p-2 border border-slate-300 rounded focus:border-[#2980b9] outline-none text-slate-900">
-                  <option value="">Seleccionar paciente...</option>
+                <input 
+                  type="text" 
+                  name="pacienteNombre" 
+                  list="pacientes-list"
+                  value={formData.pacienteNombre} 
+                  onChange={handlePacienteChange} 
+                  placeholder="Escribir o seleccionar paciente..."
+                  className="w-full text-sm p-2 border border-slate-300 rounded focus:border-[#2980b9] outline-none text-slate-900" 
+                />
+                <datalist id="pacientes-list">
                   {pacientes.map(p => (
-                    <option key={p.id} value={p.id}>{p.paciente}</option>
+                    <option key={p.id} value={p.paciente} />
                   ))}
-                </select>
+                </datalist>
               </div>
               <div>
                 <label className="block text-[10px] font-bold text-slate-400 uppercase mb-1">FECHA DE NACIMIENTO</label>

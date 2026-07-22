@@ -1,5 +1,6 @@
 "use client";
 import { useState, useEffect } from "react";
+import { getTerapeutas } from "@/app/actions/configuracion";
 
 interface Horario {
   id: number;
@@ -12,14 +13,23 @@ export default function HorariosPage() {
   const formatDateStr = (dateStr: string) => {
     if (!dateStr) return "-";
     const parts = dateStr.split("-");
-    if (parts.length === 3) return `//`;
+    if (parts.length === 3) return `${parts[2]}/${parts[1]}/${parts[0]}`;
     return dateStr;
   };
   const [horarios, setHorarios] = useState<Horario[]>([]);
   const [terapeutaSeleccionado, setTerapeutaSeleccionado] = useState("");
   const [horaActual, setHoraActual] = useState("");
+  const [terapeutasDisponibles, setTerapeutasDisponibles] = useState<string[]>([]);
 
   useEffect(() => {
+    async function loadTerapeutas() {
+      const res = await getTerapeutas();
+      if (res.success && res.terapeutas) {
+        setTerapeutasDisponibles(res.terapeutas);
+      }
+    }
+    loadTerapeutas();
+
     // Actualizar reloj cada segundo
     const interval = setInterval(() => {
       setHoraActual(new Date().toLocaleTimeString());
@@ -85,14 +95,14 @@ export default function HorariosPage() {
           <div className="w-full space-y-2">
             <label className="text-sm font-medium text-slate-700">Terapeuta</label>
             <select 
-              className="w-full text-slate-900 font-medium p-2 border border-slate-300 rounded-md focus:ring-2 focus:ring-indigo-500 outline-none text-slate-900"
+              className="w-full text-slate-900 font-medium p-2 border border-slate-300 rounded-md focus:ring-2 focus:ring-indigo-500 outline-none"
               value={terapeutaSeleccionado}
               onChange={e => setTerapeutaSeleccionado(e.target.value)}
             >
               <option value="">-- Seleccionar --</option>
-              <option value="Dra. Ana López">Dra. Ana López</option>
-              <option value="Lic. Carlos Ruiz">Lic. Carlos Ruiz</option>
-              <option value="Mtro. Fernando">Mtro. Fernando</option>
+              {terapeutasDisponibles.map((t, idx) => (
+                <option key={idx} value={t}>{t}</option>
+              ))}
             </select>
           </div>
 
@@ -148,4 +158,3 @@ export default function HorariosPage() {
     </div>
   );
 }
-

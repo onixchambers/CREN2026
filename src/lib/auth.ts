@@ -13,30 +13,24 @@ export const authOptions: NextAuthOptions = {
         password: { label: "Contraseña", type: "password" },
       },
       async authorize(credentials) {
-        if (!credentials?.email || !credentials?.password) {
+        if (!credentials?.username || !credentials?.password) {
           return null;
         }
 
-        if (credentials.email === "admin@cren.com" && credentials.password === "admin123") {
-          return {
-            id: "1",
-            name: "Administrador",
-            email: "admin@cren.com",
-            role: "ADMIN",
-          };
+        const user = await prisma.user.findFirst({
+          where: { name: credentials.username }
+        });
+
+        if (!user || user.password !== credentials.password) {
+          return null;
         }
 
-        if (credentials.email === "terapeuta@cren.com" && credentials.password === "terapeuta123") {
-          return {
-            id: "2",
-            name: "Terapeuta",
-            email: "terapeuta@cren.com",
-            role: "TERAPEUTA",
-          };
-        }
-        
-        return null;
-      },
+        return {
+          id: user.id,
+          name: user.name,
+          email: user.email || "",
+          role: user.role,
+        };,
     }),
   ],
   session: {
