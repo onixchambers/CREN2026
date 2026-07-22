@@ -22,7 +22,7 @@ export const authOptions: NextAuthOptions = {
         }
 
         const user = await prisma.user.findFirst({
-          where: { name: credentials.username }
+          where: { name: { equals: credentials.username, mode: 'insensitive' } }
         });
 
         if (!user || user.password !== credentials.password) {
