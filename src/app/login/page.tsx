@@ -58,7 +58,7 @@ export default function LoginPage() {
               </label>
               <input
                 type="text"
-                value={email}
+                value={username}
                 onChange={(e) => setUsername(e.target.value)}
                 className="w-full px-4 py-3 rounded-lg border-2 border-gray-200 focus:border-blue-500 focus:ring-4 focus:ring-blue-500/10 transition-all outline-none"
                 placeholder="Nombre de usuario"
