@@ -23,10 +23,7 @@ export default function AgendaPage() {
   const hoy = new Date().toISOString().split("T")[0];
   const [fechaSeleccionada, setFechaSeleccionada] = useState(hoy);
   
-  const [citas, setCitas] = useState<Cita[]>([
-    { id: "1", paciente: "Juan Pérez", fecha: hoy, hora: "09:00", terapeuta: "ELIZABETH", tipoServicio: "individual", frecuencia: "semanal", estado: "Ocupado" },
-    { id: "2", paciente: "Ana Gómez", fecha: hoy, hora: "10:00", terapeuta: "KARLA", tipoServicio: "valoracion", frecuencia: "unica", estado: "Reagendado" }
-  ]);
+  const [citas, setCitas] = useState<Cita[]>([]);
   
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [formData, setFormData] = useState({
