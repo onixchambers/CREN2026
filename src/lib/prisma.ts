@@ -1,4 +1,6 @@
 import { PrismaClient } from "@prisma/client";
+import { Pool } from "pg";
+import { PrismaPg } from "@prisma/adapter-pg";
 
 const globalForPrisma = globalThis as unknown as {
   prisma: PrismaClient | undefined;
@@ -16,7 +18,11 @@ let prismaInstance: PrismaClient;
 
 try {
   process.env.DATABASE_URL = fallbackUrl;
-  prismaInstance = globalForPrisma.prisma ?? new PrismaClient();
+  
+  const pool = new Pool({ connectionString: fallbackUrl });
+  const adapter = new PrismaPg(pool);
+  
+  prismaInstance = globalForPrisma.prisma ?? new PrismaClient({ adapter });
 } catch (error: any) {
   console.error("PRISMA INITIALIZATION ERROR:", error);
   // Create a dummy proxy that throws the initialization error when used
