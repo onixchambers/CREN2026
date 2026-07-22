@@ -102,3 +102,18 @@ function calculateAge(birthDateString: string) {
   }
   return age;
 }
+
+export async function deletePatient(id: string) {
+  try {
+    await prisma.$transaction([
+      prisma.session.deleteMany({ where: { patientId: id } }),
+      prisma.payment.deleteMany({ where: { patientId: id } }),
+      prisma.patient.delete({ where: { id } })
+    ]);
+    revalidatePath("/dashboard/pacientes");
+    return { success: true };
+  } catch (error: any) {
+    console.error("Error deleting patient:", error);
+    return { success: false, error: "Error de DB al borrar paciente: " + (error?.message || String(error)) };
+  }
+}
