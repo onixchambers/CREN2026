@@ -154,6 +154,65 @@ export default function AsistenciaPage() {
     handleLimpiarForm();
   };
 
+  // --- Lógica de Edición ---
+  const [editingAsistencia, setEditingAsistencia] = useState<Asistencia | null>(null);
+  const [editForm, setEditForm] = useState<any>({});
+
+  const openEditModal = (a: Asistencia) => {
+    setEditingAsistencia(a);
+    setEditForm({
+      fecha: a.fecha,
+      area: a.area,
+      tipoSesion: a.tipoSesion,
+      estado: a.estado,
+      sesiones: a.sesiones,
+      pago: a.pago,
+      fact: a.fact === "Sí",
+      subtotal: a.subtotal.replace('$', ''),
+      obs: a.obs
+    });
+  };
+
+  const handleEditChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
+    const { name, value, type } = e.target;
+    if (type === "checkbox") {
+      setEditForm({ ...editForm, [name]: (e.target as HTMLInputElement).checked });
+    } else {
+      setEditForm({ ...editForm, [name]: value });
+    }
+  };
+
+  const saveEdit = () => {
+    if (!editingAsistencia) return;
+    
+    const sub = editForm.subtotal ? parseFloat(editForm.subtotal) : 0;
+    const tot = editForm.fact ? sub * 1.16 : sub;
+
+    const nuevasAsistencias = asistencias.map(a => {
+      if (a.id === editingAsistencia.id) {
+        return {
+          ...a,
+          fecha: editForm.fecha,
+          area: editForm.area,
+          tipoSesion: editForm.tipoSesion,
+          estado: editForm.estado,
+          sesiones: editForm.sesiones,
+          pago: editForm.pago,
+          fact: editForm.fact ? "Sí" : "No",
+          subtotal: `$${sub.toFixed(2)}`,
+          total: `$${tot.toFixed(2)}`,
+          obs: editForm.obs || "—"
+        };
+      }
+      return a;
+    });
+
+    setAsistencias(nuevasAsistencias);
+    localStorage.setItem("asistenciaData", JSON.stringify(nuevasAsistencias));
+    alert("Registro actualizado.");
+    setEditingAsistencia(null);
+  };
+
   const asistenciasFiltradas = asistencias.filter(a => {
     if (filtroEstado !== "Todos" && a.estado !== filtroEstado) return false;
     // Asumiendo que la fecha se guarda en formato YYYY-MM-DD que es el del input date
@@ -444,7 +503,7 @@ export default function AsistenciaPage() {
                   <td className="px-2 py-3 font-bold text-[#1a5276]">{a.total}</td>
                   <td className="px-2 py-3 text-slate-500 max-w-[100px] truncate" title={a.obs}>{a.obs}</td>
                   <td className="px-2 py-3">
-                    <button className="text-slate-400 hover:text-[#1a5276] mx-auto">
+                    <button onClick={() => openEditModal(a)} className="text-slate-400 hover:text-[#1a5276] mx-auto">
                       <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 24 24"><path d="M3 17.25V21h3.75L17.81 9.94l-3.75-3.75L3 17.25zM20.71 7.04c.39-.39.39-1.02 0-1.41l-2.34-2.34c-.39-.39-1.02-.39-1.41 0l-1.83 1.83 3.75 3.75 1.83-1.83z"/></svg>
                     </button>
                   </td>
@@ -460,6 +519,98 @@ export default function AsistenciaPage() {
           </table>
         </div>
       </div>
+
+      {/* MODAL DE EDICIÓN */}
+      {editingAsistencia && (
+        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4 animate-in fade-in">
+          <div className="bg-white rounded-xl shadow-lg w-full max-w-lg overflow-hidden animate-in slide-in-from-bottom-4">
+            <div className="flex justify-between items-center p-4 border-b border-slate-100">
+              <h3 className="font-bold text-[#1a5276] flex items-center gap-2">
+                <svg className="w-5 h-5 text-slate-600" fill="currentColor" viewBox="0 0 24 24"><path d="M3 17.25V21h3.75L17.81 9.94l-3.75-3.75L3 17.25zM20.71 7.04c.39-.39.39-1.02 0-1.41l-2.34-2.34c-.39-.39-1.02-.39-1.41 0l-1.83 1.83 3.75 3.75 1.83-1.83z"/></svg>
+                Editar Registro de Asistencia
+              </h3>
+              <button onClick={() => setEditingAsistencia(null)} className="text-slate-400 hover:text-slate-600">
+                <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" /></svg>
+              </button>
+            </div>
+            
+            <div className="p-5 max-h-[70vh] overflow-y-auto space-y-4">
+              <div className="bg-slate-50 p-3 rounded-md text-sm text-slate-600 mb-2 border border-slate-100">
+                <span className="font-bold text-[#1a5276]">Paciente:</span> {editingAsistencia.paciente} <br/>
+              </div>
+
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <label className="block text-[10px] font-bold text-slate-500 uppercase mb-1">Fecha</label>
+                  <input type="date" name="fecha" value={editForm.fecha} onChange={handleEditChange} className="w-full text-sm p-2 border border-slate-300 rounded focus:border-[#2980b9] outline-none" />
+                </div>
+                <div>
+                  <label className="block text-[10px] font-bold text-slate-500 uppercase mb-1">Área</label>
+                  <select name="area" value={editForm.area} onChange={handleEditChange} className="w-full text-sm p-2 border border-slate-300 rounded focus:border-[#2980b9] outline-none">
+                    <option value="Psicología">Psicología</option>
+                    <option value="Lenguaje">Lenguaje</option>
+                    <option value="Fisioterapia">Fisioterapia</option>
+                  </select>
+                </div>
+                <div>
+                  <label className="block text-[10px] font-bold text-slate-500 uppercase mb-1">Tipo de Sesión</label>
+                  <select name="tipoSesion" value={editForm.tipoSesion} onChange={handleEditChange} className="w-full text-sm p-2 border border-slate-300 rounded focus:border-[#2980b9] outline-none">
+                    <option value="Individual">Individual</option>
+                    <option value="Escuela">Escuela</option>
+                    <option value="Reposicion">Reposición</option>
+                    <option value="Terapia Grupal">Terapia grupal</option>
+                    <option value="Orientacion Padres">Orientación padres</option>
+                    <option value="Otros">Otros</option>
+                  </select>
+                </div>
+                <div>
+                  <label className="block text-[10px] font-bold text-slate-500 uppercase mb-1">Estado</label>
+                  <select name="estado" value={editForm.estado} onChange={handleEditChange} className="w-full text-sm p-2 border border-slate-300 rounded focus:border-[#2980b9] outline-none">
+                    <option value="Asistio">Asistió</option>
+                    <option value="Cancelo anticipadamente">Canceló anticipadamente</option>
+                    <option value="Cancelo sin anticipacion">Canceló sin anticipación</option>
+                    <option value="Cancelo el centro">Canceló el centro</option>
+                    <option value="Alta">Alta</option>
+                    <option value="Baja">Baja</option>
+                  </select>
+                </div>
+                <div>
+                  <label className="block text-[10px] font-bold text-slate-500 uppercase mb-1">Sesiones</label>
+                  <input type="number" name="sesiones" value={editForm.sesiones} onChange={handleEditChange} className="w-full text-sm p-2 border border-slate-300 rounded focus:border-[#2980b9] outline-none" />
+                </div>
+                <div>
+                  <label className="block text-[10px] font-bold text-slate-500 uppercase mb-1">Subtotal (Monto)</label>
+                  <input type="number" name="subtotal" value={editForm.subtotal} onChange={handleEditChange} className="w-full text-sm p-2 border border-slate-300 rounded focus:border-[#2980b9] outline-none" />
+                </div>
+                <div>
+                  <label className="block text-[10px] font-bold text-slate-500 uppercase mb-1">Método de Pago</label>
+                  <select name="pago" value={editForm.pago} onChange={handleEditChange} className="w-full text-sm p-2 border border-slate-300 rounded focus:border-[#2980b9] outline-none">
+                    <option value="Efectivo">Efectivo</option>
+                    <option value="Transferencia">Transferencia</option>
+                    <option value="Tarjeta">Tarjeta</option>
+                    <option value="Por definir">Por definir</option>
+                    <option value="Beca">Beca</option>
+                  </select>
+                </div>
+                <div className="flex items-center gap-2 mt-6">
+                  <input type="checkbox" name="fact" checked={editForm.fact} onChange={handleEditChange} className="w-4 h-4 rounded border-slate-300" />
+                  <label className="text-sm font-medium text-[#1a5276]">¿Solicitó factura?</label>
+                </div>
+                <div className="col-span-2">
+                  <label className="block text-[10px] font-bold text-slate-500 uppercase mb-1">Observaciones</label>
+                  <input type="text" name="obs" value={editForm.obs} onChange={handleEditChange} className="w-full text-sm p-2 border border-slate-300 rounded focus:border-[#2980b9] outline-none" />
+                </div>
+              </div>
+            </div>
+            
+            <div className="p-4 bg-slate-50 border-t border-slate-100">
+              <button onClick={saveEdit} className="w-full bg-[#1a5276] hover:bg-[#0e2f44] text-white py-2 rounded font-semibold transition-colors">
+                Guardar Cambios
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
