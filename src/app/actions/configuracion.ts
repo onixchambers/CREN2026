@@ -34,16 +34,47 @@ export async function getSettings(month: string) {
   }
 }
 
+export async function getTerapeutasFull() {
+  try {
+    const terapeutas = await prisma.user.findMany({
+      where: { role: "Terapeuta" },
+      orderBy: { name: 'asc' },
+    });
+    return { success: true, data: terapeutas };
+  } catch (error: any) {
+    console.error("Error fetching terapeutas:", error);
+    return { success: false, data: [] };
+  }
+}
+
+export async function updateTerapeutaConfig(id: string, data: any) {
+  try {
+    await prisma.user.update({
+      where: { id },
+      data: {
+        tipoPago: data.tipoPago,
+        porcentaje: data.porcentaje,
+        salarioBase: data.salarioBase,
+        retieneIVA: data.retieneIVA,
+      }
+    });
+    return { success: true };
+  } catch (error: any) {
+    console.error("Error updating terapeuta config:", error);
+    return { success: false, error: error?.message || "Error desconocido" };
+  }
+}
+
 export async function getTerapeutas() {
   try {
     const terapeutas = await prisma.user.findMany({
       where: { role: "Terapeuta" },
       orderBy: { name: 'asc' },
     });
-    return { success: true, terapeutas: terapeutas.map(t => t.name || "") };
+    return { success: true, data: terapeutas, terapeutas: terapeutas.map(t => t.name || "") };
   } catch (error: any) {
     console.error("Error fetching terapeutas:", error);
-    return { success: false, terapeutas: [] };
+    return { success: false, data: [], terapeutas: [] };
   }
 }
 

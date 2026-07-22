@@ -22,6 +22,12 @@ model User {
 
   sessions      Session[]
   payments      Payment[]
+
+  // Compensación de terapeutas
+  tipoPago      String?   @default("Porcentaje")
+  porcentaje    Float?    @default(50)
+  salarioBase   Float?    @default(0)
+  retieneIVA    Boolean?  @default(false)
 }
 
 model Patient {
