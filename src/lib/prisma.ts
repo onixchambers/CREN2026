@@ -16,11 +16,7 @@ let prismaInstance: PrismaClient;
 
 try {
   prismaInstance = globalForPrisma.prisma ?? new PrismaClient({
-    datasources: {
-      db: {
-        url: fallbackUrl
-      }
-    }
+    datasourceUrl: fallbackUrl
   });
 } catch (error: any) {
   console.error("PRISMA INITIALIZATION ERROR:", error);
