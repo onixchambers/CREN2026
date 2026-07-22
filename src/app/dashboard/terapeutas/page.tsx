@@ -1,14 +1,25 @@
 "use client";
 import { useState, useEffect } from "react";
 
-const TERAPEUTAS_MOCK = ["Elizabeth", "Fernanda", "Karla", "Lesly", "Lulu", "Sheribeth"];
 
 export default function TerapeutasPage() {
   const [asistencias, setAsistencias] = useState<any[]>([]);
-
+  const [terapeutasActivos, setTerapeutasActivos] = useState<string[]>([]);
+  
   useEffect(() => {
+    // 1. Cargar Asistencias
     const aData = localStorage.getItem("asistenciaData");
     if (aData) setAsistencias(JSON.parse(aData));
+
+    // 2. Cargar Terapeutas Reales
+    const fetchTerapeutas = async () => {
+      const { getTerapeutas } = await import('@/app/actions/configuracion');
+      const res = await getTerapeutas();
+      if (res.success && res.data) {
+        setTerapeutasActivos(res.data.map((t: any) => t.name));
+      }
+    };
+    fetchTerapeutas();
   }, []);
 
   const hoy = new Date().toISOString().split("T")[0];
@@ -16,27 +27,23 @@ export default function TerapeutasPage() {
   
   const asistMes = asistencias.filter(a => a.fecha && a.fecha.startsWith(currentMonthStr));
 
-  // Calcular Terapeutas (usar MOCK por diseño si no hay data)
-  const terapeutasActivos = TERAPEUTAS_MOCK;
   const numTerapeutas = terapeutasActivos.length;
 
-  // Calcular Sesiones Mes
+  // Calcular Sesiones Mes (Contando cada registro de asistencia del mes como 1 o sumando .sesiones)
+  // Usamos el número de sesiones del formulario
   const sesionesMes = asistMes.reduce((acc, curr) => acc + parseInt(curr.sesiones || "1"), 0);
 
   // Calcular Más Sesiones
   const sesionesPorTerapeuta = asistMes.reduce((acc: any, curr) => {
-    const t = curr.terapeuta || "N/A"; // Si el form de asistencia no guarda nombre terapeuta por ahora, usamos N/A. Ojo, el form guarda "paciente" pero el diseño asume que hay terapeuta asociado.
-    // Para simplificar, como en asistencia no se guarda el terapeuta en el paso anterior (sólo paciente), 
-    // fingiremos que se asigna aleatorio o N/A para no romper el cálculo real.
-    // O si se guarda, lo usaremos.
+    const t = curr.terapeuta || "Sin Asignar"; // Si en el futuro agregas terapeuta a la asistencia
     acc[t] = (acc[t] || 0) + parseInt(curr.sesiones || "1");
     return acc;
   }, {});
 
-  let masSesiones = "N/A";
+  let masSesiones = "Sin Datos";
   let maxS = 0;
   for (const t in sesionesPorTerapeuta) {
-    if (t !== "N/A" && t !== "Por asignar" && sesionesPorTerapeuta[t] > maxS) {
+    if (t !== "Sin Asignar" && sesionesPorTerapeuta[t] > maxS) {
       maxS = sesionesPorTerapeuta[t];
       masSesiones = t;
     }
@@ -81,7 +88,7 @@ export default function TerapeutasPage() {
         </div>
         {/* X Axis Labels */}
         <div className="absolute bottom-0 left-6 right-0 flex justify-between px-4">
-          {TERAPEUTAS_MOCK.map((t, i) => (
+          {terapeutasActivos.map((t, i) => (
             <div key={i} className="text-[8px] text-slate-500 font-medium">{t}</div>
           ))}
         </div>
@@ -116,7 +123,7 @@ export default function TerapeutasPage() {
         </div>
         {/* X Axis Labels */}
         <div className="absolute bottom-0 left-6 right-0 flex justify-between px-4">
-          {TERAPEUTAS_MOCK.map((t, i) => (
+          {terapeutasActivos.map((t, i) => (
             <div key={i} className="text-[8px] text-slate-500 font-medium">{t}</div>
           ))}
         </div>
