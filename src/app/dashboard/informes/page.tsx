@@ -129,10 +129,12 @@ export default function InformesPage() {
                   className="w-full text-sm p-2 border border-slate-300 rounded focus:border-[#2980b9] outline-none text-slate-700 bg-white"
                 >
                   <option value="">Seleccionar...</option>
+                  <option value="Nota de Evaluación">Nota de Evaluación</option>
                   <option value="Evaluación Inicial">Evaluación Inicial</option>
-                  <option value="Reporte de Avance">Reporte de Avance</option>
-                  <option value="Alta">Alta</option>
-                  <option value="Otro">Otro</option>
+                  <option value="Informe Mensual">Informe Mensual</option>
+                  <option value="Informe de Alta">Informe de Alta</option>
+                  <option value="Plan de Tratamiento">Plan de Tratamiento</option>
+                  <option value="Otros">Otros</option>
                 </select>
               </div>
 
@@ -223,10 +225,12 @@ export default function InformesPage() {
                 className="w-40 text-xs p-1.5 border border-slate-300 rounded outline-none text-slate-700 bg-white"
               >
                 <option value="Todos">Todos</option>
+                <option value="Nota de Evaluación">Nota de Evaluación</option>
                 <option value="Evaluación Inicial">Evaluación Inicial</option>
-                <option value="Reporte de Avance">Reporte de Avance</option>
-                <option value="Alta">Alta</option>
-                <option value="Otro">Otro</option>
+                <option value="Informe Mensual">Informe Mensual</option>
+                <option value="Informe de Alta">Informe de Alta</option>
+                <option value="Plan de Tratamiento">Plan de Tratamiento</option>
+                <option value="Otros">Otros</option>
               </select>
             </div>
           </div>
