@@ -61,7 +61,7 @@ export default function DashboardPage() {
   const asistMes = asistencias.filter(a => isThisMonth(a.fecha));
   const ingresosBrutosMes = asistMes.reduce((acc, curr) => acc + parseMoney(curr.total), 0);
   const ivaMes = asistMes.reduce((acc, curr) => curr.fact === "Sí" ? acc + (parseMoney(curr.total) - parseMoney(curr.subtotal)) : acc, 0);
-  const ingresosNetosMes = ingresosBrutosMes - ivaMes - 81228.53; // using the mock negative as requested or base it on expenses (if we had them)
+  const ingresosNetosMes = ingresosBrutosMes - ivaMes;
   const sesionesMes = asistMes.reduce((acc, curr) => acc + parseInt(curr.sesiones || "1"), 0);
   const valoracionesMes = asistMes.filter(a => a.tipoSesion === "Valoracion").length;
 
@@ -69,7 +69,7 @@ export default function DashboardPage() {
   const pHoy = pacientes.filter(p => isToday(p.id ? new Date(parseInt(p.id)).toISOString().split("T")[0] : "")).length;
   const pSemana = pacientes.filter(p => isThisWeek(p.id ? new Date(parseInt(p.id)).toISOString().split("T")[0] : "")).length;
   const pMes = pacientes.filter(p => isThisMonth(p.id ? new Date(parseInt(p.id)).toISOString().split("T")[0] : "")).length;
-  const pTotal = pacientes.length > 0 ? pacientes.length : 586; // show 586 if empty to match design
+  const pTotal = pacientes.length;
 
   const KpiCard = ({ title, value, subtext, color }: any) => (
     <div className="bg-white rounded p-4 border border-slate-200 shadow-sm relative overflow-hidden">
