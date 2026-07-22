@@ -42,91 +42,86 @@ export async function saveSettings(data: {
   expenses: { label: string; amount: number }[];
 }) {
   try {
-    // 1. Process Users
-    // Get existing users
-    const existingUsers = await prisma.user.findMany();
-    const existingUserIds = existingUsers.map(u => u.id);
-    const incomingUserIds = data.users.filter(u => typeof u.id === 'string' && u.id.startsWith('c')).map(u => u.id);
+    const timeoutPromise = new Promise((_, reject) => setTimeout(() => reject(new Error("La conexión a la base de datos tardó demasiado (Timeout). Revisa tu DATABASE_URL en Vercel.")), 5000));
     
-    // Delete users that are no longer in the list (if we want to support deletion)
-    const usersToDelete = existingUserIds.filter(id => !incomingUserIds.includes(id));
-    if (usersToDelete.length > 0) {
-      await prisma.user.deleteMany({
-        where: { id: { in: usersToDelete } }
-      });
-    }
-
-    // Upsert users
-    for (const user of data.users) {
-      if (typeof user.id === 'string' && user.id.startsWith('c')) { // Assume existing CUID
-        await prisma.user.update({
-          where: { id: user.id },
-          data: {
-            name: user.usuario,
-            role: user.rol,
-            password: user.contrasena,
-          }
-        });
-      } else { // New user
-        await prisma.user.create({
-          data: {
-            name: user.usuario,
-            role: user.rol,
-            password: user.contrasena,
-          }
+    const dbPromise = (async () => {
+      // 1. Process Users
+      const existingUsers = await prisma.user.findMany();
+      const existingUserIds = existingUsers.map(u => u.id);
+      const incomingUserIds = data.users.filter(u => typeof u.id === 'string' && u.id.startsWith('c')).map(u => u.id);
+      
+      const usersToDelete = existingUserIds.filter(id => !incomingUserIds.includes(id));
+      if (usersToDelete.length > 0) {
+        await prisma.user.deleteMany({
+          where: { id: { in: usersToDelete } }
         });
       }
-    }
 
-    // 2. Save SystemSettings
-    await prisma.systemSettings.upsert({
-      where: { id: 1 },
-      update: {
-        allowTherapistEdit: data.allowTherapistEdit,
-        referenceKeys: data.referenceKeys,
-      },
-      create: {
-        id: 1,
-        allowTherapistEdit: data.allowTherapistEdit,
-        referenceKeys: data.referenceKeys,
+      for (const user of data.users) {
+        if (typeof user.id === 'string' && user.id.startsWith('c')) { 
+          await prisma.user.update({
+            where: { id: user.id },
+            data: {
+              name: user.usuario,
+              role: user.rol,
+              password: user.contrasena,
+            }
+          });
+        } else { 
+          await prisma.user.create({
+            data: {
+              name: user.usuario,
+              role: user.rol,
+              password: user.contrasena,
+            }
+          });
+        }
       }
-    });
 
-    // 3. Save Expenses for the given month
-    // First, delete expenses that are no longer in the list for this month
-    const incomingExpenseLabels = data.expenses.map(e => e.label);
-    await prisma.operationalExpense.deleteMany({
-      where: {
-        month: data.month,
-        label: { notIn: incomingExpenseLabels }
-      }
-    });
-
-    // Then upsert the incoming ones
-    for (const exp of data.expenses) {
-      if (!exp.label.trim()) continue; // Skip empty labels
-      await prisma.operationalExpense.upsert({
-        where: {
-          month_label: {
-            month: data.month,
-            label: exp.label,
-          }
-        },
+      // 2. Save SystemSettings
+      await prisma.systemSettings.upsert({
+        where: { id: 1 },
         update: {
-          amount: exp.amount,
+          allowTherapistEdit: data.allowTherapistEdit,
+          referenceKeys: data.referenceKeys,
         },
         create: {
-          month: data.month,
-          label: exp.label,
-          amount: exp.amount,
+          id: 1,
+          allowTherapistEdit: data.allowTherapistEdit,
+          referenceKeys: data.referenceKeys,
         }
       });
-    }
 
-    revalidatePath("/dashboard/configuracion");
-    return { success: true };
+      // 3. Save Expenses
+      const incomingExpenseLabels = data.expenses.map(e => e.label);
+      await prisma.operationalExpense.deleteMany({
+        where: {
+          month: data.month,
+          label: { notIn: incomingExpenseLabels }
+        }
+      });
+
+      for (const exp of data.expenses) {
+        if (!exp.label.trim()) continue; 
+        await prisma.operationalExpense.upsert({
+          where: {
+            month_label: {
+              month: data.month,
+              label: exp.label,
+            }
+          },
+          update: { amount: exp.amount },
+          create: { month: data.month, label: exp.label, amount: exp.amount }
+        });
+      }
+
+      revalidatePath("/dashboard/configuracion");
+      return { success: true };
+    })();
+
+    return await Promise.race([dbPromise, timeoutPromise]) as { success: boolean, error?: string };
   } catch (error: any) {
     console.error("Error saving settings:", error);
-    return { success: false, error: error?.message || "Failed to save settings" };
+    return { success: false, error: "Error de DB: " + (error?.message || String(error)) };
   }
 }
