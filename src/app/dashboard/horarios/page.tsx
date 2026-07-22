@@ -1,5 +1,6 @@
 "use client";
 import { useState, useEffect } from "react";
+import { useSession } from "next-auth/react";
 import { getTerapeutas } from "@/app/actions/configuracion";
 
 interface Horario {
@@ -10,6 +11,10 @@ interface Horario {
 }
 
 export default function HorariosPage() {
+  const { data: session } = useSession();
+  const userName = session?.user?.name || "Administrador";
+  const userRole = (session?.user as any)?.role || "ADMIN";
+
   const formatDateStr = (dateStr: string) => {
     if (!dateStr) return "-";
     const parts = dateStr.split("-");
@@ -25,7 +30,12 @@ export default function HorariosPage() {
     async function loadTerapeutas() {
       const res = await getTerapeutas();
       if (res.success && res.terapeutas) {
-        setTerapeutasDisponibles(res.terapeutas);
+        if (userRole === "TERAPEUTA") {
+          setTerapeutasDisponibles([userName]);
+          setTerapeutaSeleccionado(userName);
+        } else {
+          setTerapeutasDisponibles(res.terapeutas);
+        }
       }
     }
     loadTerapeutas();

@@ -1,7 +1,13 @@
 "use client";
 import { useState, useEffect } from "react";
+import { useSession } from "next-auth/react";
 
 export default function PreregistrosPage() {
+  const { data: session } = useSession();
+  const userName = session?.user?.name || "Administrador";
+  const userRole = (session?.user as any)?.role || "ADMIN";
+  const [editingId, setEditingId] = useState<string | null>(null);
+
   const formatDateStr = (dateStr: string) => {
     if (!dateStr) return "-";
     const parts = dateStr.split("-");
@@ -65,7 +71,33 @@ export default function PreregistrosPage() {
     loadPatients();
   }, []);
 
+
+  const handleEdit = (ficha: any) => {
+    setEditingId(ficha.id);
+    setFormData({
+      ...formData,
+      ...ficha
+    });
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+  };
+
+  const handleDelete = async (id: string) => {
+    if (!confirm("¿Estás seguro de eliminar este paciente permanentemente?")) return;
+    const { deletePatient, getPatients } = await import('@/app/actions/pacientes');
+    const res = await deletePatient(id);
+    if (res.success) {
+      alert("Paciente eliminado.");
+      const updated = await getPatients();
+      if (updated.success && updated.data) {
+        setFichas(updated.data);
+      }
+    } else {
+      alert(res.error);
+    }
+  };
+
   const handleLimpiar = () => {
+    setEditingId(null);
     setFormData({
       ...formData,
       nombre: "", fechaNacimiento: "", sexo: "", origen: "Google", medicoTratante: "", escuela: "",
@@ -83,11 +115,17 @@ export default function PreregistrosPage() {
       return;
     }
     
-    const { createPatient, getPatients } = await import('@/app/actions/pacientes');
-    const result = await createPatient(formData);
+    const { createPatient, updatePatient, getPatients } = await import('@/app/actions/pacientes');
+    
+    let result;
+    if (editingId) {
+      result = await updatePatient(editingId, formData);
+    } else {
+      result = await createPatient(formData);
+    }
     
     if (result.success) {
-      alert("¡Paciente registrado exitosamente en la base de datos!");
+      alert(editingId ? "¡Ficha actualizada exitosamente!" : "¡Paciente registrado exitosamente en la base de datos!");
       handleLimpiar();
       // Reload list
       const updated = await getPatients();
@@ -111,7 +149,7 @@ export default function PreregistrosPage() {
       <div className="bg-white rounded-xl shadow-sm border border-slate-200 overflow-hidden">
         <div className="p-5">
           <h3 className="text-[#1a5276] font-bold flex items-center gap-2 mb-6">
-            <span className="text-xl">+</span> Nueva Ficha de Identificación
+            <span className="text-xl">{editingId ? "✏️" : "+"}</span> {editingId ? "Editar Ficha de Identificación" : "Nueva Ficha de Identificación"}
           </h3>
 
           <form onSubmit={handleSubmit} className="space-y-6">
@@ -288,7 +326,7 @@ export default function PreregistrosPage() {
             <div className="pt-2 flex gap-3 border-t border-slate-100 mt-4 pt-4">
               <button type="submit" className="bg-[#27ae60] hover:bg-[#219653] text-white px-5 py-2 rounded text-sm font-semibold flex items-center gap-2 transition-colors">
                 <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M5 13l4 4L19 7" /></svg>
-                Guardar Ficha
+                {editingId ? "Actualizar Ficha" : "Guardar Ficha"}
               </button>
               <button type="button" onClick={handleLimpiar} className="bg-white border border-slate-300 text-[#1a5276] hover:bg-slate-50 px-5 py-2 rounded text-sm font-semibold flex items-center gap-2 transition-colors">
                 <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" /></svg>
@@ -323,8 +361,8 @@ export default function PreregistrosPage() {
               </tr>
             </thead>
             <tbody>
-              {fichas.length > 0 ? (
-                fichas.map(f => (
+              {fichas.filter(f => userRole === "TERAPEUTA" ? f.medicoTratante === userName : true).length > 0 ? (
+                fichas.filter(f => userRole === "TERAPEUTA" ? f.medicoTratante === userName : true).map(f => (
                   <tr key={f.id} className="border-b border-slate-100 hover:bg-slate-50 transition-colors">
                     <td className="px-4 py-3 font-medium text-slate-700">{new Date(f.createdAt).toLocaleDateString()}</td>
                     <td className="px-4 py-3 font-bold text-[#1a5276]">{f.name}</td>
@@ -336,7 +374,16 @@ export default function PreregistrosPage() {
                     <td className="px-4 py-3 text-slate-500">{f.origen}</td>
                     <td className="px-4 py-3 text-slate-500">{f.medicoTratante || "Por asignar"}</td>
                     <td className="px-4 py-3 text-center">
-                      <button className="text-blue-500 hover:text-blue-700 font-medium">Ver</button>
+                      <div className="flex justify-center gap-2">
+                        <button onClick={() => handleEdit(f)} className="p-1 text-yellow-500 hover:text-yellow-600 transition-colors" title="Editar">
+                          <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z" /></svg>
+                        </button>
+                        {userRole === "ADMIN" && (
+                          <button onClick={() => handleDelete(f.id)} className="p-1 text-red-500 hover:text-red-600 transition-colors" title="Eliminar">
+                            <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" /></svg>
+                          </button>
+                        )}
+                      </div>
                     </td>
                   </tr>
                 ))

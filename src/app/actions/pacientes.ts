@@ -83,10 +83,63 @@ export async function updatePatientFast(id: string, data: any) {
       }
     });
 
-    revalidatePath("/dashboard/pacientes");
+  revalidatePath("/dashboard/pacientes");
     return { success: true, data: updated };
   } catch (error: any) {
     console.error("Error updating patient:", error);
+    return { success: false, error: "Error de DB: " + (error?.message || String(error)) };
+  }
+}
+
+export async function updatePatient(id: string, data: any) {
+  try {
+    const updated = await prisma.patient.update({
+      where: { id },
+      data: {
+        name: data.nombre,
+        fechaNacimiento: data.fechaNacimiento || null,
+        sexo: data.sexo || null,
+        fechaIngreso: data.fechaIngreso || null,
+        estatus: data.estatus || "Activo",
+        origen: data.origen || "Google",
+        medicoTratante: data.medicoTratante || null,
+        escuela: data.escuela || null,
+        
+        madreNombre: data.madreNombre || null,
+        padreNombre: data.padreNombre || null,
+        otrosNombre: data.otrosNombre || null,
+        madreContacto: data.madreContacto || null,
+        padreContacto: data.padreContacto || null,
+        otrosContacto: data.otrosContacto || null,
+        
+        principalMadre: data.principalMadre || false,
+        principalPadre: data.principalPadre || false,
+        principalOtros: data.principalOtros || false,
+        correoPrincipal: data.correoPrincipal || null,
+        
+        alergias: data.alergias || false,
+        crisis: data.crisis || false,
+        convulsiones: data.convulsiones || false,
+        sensibilidad: data.sensibilidad || false,
+        riesgoFuga: data.riesgoFuga || false,
+        noSepara: data.noSepara || false,
+        otrasAlertas: data.otrasAlertas || false,
+        
+        reglamentoFirmado: data.reglamentoFirmado || false,
+        consentimientoFirmado: data.consentimientoFirmado || false,
+        
+        observacionesAdmin: data.observacionesAdmin || null,
+        
+        // Calcular edad basada en fecha de nacimiento si no viene calculada
+        age: data.fechaNacimiento ? calculateAge(data.fechaNacimiento) : null
+      }
+    });
+
+    revalidatePath("/dashboard/pacientes");
+    revalidatePath("/dashboard/preregistros");
+    return { success: true, data: updated };
+  } catch (error: any) {
+    console.error("Error updating full patient:", error);
     return { success: false, error: "Error de DB: " + (error?.message || String(error)) };
   }
 }

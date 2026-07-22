@@ -1,6 +1,7 @@
 "use client";
 import { useState, useEffect } from "react";
 import { getTerapeutas } from "@/app/actions/configuracion";
+import { useSession } from "next-auth/react";
 
 type Cita = {
   id: string;
@@ -20,6 +21,10 @@ const HORAS = [
 ];
 
 export default function AgendaPage() {
+  const { data: session, status } = useSession();
+  const userRole = (session?.user as any)?.role || "ADMIN";
+  const userName = session?.user?.name || "Administrador";
+
   const formatDateStr = (dateStr: string) => {
     if (!dateStr) return "-";
     const parts = dateStr.split("-");
@@ -39,18 +44,23 @@ export default function AgendaPage() {
   });
 
   useEffect(() => {
+    if (status === "loading") return;
     async function loadTerapeutas() {
       const res = await getTerapeutas();
       if (res.success && res.terapeutas) {
-        setTerapeutas(res.terapeutas);
-        if (res.terapeutas.length > 0) {
-          setFormData(prev => ({ ...prev, terapeuta: res.terapeutas[0] }));
+        let teraList = res.terapeutas;
+        if (userRole === "TERAPEUTA") {
+          teraList = [userName];
+        }
+        setTerapeutas(teraList);
+        if (teraList.length > 0) {
+          setFormData(prev => ({ ...prev, terapeuta: teraList[0] }));
         }
       }
       setIsLoadingTerapeutas(false);
     }
     loadTerapeutas();
-  }, []);
+  }, [status, userRole, userName]);
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
     setFormData({ ...formData, [e.target.name]: e.target.value });

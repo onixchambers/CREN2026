@@ -1,5 +1,7 @@
 "use client";
 import { useState, useEffect } from "react";
+import { useSession } from "next-auth/react";
+import { getPatients } from "@/app/actions/pacientes";
 
 type Paciente = {
   id: string;
@@ -27,6 +29,10 @@ type Asistencia = {
 };
 
 export default function AsistenciaPage() {
+  const { data: session } = useSession();
+  const userName = session?.user?.name || "Administrador";
+  const userRole = (session?.user as any)?.role || "ADMIN";
+
   const formatDateStr = (dateStr: string) => {
     if (!dateStr) return "-";
     const parts = dateStr.split("-");
@@ -66,14 +72,32 @@ export default function AsistenciaPage() {
   });
 
   useEffect(() => {
-    // Cargar pacientes
-    const pData = localStorage.getItem("pacientesData");
-    if (pData) setPacientes(JSON.parse(pData));
-
-    // Cargar asistencias
-    const aData = localStorage.getItem("asistenciaData");
-    if (aData) setAsistencias(JSON.parse(aData));
-  }, []);
+    async function loadData() {
+      // Cargar pacientes de la BD real
+      const res = await getPatients();
+      if (res.success && res.data) {
+        let validPatients = res.data;
+        if (userRole === "TERAPEUTA") {
+          validPatients = validPatients.filter((p: any) => p.medicoTratante === userName);
+        }
+        // Map to expected format
+        const mapped = validPatients.map((p: any) => ({
+          id: p.id,
+          paciente: p.name,
+          sexo: p.sexo || "—",
+          nac: p.fechaNacimiento || "—",
+          edad: p.age ? p.age.toString() : "—",
+          medicoTratante: p.medicoTratante
+        }));
+        setPacientes(mapped);
+      }
+      
+      // Cargar asistencias
+      const aData = localStorage.getItem("asistenciaData");
+      if (aData) setAsistencias(JSON.parse(aData));
+    }
+    loadData();
+  }, [userName, userRole]);
 
   const handlePacienteChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const val = e.target.value;
@@ -225,8 +249,12 @@ export default function AsistenciaPage() {
   };
 
   const asistenciasFiltradas = asistencias.filter(a => {
+    if (userRole === "TERAPEUTA") {
+      // Solo mostrar si el paciente está en la lista asignada a este terapeuta
+      const isMine = pacientes.some(p => p.paciente === a.paciente);
+      if (!isMine) return false;
+    }
     if (filtroEstado !== "Todos" && a.estado !== filtroEstado) return false;
-    // Asumiendo que la fecha se guarda en formato YYYY-MM-DD que es el del input date
     if (filtroDesde && a.fecha < filtroDesde) return false;
     if (filtroHasta && a.fecha > filtroHasta) return false;
     return true;

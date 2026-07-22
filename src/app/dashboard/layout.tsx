@@ -13,7 +13,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
   const allTabs = [
     { name: "Agenda", path: "/dashboard/agenda", adminOnly: false },
     { name: "Ficha ID", path: "/dashboard/preregistros", adminOnly: false },
-    { name: "Pacientes", path: "/dashboard/pacientes", adminOnly: false },
+    { name: "Pacientes", path: "/dashboard/pacientes", adminOnly: true },
     { name: "Asistencia", path: "/dashboard/asistencia", adminOnly: false },
     { name: "Estado de Cuenta", path: "/dashboard/finanzas", adminOnly: true },
     { name: "Informes", path: "/dashboard/informes", adminOnly: false },

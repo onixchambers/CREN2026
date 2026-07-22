@@ -1,5 +1,7 @@
 "use client";
 import { useState, useEffect, useRef } from "react";
+import { useSession } from "next-auth/react";
+import { getPatients } from "@/app/actions/pacientes";
 
 type Informe = {
   id: string;
@@ -8,6 +10,7 @@ type Informe = {
   fecha: string;
   archivoNombre: string;
   fechaSubida: string;
+  terapeuta?: string;
 };
 
 type Paciente = {
@@ -16,6 +19,10 @@ type Paciente = {
 };
 
 export default function InformesPage() {
+  const { data: session } = useSession();
+  const userName = session?.user?.name || "Administrador";
+  const userRole = (session?.user as any)?.role || "ADMIN";
+
   const formatDateStr = (dateStr: string) => {
     if (!dateStr) return "-";
     const parts = dateStr.split("-");
@@ -39,14 +46,25 @@ export default function InformesPage() {
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
-    // Cargar pacientes
-    const pData = localStorage.getItem("pacientesData");
-    if (pData) setPacientes(JSON.parse(pData));
-
-    // Cargar informes
-    const iData = localStorage.getItem("informesData");
-    if (iData) setInformes(JSON.parse(iData));
-  }, []);
+    async function loadData() {
+      const res = await getPatients();
+      if (res.success && res.data) {
+        let validPatients = res.data;
+        if (userRole === "TERAPEUTA") {
+          validPatients = validPatients.filter((p: any) => p.medicoTratante === userName);
+        }
+        const mapped = validPatients.map((p: any) => ({
+          id: p.id,
+          paciente: p.name
+        }));
+        setPacientes(mapped);
+      }
+      
+      const iData = localStorage.getItem("informesData");
+      if (iData) setInformes(JSON.parse(iData));
+    }
+    loadData();
+  }, [userName, userRole]);
 
   const handleFileDrop = (e: React.DragEvent) => {
     e.preventDefault();
