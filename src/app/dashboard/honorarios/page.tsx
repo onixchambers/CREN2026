@@ -1,10 +1,29 @@
 "use client";
+import { useState, useEffect } from "react";
+import { getTerapeutas } from "@/app/actions/configuracion";
 
 export default function HonorariosPage() {
-  const honorarios = [
-    { terapeuta: "Dra. Ana López", totalSesiones: 12, ingresoBruto: 6000, honorario: 3000, iva: 480, totalPagar: 3480, tipo: "Porcentaje (50%)" },
-    { terapeuta: "Lic. Carlos Ruiz", totalSesiones: 40, ingresoBruto: 20000, honorario: 12000, iva: 0, totalPagar: 12000, tipo: "Salario Fijo" }
-  ];
+  const [terapeutas, setTerapeutas] = useState<string[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
+
+  useEffect(() => {
+    async function loadTerapeutas() {
+      const res = await getTerapeutas();
+      if (res.success && res.terapeutas) {
+        setTerapeutas(res.terapeutas);
+      }
+      setIsLoading(false);
+    }
+    loadTerapeutas();
+  }, []);
+
+  if (isLoading) {
+    return (
+      <div className="flex items-center justify-center p-12">
+        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div>
+      </div>
+    );
+  }
 
   return (
     <div className="space-y-6 animate-in fade-in duration-500">
@@ -31,17 +50,22 @@ export default function HonorariosPage() {
               </tr>
             </thead>
             <tbody className="divide-y divide-slate-100">
-              {honorarios.map((h, i) => (
-                <tr key={i} className="hover:bg-slate-50 transition-colors">
-                  <td className="p-4 font-medium">{h.terapeuta}</td>
+              {terapeutas.map((terapeuta, i) => (
+                <tr key={i} className="hover:bg-slate-50 transition-colors text-slate-800">
+                  <td className="p-4 font-medium text-slate-900">{terapeuta}</td>
                   <td className="p-4 text-xs">
-                    <span className="px-2 py-1 bg-slate-100 rounded-md border">{h.tipo}</span>
+                    <span className="px-2 py-1 bg-slate-100 rounded-md border text-slate-700">Porcentaje (50%)</span>
                   </td>
-                  <td className="p-4">{h.totalSesiones}</td>
-                  <td className="p-4 text-right">${h.ingresoBruto.toLocaleString()}</td>
-                  <td className="p-4 text-right font-bold text-blue-700">${h.totalPagar.toLocaleString()}</td>
+                  <td className="p-4 text-slate-700">0</td>
+                  <td className="p-4 text-right text-slate-700">$0.00</td>
+                  <td className="p-4 text-right font-bold text-blue-700">$0.00</td>
                 </tr>
               ))}
+              {terapeutas.length === 0 && (
+                <tr>
+                  <td colSpan={5} className="p-4 text-center text-slate-500">No hay terapeutas registrados en Configuración</td>
+                </tr>
+              )}
             </tbody>
           </table>
         </div>

@@ -1,5 +1,6 @@
 "use client";
-import { useState } from "react";
+import { useState, useEffect } from "react";
+import { getTerapeutas } from "@/app/actions/configuracion";
 
 type Cita = {
   id: string;
@@ -12,7 +13,6 @@ type Cita = {
   estado: "Ocupado" | "Cancelado" | "Reagendado" | "Disponible";
 };
 
-const TERAPEUTAS = ["ELIZABETH", "FERNANDA", "KARLA", "LESLY", "LULU", "SHERIBETH"];
 const HORAS = [
   "08:00", "09:00", "10:00", "11:00", "12:00", 
   "13:00", "14:00", "15:00", "16:00", "17:00", 
@@ -24,11 +24,27 @@ export default function AgendaPage() {
   const [fechaSeleccionada, setFechaSeleccionada] = useState(hoy);
   
   const [citas, setCitas] = useState<Cita[]>([]);
+  const [terapeutas, setTerapeutas] = useState<string[]>([]);
+  const [isLoadingTerapeutas, setIsLoadingTerapeutas] = useState(true);
   
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [formData, setFormData] = useState({
-    paciente: "", fecha: hoy, hora: "09:00", terapeuta: TERAPEUTAS[0], tipoServicio: "individual", frecuencia: "semanal", estado: "Ocupado" as Cita["estado"]
+    paciente: "", fecha: hoy, hora: "09:00", terapeuta: "", tipoServicio: "individual", frecuencia: "semanal", estado: "Ocupado" as Cita["estado"]
   });
+
+  useEffect(() => {
+    async function loadTerapeutas() {
+      const res = await getTerapeutas();
+      if (res.success && res.terapeutas) {
+        setTerapeutas(res.terapeutas);
+        if (res.terapeutas.length > 0) {
+          setFormData(prev => ({ ...prev, terapeuta: res.terapeutas[0] }));
+        }
+      }
+      setIsLoadingTerapeutas(false);
+    }
+    loadTerapeutas();
+  }, []);
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
     setFormData({ ...formData, [e.target.name]: e.target.value });
@@ -49,7 +65,7 @@ export default function AgendaPage() {
     
     setCitas([...citas, nuevaCita]);
     setIsModalOpen(false);
-    setFormData({ paciente: "", fecha: fechaSeleccionada, hora: "09:00", terapeuta: TERAPEUTAS[0], tipoServicio: "individual", frecuencia: "semanal", estado: "Ocupado" });
+    setFormData({ paciente: "", fecha: fechaSeleccionada, hora: "09:00", terapeuta: terapeutas[0] || "", tipoServicio: "individual", frecuencia: "semanal", estado: "Ocupado" });
   };
 
   const citasFiltradas = citas.filter(c => c.fecha === fechaSeleccionada);
@@ -69,6 +85,14 @@ export default function AgendaPage() {
       default: return 'bg-slate-100 text-slate-800 border-slate-300';
     }
   };
+
+  if (isLoadingTerapeutas) {
+    return (
+      <div className="flex items-center justify-center p-12">
+        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div>
+      </div>
+    );
+  }
 
   return (
     <div className="space-y-6 animate-in fade-in duration-500">
@@ -102,7 +126,7 @@ export default function AgendaPage() {
                 <th className="border border-slate-200 bg-[#0e2f44] text-white px-4 py-3 font-semibold uppercase text-xs w-24">
                   HORA
                 </th>
-                {TERAPEUTAS.map(t => (
+                {terapeutas.map(t => (
                   <th key={t} className="border border-slate-200 bg-[#0e2f44] text-white px-4 py-3 font-semibold uppercase text-xs">
                     {t}
                   </th>
@@ -115,7 +139,7 @@ export default function AgendaPage() {
                   <td className="border border-slate-200 px-4 py-3 font-bold text-[#0e2f44] bg-slate-50">
                     {hora}
                   </td>
-                  {TERAPEUTAS.map(t => {
+                  {terapeutas.map(t => {
                     const cita = getCitaParaCelda(hora, t);
                     return (
                       <td key={`${hora}-${t}`} className="border border-slate-200 p-2 h-16 w-40 relative group">
@@ -165,7 +189,7 @@ export default function AgendaPage() {
                 <div>
                   <label className="block text-xs font-semibold text-slate-600 uppercase mb-1">Terapeuta Asignado</label>
                   <select name="terapeuta" value={formData.terapeuta} onChange={handleInputChange} className="w-full text-slate-900 font-medium border border-slate-300 rounded-lg px-3 py-2 outline-none focus:border-[#2980b9]">
-                    {TERAPEUTAS.map(t => (
+                    {terapeutas.map(t => (
                       <option key={t} value={t}>{t}</option>
                     ))}
                   </select>

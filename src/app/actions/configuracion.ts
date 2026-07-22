@@ -34,6 +34,19 @@ export async function getSettings(month: string) {
   }
 }
 
+export async function getTerapeutas() {
+  try {
+    const terapeutas = await prisma.user.findMany({
+      where: { role: "Terapeuta" },
+      orderBy: { name: 'asc' },
+    });
+    return { success: true, terapeutas: terapeutas.map(t => t.name || "") };
+  } catch (error: any) {
+    console.error("Error fetching terapeutas:", error);
+    return { success: false, terapeutas: [] };
+  }
+}
+
 export async function saveSettings(data: {
   users: any[];
   allowTherapistEdit: boolean;
