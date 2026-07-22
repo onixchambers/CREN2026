@@ -68,6 +68,29 @@ export async function getPatients() {
   }
 }
 
+export async function updatePatientFast(id: string, data: any) {
+  try {
+    const updated = await prisma.patient.update({
+      where: { id },
+      data: {
+        name: data.nombre,
+        sexo: data.sexo,
+        fechaNacimiento: data.fechaNacimiento,
+        precioTerapia: data.precioTerapia,
+        metodoPago: data.metodoPago,
+        // Calcular edad basada en fecha de nacimiento
+        age: data.fechaNacimiento ? calculateAge(data.fechaNacimiento) : null
+      }
+    });
+
+    revalidatePath("/dashboard/pacientes");
+    return { success: true, data: updated };
+  } catch (error: any) {
+    console.error("Error updating patient:", error);
+    return { success: false, error: "Error de DB: " + (error?.message || String(error)) };
+  }
+}
+
 // Helper para calcular edad
 function calculateAge(birthDateString: string) {
   const birth = new Date(birthDateString);

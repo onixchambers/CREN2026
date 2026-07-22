@@ -63,6 +63,8 @@ model Patient {
   consentimientoFirmado Boolean @default(false)
 
   observacionesAdmin    String?
+  precioTerapia         String?
+  metodoPago            String?
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt

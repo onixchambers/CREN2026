@@ -42,6 +42,45 @@ export default function PacientesPage() {
     p.name?.toLowerCase().includes(searchTerm.toLowerCase())
   );
 
+  const [editingPatient, setEditingPatient] = useState<any>(null);
+  const [editForm, setEditForm] = useState({
+    nombre: "", sexo: "", fechaNacimiento: "", precioTerapia: "", metodoPago: ""
+  });
+  const [isSaving, setIsSaving] = useState(false);
+
+  const openEditModal = (p: any) => {
+    setEditingPatient(p);
+    setEditForm({
+      nombre: p.name || "",
+      sexo: p.sexo || "",
+      fechaNacimiento: p.fechaNacimiento || "",
+      precioTerapia: p.precioTerapia || "",
+      metodoPago: p.metodoPago || ""
+    });
+  };
+
+  const handleEditChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
+    setEditForm({ ...editForm, [e.target.name]: e.target.value });
+  };
+
+  const saveEdit = async () => {
+    if (!editingPatient) return;
+    setIsSaving(true);
+    const { updatePatientFast, getPatients } = await import('@/app/actions/pacientes');
+    const result = await updatePatientFast(editingPatient.id, editForm);
+    if (result.success) {
+      alert("Paciente actualizado.");
+      setEditingPatient(null);
+      const updated = await getPatients();
+      if (updated.success && updated.data) {
+        setPacientes(updated.data);
+      }
+    } else {
+      alert(result.error);
+    }
+    setIsSaving(false);
+  };
+
   return (
     <div className="space-y-6 animate-in fade-in duration-500 max-w-[1400px] mx-auto">
       
@@ -129,10 +168,10 @@ export default function PacientesPage() {
                     </span>
                   </td>
                   <td className="px-4 py-4 text-slate-600 font-medium">{p.totalPagado || "$0.00"}</td>
-                  <td className="px-4 py-4 font-bold text-[#1a5276]">{p.precio || "Por definir"}</td>
+                  <td className="px-4 py-4 font-bold text-[#1a5276]">{p.precioTerapia ? `$${p.precioTerapia}` : "Por definir"}</td>
                   <td className="px-4 py-4">
                     <span className="bg-blue-50 text-blue-600 border border-blue-100 px-3 py-1 rounded-full text-[10px] font-medium whitespace-nowrap">
-                      {p.metodo || "Por definir"}
+                      {p.metodoPago || "Por definir"}
                     </span>
                   </td>
                   <td className="px-4 py-4 text-slate-500 font-medium">{p.ultima || "—"}</td>
@@ -142,7 +181,7 @@ export default function PacientesPage() {
                     </span>
                   </td>
                   <td className="px-4 py-4">
-                    <button className="p-1.5 border border-slate-200 rounded hover:bg-slate-100 text-amber-500 transition-colors">
+                    <button onClick={() => openEditModal(p)} className="p-1.5 border border-slate-200 rounded hover:bg-slate-100 text-amber-500 transition-colors">
                       <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z" /></svg>
                     </button>
                   </td>
@@ -158,6 +197,65 @@ export default function PacientesPage() {
           </table>
         </div>
       </div>
+
+      {/* MODAL DE EDICIÓN */}
+      {editingPatient && (
+        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4 animate-in fade-in">
+          <div className="bg-white rounded-xl shadow-lg w-full max-w-md overflow-hidden animate-in slide-in-from-bottom-4">
+            <div className="flex justify-between items-center p-4 border-b border-slate-100">
+              <h3 className="font-bold text-[#1a5276] flex items-center gap-2">
+                <svg className="w-5 h-5 text-slate-600" fill="currentColor" viewBox="0 0 24 24"><path d="M12 12c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm0 2c-2.67 0-8 1.34-8 4v2h16v-2c0-2.66-5.33-4-8-4z"/></svg>
+                Editar Paciente
+              </h3>
+              <button onClick={() => setEditingPatient(null)} className="text-slate-400 hover:text-slate-600">
+                <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" /></svg>
+              </button>
+            </div>
+            <div className="p-5 space-y-4">
+              <div>
+                <label className="block text-xs font-bold text-slate-500 uppercase mb-1">Paciente</label>
+                <input type="text" name="nombre" value={editForm.nombre} onChange={handleEditChange} className="w-full text-sm p-2 border border-slate-300 rounded focus:border-[#2980b9] outline-none text-slate-900" />
+              </div>
+              <div>
+                <label className="block text-xs font-bold text-slate-500 uppercase mb-1">Sexo</label>
+                <select name="sexo" value={editForm.sexo} onChange={handleEditChange} className="w-full text-sm p-2 border border-slate-300 rounded focus:border-[#2980b9] outline-none text-slate-900">
+                  <option value="">Desconocido</option>
+                  <option value="M">Masculino</option>
+                  <option value="F">Femenino</option>
+                </select>
+              </div>
+              <div>
+                <label className="block text-xs font-bold text-slate-500 uppercase mb-1">Fecha de Nacimiento</label>
+                <input type="date" name="fechaNacimiento" value={editForm.fechaNacimiento} onChange={handleEditChange} className="w-full text-sm p-2 border border-slate-300 rounded focus:border-[#2980b9] outline-none text-slate-900" />
+                <p className="text-[10px] text-slate-400 mt-1">La edad se calculará automáticamente</p>
+              </div>
+              <div>
+                <label className="block text-xs font-bold text-slate-500 uppercase mb-1">💰 Precio por Terapia</label>
+                <div className="relative">
+                  <span className="absolute left-3 top-2 text-slate-500 font-bold">$</span>
+                  <input type="number" name="precioTerapia" value={editForm.precioTerapia} onChange={handleEditChange} className="w-full text-sm p-2 pl-7 border border-slate-300 rounded focus:border-[#2980b9] outline-none text-slate-900" />
+                </div>
+                <p className="text-[10px] text-slate-400 mt-1">Se actualizará en todos los registros del paciente</p>
+              </div>
+              <div>
+                <label className="block text-xs font-bold text-slate-500 uppercase mb-1">💳 Método de Pago Preferido</label>
+                <select name="metodoPago" value={editForm.metodoPago} onChange={handleEditChange} className="w-full text-sm p-2 border border-slate-300 rounded focus:border-[#2980b9] outline-none text-slate-900">
+                  <option value="">Seleccionar...</option>
+                  <option value="Efectivo">Efectivo</option>
+                  <option value="Tarjeta">Tarjeta</option>
+                  <option value="Transferencia">Transferencia</option>
+                </select>
+                <p className="text-[10px] text-slate-400 mt-1">Solo se actualizará si seleccionas una opción</p>
+              </div>
+            </div>
+            <div className="p-4 bg-slate-50 border-t border-slate-100">
+              <button onClick={saveEdit} disabled={isSaving} className="w-full bg-[#1a5276] hover:bg-[#0e2f44] disabled:opacity-50 text-white py-2 rounded font-semibold transition-colors">
+                {isSaving ? "Guardando..." : "Guardar Cambios"}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
