@@ -15,9 +15,8 @@ const fallbackUrl = "postgresql://postgres.rquxzsmogmubtnovuhxu:Pj12676354%40.@a
 let prismaInstance: PrismaClient;
 
 try {
-  prismaInstance = globalForPrisma.prisma ?? new PrismaClient({
-    datasourceUrl: fallbackUrl
-  });
+  process.env.DATABASE_URL = fallbackUrl;
+  prismaInstance = globalForPrisma.prisma ?? new PrismaClient();
 } catch (error: any) {
   console.error("PRISMA INITIALIZATION ERROR:", error);
   // Create a dummy proxy that throws the initialization error when used
