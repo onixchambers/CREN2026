@@ -1,4 +1,4 @@
-﻿import React, { useState, useRef, useEffect } from 'react';
+import React, { useState, useRef, useEffect } from 'react';
 
 interface MultiSelectProps {
   options: string[];
@@ -34,10 +34,10 @@ export function MultiSelect({ options, selected, onChange }: MultiSelectProps) {
     <div className="relative flex-1" ref={containerRef}>
       <button 
         type="button"
-        className="w-full p-2 border border-slate-300 rounded text-xs text-left bg-white focus:border-blue-500 outline-none flex justify-between items-center text-slate-700"
+        className="w-full p-2 border border-slate-300 rounded text-xs text-left bg-white focus:border-blue-500 outline-none flex justify-between items-center text-slate-700 min-h-[38px] h-auto"
         onClick={() => setIsOpen(!isOpen)}
       >
-        <span className="truncate pr-2">{displayText}</span>
+        <span className="pr-2 break-words whitespace-normal leading-tight">{displayText}</span>
         <svg className="w-3 h-3 text-slate-400 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
           <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M19 9l-7 7-7-7" />
         </svg>
