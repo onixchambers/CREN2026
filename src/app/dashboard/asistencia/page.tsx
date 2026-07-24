@@ -2,6 +2,7 @@
 import { useState, useEffect } from "react";
 import { useSession } from "next-auth/react";
 import { getPatients } from "@/app/actions/pacientes";
+import { getTerapeutasFull } from "@/app/actions/configuracion";
 import { DateInput } from "@/components/DateInput";
 
 type Paciente = {
@@ -49,6 +50,7 @@ export default function AsistenciaPage() {
   const [filtroDesde, setFiltroDesde] = useState(hoy);
   const [filtroHasta, setFiltroHasta] = useState(hoy);
   const [filtroEstado, setFiltroEstado] = useState("Todos");
+  const [availableAreas, setAvailableAreas] = useState<string[]>(["Psicología", "Lenguaje", "Fisioterapia"]);
 
   // Formulario
   const [formData, setFormData] = useState({
@@ -94,6 +96,37 @@ export default function AsistenciaPage() {
         setPacientes(mapped);
       }
       
+      // Cargar áreas
+      const tRes = await getTerapeutasFull();
+      if (tRes.success && tRes.data) {
+        if (userRole.toUpperCase() === "TERAPEUTA") {
+          const me = tRes.data.find((t: any) => t.name === userName);
+          if (me && me.especialidad) {
+            const espList = me.especialidad.split(',').map((s: string) => s.trim()).filter((s: string) => s);
+            if (espList.length > 0) {
+              setAvailableAreas(espList);
+              if (espList.length === 1) {
+                setFormData(prev => ({ ...prev, area: espList[0] }));
+              }
+            }
+          }
+        } else {
+          const allEsp = new Set<string>();
+          tRes.data.forEach((t: any) => {
+            if (t.especialidad) {
+              t.especialidad.split(',').forEach((s: string) => {
+                const val = s.trim();
+                if (val) allEsp.add(val);
+              });
+            }
+          });
+          allEsp.add("Psicología");
+          allEsp.add("Lenguaje");
+          allEsp.add("Fisioterapia");
+          setAvailableAreas(Array.from(allEsp));
+        }
+      }
+
       // Cargar asistencias
       const aData = localStorage.getItem("asistenciaData");
       if (aData) setAsistencias(JSON.parse(aData));
@@ -137,7 +170,7 @@ export default function AsistenciaPage() {
   const handleLimpiarForm = () => {
     setFormData({
       fecha: hoy,
-      area: "",
+      area: (availableAreas.length === 1 && userRole.toUpperCase() === "TERAPEUTA") ? availableAreas[0] : "",
       tipoSesion: "",
       pacienteId: "",
       pacienteNombre: "",
@@ -295,9 +328,9 @@ export default function AsistenciaPage() {
                 <label className="block text-[10px] font-bold text-slate-400 uppercase mb-1">ÁREA</label>
                 <select name="area" value={formData.area} onChange={handleChange} className="w-full text-sm p-2 border border-slate-300 rounded focus:border-[#2980b9] outline-none text-slate-900">
                   <option value="">Seleccionar especialidad...</option>
-                  <option value="Psicología">Psicología</option>
-                  <option value="Lenguaje">Lenguaje</option>
-                  <option value="Fisioterapia">Fisioterapia</option>
+                  {availableAreas.map(area => (
+                    <option key={area} value={area}>{area}</option>
+                  ))}
                 </select>
               </div>
               <div>
@@ -596,9 +629,10 @@ export default function AsistenciaPage() {
                 <div>
                   <label className="block text-[10px] font-bold text-slate-500 uppercase mb-1">Área</label>
                   <select name="area" value={editForm.area} onChange={handleEditChange} className="w-full text-sm p-2 border border-slate-300 rounded focus:border-[#2980b9] outline-none text-slate-900">
-                    <option value="Psicología">Psicología</option>
-                    <option value="Lenguaje">Lenguaje</option>
-                    <option value="Fisioterapia">Fisioterapia</option>
+                    <option value="">Seleccionar especialidad...</option>
+                    {availableAreas.map(area => (
+                      <option key={area} value={area}>{area}</option>
+                    ))}
                   </select>
                 </div>
                 <div>
