@@ -1,6 +1,7 @@
 "use client";
 import { useState, useEffect } from "react";
 import { getSettings, saveSettings } from "@/app/actions/configuracion";
+import { MultiSelect } from "@/components/MultiSelect";
 
 export default function ConfiguracionPage() {
   const formatDateStr = (dateStr: string) => {
@@ -159,30 +160,18 @@ export default function ConfiguracionPage() {
                 </div>
 
                 {u.rol === 'Terapeuta' && (
-                  <div className="flex items-start gap-2 flex-1 min-w-[200px]">
-                    <label className="text-sm text-slate-500 w-24 mt-2">Especialidades</label>
-                    <div className="flex-1 p-2 border border-slate-300 rounded bg-white h-28 overflow-y-auto custom-scrollbar flex flex-col gap-1">
-                      {["Psicología", "Lenguaje", "Neurodesarrollo", "Fisioterapia", "Asesoría de crianza", "Rehabilitación", "Otro"].map(esp => (
-                        <label key={esp} className="flex items-center gap-2 text-[11px] text-slate-700 cursor-pointer hover:bg-slate-50 p-1 rounded">
-                          <input type="checkbox" className="accent-blue-600 cursor-pointer w-3 h-3"
-                            checked={u.especialidad ? u.especialidad.split(',').includes(esp) : false}
-                            onChange={(e) => {
-                              const newU = [...usuarios];
-                              const idx = newU.findIndex(x => x.id === u.id);
-                              let current = u.especialidad ? u.especialidad.split(',').filter(Boolean) : [];
-                              if (e.target.checked) {
-                                current.push(esp);
-                              } else {
-                                current = current.filter(x => x !== esp);
-                              }
-                              newU[idx].especialidad = current.join(',');
-                              setUsuarios(newU);
-                            }}
-                          />
-                          {esp}
-                        </label>
-                      ))}
-                    </div>
+                  <div className="flex items-center gap-2 flex-1 min-w-[200px]">
+                    <label className="text-sm text-slate-500 w-24">Especialidades</label>
+                    <MultiSelect 
+                      options={["Psicología", "Lenguaje", "Neurodesarrollo", "Fisioterapia", "Asesoría de crianza", "Rehabilitación", "Otro"]}
+                      selected={u.especialidad ? u.especialidad.split(',').filter(Boolean) : []}
+                      onChange={(selected) => {
+                        const newU = [...usuarios];
+                        const idx = newU.findIndex(x => x.id === u.id);
+                        newU[idx].especialidad = selected.join(',');
+                        setUsuarios(newU);
+                      }}
+                    />
                   </div>
                   )}
   
