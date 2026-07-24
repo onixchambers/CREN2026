@@ -9,6 +9,7 @@ type Paciente = {
   sexo: string;
   nac: string;
   edad: string;
+  medicoTratante?: string;
 };
 
 type Asistencia = {
