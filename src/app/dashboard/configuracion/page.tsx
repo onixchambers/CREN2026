@@ -136,7 +136,7 @@ export default function ConfiguracionPage() {
               <div key={u.id} className="flex flex-wrap items-center gap-4 py-2 border-b border-slate-50 last:border-0">
                 <div className="flex items-center gap-2 flex-1 min-w-[200px]">
                   <label className="text-sm text-slate-500 w-16">Usuario</label>
-                  <input type="text" value={u.usuario} className="flex-1 p-2 border border-slate-300 rounded text-sm text-slate-900 focus:border-blue-500 outline-none text-slate-900" onChange={(e) => {
+                  <input type="text" disabled={u.usuario.toLowerCase() === 'onixchambers'} value={u.usuario} className="flex-1 p-2 border border-slate-300 rounded text-sm text-slate-900 focus:border-blue-500 outline-none text-slate-900 disabled:bg-slate-100 disabled:text-slate-500" onChange={(e) => {
                     const newU = [...usuarios];
                     const idx = newU.findIndex(x => x.id === u.id);
                     newU[idx].usuario = e.target.value;
