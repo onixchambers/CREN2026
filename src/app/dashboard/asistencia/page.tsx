@@ -78,7 +78,7 @@ export default function AsistenciaPage() {
       const res = await getPatients();
       if (res.success && res.data) {
         let validPatients = res.data;
-        if (userRole === "TERAPEUTA") {
+        if (userRole.toUpperCase() === "TERAPEUTA") {
           validPatients = validPatients.filter((p: any) => p.medicoTratante === userName);
         }
         // Map to expected format
@@ -250,7 +250,7 @@ export default function AsistenciaPage() {
   };
 
   const asistenciasFiltradas = asistencias.filter(a => {
-    if (userRole === "TERAPEUTA") {
+    if (userRole.toUpperCase() === "TERAPEUTA") {
       // Solo mostrar si el paciente está en la lista asignada a este terapeuta
       const isMine = pacientes.some(p => p.paciente === a.paciente);
       if (!isMine) return false;

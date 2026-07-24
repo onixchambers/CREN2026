@@ -50,7 +50,7 @@ export default function InformesPage() {
       const res = await getPatients();
       if (res.success && res.data) {
         let validPatients = res.data;
-        if (userRole === "TERAPEUTA") {
+        if (userRole.toUpperCase() === "TERAPEUTA") {
           validPatients = validPatients.filter((p: any) => p.medicoTratante === userName);
         }
         const mapped = validPatients.map((p: any) => ({

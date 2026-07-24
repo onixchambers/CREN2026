@@ -361,8 +361,8 @@ export default function PreregistrosPage() {
               </tr>
             </thead>
             <tbody>
-              {fichas.filter(f => userRole === "TERAPEUTA" ? f.medicoTratante === userName : true).length > 0 ? (
-                fichas.filter(f => userRole === "TERAPEUTA" ? f.medicoTratante === userName : true).map(f => (
+              {fichas.filter(f => userRole.toUpperCase() === "TERAPEUTA" ? f.medicoTratante === userName : true).length > 0 ? (
+                fichas.filter(f => userRole.toUpperCase() === "TERAPEUTA" ? f.medicoTratante === userName : true).map(f => (
                   <tr key={f.id} className="border-b border-slate-100 hover:bg-slate-50 transition-colors">
                     <td className="px-4 py-3 font-medium text-slate-700">{new Date(f.createdAt).toLocaleDateString()}</td>
                     <td className="px-4 py-3 font-bold text-[#1a5276]">{f.name}</td>

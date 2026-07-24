@@ -28,7 +28,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
 
   // Filter tabs based on role
   const tabs = allTabs.filter(tab => {
-    if (userRole === "TERAPEUTA" && tab.adminOnly) {
+    if (userRole.toUpperCase() === "TERAPEUTA" && tab.adminOnly) {
       return false;
     }
     return true;
@@ -52,7 +52,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
           </div>
           <div className="flex items-center gap-4">
             <div className="hidden md:flex items-center gap-2 px-4 py-1.5 bg-white/10 rounded-full backdrop-blur-md text-sm">
-              <span className={`px-2 py-0.5 rounded text-xs font-semibold uppercase ${userRole === 'ADMIN' ? 'bg-red-500/80' : 'bg-green-500/80'}`}>
+              <span className={`px-2 py-0.5 rounded text-xs font-semibold uppercase ${userRole.toUpperCase() === 'ADMIN' ? 'bg-red-500/80' : 'bg-green-500/80'}`}>
                 {userRole}
               </span>
               <span>{userName}</span>

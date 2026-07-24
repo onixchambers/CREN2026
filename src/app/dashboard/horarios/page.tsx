@@ -30,7 +30,7 @@ export default function HorariosPage() {
     async function loadTerapeutas() {
       const res = await getTerapeutas();
       if (res.success && res.terapeutas) {
-        if (userRole === "TERAPEUTA") {
+        if (userRole.toUpperCase() === "TERAPEUTA") {
           setTerapeutasDisponibles([userName]);
           setTerapeutaSeleccionado(userName);
         } else {
