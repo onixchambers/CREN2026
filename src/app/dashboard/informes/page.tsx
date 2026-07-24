@@ -165,10 +165,7 @@ export default function InformesPage() {
 
               <div>
                 <label className="block text-[10px] font-bold text-slate-400 uppercase mb-2">FECHA</label>
-                <input 
-                   
-                  value={selectedFecha}
-                  onChange={e => setSelectedFecha(e.target.value)}
+                <DateInput value={selectedFecha} onChange={e => setSelectedFecha(e.target.value)}
                   className="w-full text-sm p-2 border border-slate-300 rounded focus:border-[#2980b9] outline-none text-slate-700" 
                 />
               </div>
