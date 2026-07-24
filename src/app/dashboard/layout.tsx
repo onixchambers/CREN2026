@@ -71,7 +71,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
           {tabs.map((tab) => {
             const isActive = pathname === tab.path;
             return (
-              <Link
+              <a
                 key={tab.name}
                 href={tab.path}
                 className={`px-4 py-2.5 text-sm font-medium border-b-2 whitespace-nowrap transition-colors ${
@@ -81,7 +81,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
                 }`}
               >
                 {tab.name}
-              </Link>
+              </a>
             );
           })}
         </nav>
