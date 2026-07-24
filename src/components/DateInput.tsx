@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+﻿import React, { useState, useEffect } from 'react';
 
 interface DateInputProps extends Omit<React.InputHTMLAttributes<HTMLInputElement>, 'value' | 'onChange'> {
   value: string; // Expected in YYYY-MM-DD format or empty
@@ -19,7 +19,7 @@ export function DateInput({ value, onChange, className, name, required }: DateIn
     if (parts.length === 3) {
       const [year, month, day] = parts;
       if (year.length === 4) {
-        setDisplayValue(${day}//);
+        setDisplayValue(`${day}/${month}/${year}`);
       }
     }
   }, [value]);
@@ -32,9 +32,9 @@ export function DateInput({ value, onChange, className, name, required }: DateIn
     
     let formatted = input;
     if (input.length >= 3 && input.length <= 4) {
-      formatted = ${input.slice(0, 2)}/;
+      formatted = `${input.slice(0, 2)}/${input.slice(2)}`;
     } else if (input.length >= 5) {
-      formatted = ${input.slice(0, 2)}//;
+      formatted = `${input.slice(0, 2)}/${input.slice(2, 4)}/${input.slice(4)}`;
     }
     
     setDisplayValue(formatted);
@@ -45,7 +45,7 @@ export function DateInput({ value, onChange, className, name, required }: DateIn
       const month = input.slice(2, 4);
       const year = input.slice(4, 8);
       
-      const isoDate = ${year}--;
+      const isoDate = `${year}-${month}-${day}`;
       
       // Create synthetic event
       const syntheticEvent = {
