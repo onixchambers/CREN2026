@@ -25,7 +25,11 @@ export async function getSettings(month: string) {
         rol: u.role,
         contrasena: u.password || "",
         especialidad: u.especialidad || "",
-      })),
+      })).sort((a, b) => {
+        if (a.rol === 'Admin' && b.rol !== 'Admin') return -1;
+        if (a.rol !== 'Admin' && b.rol === 'Admin') return 1;
+        return 0;
+      }),
       settings: settings || { allowTherapistEdit: true, referenceKeys: "" },
       expenses: expenses,
     };
