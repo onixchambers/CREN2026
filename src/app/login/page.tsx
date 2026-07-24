@@ -26,7 +26,7 @@ export default function LoginPage() {
       setError("Credenciales incorrectas");
       setLoading(false);
     } else {
-      window.location.href = "/dashboard";
+      window.location.href = `/dashboard?t=${Date.now()}`;
       router.refresh();
     }
   };

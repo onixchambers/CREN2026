@@ -73,7 +73,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
             return (
               <a
                 key={tab.name}
-                href={tab.path}
+                href={`${tab.path}?t=${Date.now()}`}
                 className={`px-4 py-2.5 text-sm font-medium border-b-2 whitespace-nowrap transition-colors ${
                   isActive
                     ? "border-green-400 text-white bg-white/10"
