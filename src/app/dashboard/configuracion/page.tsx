@@ -69,6 +69,7 @@ export default function ConfiguracionPage() {
 
       if (res.success) {
         alert("¡Configuración guardada exitosamente!");
+          window.location.reload();
       } else {
         alert("Hubo un error al guardar: " + (res.error || "Error desconocido"));
       }
