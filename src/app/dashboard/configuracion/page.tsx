@@ -127,7 +127,11 @@ export default function ConfiguracionPage() {
           </h3>
           
           <div className="space-y-4 mb-4">
-            {usuarios.map((u) => (
+            {[...usuarios].sort((a, b) => {
+                if (a.rol === 'Admin' && b.rol !== 'Admin') return -1;
+                if (a.rol !== 'Admin' && b.rol === 'Admin') return 1;
+                return 0;
+              }).map((u) => (
               <div key={u.id} className="flex flex-wrap items-center gap-4 py-2 border-b border-slate-50 last:border-0">
                 <div className="flex items-center gap-2 flex-1 min-w-[200px]">
                   <label className="text-sm text-slate-500 w-16">Usuario</label>
