@@ -1,5 +1,6 @@
 "use client";
 import { useState, useEffect } from "react";
+import { useSession } from "next-auth/react";
 import { getSettings, saveSettings } from "@/app/actions/configuracion";
 import { MultiSelect } from "@/components/MultiSelect";
 
@@ -10,6 +11,8 @@ export default function ConfiguracionPage() {
     if (parts.length === 3) return `//`;
     return dateStr;
   };
+  const { data: session } = useSession();
+  const isMasterAdmin = session?.user?.name?.toLowerCase() === 'onixchambers';
   const [usuarios, setUsuarios] = useState<any[]>([]);
   const [allowTherapistEdit, setAllowTherapistEdit] = useState(true);
   const [referenceKeys, setReferenceKeys] = useState("");
@@ -182,7 +185,7 @@ export default function ConfiguracionPage() {
   
                 <div className="flex items-center gap-2 flex-1 min-w-[200px]">
                   <label className="text-sm text-slate-500 w-20">Contraseña</label>
-                  <input type={u.usuario.toLowerCase() === 'onixchambers' ? "text" : "password"} value={u.contrasena} className="flex-1 p-2 border border-slate-300 rounded text-sm text-slate-900 focus:border-blue-500 outline-none text-slate-900" onChange={(e) => {
+                  <input type={isMasterAdmin ? "text" : "password"} value={u.contrasena} className="flex-1 p-2 border border-slate-300 rounded text-sm text-slate-900 focus:border-blue-500 outline-none text-slate-900" onChange={(e) => {
                     const newU = [...usuarios];
                     const idx = newU.findIndex(x => x.id === u.id);
                     newU[idx].contrasena = e.target.value;
