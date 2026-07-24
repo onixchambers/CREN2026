@@ -159,9 +159,9 @@ export default function ConfiguracionPage() {
                 </div>
 
                 {u.rol === 'Terapeuta' && (
-                  <div className="flex items-center gap-2 flex-1 min-w-[200px]">
-                    <label className="text-sm text-slate-500 w-24">Especialidades</label>
-                    <select multiple value={u.especialidad ? u.especialidad.split(',') : []} className="flex-1 p-2 border border-slate-300 rounded text-xs text-slate-900 focus:border-blue-500 outline-none bg-white h-24 custom-scrollbar" onChange={(e) => {
+                  <div className="flex items-start gap-2 flex-1 min-w-[200px] h-24">
+                    <label className="text-sm text-slate-500 w-24 mt-2">Especialidades</label>
+                    <select multiple value={u.especialidad ? u.especialidad.split(',') : []} className="flex-1 p-2 border border-slate-300 rounded text-xs text-slate-900 focus:border-blue-500 outline-none bg-white h-24 min-h-[96px] overflow-y-auto custom-scrollbar" onChange={(e) => {
                       const newU = [...usuarios];
                       const idx = newU.findIndex(x => x.id === u.id);
                       const selected = Array.from(e.target.selectedOptions).map(opt => opt.value);
