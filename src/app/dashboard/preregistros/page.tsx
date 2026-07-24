@@ -1,6 +1,7 @@
 "use client";
 import { useState, useEffect } from "react";
 import { useSession } from "next-auth/react";
+import { DateInput } from "@/components/DateInput";
 
 export default function PreregistrosPage() {
   const { data: session } = useSession();
@@ -168,7 +169,7 @@ export default function PreregistrosPage() {
                 </div>
                 <div>
                   <label className="block text-[10px] font-bold text-slate-500 uppercase mb-1">Fecha de Nacimiento</label>
-                  <input type="date" name="fechaNacimiento" value={formData.fechaNacimiento} onChange={handleInputChange} className="w-full text-sm p-2 border border-slate-300 rounded focus:border-[#2980b9] outline-none text-slate-900" />
+                  <DateInput name="fechaNacimiento" value={formData.fechaNacimiento} onChange={handleInputChange} className="w-full text-sm p-2 border border-slate-300 rounded focus:border-[#2980b9] outline-none text-slate-900" />
                 </div>
                 <div>
                   <label className="block text-[10px] font-bold text-slate-500 uppercase mb-1">Sexo</label>
@@ -180,7 +181,7 @@ export default function PreregistrosPage() {
                 </div>
                 <div>
                   <label className="block text-[10px] font-bold text-slate-500 uppercase mb-1">Fecha de Ingreso</label>
-                  <input type="date" name="fechaIngreso" value={formData.fechaIngreso} onChange={handleInputChange} className="w-full text-sm p-2 border border-slate-300 rounded bg-slate-50 outline-none text-slate-900" />
+                  <DateInput name="fechaIngreso" value={formData.fechaIngreso} onChange={handleInputChange} className="w-full text-sm p-2 border border-slate-300 rounded bg-slate-50 outline-none text-slate-900" />
                 </div>
               </div>
 

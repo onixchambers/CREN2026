@@ -1,5 +1,6 @@
 "use client";
 import { useState } from "react";
+import { DateInput } from "@/components/DateInput";
 
 type Movimiento = {
   id: string;
@@ -151,7 +152,7 @@ export default function FinanzasPage() {
                 </div>
                 <div>
                   <label className="block text-xs font-semibold text-slate-600 uppercase mb-1">Fecha</label>
-                  <input required type="date" name="fecha" value={formData.fecha} onChange={handleInputChange} className="w-full border border-slate-300 rounded-lg px-3 py-2 outline-none focus:border-blue-500" />
+                  <DateInput required name="fecha" value={formData.fecha} onChange={handleInputChange} className="w-full border border-slate-300 rounded-lg px-3 py-2 outline-none focus:border-blue-500" />
                 </div>
               </div>
               

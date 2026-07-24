@@ -24,6 +24,7 @@ export async function getSettings(month: string) {
         usuario: u.name || "",
         rol: u.role,
         contrasena: u.password || "",
+        especialidad: u.especialidad || "",
       })),
       settings: settings || { allowTherapistEdit: true, referenceKeys: "" },
       expenses: expenses,
@@ -109,6 +110,7 @@ export async function saveSettings(data: {
               name: user.usuario,
               role: user.rol,
               password: user.contrasena,
+              especialidad: user.especialidad || "",
             }
           });
         } else { 
@@ -117,6 +119,7 @@ export async function saveSettings(data: {
               name: user.usuario,
               role: user.rol,
               password: user.contrasena,
+              especialidad: user.especialidad || "",
             }
           });
         }

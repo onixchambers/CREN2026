@@ -31,7 +31,7 @@ export default function ConfiguracionPage() {
       const res = await getSettings(m);
       if (res.success && res.users) {
         setUsuarios(res.users.length > 0 ? res.users : [
-          { id: Date.now(), usuario: "Administrador", rol: "Admin", contrasena: "admin2026" }
+          { id: Date.now(), usuario: "Administrador", rol: "Admin", contrasena: "admin2026", especialidad: "" }
         ]);
         setAllowTherapistEdit(res.settings?.allowTherapistEdit ?? true);
         setReferenceKeys(res.settings?.referenceKeys ?? "");
@@ -80,7 +80,7 @@ export default function ConfiguracionPage() {
   };
 
   const addUsuario = () => {
-    setUsuarios([...usuarios, { id: Date.now(), usuario: "", rol: "Terapeuta", contrasena: "" }]);
+    setUsuarios([...usuarios, { id: Date.now(), usuario: "", rol: "Terapeuta", contrasena: "", especialidad: "" }]);
   };
 
   const removeUsuario = (id: any) => {

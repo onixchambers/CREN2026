@@ -2,6 +2,7 @@
 import { useState, useEffect, useRef } from "react";
 import { useSession } from "next-auth/react";
 import { getPatients } from "@/app/actions/pacientes";
+import { DateInput } from "@/components/DateInput";
 
 type Informe = {
   id: string;
@@ -165,7 +166,7 @@ export default function InformesPage() {
               <div>
                 <label className="block text-[10px] font-bold text-slate-400 uppercase mb-2">FECHA</label>
                 <input 
-                  type="date" 
+                   
                   value={selectedFecha}
                   onChange={e => setSelectedFecha(e.target.value)}
                   className="w-full text-sm p-2 border border-slate-300 rounded focus:border-[#2980b9] outline-none text-slate-700" 

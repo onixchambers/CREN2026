@@ -2,6 +2,7 @@
 import { useState, useEffect } from "react";
 import { getTerapeutas } from "@/app/actions/configuracion";
 import { useSession } from "next-auth/react";
+import { DateInput } from "@/components/DateInput";
 
 type Cita = {
   id: string;
@@ -126,9 +127,7 @@ export default function AgendaPage() {
         <div className="p-4 border-b border-slate-100 flex justify-end items-center bg-slate-50">
           <div className="flex items-center gap-3">
             <span className="text-sm font-semibold text-slate-500">Filtrar Fecha:</span>
-            <input 
-              type="date" 
-              value={fechaSeleccionada} 
+            <DateInput value={fechaSeleccionada} 
               onChange={(e) => setFechaSeleccionada(e.target.value)}
               className="border border-slate-300 rounded-lg px-3 py-1.5 text-sm outline-none focus:border-blue-500 font-medium text-slate-700" 
             />
@@ -214,7 +213,7 @@ export default function AgendaPage() {
                 {/* Fecha y Hora */}
                 <div>
                   <label className="block text-xs font-semibold text-slate-600 uppercase mb-1">Fecha</label>
-                  <input required type="date" name="fecha" value={formData.fecha} onChange={handleInputChange} className="w-full text-slate-900 font-medium border border-slate-300 rounded-lg px-3 py-2 outline-none focus:border-[#2980b9]" />
+                  <DateInput required name="fecha" value={formData.fecha} onChange={handleInputChange} className="w-full text-slate-900 font-medium border border-slate-300 rounded-lg px-3 py-2 outline-none focus:border-[#2980b9]" />
                 </div>
                 <div>
                   <label className="block text-xs font-semibold text-slate-600 uppercase mb-1">Hora</label>

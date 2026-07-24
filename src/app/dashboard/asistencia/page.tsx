@@ -2,6 +2,7 @@
 import { useState, useEffect } from "react";
 import { useSession } from "next-auth/react";
 import { getPatients } from "@/app/actions/pacientes";
+import { DateInput } from "@/components/DateInput";
 
 type Paciente = {
   id: string;
@@ -288,7 +289,7 @@ export default function AsistenciaPage() {
             <div className="grid grid-cols-1 md:grid-cols-5 gap-4">
               <div>
                 <label className="block text-[10px] font-bold text-slate-400 uppercase mb-1">FECHA</label>
-                <input type="date" name="fecha" value={formData.fecha} onChange={handleChange} className="w-full text-sm p-2 border border-slate-300 rounded focus:border-[#2980b9] outline-none text-slate-900" />
+                <DateInput name="fecha" value={formData.fecha} onChange={handleChange} className="w-full text-sm p-2 border border-slate-300 rounded focus:border-[#2980b9] outline-none text-slate-900" />
               </div>
               <div>
                 <label className="block text-[10px] font-bold text-slate-400 uppercase mb-1">ÁREA</label>
@@ -480,11 +481,11 @@ export default function AsistenciaPage() {
         <div className="bg-slate-50 border-b border-slate-200 p-3 flex flex-wrap items-center gap-4">
           <div className="flex items-center gap-2">
             <label className="text-[11px] font-semibold text-slate-500">Desde:</label>
-            <input type="date" value={filtroDesde} onChange={e => setFiltroDesde(e.target.value)} className="text-xs p-1.5 border border-slate-300 rounded outline-none text-slate-700 bg-white" />
+            <DateInput value={filtroDesde} onChange={e => setFiltroDesde(e.target.value)} className="text-xs p-1.5 border border-slate-300 rounded outline-none text-slate-700 bg-white" />
           </div>
           <div className="flex items-center gap-2">
             <label className="text-[11px] font-semibold text-slate-500">Hasta:</label>
-            <input type="date" value={filtroHasta} onChange={e => setFiltroHasta(e.target.value)} className="text-xs p-1.5 border border-slate-300 rounded outline-none text-slate-700 bg-white" />
+            <DateInput value={filtroHasta} onChange={e => setFiltroHasta(e.target.value)} className="text-xs p-1.5 border border-slate-300 rounded outline-none text-slate-700 bg-white" />
           </div>
           <div className="flex items-center gap-2">
             <label className="text-[11px] font-semibold text-slate-500">Estado:</label>
@@ -590,7 +591,7 @@ export default function AsistenciaPage() {
               <div className="grid grid-cols-2 gap-4">
                 <div>
                   <label className="block text-[10px] font-bold text-slate-500 uppercase mb-1">Fecha</label>
-                  <input type="date" name="fecha" value={editForm.fecha} onChange={handleEditChange} className="w-full text-sm p-2 border border-slate-300 rounded focus:border-[#2980b9] outline-none text-slate-900" />
+                  <DateInput name="fecha" value={editForm.fecha} onChange={handleEditChange} className="w-full text-sm p-2 border border-slate-300 rounded focus:border-[#2980b9] outline-none text-slate-900" />
                 </div>
                 <div>
                   <label className="block text-[10px] font-bold text-slate-500 uppercase mb-1">Área</label>

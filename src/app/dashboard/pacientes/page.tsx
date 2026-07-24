@@ -1,5 +1,6 @@
 "use client";
 import { useState, useEffect } from "react";
+import { DateInput } from "@/components/DateInput";
 
 type Paciente = {
   id: string;
@@ -253,7 +254,7 @@ export default function PacientesPage() {
               </div>
               <div>
                 <label className="block text-xs font-bold text-slate-500 uppercase mb-1">Fecha de Nacimiento</label>
-                <input type="date" name="fechaNacimiento" value={editForm.fechaNacimiento} onChange={handleEditChange} className="w-full text-sm p-2 border border-slate-300 rounded focus:border-[#2980b9] outline-none text-slate-900" />
+                <DateInput name="fechaNacimiento" value={editForm.fechaNacimiento} onChange={handleEditChange} className="w-full text-sm p-2 border border-slate-300 rounded focus:border-[#2980b9] outline-none text-slate-900" />
                 <p className="text-[10px] text-slate-400 mt-1">La edad se calculará automáticamente</p>
               </div>
               <div>
