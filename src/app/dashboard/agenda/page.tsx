@@ -238,11 +238,11 @@ export default function AgendaPage() {
                   {terapeutas.map(t => {
                     const cita = getCitaParaCelda(hora, t);
                     return (
-                      <td key={`${hora}-${t}`} className="border border-slate-200 p-2 h-16 w-40 relative align-top group">
+                      <td key={`${hora}-${t}`} className="border border-slate-200 p-0 h-16 w-40 relative align-top group">
                         {cita ? (
                             <div 
                               onClick={() => { setSelectedCita(cita); setIsEditModalOpen(true); }}
-                              className={`p-2 rounded border text-xs font-semibold flex flex-col items-center justify-center h-full w-full cursor-pointer shadow-sm hover:brightness-95 transition-all relative ${getEstadoColor(cita.estado)}`}>
+                              className={`absolute left-0 w-full h-full p-2 rounded border text-xs font-semibold flex flex-col items-center justify-center cursor-pointer shadow-sm hover:brightness-95 transition-all ${cita.hora.includes(":30") ? "top-[50%] z-10" : "top-0"} ${getEstadoColor(cita.estado)}`}>
                               
                               <button 
                                 onClick={(e) => { e.stopPropagation(); handleDeleteCita(cita.id); }} 
@@ -374,36 +374,6 @@ export default function AgendaPage() {
                   </select>
                 </div>
               </div>
-
-              <div className="grid grid-cols-2 gap-4 mt-4 pt-4 border-t border-slate-100">
-                <div className="flex items-center gap-2">
-                  <input 
-                    type="checkbox" 
-                    id="pagado"
-                    checked={formData.pagado}
-                    onChange={e => setFormData({...formData, pagado: e.target.checked})}
-                    className="w-4 h-4 text-[#2980b9] rounded focus:ring-[#2980b9]"
-                  />
-                  <label htmlFor="pagado" className="text-sm font-bold text-slate-700 cursor-pointer">Paciente Pagó</label>
-                </div>
-                
-                {formData.pagado && (
-                  <div>
-                    <select 
-                      name="metodoPago" 
-                      value={formData.metodoPago} 
-                      onChange={handleInputChange} 
-                      className="w-full text-sm p-2 border border-slate-300 rounded focus:border-[#2980b9] outline-none text-slate-700 bg-white"
-                      required
-                    >
-                      <option value="">Método...</option>
-                      <option value="Efectivo">Efectivo</option>
-                      <option value="Tarjeta">Tarjeta</option>
-                      <option value="Transferencia">Transferencia</option>
-                    </select>
-                  </div>
-                )}
-              </div>
               
               <div className="pt-4 flex gap-3">
                 <button type="button" onClick={() => setIsModalOpen(false)} className="flex-1 py-2 bg-slate-100 text-slate-700 font-semibold rounded-lg hover:bg-slate-200 transition-colors">Cancelar</button>
@@ -445,35 +415,6 @@ export default function AgendaPage() {
                   <option value="Reagendado">Reagendado</option>
                   <option value="Disponible">Disponible</option>
                 </select>
-              </div>
-
-              <div className="pt-4 border-t border-slate-100">
-                <div className="flex items-center gap-2 mb-3">
-                  <input 
-                    type="checkbox" 
-                    id="edit-pagado"
-                    checked={selectedCita.pagado || false}
-                    onChange={e => setSelectedCita({...selectedCita, pagado: e.target.checked})}
-                    className="w-4 h-4 text-[#2980b9] rounded focus:ring-[#2980b9]"
-                  />
-                  <label htmlFor="edit-pagado" className="text-sm font-bold text-slate-700 cursor-pointer">Paciente Pagó</label>
-                </div>
-                
-                {(selectedCita.pagado) && (
-                  <div>
-                    <select 
-                      value={selectedCita.metodoPago || ""} 
-                      onChange={e => setSelectedCita({...selectedCita, metodoPago: e.target.value})} 
-                      className="w-full text-sm p-2 border border-slate-300 rounded focus:border-[#2980b9] outline-none text-slate-700 bg-white"
-                      required
-                    >
-                      <option value="">Método de Pago...</option>
-                      <option value="Efectivo">Efectivo</option>
-                      <option value="Tarjeta">Tarjeta</option>
-                      <option value="Transferencia">Transferencia</option>
-                    </select>
-                  </div>
-                )}
               </div>
 
               <div className="pt-4 flex gap-2">
