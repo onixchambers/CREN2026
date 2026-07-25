@@ -76,39 +76,44 @@ export default function InformesPage() {
   const handleFileDrop = (e: React.DragEvent) => {
     e.preventDefault();
     if (e.dataTransfer.files && e.dataTransfer.files.length > 0) {
-      setFile(e.dataTransfer.files[0]);
+      setFiles(prev => [...prev, ...Array.from(e.dataTransfer.files as FileList)]);
     }
   };
 
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     if (e.target.files && e.target.files.length > 0) {
-      setFile(e.target.files[0]);
+      setFiles(prev => [...prev, ...Array.from(e.target.files as FileList)]);
     }
   };
 
+  const removeFile = (index: number) => {
+    setFiles(prev => prev.filter((_, i) => i !== index));
+  };
+
   const handleSubirInforme = () => {
-    if (!selectedPaciente || !selectedTipo || !file) {
-      alert("Por favor selecciona paciente, tipo y adjunta un archivo.");
+    if (!selectedPaciente || !selectedTipo || files.length === 0) {
+      alert("Por favor selecciona paciente, tipo y adjunta al menos un archivo.");
       return;
     }
 
-    const nuevoInforme: Informe = {
-      id: Date.now().toString(),
+    const nuevosInformes: Informe[] = files.map((f, index) => ({
+      id: Date.now().toString() + index,
       paciente: selectedPaciente,
       tipo: selectedTipo,
       fecha: selectedFecha,
-      archivoNombre: file.name,
-      fechaSubida: new Date().toLocaleDateString()
-    };
+      archivoNombre: f.name,
+      fechaSubida: new Date().toLocaleDateString(),
+      terapeuta: userName
+    }));
 
-    const nuevosInformes = [nuevoInforme, ...informes];
-    setInformes(nuevosInformes);
-    localStorage.setItem("informesData", JSON.stringify(nuevosInformes));
-    
-    // Reset
+    const updated = [...nuevosInformes, ...informes];
+    setInformes(updated);
+    localStorage.setItem("informesData", JSON.stringify(updated));
+
     setSelectedPaciente("");
+    setSearchInput("");
     setSelectedTipo("");
-    setFile(null);
+    setFiles([]);
     alert("Informe subido exitosamente");
   };
 
