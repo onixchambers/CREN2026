@@ -2,7 +2,7 @@
 import { useState, useEffect } from "react";
 import { getTerapeutas } from "@/app/actions/configuracion";
 import { getPatients } from "@/app/actions/pacientes";
-import { getAgenda, addCita, updateCita } from "@/app/actions/agenda";
+import { getAgenda, addCita, updateCita, deleteCita } from "@/app/actions/agenda";
 import { useSession } from "next-auth/react";
 import { DateInput } from "@/components/DateInput";
 
@@ -14,7 +14,7 @@ type Cita = {
   terapeuta: string;
   tipoServicio: string;
   frecuencia: string;
-  estado: "Ocupado" | "Cancelado" | "Reagendado" | "Disponible";
+  estado: string;
   pagado?: boolean;
   metodoPago?: string;
 };
@@ -46,6 +46,8 @@ export default function AgendaPage() {
   const [isLoadingTerapeutas, setIsLoadingTerapeutas] = useState(true);
   
   const [isModalOpen, setIsModalOpen] = useState(false);
+  const [isEditModalOpen, setIsEditModalOpen] = useState(false);
+  const [selectedCita, setSelectedCita] = useState<Cita | null>(null);
   const [formData, setFormData] = useState({
     paciente: "", fecha: hoy, hora: "09:00", terapeuta: "", tipoServicio: "individual", frecuencia: "semanal", estado: "Ocupado" as Cita["estado"], pagado: false, metodoPago: ""
   });
@@ -109,6 +111,29 @@ export default function AgendaPage() {
     }
   };
   
+  const handleDeleteCita = async (id: string) => {
+    if (!confirm("¿Eliminar esta cita permanentemente?")) return;
+    const res = await deleteCita(id);
+    if (res.success) {
+      setCitas(citas.filter(c => c.id !== id));
+      setIsEditModalOpen(false);
+    }
+  };
+
+  const handleUpdateSelectedCita = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!selectedCita) return;
+    const res = await updateCita(selectedCita.id, {
+      estado: selectedCita.estado,
+      pagado: selectedCita.pagado,
+      metodoPago: selectedCita.metodoPago
+    });
+    if (res.success) {
+      setCitas(citas.map(c => c.id === selectedCita.id ? selectedCita : c));
+      setIsEditModalOpen(false);
+    }
+  };
+
   const handleTogglePagado = async (citaId: string, currentPagado: boolean) => {
     const newVal = !currentPagado;
     const res = await updateCita(citaId, { pagado: newVal });
@@ -130,6 +155,11 @@ export default function AgendaPage() {
       case 'Ocupado': return 'bg-blue-100 text-blue-800 border-blue-300';
       case 'Reagendado': return 'bg-orange-100 text-orange-800 border-orange-300';
       case 'Disponible': return 'bg-green-100 text-green-800 border-green-300';
+        case 'Asistió': return 'bg-emerald-100 text-emerald-800 border-emerald-300';
+        case 'Canceló': return 'bg-red-100 text-red-800 border-red-300';
+        case 'Faltó': return 'bg-rose-100 text-rose-800 border-rose-300';
+        case 'Baja': return 'bg-stone-100 text-stone-800 border-stone-300';
+        case 'Alta': return 'bg-teal-100 text-teal-800 border-teal-300';
       case 'Cancelado': return 'bg-red-100 text-red-800 border-red-300';
       default: return 'bg-slate-100 text-slate-800 border-slate-300';
     }
@@ -205,7 +235,7 @@ export default function AgendaPage() {
                               
                               <div className="mt-2 flex justify-center items-center gap-1">
                                 <button 
-                                  onClick={() => handleTogglePagado(cita.id, !!cita.pagado)}
+                                  onClick={(e) => { e.stopPropagation(); handleTogglePagado(cita.id, !!cita.pagado); }}
                                   className={`text-[10px] px-2 py-1 rounded font-bold ${cita.pagado ? 'bg-green-500 text-white' : 'bg-slate-200 text-slate-500 hover:bg-slate-300'}`}
                                 >
                                   {cita.pagado ? 'Pagado' : 'Cobrar'}
@@ -376,7 +406,80 @@ export default function AgendaPage() {
           </div>
         </div>
       )}
+
+      {/* MODAL DE EDICION */}
+      {isEditModalOpen && selectedCita && (
+        <div className="fixed inset-0 bg-slate-900/50 backdrop-blur-sm z-50 flex items-center justify-center p-4 animate-in fade-in">
+          <div className="bg-white rounded-xl shadow-xl w-full max-w-sm overflow-hidden">
+            <div className="px-6 py-4 border-b border-slate-100 flex justify-between items-center bg-slate-50">
+              <h3 className="font-bold text-lg text-[#0e2f44]">Editar Cita</h3>
+              <button onClick={() => setIsEditModalOpen(false)} className="text-slate-400 hover:text-slate-600 text-xl font-bold">&times;</button>
+            </div>
+            
+            <form onSubmit={handleUpdateSelectedCita} className="p-6 space-y-4">
+              <div>
+                <p className="font-bold text-slate-800">{selectedCita.paciente}</p>
+                <p className="text-slate-500 text-sm">{selectedCita.fecha} a las {selectedCita.hora}</p>
+              </div>
+
+              <div>
+                <label className="block text-xs font-semibold text-slate-600 uppercase mb-1">Estado de Asistencia</label>
+                <select 
+                  value={selectedCita.estado} 
+                  onChange={e => setSelectedCita({...selectedCita, estado: e.target.value})} 
+                  className="w-full text-slate-900 font-medium border border-slate-300 rounded-lg px-3 py-2 outline-none focus:border-[#2980b9]"
+                >
+                  <option value="Ocupado">Ocupado (Confirmado)</option>
+                  <option value="Asistió">Asistió</option>
+                  <option value="Canceló">Canceló</option>
+                  <option value="Faltó">Faltó</option>
+                  <option value="Baja">Baja</option>
+                  <option value="Alta">Alta</option>
+                  <option value="Reagendado">Reagendado</option>
+                  <option value="Disponible">Disponible</option>
+                </select>
+              </div>
+
+              <div className="pt-4 border-t border-slate-100">
+                <div className="flex items-center gap-2 mb-3">
+                  <input 
+                    type="checkbox" 
+                    id="edit-pagado"
+                    checked={selectedCita.pagado || false}
+                    onChange={e => setSelectedCita({...selectedCita, pagado: e.target.checked})}
+                    className="w-4 h-4 text-[#2980b9] rounded focus:ring-[#2980b9]"
+                  />
+                  <label htmlFor="edit-pagado" className="text-sm font-bold text-slate-700 cursor-pointer">Paciente Pagó</label>
+                </div>
+                
+                {(selectedCita.pagado) && (
+                  <div>
+                    <select 
+                      value={selectedCita.metodoPago || ""} 
+                      onChange={e => setSelectedCita({...selectedCita, metodoPago: e.target.value})} 
+                      className="w-full text-sm p-2 border border-slate-300 rounded focus:border-[#2980b9] outline-none text-slate-700 bg-white"
+                      required
+                    >
+                      <option value="">Método de Pago...</option>
+                      <option value="Efectivo">Efectivo</option>
+                      <option value="Tarjeta">Tarjeta</option>
+                      <option value="Transferencia">Transferencia</option>
+                    </select>
+                  </div>
+                )}
+              </div>
+
+              <div className="pt-4 flex gap-2">
+                <button type="button" onClick={() => handleDeleteCita(selectedCita.id)} className="px-4 py-2 bg-red-50 text-red-600 font-semibold rounded-lg hover:bg-red-100 transition-colors">Eliminar</button>
+                <button type="button" onClick={() => setIsEditModalOpen(false)} className="flex-1 py-2 bg-slate-100 text-slate-700 font-semibold rounded-lg hover:bg-slate-200 transition-colors">Cancelar</button>
+                <button type="submit" className="flex-1 py-2 bg-[#1a5276] text-white font-semibold rounded-lg hover:bg-[#0e2f44] transition-colors">Guardar</button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
+
 

@@ -1,32 +1,39 @@
-﻿import os
+﻿const fs = require('fs');
+const path = './src/app/dashboard/agenda/page.tsx';
+let content = fs.readFileSync(path, 'utf8');
 
-path = 'src/app/dashboard/agenda/page.tsx'
-with open(path, 'r', encoding='utf-8') as f:
-    content = f.read()
-
+// 1. Update imports
 content = content.replace(
   'import { getAgenda, addCita, updateCita } from "@/app/actions/agenda";',
   'import { getAgenda, addCita, updateCita, deleteCita } from "@/app/actions/agenda";'
-)
+);
 
+// 2. Update type Cita
 content = content.replace(
   'estado: "Ocupado" | "Cancelado" | "Reagendado" | "Disponible";',
   'estado: string;'
-)
+);
 
-content = content.replace(
-  'const [isModalOpen, setIsModalOpen] = useState(false);',
-  'const [isModalOpen, setIsModalOpen] = useState(false);\n  const [isEditModalOpen, setIsEditModalOpen] = useState(false);\n  const [selectedCita, setSelectedCita] = useState<Cita | null>(null);'
-)
+// 3. Add edit modal state
+const stateHookTarget = 'const [isModalOpen, setIsModalOpen] = useState(false);';
+const stateHookReplacement = `const [isModalOpen, setIsModalOpen] = useState(false);
+  const [isEditModalOpen, setIsEditModalOpen] = useState(false);
+  const [selectedCita, setSelectedCita] = useState<Cita | null>(null);`;
+content = content.replace(stateHookTarget, stateHookReplacement);
 
-content = content.replace(
-  "case 'Disponible': return 'bg-green-100 text-green-800 border-green-300';",
-  "case 'Disponible': return 'bg-green-100 text-green-800 border-green-300';\n        case 'Asistió': return 'bg-emerald-100 text-emerald-800 border-emerald-300';\n        case 'Canceló': return 'bg-red-100 text-red-800 border-red-300';\n        case 'Faltó': return 'bg-rose-100 text-rose-800 border-rose-300';\n        case 'Baja': return 'bg-stone-100 text-stone-800 border-stone-300';\n        case 'Alta': return 'bg-teal-100 text-teal-800 border-teal-300';"
-)
+// 4. Update getEstadoColor
+const getEstadoColorTarget = `case 'Disponible': return 'bg-green-100 text-green-800 border-green-300';`;
+const getEstadoColorReplacement = `case 'Disponible': return 'bg-green-100 text-green-800 border-green-300';
+        case 'Asistió': return 'bg-emerald-100 text-emerald-800 border-emerald-300';
+        case 'Canceló': return 'bg-red-100 text-red-800 border-red-300';
+        case 'Faltó': return 'bg-rose-100 text-rose-800 border-rose-300';
+        case 'Baja': return 'bg-stone-100 text-stone-800 border-stone-300';
+        case 'Alta': return 'bg-teal-100 text-teal-800 border-teal-300';`;
+content = content.replace(getEstadoColorTarget, getEstadoColorReplacement);
 
-content = content.replace(
-  'const handleTogglePagado = async (citaId: string, currentPagado: boolean) => {',
-  '''const handleDeleteCita = async (id: string) => {
+// 5. Add handleDeleteCita and handleUpdateSelectedCita
+const handlersTarget = `const handleTogglePagado = async (citaId: string, currentPagado: boolean) => {`;
+const handlersReplacement = `const handleDeleteCita = async (id: string) => {
     if (!confirm("¿Eliminar esta cita permanentemente?")) return;
     const res = await deleteCita(id);
     if (res.success) {
@@ -49,22 +56,23 @@ content = content.replace(
     }
   };
 
-  const handleTogglePagado = async (citaId: string, currentPagado: boolean) => {'''
-)
+  const handleTogglePagado = async (citaId: string, currentPagado: boolean) => {`;
+content = content.replace(handlersTarget, handlersReplacement);
 
-content = content.replace(
-  'onClick={() => handleTogglePagado(cita.id, !!cita.pagado)}',
-  'onClick={(e) => { e.stopPropagation(); handleTogglePagado(cita.id, !!cita.pagado); }}'
-)
-
-import re
-cellDivTarget = r'<div className=\{p-2 rounded border text-xs font-semibold flex flex-col items-center justify-center h-full w-full cursor-pointer shadow-sm hover:brightness-95 transition-all \$\{getEstadoColor\(cita\.estado\)\}\}>'
-cellDivReplacement = '''<div 
+// 6. Cell Click handler
+const cellDivTarget = /<div className=\{`p-2 rounded border text-xs font-semibold flex flex-col items-center justify-center h-full w-full cursor-pointer shadow-sm hover:brightness-95 transition-all \$\{getEstadoColor\(cita\.estado\)\}`\}>/g;
+const cellDivReplacement = `<div 
                               onClick={() => { setSelectedCita(cita); setIsEditModalOpen(true); }}
-                              className={p-2 rounded border text-xs font-semibold flex flex-col items-center justify-center h-full w-full cursor-pointer shadow-sm hover:brightness-95 transition-all }>'''
-content = re.sub(cellDivTarget, cellDivReplacement, content)
+                              className={\`p-2 rounded border text-xs font-semibold flex flex-col items-center justify-center h-full w-full cursor-pointer shadow-sm hover:brightness-95 transition-all \${getEstadoColor(cita.estado)}\`}>`;
+content = content.replace(cellDivTarget, cellDivReplacement);
 
-editModalStr = '''
+// Stop propagation on the Pagado button inside the hover so it doesn't open the edit modal
+const pagadoBtnTarget = /onClick=\{\(\) => handleTogglePagado\(cita\.id, !!cita\.pagado\)\}/g;
+const pagadoBtnReplacement = `onClick={(e) => { e.stopPropagation(); handleTogglePagado(cita.id, !!cita.pagado); }}`;
+content = content.replace(pagadoBtnTarget, pagadoBtnReplacement);
+
+// 7. Inject Modal at the very end
+const editModalStr = `
       {/* MODAL DE EDICION */}
       {isEditModalOpen && selectedCita && (
         <div className="fixed inset-0 bg-slate-900/50 backdrop-blur-sm z-50 flex items-center justify-center p-4 animate-in fade-in">
@@ -138,11 +146,9 @@ editModalStr = '''
       )}
     </div>
   );
-}
-'''
+}`;
 
-content = content.replace('    </div>\n  );\n}', editModalStr)
+content = content.substring(0, content.lastIndexOf('</div>\n  );\n}')) + editModalStr;
 
-with open(path, 'w', encoding='utf-8') as f:
-    f.write(content)
-print("Updated successfully via python.")
+fs.writeFileSync(path, content);
+console.log('Update complete.');
