@@ -196,8 +196,8 @@ export default function AsistenciaPage() {
   };
 
   const handleGuardar = () => {
-    if (!formData.pacienteNombre || !formData.area || !formData.estadoAsistencia) {
-      alert("Por favor completa los campos principales (Paciente, Área, Estado).");
+    if (!formData.pacienteNombre || !formData.area || !formData.estadoAsistencia || !formData.tipoSesion) {
+      alert("Por favor completa los campos principales (Paciente, Área, Tipo de Sesión, Estado).");
       return;
     }
 
@@ -288,7 +288,10 @@ export default function AsistenciaPage() {
   };
 
   const asistenciasFiltradas = asistencias.filter(a => {
-    // Ahora todos pueden ver todos los registros locales
+    if (userRole.toUpperCase() === "TERAPEUTA") {
+      const isMine = pacientes.some(p => p.paciente === a.paciente && p.medicoTratante?.trim().toLowerCase() === userName.trim().toLowerCase());
+      if (!isMine) return false;
+    }
     if (filtroEstado !== "Todos" && a.estado !== filtroEstado) return false;
     if (filtroDesde && a.fecha < filtroDesde) return false;
     if (filtroHasta && a.fecha > filtroHasta) return false;
