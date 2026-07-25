@@ -44,6 +44,9 @@ export default function InformesPage() {
   const [filtroPaciente, setFiltroPaciente] = useState("");
   const [filtroTipo, setFiltroTipo] = useState("Todos");
 
+  const [showDropdown, setShowDropdown] = useState(false);
+  const [searchInput, setSearchInput] = useState("");
+
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
@@ -132,18 +135,37 @@ export default function InformesPage() {
           <div className="space-y-6">
             {/* ROW: Paciente, Tipo, Fecha */}
             <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-              <div>
+              <div className="relative">
                 <label className="block text-[10px] font-bold text-slate-400 uppercase mb-2">PACIENTE</label>
-                <select 
-                  value={selectedPaciente} 
-                  onChange={e => setSelectedPaciente(e.target.value)}
+                <input 
+                  type="text"
+                  placeholder="Escribe para buscar..."
+                  value={searchInput}
+                  onFocus={() => setShowDropdown(true)}
+                  onBlur={() => setTimeout(() => setShowDropdown(false), 200)}
+                  onChange={e => {
+                    setSearchInput(e.target.value);
+                    if (e.target.value === "") setSelectedPaciente("");
+                  }}
                   className="w-full text-sm p-2 border border-slate-300 rounded focus:border-[#2980b9] outline-none text-slate-700 bg-white"
-                >
-                  <option value="">Seleccionar...</option>
-                  {pacientes.map(p => (
-                    <option key={p.id} value={p.paciente}>{p.paciente}</option>
-                  ))}
-                </select>
+                />
+                {showDropdown && searchInput && (
+                  <div className="absolute z-10 w-full mt-1 bg-white border border-slate-200 rounded-md shadow-lg max-h-48 overflow-y-auto">
+                    {pacientes.filter(p => p.paciente.toLowerCase().includes(searchInput.toLowerCase())).map(p => (
+                      <div 
+                        key={p.id} 
+                        className="p-2 text-sm hover:bg-slate-50 cursor-pointer text-slate-700 font-medium"
+                        onClick={() => {
+                          setSelectedPaciente(p.paciente);
+                          setSearchInput(p.paciente);
+                          setShowDropdown(false);
+                        }}
+                      >
+                        {p.paciente}
+                      </div>
+                    ))}
+                  </div>
+                )}
               </div>
               
               <div>

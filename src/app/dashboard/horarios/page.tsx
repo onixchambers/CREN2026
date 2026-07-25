@@ -2,7 +2,8 @@
 import { useState, useEffect } from "react";
 import { useSession } from "next-auth/react";
 import { getTerapeutas } from "@/app/actions/configuracion";
-import { registrarEntrada, registrarSalida, getHorariosHoy } from "@/app/actions/horarios";
+import { registrarEntrada, registrarSalida, getHorariosHoy, getHorariosByDate } from "@/app/actions/horarios";
+import { DateInput } from "@/components/DateInput";
 
 interface Horario {
   id: string;
@@ -26,11 +27,18 @@ export default function HorariosPage() {
   const [terapeutaSeleccionado, setTerapeutaSeleccionado] = useState("");
   const [horaActual, setHoraActual] = useState("");
   const [terapeutasDisponibles, setTerapeutasDisponibles] = useState<string[]>([]);
+  
+  const hoy = new Date().toLocaleDateString("en-CA");
+  const [fechaFiltro, setFechaFiltro] = useState(hoy);
 
-  const fetchHorarios = async () => {
-    const res = await getHorariosHoy();
-    if (res.success && res.data) {
-      setHorarios(res.data);
+  const fetchHorarios = async (fecha?: string) => {
+    const f = fecha || fechaFiltro;
+    if (f === hoy) {
+      const res = await getHorariosHoy();
+      if (res.success && res.data) setHorarios(res.data);
+    } else {
+      const res = await getHorariosByDate(f);
+      if (res.success && res.data) setHorarios(res.data);
     }
   };
 
@@ -59,7 +67,7 @@ export default function HorariosPage() {
     
     // Polling auto-refresh de la base de datos cada 10 segundos
     const syncInterval = setInterval(() => {
-      fetchHorarios();
+      fetchHorarios(fechaFiltro);
     }, 10000);
 
     return () => {
@@ -155,8 +163,32 @@ export default function HorariosPage() {
 
         {/* Registros (Cuadros por separado) */}
         <div className="md:col-span-2 space-y-4">
-          <div className="bg-white rounded-xl shadow-sm border border-slate-200 p-4 font-bold text-slate-700">
-            Registros de Hoy ({new Date().toLocaleDateString()})
+          <div className="bg-white rounded-xl shadow-sm border border-slate-200 p-4 flex flex-wrap items-center justify-between gap-4">
+            <div className="font-bold text-slate-700">
+              {fechaFiltro === hoy ? "Registros de Hoy" : "Historial de Registros"}
+            </div>
+            <div className="flex items-center gap-2">
+              <label className="text-sm font-semibold text-slate-500">Fecha:</label>
+              <DateInput 
+                value={fechaFiltro}
+                onChange={(e) => {
+                  setFechaFiltro(e.target.value);
+                  fetchHorarios(e.target.value);
+                }}
+                className="border border-slate-300 rounded px-3 py-1.5 text-sm outline-none focus:border-indigo-500 text-slate-700"
+              />
+              {fechaFiltro !== hoy && (
+                <button 
+                  onClick={() => {
+                    setFechaFiltro(hoy);
+                    fetchHorarios(hoy);
+                  }}
+                  className="bg-indigo-50 text-indigo-600 hover:bg-indigo-100 px-3 py-1.5 rounded text-xs font-bold transition-colors"
+                >
+                  Ver Hoy
+                </button>
+              )}
+            </div>
           </div>
           
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-2 gap-4">

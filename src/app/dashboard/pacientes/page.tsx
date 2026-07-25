@@ -40,13 +40,26 @@ export default function PacientesPage() {
     loadPatients();
   }, []);
 
+  const [currentPage, setCurrentPage] = useState(1);
+  const ITEMS_PER_PAGE = 25;
+
+  const [viewingPatient, setViewingPatient] = useState<any>(null);
+
   const handleLimpiar = () => {
     setSearchTerm("");
     setMonthTerm("");
   };
 
-  const pacientesFiltrados = pacientes.filter(p => 
-    p.name?.toLowerCase().includes(searchTerm.toLowerCase())
+  const pacientesFiltrados = pacientes.filter(p => {
+    const matchSearch = p.name?.toLowerCase().includes(searchTerm.toLowerCase());
+    const matchMonth = monthTerm ? p.createdAt?.startsWith(monthTerm) : true;
+    return matchSearch && matchMonth;
+  });
+
+  const totalPages = Math.ceil(pacientesFiltrados.length / ITEMS_PER_PAGE);
+  const paginatedPacientes = pacientesFiltrados.slice(
+    (currentPage - 1) * ITEMS_PER_PAGE,
+    currentPage * ITEMS_PER_PAGE
   );
 
   const [editingPatient, setEditingPatient] = useState<any>(null);
@@ -169,10 +182,13 @@ export default function PacientesPage() {
               </tr>
             </thead>
             <tbody className="divide-y divide-slate-100">
-              {pacientesFiltrados.length > 0 ? pacientesFiltrados.map((p) => (
-                <tr key={p.id} className="hover:bg-slate-50 transition-colors">
+              {paginatedPacientes.length > 0 ? paginatedPacientes.map((p) => (
+                <tr key={p.id} className="hover:bg-slate-50 transition-colors cursor-pointer" onClick={() => setViewingPatient(p)}>
                   <td className="px-4 py-4 text-left font-bold text-slate-800">
-                    <div className="max-w-[150px] leading-tight">{p.name}</div>
+                    <div className="max-w-[150px] leading-tight flex items-center gap-2">
+                      {p.foto && <img src={p.foto} alt="Foto" className="w-8 h-8 rounded-full object-cover" />}
+                      {p.name}
+                    </div>
                   </td>
                   <td className="px-2 py-4 text-slate-500">
                     <span className="text-base">{p.sexo === 'M' ? '♂' : p.sexo === 'F' ? '♀' : '⚥'}</span>
@@ -203,7 +219,7 @@ export default function PacientesPage() {
                       {p.estatus}
                     </span>
                   </td>
-                  <td className="px-4 py-4">
+                  <td className="px-4 py-4" onClick={(e) => e.stopPropagation()}>
                     <div className="flex gap-2">
                       <button onClick={() => openEditModal(p)} title="Editar" className="p-1.5 border border-slate-200 rounded hover:bg-slate-100 text-amber-500 transition-colors">
                         <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z" /></svg>
@@ -225,6 +241,175 @@ export default function PacientesPage() {
           </table>
         </div>
       </div>
+
+      {/* PAGINACIÓN */}
+      {totalPages > 1 && (
+        <div className="flex justify-between items-center bg-white p-4 rounded-xl shadow-sm border border-slate-200 mt-4">
+          <div className="text-sm text-slate-500">
+            Mostrando {((currentPage - 1) * ITEMS_PER_PAGE) + 1} a {Math.min(currentPage * ITEMS_PER_PAGE, pacientesFiltrados.length)} de {pacientesFiltrados.length}
+          </div>
+          <div className="flex gap-2">
+            <button 
+              disabled={currentPage === 1}
+              onClick={() => setCurrentPage(prev => prev - 1)}
+              className="px-4 py-2 border border-slate-300 rounded text-sm font-semibold text-slate-600 disabled:opacity-50 hover:bg-slate-50 transition-colors"
+            >
+              Anterior
+            </button>
+            <div className="px-4 py-2 text-sm font-bold text-[#1a5276]">
+              Página {currentPage} de {totalPages}
+            </div>
+            <button 
+              disabled={currentPage === totalPages}
+              onClick={() => setCurrentPage(prev => prev + 1)}
+              className="px-4 py-2 border border-slate-300 rounded text-sm font-semibold text-slate-600 disabled:opacity-50 hover:bg-slate-50 transition-colors"
+            >
+              Siguiente
+            </button>
+          </div>
+        </div>
+      )}
+
+      {/* MODAL VISTA DETALLADA */}
+      {viewingPatient && (
+        <div className="fixed inset-0 bg-black/60 flex items-center justify-center z-50 p-4 animate-in fade-in" onClick={() => setViewingPatient(null)}>
+          <div className="bg-white rounded-2xl shadow-2xl w-full max-w-4xl max-h-[90vh] overflow-y-auto" onClick={e => e.stopPropagation()}>
+            <div className="sticky top-0 bg-white border-b border-slate-200 p-4 flex justify-between items-center z-10">
+              <h3 className="font-bold text-xl text-[#1a5276]">Expediente Completo del Paciente</h3>
+              <button onClick={() => setViewingPatient(null)} className="p-2 bg-slate-100 hover:bg-slate-200 text-slate-600 rounded-full transition-colors">
+                <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" /></svg>
+              </button>
+            </div>
+            
+            <div className="p-8">
+              <div className="flex flex-col md:flex-row gap-8 mb-8">
+                {/* Foto */}
+                <div className="flex-shrink-0 flex flex-col items-center">
+                  <div className="w-32 h-32 md:w-48 md:h-48 rounded-2xl border-4 border-slate-100 shadow-sm overflow-hidden bg-slate-50 flex items-center justify-center">
+                    {viewingPatient.foto ? (
+                      <img src={viewingPatient.foto} alt="Foto" className="w-full h-full object-cover" />
+                    ) : (
+                      <svg className="w-16 h-16 text-slate-300" fill="currentColor" viewBox="0 0 24 24"><path d="M12 12c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm0 2c-2.67 0-8 1.34-8 4v2h16v-2c0-2.66-5.33-4-8-4z"/></svg>
+                    )}
+                  </div>
+                  <div className="mt-4 flex gap-2">
+                    <span className={`px-3 py-1 rounded-full text-xs font-bold ${viewingPatient.estatus === 'Activo' ? 'bg-green-100 text-green-700' : 'bg-slate-200 text-slate-700'}`}>
+                      {viewingPatient.estatus || 'Activo'}
+                    </span>
+                    <span className="px-3 py-1 rounded-full bg-blue-50 text-blue-700 text-xs font-bold uppercase tracking-wider">
+                      {viewingPatient.origen || 'Google'}
+                    </span>
+                  </div>
+                </div>
+
+                {/* Info Principal */}
+                <div className="flex-grow space-y-6">
+                  <div>
+                    <h2 className="text-3xl font-black text-slate-800 tracking-tight">{viewingPatient.name}</h2>
+                    <p className="text-lg text-[#1a5276] font-medium mt-1">Terapeuta: {viewingPatient.medicoTratante || "No asignado"}</p>
+                  </div>
+                  
+                  <div className="grid grid-cols-2 md:grid-cols-4 gap-4 bg-slate-50 p-4 rounded-xl border border-slate-100">
+                    <div>
+                      <p className="text-[10px] font-bold text-slate-400 uppercase">Edad</p>
+                      <p className="font-semibold text-slate-800">{viewingPatient.age || "N/A"}</p>
+                    </div>
+                    <div>
+                      <p className="text-[10px] font-bold text-slate-400 uppercase">Sexo</p>
+                      <p className="font-semibold text-slate-800">{viewingPatient.sexo === 'M' ? 'Masculino' : viewingPatient.sexo === 'F' ? 'Femenino' : 'N/A'}</p>
+                    </div>
+                    <div>
+                      <p className="text-[10px] font-bold text-slate-400 uppercase">Fecha Nac.</p>
+                      <p className="font-semibold text-slate-800">{viewingPatient.fechaNacimiento || "N/A"}</p>
+                    </div>
+                    <div>
+                      <p className="text-[10px] font-bold text-slate-400 uppercase">Fecha Ingreso</p>
+                      <p className="font-semibold text-slate-800">{viewingPatient.fechaIngreso || "N/A"}</p>
+                    </div>
+                  </div>
+                  
+                  <div>
+                    <h4 className="text-sm font-bold text-slate-800 border-b border-slate-200 pb-2 mb-3">Información de Contacto</h4>
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                      {viewingPatient.madreNombre && (
+                        <div className={`p-3 rounded-lg border ${viewingPatient.principalMadre ? 'bg-amber-50 border-amber-200' : 'bg-white border-slate-200'}`}>
+                          <p className="text-[10px] font-bold text-slate-400 uppercase mb-1">Madre {viewingPatient.principalMadre && '⭐ (Principal)'}</p>
+                          <p className="font-bold text-slate-800 text-sm">{viewingPatient.madreNombre}</p>
+                          <p className="text-slate-600 text-sm">{viewingPatient.madreContacto}</p>
+                        </div>
+                      )}
+                      {viewingPatient.padreNombre && (
+                        <div className={`p-3 rounded-lg border ${viewingPatient.principalPadre ? 'bg-amber-50 border-amber-200' : 'bg-white border-slate-200'}`}>
+                          <p className="text-[10px] font-bold text-slate-400 uppercase mb-1">Padre {viewingPatient.principalPadre && '⭐ (Principal)'}</p>
+                          <p className="font-bold text-slate-800 text-sm">{viewingPatient.padreNombre}</p>
+                          <p className="text-slate-600 text-sm">{viewingPatient.padreContacto}</p>
+                        </div>
+                      )}
+                      {viewingPatient.otrosNombre && (
+                        <div className={`p-3 rounded-lg border ${viewingPatient.principalOtros ? 'bg-amber-50 border-amber-200' : 'bg-white border-slate-200'}`}>
+                          <p className="text-[10px] font-bold text-slate-400 uppercase mb-1">Otro Contacto {viewingPatient.principalOtros && '⭐ (Principal)'}</p>
+                          <p className="font-bold text-slate-800 text-sm">{viewingPatient.otrosNombre}</p>
+                          <p className="text-slate-600 text-sm">{viewingPatient.otrosContacto}</p>
+                        </div>
+                      )}
+                      {viewingPatient.correoPrincipal && (
+                        <div className="p-3 rounded-lg bg-blue-50 border border-blue-100 md:col-span-2">
+                          <p className="text-[10px] font-bold text-slate-400 uppercase mb-1">Correo Electrónico (Facturación)</p>
+                          <p className="font-bold text-blue-900 text-sm">{viewingPatient.correoPrincipal}</p>
+                        </div>
+                      )}
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              {/* Alertas */}
+              <div className="mb-8">
+                <h4 className="text-sm font-bold text-slate-800 border-b border-slate-200 pb-2 mb-3">Alertas Clínicas y Operativas</h4>
+                <div className="flex flex-wrap gap-2">
+                  {viewingPatient.alergias && <span className="px-3 py-1 bg-red-100 text-red-700 rounded-full text-xs font-bold flex items-center gap-1"><svg className="w-3 h-3" fill="currentColor" viewBox="0 0 24 24"><path d="M12 2L1 21h22L12 2zm1 14h-2v-2h2v2zm0-4h-2V7h2v5z"/></svg> Alergias</span>}
+                  {viewingPatient.crisis && <span className="px-3 py-1 bg-red-100 text-red-700 rounded-full text-xs font-bold flex items-center gap-1"><svg className="w-3 h-3" fill="currentColor" viewBox="0 0 24 24"><path d="M12 2L1 21h22L12 2zm1 14h-2v-2h2v2zm0-4h-2V7h2v5z"/></svg> Crisis</span>}
+                  {viewingPatient.convulsiones && <span className="px-3 py-1 bg-red-100 text-red-700 rounded-full text-xs font-bold flex items-center gap-1"><svg className="w-3 h-3" fill="currentColor" viewBox="0 0 24 24"><path d="M12 2L1 21h22L12 2zm1 14h-2v-2h2v2zm0-4h-2V7h2v5z"/></svg> Convulsiones</span>}
+                  {viewingPatient.sensibilidad && <span className="px-3 py-1 bg-amber-100 text-amber-700 rounded-full text-xs font-bold flex items-center gap-1">⚠️ Sensibilidad Sensorial</span>}
+                  {viewingPatient.riesgoFuga && <span className="px-3 py-1 bg-amber-100 text-amber-700 rounded-full text-xs font-bold flex items-center gap-1">⚠️ Riesgo de Fuga</span>}
+                  {viewingPatient.noSepara && <span className="px-3 py-1 bg-amber-100 text-amber-700 rounded-full text-xs font-bold flex items-center gap-1">⚠️ No se separa de mamá</span>}
+                  {viewingPatient.otrasAlertas && <span className="px-3 py-1 bg-amber-100 text-amber-700 rounded-full text-xs font-bold flex items-center gap-1">⚠️ Otras Alertas</span>}
+                  {!viewingPatient.alergias && !viewingPatient.crisis && !viewingPatient.convulsiones && !viewingPatient.sensibilidad && !viewingPatient.riesgoFuga && !viewingPatient.noSepara && !viewingPatient.otrasAlertas && (
+                    <span className="text-slate-400 text-sm italic">No hay alertas registradas para este paciente.</span>
+                  )}
+                </div>
+              </div>
+
+              {/* Legal y Admin */}
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <div>
+                  <h4 className="text-sm font-bold text-slate-800 border-b border-slate-200 pb-2 mb-3">Documentos Legales</h4>
+                  <ul className="space-y-2 text-sm text-slate-700">
+                    <li className="flex items-center gap-2">
+                      {viewingPatient.reglamentoFirmado ? <svg className="w-5 h-5 text-green-500" fill="currentColor" viewBox="0 0 24 24"><path d="M9 16.17L4.83 12l-1.42 1.41L9 19 21 7l-1.41-1.41z"/></svg> : <svg className="w-5 h-5 text-red-500" fill="currentColor" viewBox="0 0 24 24"><path d="M19 6.41L17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z"/></svg>}
+                      Reglamento Interno Firmado
+                    </li>
+                    <li className="flex items-center gap-2">
+                      {viewingPatient.consentimientoFirmado ? <svg className="w-5 h-5 text-green-500" fill="currentColor" viewBox="0 0 24 24"><path d="M9 16.17L4.83 12l-1.42 1.41L9 19 21 7l-1.41-1.41z"/></svg> : <svg className="w-5 h-5 text-red-500" fill="currentColor" viewBox="0 0 24 24"><path d="M19 6.41L17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z"/></svg>}
+                      Consentimiento Informado Firmado
+                    </li>
+                  </ul>
+                </div>
+                
+                {viewingPatient.observacionesAdmin && (
+                  <div>
+                    <h4 className="text-sm font-bold text-slate-800 border-b border-slate-200 pb-2 mb-3">Observaciones Administrativas</h4>
+                    <div className="bg-amber-50 p-3 rounded-lg border border-amber-200 text-sm text-slate-800 whitespace-pre-wrap">
+                      {viewingPatient.observacionesAdmin}
+                    </div>
+                  </div>
+                )}
+              </div>
+
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* MODAL DE EDICIÓN */}
       {editingPatient && (

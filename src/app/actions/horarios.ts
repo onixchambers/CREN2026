@@ -4,7 +4,7 @@ import { prisma } from "@/lib/prisma";
 
 export async function registrarEntrada(terapeuta: string) {
   try {
-    const hoy = new Date().toISOString().split("T")[0];
+    const hoy = new Date().toLocaleDateString("en-CA");
     
     // First, check if there's already an entry without an exit for today
     const existente = await prisma.horario.findFirst({
@@ -36,7 +36,7 @@ export async function registrarEntrada(terapeuta: string) {
 
 export async function registrarSalida(terapeuta: string) {
   try {
-    const hoy = new Date().toISOString().split("T")[0];
+    const hoy = new Date().toLocaleDateString("en-CA");
     
     // Find active entry
     const activa = await prisma.horario.findFirst({
@@ -67,9 +67,22 @@ export async function registrarSalida(terapeuta: string) {
 
 export async function getHorariosHoy() {
   try {
-    const hoy = new Date().toISOString().split("T")[0];
+    const hoy = new Date().toLocaleDateString("en-CA");
     const horarios = await prisma.horario.findMany({
       where: { fecha: hoy },
+      orderBy: { createdAt: 'desc' }
+    });
+    return { success: true, data: horarios };
+  } catch (error) {
+    console.error("Error cargando horarios:", error);
+    return { success: false, data: [] };
+  }
+}
+
+export async function getHorariosByDate(fecha: string) {
+  try {
+    const horarios = await prisma.horario.findMany({
+      where: { fecha: fecha },
       orderBy: { createdAt: 'desc' }
     });
     return { success: true, data: horarios };
