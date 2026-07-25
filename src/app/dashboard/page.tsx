@@ -97,9 +97,18 @@ export default function DashboardPage() {
   const valoracionesMes = asistMes.filter(a => a.tipoSesion === "Valoracion").length;
 
   // --- PACIENTES ---
-  const pHoy = pacientes.filter(p => isToday(p.id ? new Date(parseInt(p.id)).toISOString().split("T")[0] : "")).length;
-  const pSemana = pacientes.filter(p => isThisWeek(p.id ? new Date(parseInt(p.id)).toISOString().split("T")[0] : "")).length;
-  const pMes = pacientes.filter(p => isThisMonth(p.id ? new Date(parseInt(p.id)).toISOString().split("T")[0] : "")).length;
+  const getPatientDateStr = (p: any) => {
+    try {
+      if (p.createdAt) return new Date(p.createdAt).toISOString().split("T")[0];
+      if (p.fechaIngreso) return new Date(p.fechaIngreso).toISOString().split("T")[0];
+      if (p.id && !isNaN(Number(p.id))) return new Date(parseInt(p.id)).toISOString().split("T")[0];
+    } catch (e) {}
+    return "";
+  };
+
+  const pHoy = pacientes.filter(p => isToday(getPatientDateStr(p))).length;
+  const pSemana = pacientes.filter(p => isThisWeek(getPatientDateStr(p))).length;
+  const pMes = pacientes.filter(p => isThisMonth(getPatientDateStr(p))).length;
   const pTotal = pacientes.length;
 
   // --- INGRESOS POR MÉTODO (MES) ---
