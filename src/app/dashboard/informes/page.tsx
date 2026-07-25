@@ -91,6 +91,14 @@ export default function InformesPage() {
     setFiles(prev => prev.filter((_, i) => i !== index));
   };
   
+  const handleDelete = (id: string) => {
+    if (confirm("¿Estás seguro de eliminar este informe?")) {
+      const updated = informes.filter(i => i.id !== id);
+      setInformes(updated);
+      localStorage.setItem("informesData", JSON.stringify(updated));
+    }
+  };
+
   const handleDownload = (inf: Informe) => {
     if (!inf.data) {
       alert("No hay archivo adjunto para descargar.");

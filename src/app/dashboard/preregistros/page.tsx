@@ -184,7 +184,7 @@ export default function PreregistrosPage() {
   };
 
 
-  const tableFilteredFichas = fichas.filter(f => userRole.toUpperCase() === "TERAPEUTA" ? f.medicoTratante === userName : true);
+  const tableFilteredFichas = fichas;
   const totalPages = Math.ceil(tableFilteredFichas.length / 25) || 1;
   const currentTableData = tableFilteredFichas.slice((currentPage - 1) * 25, currentPage * 25);
 
