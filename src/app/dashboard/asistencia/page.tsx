@@ -47,7 +47,10 @@ export default function AsistenciaPage() {
   
   // Filtros de tabla
   const hoy = new Date().toISOString().split("T")[0];
-  const [filtroDesde, setFiltroDesde] = useState(hoy);
+  const hace30Dias = new Date();
+  hace30Dias.setDate(hace30Dias.getDate() - 30);
+  const hace30DiasStr = hace30Dias.toISOString().split("T")[0];
+  const [filtroDesde, setFiltroDesde] = useState(hace30DiasStr);
   const [filtroHasta, setFiltroHasta] = useState(hoy);
   const [filtroEstado, setFiltroEstado] = useState("Todos");
   const [availableAreas, setAvailableAreas] = useState<string[]>(["Psicología", "Lenguaje", "Fisioterapia"]);
@@ -84,9 +87,7 @@ export default function AsistenciaPage() {
       const res = await getPatients();
       if (res.success && res.data) {
         let validPatients = res.data;
-        if (userRole.toUpperCase() === "TERAPEUTA") {
-          validPatients = validPatients.filter((p: any) => p.medicoTratante?.trim().toLowerCase() === userName.trim().toLowerCase());
-        }
+        // Todos pueden ver todos los pacientes (solicitud del usuario)
         // Map to expected format
         const mapped = validPatients.map((p: any) => ({
           id: p.id,
@@ -287,11 +288,7 @@ export default function AsistenciaPage() {
   };
 
   const asistenciasFiltradas = asistencias.filter(a => {
-    if (userRole.toUpperCase() === "TERAPEUTA") {
-      // Solo mostrar si el paciente está en la lista asignada a este terapeuta
-      const isMine = pacientes.some(p => p.paciente === a.paciente);
-      if (!isMine) return false;
-    }
+    // Ahora todos pueden ver todos los registros locales
     if (filtroEstado !== "Todos" && a.estado !== filtroEstado) return false;
     if (filtroDesde && a.fecha < filtroDesde) return false;
     if (filtroHasta && a.fecha > filtroHasta) return false;
