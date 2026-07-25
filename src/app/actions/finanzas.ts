@@ -9,27 +9,28 @@ export async function getFinanzasMensuales(month: string) {
     });
     
     let ingresosBrutos = 0;
+    // En un sistema real, leerías de las sesiones/citas reales marcadas como 'pagadas' o 'completadas'.
+    // Por ahora sumamos los precios de las terapias de pacientes activos si existen.
     pacientes.forEach(p => {
       const precio = parseFloat(p.precioTerapia || "0");
       if (!isNaN(precio) && precio > 0) {
-        ingresosBrutos += (precio * 4);
+        ingresosBrutos += (precio * 4); // Asumiendo 4 terapias mensuales (debe ser dinámico después)
       }
     });
-    if (ingresosBrutos === 0) ingresosBrutos = 12500;
 
     const terapeutas = await prisma.user.findMany({
       where: { role: "THERAPIST" }
     });
 
     const terapeutasData = terapeutas.map(t => {
-      const sesiones = Math.floor(Math.random() * 20) + 10;
-      const ingresoGenerado = sesiones * 40;
+      const sesiones = 0; // Sin sesiones reales aún
+      const ingresoGenerado = 0;
       
       let pago = 0;
-      if (t.tipoPago === "Porcentaje") {
-        pago = ingresoGenerado * ((t.porcentaje || 50) / 100);
-      } else {
+      if (t.tipoPago === "Salario Base") {
         pago = t.salarioBase || 0;
+      } else {
+        pago = ingresoGenerado * ((t.porcentaje || 0) / 100);
       }
 
       return {
@@ -51,14 +52,7 @@ export async function getFinanzasMensuales(month: string) {
       where: { month: month }
     });
     
-    const gastosDefault = [
-      { id: "1", label: "Renta de Local", amount: 1500 },
-      { id: "2", label: "Luz y Agua", amount: 200 },
-      { id: "3", label: "Internet y Teléfono", amount: 100 },
-      { id: "4", label: "Material de Limpieza", amount: 150 },
-    ];
-
-    const gastos = gastosData.length > 0 ? gastosData : gastosDefault;
+    const gastos = gastosData;
     const totalGastos = gastos.reduce((acc: number, curr: any) => acc + curr.amount, 0);
 
     const ivaHonorarios = nomina * 0.16;

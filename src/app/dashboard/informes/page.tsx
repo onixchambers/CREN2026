@@ -12,6 +12,7 @@ type Informe = {
   archivoNombre: string;
   fechaSubida: string;
   terapeuta?: string;
+  data?: string; // Base64 data for download
 };
 
 type Paciente = {
@@ -90,31 +91,56 @@ export default function InformesPage() {
     setFiles(prev => prev.filter((_, i) => i !== index));
   };
 
-  const handleSubirInforme = () => {
+  const handleSubirInforme = async () => {
     if (!selectedPaciente || !selectedTipo || files.length === 0) {
       alert("Por favor selecciona paciente, tipo y adjunta al menos un archivo.");
       return;
     }
 
-    const nuevosInformes: Informe[] = files.map((f, index) => ({
-      id: Date.now().toString() + index,
-      paciente: selectedPaciente,
-      tipo: selectedTipo,
-      fecha: selectedFecha,
-      archivoNombre: f.name,
-      fechaSubida: new Date().toLocaleDateString(),
-      terapeuta: userName
-    }));
+    const readAsDataURL = (file: File): Promise<string> => {
+      return new Promise((resolve, reject) => {
+        const reader = new FileReader();
+        reader.onload = () => resolve(reader.result as string);
+        reader.onerror = error => reject(error);
+        reader.readAsDataURL(file);
+      });
+    };
+
+    const nuevosInformes: Informe[] = [];
+    
+    for (let index = 0; index < files.length; index++) {
+      const f = files[index];
+      try {
+        const data = await readAsDataURL(f);
+        nuevosInformes.push({
+          id: Date.now().toString() + index,
+          paciente: selectedPaciente,
+          tipo: selectedTipo,
+          fecha: selectedFecha,
+          archivoNombre: f.name,
+          fechaSubida: new Date().toLocaleDateString(),
+          terapeuta: userName,
+          data: data
+        });
+      } catch (error) {
+        console.error("Error reading file:", error);
+      }
+    }
 
     const updated = [...nuevosInformes, ...informes];
-    setInformes(updated);
-    localStorage.setItem("informesData", JSON.stringify(updated));
-
-    setSelectedPaciente("");
-    setSearchInput("");
-    setSelectedTipo("");
-    setFiles([]);
-    alert("Informe subido exitosamente");
+    
+    // Si excede el almacenamiento local por tamaño de archivo, se captura el error
+    try {
+      localStorage.setItem("informesData", JSON.stringify(updated));
+      setInformes(updated);
+      setSelectedPaciente("");
+      setSearchInput("");
+      setSelectedTipo("");
+      setFiles([]);
+      alert("Informe subido exitosamente");
+    } catch (error) {
+      alert("Error: Archivo muy grande para guardar en modo prueba. Se alcanzó el límite de almacenamiento del navegador.");
+    }
   };
 
   const informesFiltrados = informes.filter(i => {
