@@ -30,6 +30,7 @@ type Asistencia = {
   total: string;
   obs: string;
   creadoPor?: string;
+  terapeuta?: string;
 };
 
 export default function AsistenciaPage() {
@@ -55,6 +56,7 @@ export default function AsistenciaPage() {
   const [filtroHasta, setFiltroHasta] = useState(hoy);
   const [filtroEstado, setFiltroEstado] = useState("Todos");
   const [availableAreas, setAvailableAreas] = useState<string[]>(["Psicología", "Lenguaje", "Fisioterapia"]);
+  const [terapeutas, setTerapeutas] = useState<string[]>([]);
 
   // Predictivo
   const [showDropdown, setShowDropdown] = useState(false);
@@ -62,6 +64,7 @@ export default function AsistenciaPage() {
   // Formulario
   const [formData, setFormData] = useState({
     fecha: hoy,
+    terapeuta: "",
     area: "",
     tipoSesion: "",
     pacienteId: "",
@@ -104,7 +107,10 @@ export default function AsistenciaPage() {
       // Cargar áreas
       const tRes = await getTerapeutasFull();
       if (tRes.success && tRes.data) {
+        const allTeras = tRes.data.map((t: any) => t.name).filter(Boolean);
         if (userRole.toUpperCase() === "TERAPEUTA") {
+          setTerapeutas([userName]);
+          setFormData(prev => ({ ...prev, terapeuta: userName }));
           const me = tRes.data.find((t: any) => t.name === userName);
           if (me && me.especialidad) {
             const espList = me.especialidad.split(',').map((s: string) => s.trim()).filter((s: string) => s);
@@ -116,6 +122,7 @@ export default function AsistenciaPage() {
             }
           }
         } else {
+          setTerapeutas(allTeras);
           const allEsp = new Set<string>();
           tRes.data.forEach((t: any) => {
             if (t.especialidad) {
@@ -175,6 +182,7 @@ export default function AsistenciaPage() {
   const handleLimpiarForm = () => {
     setFormData({
       fecha: hoy,
+      terapeuta: userRole.toUpperCase() === "TERAPEUTA" ? userName : "",
       area: (availableAreas.length === 1 && userRole.toUpperCase() === "TERAPEUTA") ? availableAreas[0] : "",
       tipoSesion: "",
       pacienteId: "",
@@ -197,8 +205,8 @@ export default function AsistenciaPage() {
   };
 
   const handleGuardar = () => {
-    if (!formData.pacienteNombre || !formData.area || !formData.estadoAsistencia || !formData.tipoSesion) {
-      alert("Por favor completa los campos principales (Paciente, Área, Tipo de Sesión, Estado).");
+    if (!formData.pacienteNombre || !formData.area || !formData.estadoAsistencia || !formData.tipoSesion || !formData.terapeuta) {
+      alert("Por favor completa los campos principales (Paciente, Terapeuta, Área, Tipo de Sesión, Estado).");
       return;
     }
 
@@ -220,7 +228,8 @@ export default function AsistenciaPage() {
       subtotal: `$${sub.toFixed(2)}`,
       total: `$${tot.toFixed(2)}`,
       obs: formData.observaciones || "—",
-      creadoPor: userName
+      creadoPor: userName,
+      terapeuta: formData.terapeuta
     };
 
     const nuevas = [nuevaAsistencia, ...asistencias];
@@ -245,7 +254,8 @@ export default function AsistenciaPage() {
       pago: a.pago,
       fact: a.fact === "Sí",
       subtotal: a.subtotal.replace('$', ''),
-      obs: a.obs
+      obs: a.obs,
+      terapeuta: a.terapeuta || ""
     });
   };
 
@@ -278,7 +288,8 @@ export default function AsistenciaPage() {
           subtotal: `$${sub.toFixed(2)}`,
           total: `$${tot.toFixed(2)}`,
           obs: editForm.obs || "—",
-          creadoPor: a.creadoPor || userName
+          creadoPor: a.creadoPor || userName,
+          terapeuta: editForm.terapeuta || a.terapeuta
         };
       }
       return a;
@@ -300,7 +311,9 @@ export default function AsistenciaPage() {
 
   const asistenciasFiltradas = asistencias.filter(a => {
     if (userRole.toUpperCase() === "TERAPEUTA") {
-      if (a.creadoPor) {
+      if (a.terapeuta) {
+        if (a.terapeuta !== userName) return false;
+      } else if (a.creadoPor) {
         if (a.creadoPor !== userName) return false;
       } else {
         const isMine = pacientes.some(p => p.paciente === a.paciente && p.medicoTratante?.trim().toLowerCase() === userName.trim().toLowerCase());
@@ -337,10 +350,19 @@ export default function AsistenciaPage() {
 
           <div className="space-y-5">
             {/* ROW 1 */}
-            <div className="grid grid-cols-1 md:grid-cols-5 gap-4">
+            <div className="grid grid-cols-1 md:grid-cols-6 gap-4">
               <div>
                 <label className="block text-[10px] font-bold text-slate-400 uppercase mb-1">FECHA</label>
                 <DateInput name="fecha" value={formData.fecha} onChange={handleChange} className="w-full text-sm p-2 border border-slate-300 rounded focus:border-[#2980b9] outline-none text-slate-900" />
+              </div>
+              <div>
+                <label className="block text-[10px] font-bold text-slate-400 uppercase mb-1">TERAPEUTA</label>
+                <select name="terapeuta" value={formData.terapeuta} onChange={handleChange} className="w-full text-sm p-2 border border-slate-300 rounded focus:border-[#2980b9] outline-none text-slate-900" disabled={userRole.toUpperCase() === "TERAPEUTA"}>
+                  {userRole.toUpperCase() !== "TERAPEUTA" && <option value="">Seleccionar...</option>}
+                  {terapeutas.map(t => (
+                    <option key={t} value={t}>{t}</option>
+                  ))}
+                </select>
               </div>
               <div>
                 <label className="block text-[10px] font-bold text-slate-400 uppercase mb-1">ÁREA</label>
@@ -595,6 +617,7 @@ export default function AsistenciaPage() {
             <thead className="bg-[#0e2f44] text-white font-semibold">
               <tr>
                 <th className="px-2 py-3 border-b border-[#0e2f44]">FECHA</th>
+                <th className="px-2 py-3 border-b border-[#0e2f44]">TERAPEUTA</th>
                 <th className="px-2 py-3 border-b border-[#0e2f44]">ÁREA</th>
                 <th className="px-4 py-3 text-left border-b border-[#0e2f44]">PACIENTE</th>
                 <th className="px-2 py-3 border-b border-[#0e2f44]">SEXO</th>
@@ -673,6 +696,15 @@ export default function AsistenciaPage() {
               </div>
 
               <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <label className="block text-[10px] font-bold text-slate-500 uppercase mb-1">Terapeuta</label>
+                  <select name="terapeuta" value={editForm.terapeuta} onChange={handleEditChange} className="w-full text-sm p-2 border border-slate-300 rounded focus:border-[#2980b9] outline-none text-slate-900" disabled={userRole.toUpperCase() === "TERAPEUTA"}>
+                    {userRole.toUpperCase() !== "TERAPEUTA" && <option value="">Seleccionar...</option>}
+                    {terapeutas.map(t => (
+                      <option key={t} value={t}>{t}</option>
+                    ))}
+                  </select>
+                </div>
                 <div>
                   <label className="block text-[10px] font-bold text-slate-500 uppercase mb-1">Fecha</label>
                   <DateInput name="fecha" value={editForm.fecha} onChange={handleEditChange} className="w-full text-sm p-2 border border-slate-300 rounded focus:border-[#2980b9] outline-none text-slate-900" />
