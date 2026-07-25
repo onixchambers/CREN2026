@@ -108,8 +108,9 @@ export default function HorariosPage() {
               className="w-full text-slate-900 font-medium p-2 border border-slate-300 rounded-md focus:ring-2 focus:ring-indigo-500 outline-none"
               value={terapeutaSeleccionado}
               onChange={e => setTerapeutaSeleccionado(e.target.value)}
+              disabled={userRole.toUpperCase() === "TERAPEUTA"}
             >
-              <option value="">-- Seleccionar --</option>
+              {userRole.toUpperCase() !== "TERAPEUTA" && <option value="">-- Seleccionar --</option>}
               {terapeutasDisponibles.map((t, idx) => (
                 <option key={idx} value={t}>{t}</option>
               ))}
