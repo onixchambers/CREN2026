@@ -240,10 +240,17 @@ export default function AgendaPage() {
                     return (
                       <td key={`${hora}-${t}`} className="border border-slate-200 p-2 h-16 w-40 relative align-top group">
                         {cita ? (
-                          <div 
+                            <div 
                               onClick={() => { setSelectedCita(cita); setIsEditModalOpen(true); }}
-                              className={`p-2 rounded border text-xs font-semibold flex flex-col items-center justify-center h-full w-full cursor-pointer shadow-sm hover:brightness-95 transition-all ${getEstadoColor(cita.estado)}`}>
-                              <span className="truncate w-full text-center">{cita.paciente}</span>
+                              className={`p-2 rounded border text-xs font-semibold flex flex-col items-center justify-center h-full w-full cursor-pointer shadow-sm hover:brightness-95 transition-all relative ${getEstadoColor(cita.estado)}`}>
+                              
+                              <button 
+                                onClick={(e) => { e.stopPropagation(); handleDeleteCita(cita.id); }} 
+                                className="absolute top-1 right-1 text-red-500 hover:text-red-700 font-bold bg-white/50 rounded-full w-4 h-4 flex items-center justify-center leading-none" 
+                                title="Eliminar Cita"
+                              >&times;</button>
+
+                              <span className="truncate w-full text-center mt-1">{cita.paciente}</span>
                               <span className="text-[10px] opacity-80 uppercase mt-0.5 truncate w-full text-center">{cita.tipoServicio}</span>
                             </div>
                         ) : (
