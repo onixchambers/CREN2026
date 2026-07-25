@@ -109,8 +109,19 @@ export default function AsistenciaPage() {
         const tRes = await getTerapeutasFull();
         if (tRes.success && tRes.data) {
           const areas = Array.from(new Set(tRes.data.map((t: any) => t.area).filter(Boolean)));
-          setAvailableAreas(areas.length > 0 ? areas : ["Psicología", "Lenguaje", "Fisioterapia", "Terapia Ocupacional"]);
-          setTerapeutas(tRes.data.map((t: any) => t.name));
+          
+          if (userRole.toUpperCase() === "TERAPEUTA") {
+            const matched = tRes.data.find((t: any) => t.name.toLowerCase().includes(userName.toLowerCase()) || userName.toLowerCase().includes(t.name.toLowerCase()));
+            const miTerapeutaStr = matched ? matched.name : (tRes.data[0]?.name || userName);
+            const miAreaStr = matched ? matched.area : "";
+            
+            setAvailableAreas(miAreaStr ? [miAreaStr] : (areas.length > 0 ? areas as string[] : ["Psicología", "Lenguaje", "Fisioterapia", "Terapia Ocupacional"]));
+            setTerapeutas([miTerapeutaStr]);
+            setFormData(prev => ({...prev, terapeuta: miTerapeutaStr, area: miAreaStr}));
+          } else {
+            setAvailableAreas(areas.length > 0 ? areas as string[] : ["Psicología", "Lenguaje", "Fisioterapia", "Terapia Ocupacional"]);
+            setTerapeutas(tRes.data.map((t: any) => t.name));
+          }
         }
         
         // Cargar asistencias reales de la Agenda
