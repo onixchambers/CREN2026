@@ -1,8 +1,11 @@
-"use server";
+﻿import os
 
-import { prisma } from "@/lib/prisma";
+path = 'src/app/actions/finanzas.ts'
+with open(path, 'r', encoding='utf-8') as f:
+    content = f.read()
 
-export async function getFinanzasMensuales(month: string) {
+# Let's replace the whole body of getFinanzasMensuales to use actual Sessions.
+new_body = '''export async function getFinanzasMensuales(month: string) {
   try {
     // 1. Obtener todas las sesiones del mes (Agenda)
     const sessions = await prisma.session.findMany({
@@ -132,40 +135,30 @@ export async function getFinanzasMensuales(month: string) {
 
     return {
       success: true,
-      data: {
-        ingresosBrutos,
-        nomina: totalNomina,
-        gastosOperativos: totalGastosOperativos,
-        gastosList: gastos,
-        ivaHonorarios: ivaTotal,
-        utilidadNeta: utilidadNeta,
-        terapeutas: terapeutasData,
+      datos: {
+        ingresosBrutos, // Esto es el dinero total que entró
+        totalNomina,
+        totalGastosOperativos,
         utilidadBruta,
-        margenUtilidad
-      }
+        utilidadNeta,
+        margenUtilidad,
+        iva: ivaTotal // Se mostrará como impuesto a restar
+      },
+      terapeutas: terapeutasData,
+      gastos
     };
   } catch (error: any) {
     console.error("Error obteniendo finanzas:", error);
     return { success: false, error: error?.message || "Error desconocido" };
   }
-}
+}'''
 
-export async function addGastoOperativo(month: string, label: string, amount: number) {
-  try {
-    await prisma.operationalExpense.create({
-      data: { month, label, amount }
-    });
-    return { success: true };
-  } catch (error) {
-    return { success: false, error: "Error al guardar el gasto" };
-  }
-}
+# Replace the old function
+start_idx = content.find('export async function getFinanzasMensuales')
+end_idx = content.find('export async function addGastoOperativo')
 
-export async function removeGastoOperativo(id: string) {
-  try {
-    await prisma.operationalExpense.delete({ where: { id } });
-    return { success: true };
-  } catch (error) {
-    return { success: false, error: "Error al eliminar el gasto" };
-  }
-}
+if start_idx != -1 and end_idx != -1:
+    content = content[:start_idx] + new_body + '\n\n' + content[end_idx:]
+
+with open(path, 'w', encoding='utf-8') as f:
+    f.write(content)

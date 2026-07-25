@@ -2,6 +2,7 @@
 import { useState, useEffect } from "react";
 import { getTerapeutas } from "@/app/actions/configuracion";
 import { getPatients } from "@/app/actions/pacientes";
+import { getAgenda, addCita, updateCita } from "@/app/actions/agenda";
 import { useSession } from "next-auth/react";
 import { DateInput } from "@/components/DateInput";
 
@@ -14,6 +15,8 @@ type Cita = {
   tipoServicio: string;
   frecuencia: string;
   estado: "Ocupado" | "Cancelado" | "Reagendado" | "Disponible";
+  pagado?: boolean;
+  metodoPago?: string;
 };
 
 const HORAS = [
@@ -44,7 +47,7 @@ export default function AgendaPage() {
   
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [formData, setFormData] = useState({
-    paciente: "", fecha: hoy, hora: "09:00", terapeuta: "", tipoServicio: "individual", frecuencia: "semanal", estado: "Ocupado" as Cita["estado"]
+    paciente: "", fecha: hoy, hora: "09:00", terapeuta: "", tipoServicio: "individual", frecuencia: "semanal", estado: "Ocupado" as Cita["estado"], pagado: false, metodoPago: ""
   });
 
   useEffect(() => {
@@ -67,6 +70,11 @@ export default function AgendaPage() {
         setPacientes(pacRes.data.map((p: any) => ({ id: p.id, name: p.name })));
       }
       
+      const agendaRes = await getAgenda();
+      if (agendaRes.success && agendaRes.data) {
+        setCitas(agendaRes.data);
+      }
+
       setIsLoadingTerapeutas(false);
     }
     loadTerapeutas();
@@ -76,22 +84,37 @@ export default function AgendaPage() {
     setFormData({ ...formData, [e.target.name]: e.target.value });
   };
 
-  const handleAddCita = (e: React.FormEvent) => {
+  const handleAddCita = async (e: React.FormEvent) => {
     e.preventDefault();
-    const nuevaCita: Cita = {
-      id: Date.now().toString(),
+    
+    const nuevaCitaObj = {
       paciente: formData.paciente,
       fecha: formData.fecha,
-      hora: formData.hora, // Formato "HH:MM"
+      hora: formData.hora,
       terapeuta: formData.terapeuta,
       tipoServicio: formData.tipoServicio,
       frecuencia: formData.frecuencia,
-      estado: formData.estado
+      estado: formData.estado,
+      pagado: formData.pagado,
+      metodoPago: formData.metodoPago
     };
     
-    setCitas([...citas, nuevaCita]);
-    setIsModalOpen(false);
-    setFormData({ paciente: "", fecha: fechaSeleccionada, hora: "09:00", terapeuta: terapeutas[0] || "", tipoServicio: "individual", frecuencia: "semanal", estado: "Ocupado" });
+    const res = await addCita(nuevaCitaObj);
+    if (res.success) {
+      setCitas([...citas, { id: res.id, ...nuevaCitaObj } as Cita]);
+      setIsModalOpen(false);
+      setFormData({ paciente: "", fecha: fechaSeleccionada, hora: "09:00", terapeuta: terapeutas[0] || "", tipoServicio: "individual", frecuencia: "semanal", estado: "Ocupado", pagado: false, metodoPago: "" });
+    } else {
+      alert("Error: " + res.error);
+    }
+  };
+  
+  const handleTogglePagado = async (citaId: string, currentPagado: boolean) => {
+    const newVal = !currentPagado;
+    const res = await updateCita(citaId, { pagado: newVal });
+    if (res.success) {
+      setCitas(citas.map(c => c.id === citaId ? { ...c, pagado: newVal } : c));
+    }
   };
 
   const citasFiltradas = citas.filter(c => c.fecha === fechaSeleccionada);
