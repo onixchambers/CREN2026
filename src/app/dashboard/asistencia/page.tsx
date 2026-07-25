@@ -29,6 +29,7 @@ type Asistencia = {
   subtotal: string;
   total: string;
   obs: string;
+  creadoPor?: string;
 };
 
 export default function AsistenciaPage() {
@@ -218,7 +219,8 @@ export default function AsistenciaPage() {
       fact: formData.solicitaFactura ? "Sí" : "No",
       subtotal: `$${sub.toFixed(2)}`,
       total: `$${tot.toFixed(2)}`,
-      obs: formData.observaciones || "—"
+      obs: formData.observaciones || "—",
+      creadoPor: userName
     };
 
     const nuevas = [nuevaAsistencia, ...asistencias];
@@ -275,7 +277,8 @@ export default function AsistenciaPage() {
           fact: editForm.fact ? "Sí" : "No",
           subtotal: `$${sub.toFixed(2)}`,
           total: `$${tot.toFixed(2)}`,
-          obs: editForm.obs || "—"
+          obs: editForm.obs || "—",
+          creadoPor: a.creadoPor || userName
         };
       }
       return a;
@@ -289,8 +292,12 @@ export default function AsistenciaPage() {
 
   const asistenciasFiltradas = asistencias.filter(a => {
     if (userRole.toUpperCase() === "TERAPEUTA") {
-      const isMine = pacientes.some(p => p.paciente === a.paciente && p.medicoTratante?.trim().toLowerCase() === userName.trim().toLowerCase());
-      if (!isMine) return false;
+      if (a.creadoPor) {
+        if (a.creadoPor !== userName) return false;
+      } else {
+        const isMine = pacientes.some(p => p.paciente === a.paciente && p.medicoTratante?.trim().toLowerCase() === userName.trim().toLowerCase());
+        if (!isMine) return false;
+      }
     }
     if (filtroEstado !== "Todos" && a.estado !== filtroEstado) return false;
     if (filtroDesde && a.fecha < filtroDesde) return false;
