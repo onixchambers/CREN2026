@@ -90,6 +90,19 @@ export default function InformesPage() {
   const removeFile = (index: number) => {
     setFiles(prev => prev.filter((_, i) => i !== index));
   };
+  
+  const handleDownload = (inf: Informe) => {
+    if (!inf.data) {
+      alert("No hay archivo adjunto para descargar.");
+      return;
+    }
+    const a = document.createElement("a");
+    a.href = inf.data;
+    a.download = inf.archivoNombre || "informe_descarga";
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+  };
 
   const handleSubirInforme = async () => {
     if (!selectedPaciente || !selectedTipo || files.length === 0) {
