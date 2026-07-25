@@ -44,11 +44,26 @@ export async function addCita(data: any) {
     const patient = await prisma.patient.findFirst({ where: { name: data.paciente } });
     if (!patient) return { success: false, error: "Paciente no encontrado en DB." };
 
-    // Buscar therapistId
-    const therapist = await prisma.user.findFirst({ where: { name: data.terapeuta, role: "THERAPIST" } });
-    const therapistId = therapist ? therapist.id : (await prisma.user.findFirst({ where: { role: "ADMIN" } }))?.id;
+    // Buscar therapistId de forma ultra-flexible (ignorar mayúsculas y espacios)
+    const allUsers = await prisma.user.findMany();
+    let therapistId: string | undefined = undefined;
+    
+    // 1. Intentar coincidencia exacta o ignorando mayúsculas
+    const match = allUsers.find(u => (u.name || "").trim().toLowerCase() === (data.terapeuta || "").trim().toLowerCase());
+    if (match) {
+      therapistId = match.id;
+    } else {
+      // 2. Si no, agarrar cualquier administrador
+      const admin = allUsers.find(u => (u.role || "").toUpperCase() === "ADMIN");
+      if (admin) {
+        therapistId = admin.id;
+      } else if (allUsers.length > 0) {
+        // 3. Fallback final: cualquier usuario
+        therapistId = allUsers[0].id;
+      }
+    }
 
-    if (!therapistId) return { success: false, error: "Terapeuta no encontrado." };
+    if (!therapistId) return { success: false, error: "No hay terapeutas ni usuarios registrados en la base de datos." };
 
     // Construir fecha
     const jsDate = new Date(`${data.fecha}T${data.hora}:00`);
