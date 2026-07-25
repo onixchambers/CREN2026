@@ -238,63 +238,14 @@ export default function AgendaPage() {
                   {terapeutas.map(t => {
                     const cita = getCitaParaCelda(hora, t);
                     return (
-                      <td key={`${hora}-${t}`} className="border border-slate-200 p-2 min-h-[110px] w-48 relative align-top">
+                      <td key={`${hora}-${t}`} className="border border-slate-200 p-2 h-16 w-40 relative align-top group">
                         {cita ? (
-                          <div className={`p-2 rounded border text-xs flex flex-col gap-1.5 h-full w-full shadow-sm transition-all ${getEstadoColor(cita.estado)}`}>
-                            <div className="flex justify-between items-start w-full">
-                              <div className="flex flex-col truncate">
-                                <span className="font-bold truncate w-full text-[11px]">{cita.paciente}</span>
-                                <span className="text-[9px] opacity-80 uppercase truncate w-full">{cita.tipoServicio}</span>
-                              </div>
-                              <button onClick={(e) => { e.stopPropagation(); handleDeleteCita(cita.id); }} className="text-red-500 hover:text-red-700 font-bold ml-1" title="Eliminar Cita">&times;</button>
+                          <div 
+                              onClick={() => { setSelectedCita(cita); setIsEditModalOpen(true); }}
+                              className={`p-2 rounded border text-xs font-semibold flex flex-col items-center justify-center h-full w-full cursor-pointer shadow-sm hover:brightness-95 transition-all ${getEstadoColor(cita.estado)}`}>
+                              <span className="truncate w-full text-center">{cita.paciente}</span>
+                              <span className="text-[10px] opacity-80 uppercase mt-0.5 truncate w-full text-center">{cita.tipoServicio}</span>
                             </div>
-                            
-                            <select 
-                              value={cita.estado} 
-                              onChange={(e) => handleUpdateInline(cita.id, { estado: e.target.value })}
-                              className="text-[10px] w-full p-1 rounded border border-slate-300 bg-white/80 outline-none mt-1 font-semibold text-slate-700"
-                            >
-                              <option value="Ocupado">Confirmado</option>
-                              <option value="Asistió">Asistió</option>
-                              <option value="Canceló">Canceló</option>
-                              <option value="Faltó">Faltó</option>
-                              <option value="Baja">Baja</option>
-                              <option value="Alta">Alta</option>
-                              <option value="Reagendado">Reagendado</option>
-                              <option value="Disponible">Disponible</option>
-                            </select>
-
-                            <div className="flex items-center gap-1 mt-0.5">
-                              <input 
-                                type="checkbox" 
-                                checked={cita.pagado || false}
-                                onChange={(e) => handleUpdateInline(cita.id, { pagado: e.target.checked })}
-                                className="w-3 h-3 cursor-pointer"
-                                id={`pago-${cita.id}`}
-                              />
-                              <label htmlFor={`pago-${cita.id}`} className="text-[10px] font-bold cursor-pointer">Pagó</label>
-                            </div>
-
-                            {cita.pagado && (
-                              <select 
-                                value={cita.metodoPago || ""} 
-                                onChange={(e) => handleUpdateInline(cita.id, { metodoPago: e.target.value })}
-                                className="text-[9px] w-full p-1 rounded border border-slate-300 bg-white/80 outline-none font-semibold text-slate-700"
-                              >
-                                <option value="">Método...</option>
-                                <option value="Efectivo">Efectivo</option>
-                                <option value="Tarjeta">Tarjeta</option>
-                                <option value="Transferencia">Transferencia</option>
-                              </select>
-                            )}
-
-                            <button 
-                              onClick={(e) => { e.stopPropagation(); handleSaveInline(cita.id); }}
-                              className="mt-1 w-full bg-[#1a5276] text-white text-[10px] font-bold py-1 rounded hover:bg-[#0e2f44] transition-colors"
-                            >
-                              Guardar
-                            </button>
-                          </div>
                         ) : (
                           <span className="text-slate-300">—</span>
                         )}

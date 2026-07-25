@@ -108,7 +108,8 @@ export default function AsistenciaPage() {
       // Cargar áreas
         const tRes = await getTerapeutasFull();
         if (tRes.success && tRes.data) {
-          setAvailableAreas(tRes.data.map((t: any) => t.area));
+          const areas = Array.from(new Set(tRes.data.map((t: any) => t.area).filter(Boolean)));
+          setAvailableAreas(areas.length > 0 ? areas : ["Psicología", "Lenguaje", "Fisioterapia", "Terapia Ocupacional"]);
           setTerapeutas(tRes.data.map((t: any) => t.name));
         }
         
