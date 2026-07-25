@@ -111,6 +111,14 @@ export default function AgendaPage() {
     }
   };
   
+    const handleUpdateInline = async (id: string, updates: any) => {
+    // Optimistic update
+    setCitas(citas.map(c => c.id === id ? { ...c, ...updates } : c));
+    const current = citas.find(c => c.id === id);
+    if (!current) return;
+    await updateCita(id, { ...current, ...updates });
+  };
+
   const handleDeleteCita = async (id: string) => {
     if (!confirm("¿Eliminar esta cita permanentemente?")) return;
     const res = await deleteCita(id);
@@ -219,7 +227,7 @@ export default function AgendaPage() {
                   {terapeutas.map(t => {
                     const cita = getCitaParaCelda(hora, t);
                     return (
-                      <td key={`${hora}-${t}`} className="border border-slate-200 p-2 h-16 w-40 relative group">
+                      <td key={`${hora}-${t}`} className="border border-slate-200 p-2 min-h-[110px] w-48 relative align-top">
                         {cita ? (
                           <div className={`p-2 rounded border text-xs font-semibold flex flex-col items-center justify-center h-full w-full cursor-pointer shadow-sm hover:brightness-95 transition-all ${getEstadoColor(cita.estado)}`}>
                             <span className="truncate w-full">{cita.paciente}</span>
