@@ -1,0 +1,9 @@
+﻿import os
+path = 'package.json'
+with open(path, 'r', encoding='utf-8') as f:
+    content = f.read()
+
+content = content.replace('"build": "prisma generate && prisma db push && next build"', '"build": "prisma generate && next build"')
+
+with open(path, 'w', encoding='utf-8') as f:
+    f.write(content)

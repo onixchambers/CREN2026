@@ -1,4 +1,10 @@
-import { NextResponse } from 'next/server';
+﻿import os
+
+path = 'src/app/api/migrate/route.ts'
+os.makedirs(os.path.dirname(path), exist_ok=True)
+
+with open(path, 'w', encoding='utf-8') as f:
+    f.write("""import { NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
 
 export async function GET() {
@@ -15,12 +21,9 @@ export async function GET() {
         CONSTRAINT "Horario_pkey" PRIMARY KEY ("id")
       );
     `);
-    
-    await prisma.$executeRawUnsafe(`
-      ALTER TABLE "Patient" ADD COLUMN IF NOT EXISTS "foto" TEXT;
-    `);
-    return NextResponse.json({ success: true, message: "Migrations executed successfully" });
+    return NextResponse.json({ success: true, message: "Table Horario created successfully" });
   } catch (error: any) {
     return NextResponse.json({ success: false, error: error.message });
   }
 }
+""")

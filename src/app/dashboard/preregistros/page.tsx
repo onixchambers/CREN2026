@@ -47,7 +47,8 @@ export default function PreregistrosPage() {
     reglamentoFirmado: false,
     consentimientoFirmado: false,
     
-    observacionesAdmin: ""
+    observacionesAdmin: "",
+    foto: ""
   });
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement>) => {
@@ -70,9 +71,16 @@ export default function PreregistrosPage() {
   const handlePhotoChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (file) {
-      setPhotoPreview(URL.createObjectURL(file));
+      const reader = new FileReader();
+      reader.onloadend = () => {
+        const base64String = reader.result as string;
+        setPhotoPreview(base64String);
+        setFormData(prev => ({ ...prev, foto: base64String }));
+      };
+      reader.readAsDataURL(file);
     } else {
       setPhotoPreview(null);
+      setFormData(prev => ({ ...prev, foto: "" }));
     }
   };
 
@@ -110,7 +118,9 @@ export default function PreregistrosPage() {
       ...formData,
       ...ficha,
       nombre: ficha.name || ficha.nombre || "",
+      foto: ficha.foto || ""
     });
+    setPhotoPreview(ficha.foto || null);
     window.scrollTo({ top: 0, behavior: 'smooth' });
   };
 
@@ -139,7 +149,8 @@ export default function PreregistrosPage() {
       madreNombre: "", padreNombre: "", otrosNombre: "", madreContacto: "", padreContacto: "", otrosContacto: "",
       principalMadre: false, principalPadre: false, principalOtros: false, correoPrincipal: "",
       alergias: false, crisis: false, convulsiones: false, sensibilidad: false, riesgoFuga: false, noSepara: false, otrasAlertas: false,
-      reglamentoFirmado: false, consentimientoFirmado: false, observacionesAdmin: ""
+      reglamentoFirmado: false, consentimientoFirmado: false, observacionesAdmin: "",
+    foto: ""
     });
   };
 

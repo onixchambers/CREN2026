@@ -40,6 +40,7 @@ export async function createPatient(data: any) {
         consentimientoFirmado: data.consentimientoFirmado || false,
         
         observacionesAdmin: data.observacionesAdmin || null,
+        foto: data.foto || null,
         
         // Calcular edad basada en fecha de nacimiento si no viene calculada
         age: data.fechaNacimiento ? calculateAge(data.fechaNacimiento) : null
@@ -129,6 +130,7 @@ export async function updatePatient(id: string, data: any) {
         consentimientoFirmado: data.consentimientoFirmado || false,
         
         observacionesAdmin: data.observacionesAdmin || null,
+        foto: data.foto || null,
         
         // Calcular edad basada en fecha de nacimiento si no viene calculada
         age: data.fechaNacimiento ? calculateAge(data.fechaNacimiento) : null
