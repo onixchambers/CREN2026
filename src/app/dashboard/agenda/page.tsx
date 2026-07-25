@@ -1,6 +1,7 @@
 "use client";
 import { useState, useEffect } from "react";
 import { getTerapeutas } from "@/app/actions/configuracion";
+import { getPatients } from "@/app/actions/pacientes";
 import { useSession } from "next-auth/react";
 import { DateInput } from "@/components/DateInput";
 
@@ -37,6 +38,8 @@ export default function AgendaPage() {
   
   const [citas, setCitas] = useState<Cita[]>([]);
   const [terapeutas, setTerapeutas] = useState<string[]>([]);
+  const [pacientes, setPacientes] = useState<{id: string, name: string}[]>([]);
+  const [showDropdown, setShowDropdown] = useState(false);
   const [isLoadingTerapeutas, setIsLoadingTerapeutas] = useState(true);
   
   const [isModalOpen, setIsModalOpen] = useState(false);
@@ -50,7 +53,7 @@ export default function AgendaPage() {
       const res = await getTerapeutas();
       if (res.success && res.terapeutas) {
         let teraList = res.terapeutas;
-        if (userRole === "TERAPEUTA") {
+        if (userRole.toUpperCase() === "TERAPEUTA") {
           teraList = [userName];
         }
         setTerapeutas(teraList);
@@ -58,6 +61,12 @@ export default function AgendaPage() {
           setFormData(prev => ({ ...prev, terapeuta: teraList[0] }));
         }
       }
+      
+      const pacRes = await getPatients();
+      if (pacRes.success && pacRes.data) {
+        setPacientes(pacRes.data.map((p: any) => ({ id: p.id, name: p.name })));
+      }
+      
       setIsLoadingTerapeutas(false);
     }
     loadTerapeutas();
@@ -197,9 +206,47 @@ export default function AgendaPage() {
             <form onSubmit={handleAddCita} className="p-6 space-y-4">
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 {/* Paciente y Terapeuta */}
-                <div>
+                <div className="relative">
                   <label className="block text-xs font-semibold text-slate-600 uppercase mb-1">Nombre del Paciente</label>
-                  <input required type="text" name="paciente" value={formData.paciente} onChange={handleInputChange} className="w-full text-slate-900 font-medium border border-slate-300 rounded-lg px-3 py-2 outline-none focus:border-[#2980b9]" placeholder="Ej. Carlos Mendoza" />
+                  <input 
+                    required 
+                    type="text" 
+                    name="paciente" 
+                    autoComplete="off"
+                    value={formData.paciente} 
+                    onChange={(e) => {
+                      handleInputChange(e);
+                      setShowDropdown(true);
+                    }}
+                    onFocus={() => setShowDropdown(true)}
+                    onBlur={() => setTimeout(() => setShowDropdown(false), 200)}
+                    className="w-full text-slate-900 font-medium border border-slate-300 rounded-lg px-3 py-2 outline-none focus:border-[#2980b9]" 
+                    placeholder="Escribir para buscar paciente..." 
+                  />
+                  {showDropdown && (
+                    <ul className="absolute z-10 w-full bg-white border border-slate-300 rounded-md mt-1 max-h-48 overflow-y-auto shadow-lg">
+                      {pacientes
+                        .filter(p => p.name.toLowerCase().includes(formData.paciente.toLowerCase()))
+                        .map(p => (
+                          <li 
+                            key={p.id} 
+                            className="px-3 py-2 text-sm text-slate-700 hover:bg-[#2980b9] hover:text-white cursor-pointer"
+                            onClick={() => {
+                              setFormData({
+                                ...formData,
+                                paciente: p.name,
+                              });
+                              setShowDropdown(false);
+                            }}
+                          >
+                            {p.name}
+                          </li>
+                        ))}
+                      {pacientes.filter(p => p.name.toLowerCase().includes(formData.paciente.toLowerCase())).length === 0 && (
+                        <li className="px-3 py-2 text-sm text-slate-400">No se encontraron pacientes</li>
+                      )}
+                    </ul>
+                  )}
                 </div>
                 <div>
                   <label className="block text-xs font-semibold text-slate-600 uppercase mb-1">Terapeuta Asignado</label>
