@@ -379,14 +379,22 @@ export default function InformesPage() {
                       <td className="px-4 py-3 text-slate-600">{formatDateStr(inf.fecha)}</td>
                       <td className="px-4 py-3 font-bold text-[#1a5276]">{inf.paciente}</td>
                       <td className="px-4 py-3 text-slate-500">{inf.tipo}</td>
-                      <td className="px-4 py-3 text-[#2980b9] font-medium flex items-center gap-2">
-                        <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15.172 7l-6.586 6.586a2 2 0 102.828 2.828l6.414-6.586a4 4 0 00-5.656-5.656l-6.415 6.585a6 6 0 108.486 8.486L20.5 13" /></svg>
-                        {inf.archivoNombre}
+                      <td className="px-4 py-3 text-[#2980b9] font-medium">
+                        <div className="flex items-center gap-2">
+                          <svg className="w-4 h-4 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15.172 7l-6.586 6.586a2 2 0 102.828 2.828l6.414-6.586a4 4 0 00-5.656-5.656l-6.415 6.585a6 6 0 108.486 8.486L20.5 13" /></svg>
+                          <span className="truncate max-w-[200px]">{inf.archivoNombre}</span>
+                        </div>
+                        {inf.fechaSubida && <div className="text-[10px] text-slate-400 mt-0.5 ml-6">Subido el: {inf.fechaSubida}</div>}
                       </td>
                       <td className="px-4 py-3 text-center">
-                        <button className="text-slate-400 hover:text-[#1a5276]">
-                          <svg className="w-5 h-5 mx-auto" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" /></svg>
-                        </button>
+                        <div className="flex justify-center gap-2">
+                          <button onClick={() => handleDownload(inf)} className="text-slate-400 hover:text-[#1a5276]" title="Descargar">
+                            <svg className="w-5 h-5 mx-auto" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" /></svg>
+                          </button>
+                          <button onClick={() => handleDelete(inf.id)} className="text-red-400 hover:text-red-600" title="Eliminar">
+                            <svg className="w-5 h-5 mx-auto" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" /></svg>
+                          </button>
+                        </div>
                       </td>
                     </tr>
                   ))}
