@@ -202,6 +202,18 @@ export default function AgendaPage() {
                               <p className="text-slate-600 text-xs capitalize"><strong>Servicio:</strong> {cita.tipoServicio}</p>
                               <p className="text-slate-600 text-xs capitalize"><strong>Frecuencia:</strong> {cita.frecuencia}</p>
                               <p className="text-slate-600 text-xs capitalize mt-1"><span className={`px-2 py-0.5 rounded text-[10px] ${getEstadoColor(cita.estado)}`}>{cita.estado}</span></p>
+                              
+                              <div className="mt-2 flex justify-center items-center gap-1">
+                                <button 
+                                  onClick={() => handleTogglePagado(cita.id, !!cita.pagado)}
+                                  className={`text-[10px] px-2 py-1 rounded font-bold ${cita.pagado ? 'bg-green-500 text-white' : 'bg-slate-200 text-slate-500 hover:bg-slate-300'}`}
+                                >
+                                  {cita.pagado ? 'Pagado' : 'Cobrar'}
+                                </button>
+                                {cita.pagado && cita.metodoPago && (
+                                  <span className="text-[10px] text-slate-500 font-semibold truncate max-w-[70px]">{cita.metodoPago}</span>
+                                )}
+                              </div>
                             </div>
                           </div>
                         ) : (
@@ -324,6 +336,36 @@ export default function AgendaPage() {
                     <option value="Cancelado">Cancelado</option>
                   </select>
                 </div>
+              </div>
+
+              <div className="grid grid-cols-2 gap-4 mt-4 pt-4 border-t border-slate-100">
+                <div className="flex items-center gap-2">
+                  <input 
+                    type="checkbox" 
+                    id="pagado"
+                    checked={formData.pagado}
+                    onChange={e => setFormData({...formData, pagado: e.target.checked})}
+                    className="w-4 h-4 text-[#2980b9] rounded focus:ring-[#2980b9]"
+                  />
+                  <label htmlFor="pagado" className="text-sm font-bold text-slate-700 cursor-pointer">Paciente Pagó</label>
+                </div>
+                
+                {formData.pagado && (
+                  <div>
+                    <select 
+                      name="metodoPago" 
+                      value={formData.metodoPago} 
+                      onChange={handleInputChange} 
+                      className="w-full text-sm p-2 border border-slate-300 rounded focus:border-[#2980b9] outline-none text-slate-700 bg-white"
+                      required
+                    >
+                      <option value="">Método...</option>
+                      <option value="Efectivo">Efectivo</option>
+                      <option value="Tarjeta">Tarjeta</option>
+                      <option value="Transferencia">Transferencia</option>
+                    </select>
+                  </div>
+                )}
               </div>
               
               <div className="pt-4 flex gap-3">
