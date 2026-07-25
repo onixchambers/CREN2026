@@ -2,12 +2,13 @@
 import { useState, useEffect } from "react";
 import { useSession } from "next-auth/react";
 import { getTerapeutas } from "@/app/actions/configuracion";
+import { registrarEntrada, registrarSalida, getHorariosHoy } from "@/app/actions/horarios";
 
 interface Horario {
-  id: number;
+  id: string;
   terapeuta: string;
   horaEntrada: string;
-  horaSalida?: string;
+  horaSalida: string | null;
 }
 
 export default function HorariosPage() {
@@ -26,6 +27,13 @@ export default function HorariosPage() {
   const [horaActual, setHoraActual] = useState("");
   const [terapeutasDisponibles, setTerapeutasDisponibles] = useState<string[]>([]);
 
+  const fetchHorarios = async () => {
+    const res = await getHorariosHoy();
+    if (res.success && res.data) {
+      setHorarios(res.data);
+    }
+  };
+
   useEffect(() => {
     async function loadTerapeutas() {
       const res = await getTerapeutas();
@@ -40,53 +48,58 @@ export default function HorariosPage() {
     }
     if (userName) {
       loadTerapeutas();
+      fetchHorarios();
     }
   }, [userName, userRole]);
 
   useEffect(() => {
     const interval = setInterval(() => {
-      setHoraActual(new Date().toLocaleTimeString());
+      setHoraActual(new Date().toLocaleTimeString('en-US', { hour12: false }));
     }, 1000);
-    return () => clearInterval(interval);
+    
+    // Polling auto-refresh de la base de datos cada 10 segundos
+    const syncInterval = setInterval(() => {
+      fetchHorarios();
+    }, 10000);
+
+    return () => {
+      clearInterval(interval);
+      clearInterval(syncInterval);
+    };
   }, []);
 
-  const registrarEntrada = () => {
+  const handleEntrada = async () => {
     if (!terapeutaSeleccionado) {
       alert("Selecciona un terapeuta primero.");
       return;
     }
+    
+    const res = await registrarEntrada(terapeutaSeleccionado);
+    if (!res.success) {
+      alert(res.error || "Error al registrar entrada");
+      return;
+    }
 
-    const nuevoHorario: Horario = {
-      id: Date.now(),
-      terapeuta: terapeutaSeleccionado,
-      horaEntrada: new Date().toLocaleTimeString(),
-    };
-
-    setHorarios([nuevoHorario, ...horarios]);
+    await fetchHorarios();
+    
     if (userRole.toUpperCase() !== "TERAPEUTA") {
       setTerapeutaSeleccionado("");
     }
   };
 
-  const registrarSalida = () => {
+  const handleSalida = async () => {
     if (!terapeutaSeleccionado) {
       alert("Selecciona un terapeuta primero.");
       return;
     }
 
-    // Buscar si ya tiene una entrada hoy
-    const index = horarios.findIndex(h => h.terapeuta === terapeutaSeleccionado && !h.horaSalida);
-    
-    if (index !== -1) {
-      const nuevosHorarios = [...horarios];
-      nuevosHorarios[index] = {
-        ...nuevosHorarios[index],
-        horaSalida: new Date().toLocaleTimeString()
-      };
-      setHorarios(nuevosHorarios);
-    } else {
-      alert("Este terapeuta no tiene una entrada activa registrada.");
+    const res = await registrarSalida(terapeutaSeleccionado);
+    if (!res.success) {
+      alert(res.error || "Error al registrar salida");
+      return;
     }
+
+    await fetchHorarios();
     
     if (userRole.toUpperCase() !== "TERAPEUTA") {
       setTerapeutaSeleccionado("");
@@ -126,13 +139,13 @@ export default function HorariosPage() {
 
           <div className="flex gap-2 w-full">
             <button 
-              onClick={registrarEntrada}
+              onClick={handleEntrada}
               className="flex-1 px-4 py-3 bg-indigo-600 hover:bg-indigo-700 text-white font-bold rounded-lg shadow-sm transition-transform active:scale-95"
             >
               Entrada
             </button>
             <button 
-              onClick={registrarSalida}
+              onClick={handleSalida}
               className="flex-1 px-4 py-3 bg-slate-800 hover:bg-slate-900 text-white font-bold rounded-lg shadow-sm transition-transform active:scale-95"
             >
               Salida
