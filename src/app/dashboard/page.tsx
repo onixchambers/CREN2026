@@ -16,6 +16,15 @@ export default function DashboardPage() {
     }
   }, [session, status, router]);
 
+  if (status === "loading" || (status === "authenticated" && ((session?.user as any)?.role || "ADMIN").toUpperCase() === "TERAPEUTA")) {
+    return (
+      <div className="flex items-center justify-center min-h-[50vh]">
+        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-[#1a5276]"></div>
+        <span className="ml-3 text-slate-500 font-medium">Redirigiendo a Agenda...</span>
+      </div>
+    );
+  }
+
   const formatDateStr = (dateStr: string) => {
     if (!dateStr) return "-";
     const parts = dateStr.split("-");
