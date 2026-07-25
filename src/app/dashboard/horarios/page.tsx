@@ -38,9 +38,12 @@ export default function HorariosPage() {
         }
       }
     }
-    loadTerapeutas();
+    if (userName) {
+      loadTerapeutas();
+    }
+  }, [userName, userRole]);
 
-    // Actualizar reloj cada segundo
+  useEffect(() => {
     const interval = setInterval(() => {
       setHoraActual(new Date().toLocaleTimeString());
     }, 1000);
@@ -60,7 +63,9 @@ export default function HorariosPage() {
     };
 
     setHorarios([nuevoHorario, ...horarios]);
-    setTerapeutaSeleccionado("");
+    if (userRole.toUpperCase() !== "TERAPEUTA") {
+      setTerapeutaSeleccionado("");
+    }
   };
 
   const registrarSalida = () => {
@@ -83,7 +88,9 @@ export default function HorariosPage() {
       alert("Este terapeuta no tiene una entrada activa registrada.");
     }
     
-    setTerapeutaSeleccionado("");
+    if (userRole.toUpperCase() !== "TERAPEUTA") {
+      setTerapeutaSeleccionado("");
+    }
   };
 
   return (
