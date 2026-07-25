@@ -2,6 +2,7 @@
 import { useState, useEffect } from "react";
 import { useSession } from "next-auth/react";
 import { getPatients } from "@/app/actions/pacientes";
+import { getAgenda } from "@/app/actions/agenda";
 import { getTerapeutasFull } from "@/app/actions/configuracion";
 import { DateInput } from "@/components/DateInput";
 
@@ -105,43 +106,45 @@ export default function AsistenciaPage() {
       }
       
       // Cargar áreas
-      const tRes = await getTerapeutasFull();
-      if (tRes.success && tRes.data) {
-        const allTeras = tRes.data.map((t: any) => t.name).filter(Boolean);
-        if (userRole.toUpperCase() === "TERAPEUTA") {
-          setTerapeutas([userName]);
-          setFormData(prev => ({ ...prev, terapeuta: userName }));
-          const me = tRes.data.find((t: any) => t.name === userName);
-          if (me && me.especialidad) {
-            const espList = me.especialidad.split(',').map((s: string) => s.trim()).filter((s: string) => s);
-            if (espList.length > 0) {
-              setAvailableAreas(espList);
-              if (espList.length === 1) {
-                setFormData(prev => ({ ...prev, area: espList[0] }));
-              }
-            }
-          }
-        } else {
-          setTerapeutas(allTeras);
-          const allEsp = new Set<string>();
-          tRes.data.forEach((t: any) => {
-            if (t.especialidad) {
-              t.especialidad.split(',').forEach((s: string) => {
-                const val = s.trim();
-                if (val) allEsp.add(val);
-              });
-            }
-          });
-          allEsp.add("Psicología");
-          allEsp.add("Lenguaje");
-          allEsp.add("Fisioterapia");
-          setAvailableAreas(Array.from(allEsp));
+        const tRes = await getTerapeutasFull();
+        if (tRes.success && tRes.data) {
+          setAvailableAreas(tRes.data.map((t: any) => t.area));
+          setTerapeutas(tRes.data.map((t: any) => t.name));
         }
-      }
+        
+        // Cargar asistencias reales de la Agenda
+        const agRes = await getAgenda();
+        let agendaAsistencias: any[] = [];
+        if (agRes.success && agRes.data) {
+          agendaAsistencias = agRes.data.map((c: any) => {
+            // Find patient to get sex and age
+            const p = validPatients.find((vp: any) => vp.name === c.paciente);
+            return {
+              id: c.id,
+              fecha: c.fecha,
+              area: "Terapia",
+              paciente: c.paciente,
+              sexo: p?.sexo || "N/A",
+              edad: p?.age ? p.age.toString() : "N/A",
+              terapeuta: c.terapeuta,
+              tipoSesion: c.tipoServicio || "Individual",
+              estado: c.estado,
+              sesiones: c.frecuencia || "1/1",
+              pago: c.pagado ? "Sí" : "No",
+              fact: "No",
+              subtotal: "$0",
+              obs: c.metodoPago ? `Método: ${c.metodoPago}` : "Desde Agenda",
+              creadoPor: c.terapeuta
+            };
+          });
+        }
 
-      // Cargar asistencias
-      const aData = localStorage.getItem("asistenciaData");
-      if (aData) setAsistencias(JSON.parse(aData));
+        // Cargar asistencias desde localStorage (mock/legacy)
+        const aData = localStorage.getItem("asistenciaData");
+        let localAsist: any[] = [];
+        if (aData) localAsist = JSON.parse(aData);
+        
+        setAsistencias([...agendaAsistencias, ...localAsist]);
     }
     loadData();
   }, [userName, userRole]);

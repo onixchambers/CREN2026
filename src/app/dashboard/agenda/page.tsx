@@ -111,12 +111,23 @@ export default function AgendaPage() {
     }
   };
   
-    const handleUpdateInline = async (id: string, updates: any) => {
-    // Optimistic update
+    const handleUpdateInline = (id: string, updates: any) => {
     setCitas(citas.map(c => c.id === id ? { ...c, ...updates } : c));
+  };
+
+  const handleSaveInline = async (id: string) => {
     const current = citas.find(c => c.id === id);
     if (!current) return;
-    await updateCita(id, { ...current, ...updates });
+    const res = await updateCita(id, { 
+      estado: current.estado,
+      pagado: current.pagado,
+      metodoPago: current.metodoPago
+    });
+    if (res.success) {
+      alert("Cita guardada correctamente");
+    } else {
+      alert("Error al guardar cita");
+    }
   };
 
   const handleDeleteCita = async (id: string) => {
@@ -276,6 +287,13 @@ export default function AgendaPage() {
                                 <option value="Transferencia">Transferencia</option>
                               </select>
                             )}
+
+                            <button 
+                              onClick={(e) => { e.stopPropagation(); handleSaveInline(cita.id); }}
+                              className="mt-1 w-full bg-[#1a5276] text-white text-[10px] font-bold py-1 rounded hover:bg-[#0e2f44] transition-colors"
+                            >
+                              Guardar
+                            </button>
                           </div>
                         ) : (
                           <span className="text-slate-300">—</span>

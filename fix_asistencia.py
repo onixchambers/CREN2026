@@ -1,96 +1,109 @@
 ﻿import os
+import re
 
 path = 'src/app/dashboard/asistencia/page.tsx'
 with open(path, 'r', encoding='utf-8') as f:
     content = f.read()
 
-# Chunk 1
-content = content.replace(
-    'import { getPatients } from "@/app/actions/pacientes";',
-    'import { getPatients } from "@/app/actions/pacientes";\nimport { getTerapeutasFull } from "@/app/actions/configuracion";'
-)
+# 1. Add getAgenda import
+content = content.replace('import { getPatients } from "@/app/actions/pacientes";', 'import { getPatients } from "@/app/actions/pacientes";\nimport { getAgenda } from "@/app/actions/agenda";')
 
-# Chunk 2
-content = content.replace(
-    'const [filtroEstado, setFiltroEstado] = useState("Todos");',
-    'const [filtroEstado, setFiltroEstado] = useState("Todos");\n  const [availableAreas, setAvailableAreas] = useState<string[]>(["Psicología", "Lenguaje", "Fisioterapia"]);'
-)
-
-# Chunk 3
-old_load = '''      // Cargar asistencias
-      const aData = localStorage.getItem("asistenciaData");'''
-new_load = '''      // Cargar áreas
-      const tRes = await getTerapeutasFull();
-      if (tRes.success && tRes.data) {
-        if (userRole.toUpperCase() === "TERAPEUTA") {
-          const me = tRes.data.find((t: any) => t.name === userName);
-          if (me && me.especialidad) {
-            const espList = me.especialidad.split(',').map((s: string) => s.trim()).filter((s: string) => s);
-            if (espList.length > 0) {
-              setAvailableAreas(espList);
-              if (espList.length === 1) {
-                setFormData(prev => ({ ...prev, area: espList[0] }));
-              }
-            }
-          }
-        } else {
-          const allEsp = new Set<string>();
-          tRes.data.forEach((t: any) => {
-            if (t.especialidad) {
-              t.especialidad.split(',').forEach((s: string) => {
-                const val = s.trim();
-                if (val) allEsp.add(val);
-              });
-            }
-          });
-          allEsp.add("Psicología");
-          allEsp.add("Lenguaje");
-          allEsp.add("Fisioterapia");
-          setAvailableAreas(Array.from(allEsp));
+# 2. Modify loadData in useEffect
+old_load_data = '''        // Cargar ǭreas
+        const tRes = await getTerapeutasFull();
+        if (tRes.success && tRes.data) {
+          setAvailableAreas(tRes.data.map((t: any) => t.area));
+          setTerapeutas(tRes.data.map((t: any) => t.name));
         }
-      }
+        
+        // Cargar asistencias desde localStorage (mock)
+        const aData = localStorage.getItem("asistenciaData");
+        if (aData) setAsistencias(JSON.parse(aData));'''
 
-      // Cargar asistencias
-      const aData = localStorage.getItem("asistenciaData");'''
-content = content.replace(old_load, new_load)
+new_load_data = '''        // Cargar ǭreas
+        const tRes = await getTerapeutasFull();
+        if (tRes.success && tRes.data) {
+          setAvailableAreas(tRes.data.map((t: any) => t.area));
+          setTerapeutas(tRes.data.map((t: any) => t.name));
+        }
+        
+        // Cargar asistencias reales de la Agenda
+        const agRes = await getAgenda();
+        let agendaAsistencias = [];
+        if (agRes.success && agRes.data) {
+          agendaAsistencias = agRes.data.map((c: any) => ({
+            id: c.id,
+            fecha: c.fecha,
+            area: "General", // Se puede mejorar
+            paciente: c.paciente,
+            sexo: "N/A", // Se podrǭ cruzar con validPatients
+            edad: "N/A",
+            terapeuta: c.terapeuta,
+            tipoSesion: c.tipoServicio || "Individual",
+            estado: c.estado,
+            sesiones: c.frecuencia || "1/1",
+            pago: c.pagado ? "Sǭ" : "No",
+            fact: "No",
+            subtotal: "",
+            obs: c.metodoPago ? Mǭtodo:  : "Desde Agenda",
+            creadoPor: c.terapeuta
+          }));
+        }
 
-# Chunk 4
-old_select1 = '''                <select name="area" value={formData.area} onChange={handleChange} className="w-full text-sm p-2 border border-slate-300 rounded focus:border-[#2980b9] outline-none text-slate-900">
-                  <option value="">Seleccionar especialidad...</option>
-                  <option value="Psicología">Psicología</option>
-                  <option value="Lenguaje">Lenguaje</option>
-                  <option value="Fisioterapia">Fisioterapia</option>
-                </select>'''
-new_select1 = '''                <select name="area" value={formData.area} onChange={handleChange} className="w-full text-sm p-2 border border-slate-300 rounded focus:border-[#2980b9] outline-none text-slate-900">
-                  <option value="">Seleccionar especialidad...</option>
-                  {availableAreas.map(area => (
-                    <option key={area} value={area}>{area}</option>
-                  ))}
-                </select>'''
-content = content.replace(old_select1, new_select1)
+        // Cargar asistencias desde localStorage (mock/legacy)
+        const aData = localStorage.getItem("asistenciaData");
+        let localAsist = [];
+        if (aData) localAsist = JSON.parse(aData);
+        
+        // Unir ambas fuentes, dando prioridad a las de la agenda para mostrar todas en la tabla
+        setAsistencias([...agendaAsistencias, ...localAsist]);'''
 
-# Chunk 5
-old_select2 = '''                  <select name="area" value={editForm.area} onChange={handleEditChange} className="w-full text-sm p-2 border border-slate-300 rounded focus:border-[#2980b9] outline-none text-slate-900">
-                    <option value="Psicología">Psicología</option>
-                    <option value="Lenguaje">Lenguaje</option>
-                    <option value="Fisioterapia">Fisioterapia</option>
-                  </select>'''
-new_select2 = '''                  <select name="area" value={editForm.area} onChange={handleEditChange} className="w-full text-sm p-2 border border-slate-300 rounded focus:border-[#2980b9] outline-none text-slate-900">
-                    <option value="">Seleccionar especialidad...</option>
-                    {availableAreas.map(area => (
-                      <option key={area} value={area}>{area}</option>
-                    ))}
-                  </select>'''
-content = content.replace(old_select2, new_select2)
+# We need to handle the encoding issues from powershell output (ǭ)
+# Actually, the python script will use normal strings
+old_load_data = re.search(r'// Cargar áreas.*?if \(aData\) setAsistencias\(JSON\.parse\(aData\)\);', content, flags=re.DOTALL)
+if old_load_data:
+    new_load_data_str = '''// Cargar áreas
+        const tRes = await getTerapeutasFull();
+        if (tRes.success && tRes.data) {
+          setAvailableAreas(tRes.data.map((t: any) => t.area));
+          setTerapeutas(tRes.data.map((t: any) => t.name));
+        }
+        
+        // Cargar asistencias reales de la Agenda
+        const agRes = await getAgenda();
+        let agendaAsistencias: any[] = [];
+        if (agRes.success && agRes.data) {
+          agendaAsistencias = agRes.data.map((c: any) => {
+            // Find patient to get sex and age
+            const p = validPatients.find((vp: any) => vp.name === c.paciente);
+            return {
+              id: c.id,
+              fecha: c.fecha,
+              area: "Terapia",
+              paciente: c.paciente,
+              sexo: p?.sexo || "N/A",
+              edad: p?.age ? p.age.toString() : "N/A",
+              terapeuta: c.terapeuta,
+              tipoSesion: c.tipoServicio || "Individual",
+              estado: c.estado,
+              sesiones: c.frecuencia || "1/1",
+              pago: c.pagado ? "Sí" : "No",
+              fact: "No",
+              subtotal: "",
+              obs: c.metodoPago ? Método:  : "Desde Agenda",
+              creadoPor: c.terapeuta
+            };
+          });
+        }
 
-# Chunk 6
-old_limpiar = '''    setFormData({
-      fecha: hoy,
-      area: "",'''
-new_limpiar = '''    setFormData({
-      fecha: hoy,
-      area: (availableAreas.length === 1 && userRole.toUpperCase() === "TERAPEUTA") ? availableAreas[0] : "",'''
-content = content.replace(old_limpiar, new_limpiar)
+        // Cargar asistencias desde localStorage (mock/legacy)
+        const aData = localStorage.getItem("asistenciaData");
+        let localAsist: any[] = [];
+        if (aData) localAsist = JSON.parse(aData);
+        
+        setAsistencias([...agendaAsistencias, ...localAsist]);'''
+    content = content.replace(old_load_data.group(0), new_load_data_str)
 
 with open(path, 'w', encoding='utf-8') as f:
     f.write(content)
+print("Added agenda syncing to Asistencia!")
