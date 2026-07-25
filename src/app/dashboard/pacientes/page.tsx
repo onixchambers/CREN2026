@@ -45,15 +45,8 @@ export default function PacientesPage() {
 
   const [viewingPatient, setViewingPatient] = useState<any>(null);
 
-  const handleLimpiar = () => {
-    setSearchTerm("");
-    setMonthTerm("");
-  };
-
   const pacientesFiltrados = pacientes.filter(p => {
-    const matchSearch = p.name?.toLowerCase().includes(searchTerm.toLowerCase());
-    const matchMonth = monthTerm ? p.createdAt?.startsWith(monthTerm) : true;
-    return matchSearch && matchMonth;
+    return p.name?.toLowerCase().includes(searchTerm.toLowerCase());
   });
 
   const totalPages = Math.ceil(pacientesFiltrados.length / ITEMS_PER_PAGE);
@@ -144,20 +137,6 @@ export default function PacientesPage() {
           <button className="bg-[#1a5276] hover:bg-[#0e2f44] text-white px-4 py-1.5 rounded text-sm font-semibold flex items-center gap-2 transition-colors">
             <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" /></svg>
             Buscar
-          </button>
-
-          <div className="flex items-center gap-2 ml-4">
-            <label className="text-sm font-semibold text-slate-500">Mes/Año:</label>
-            <input 
-              type="month" 
-              value={monthTerm}
-              onChange={(e) => setMonthTerm(e.target.value)}
-              className="border border-slate-300 rounded px-3 py-1.5 text-sm outline-none focus:border-[#2980b9] text-slate-700 w-40"
-            />
-          </div>
-
-          <button onClick={handleLimpiar} className="border border-slate-300 text-slate-600 hover:bg-slate-50 px-4 py-1.5 rounded text-sm font-semibold transition-colors">
-            Limpiar
           </button>
         </div>
 

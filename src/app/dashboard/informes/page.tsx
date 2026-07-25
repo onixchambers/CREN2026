@@ -38,13 +38,16 @@ export default function InformesPage() {
   const [selectedTipo, setSelectedTipo] = useState("");
   const hoy = new Date().toISOString().split("T")[0];
   const [selectedFecha, setSelectedFecha] = useState(hoy);
-  const [file, setFile] = useState<File | null>(null);
+  const [files, setFiles] = useState<File[]>([]);
+  const [currentPage, setCurrentPage] = useState(1);
+  const ITEMS_PER_PAGE = 25;
   
   // Filtros tabla
   const [filtroPaciente, setFiltroPaciente] = useState("");
   const [filtroTipo, setFiltroTipo] = useState("Todos");
 
   const [showDropdown, setShowDropdown] = useState(false);
+  const [showFiltroDropdown, setShowFiltroDropdown] = useState(false);
   const [searchInput, setSearchInput] = useState("");
 
   const fileInputRef = useRef<HTMLInputElement>(null);
@@ -115,6 +118,12 @@ export default function InformesPage() {
     return matchPaciente && matchTipo;
   });
 
+  const totalPages = Math.ceil(informesFiltrados.length / ITEMS_PER_PAGE);
+  const paginatedInformes = informesFiltrados.slice(
+    (currentPage - 1) * ITEMS_PER_PAGE,
+    currentPage * ITEMS_PER_PAGE
+  );
+
   return (
     <div className="space-y-6 animate-in fade-in duration-500 max-w-[1200px] mx-auto">
       
@@ -149,7 +158,7 @@ export default function InformesPage() {
                   }}
                   className="w-full text-sm p-2 border border-slate-300 rounded focus:border-[#2980b9] outline-none text-slate-700 bg-white"
                 />
-                {showDropdown && searchInput && (
+                {showDropdown && (
                   <div className="absolute z-10 w-full mt-1 bg-white border border-slate-200 rounded-md shadow-lg max-h-48 overflow-y-auto">
                     {pacientes.filter(p => p.paciente.toLowerCase().includes(searchInput.toLowerCase())).map(p => (
                       <div 
@@ -219,7 +228,7 @@ export default function InformesPage() {
                 ) : (
                   <div className="text-center">
                     <svg className="w-10 h-10 mx-auto text-[#1a5276] opacity-70 mb-3" fill="none" stroke="currentColor" strokeWidth={1.5} viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" d="M7 21h10a2 2 0 002-2V9.414a1 1 0 00-.293-.707l-5.414-5.414A1 1 0 0012.586 3H7a2 2 0 00-2 2v14a2 2 0 002 2z" /><path strokeLinecap="round" strokeLinejoin="round" d="M9 9h1.5m1.5 0H15m-6 4h6m-6 4h6" /></svg>
-                    <p className="text-[#1a5276] font-bold text-[15px]">Arrastra aquí o haz clic</p>
+                    <p className="text-[#1a5276] font-bold text-[15px]">Arrastra aquíí o haz clic</p>
                     <p className="text-xs text-slate-400 mt-1">PDF, JPG, PNG, DOC, DOCX (máx. 5MB)</p>
                   </div>
                 )}

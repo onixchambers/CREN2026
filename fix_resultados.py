@@ -1,4 +1,7 @@
-"use client";
+﻿import os
+
+path = 'src/app/dashboard/estado-resultados/page.tsx'
+content = """"use client";
 
 import { useState, useEffect } from "react";
 import { getFinanzasMensuales, addGastoOperativo, removeGastoOperativo } from "@/app/actions/finanzas";
@@ -260,3 +263,7 @@ export default function EstadoResultadosPage() {
     </div>
   );
 }
+"""
+
+with open(path, 'w', encoding='utf-8') as f:
+    f.write(content)
