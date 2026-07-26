@@ -40,7 +40,7 @@ export default function DashboardPage() {
           return {
             fecha: extra.fecha || s.fecha,
             estado: extra.estadoAsistencia || s.estado,
-            total: extra.total ? $+{extra.total} : (s.pagado ? "1" : "0"), // fallback if missing
+            total: extra.total ? $ + extra.total : (s.pagado ? "1" : "0"), // fallback if missing
             pago: extra.metodoPago || s.metodoPago || "No especificado",
             terapeuta: s.terapeuta
           };
