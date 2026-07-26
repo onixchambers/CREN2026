@@ -3,6 +3,7 @@ import { useState, useEffect } from "react";
 import { useSession } from "next-auth/react";
 import { getPatients } from "@/app/actions/pacientes";
 import { getAgenda } from "@/app/actions/agenda";
+import { saveAsistenciaDB } from "@/app/actions/asistencia";
 import { getTerapeutasFull } from "@/app/actions/configuracion";
 import { DateInput } from "@/components/DateInput";
 
@@ -652,6 +653,7 @@ export default function AsistenciaPage() {
               {asistenciasFiltradas.length > 0 ? asistenciasFiltradas.map(a => (
                 <tr key={a.id} className="hover:bg-slate-50 transition-colors">
                   <td className="px-2 py-3 text-slate-500 font-medium">{formatDateStr(a.fecha)}</td>
+                  <td className="px-2 py-3 text-slate-500 max-w-[100px] truncate" title={a.terapeuta}>{a.terapeuta}</td>
                   <td className="px-2 py-3 text-slate-500">{a.area}</td>
                   <td className="px-4 py-3 text-left font-bold text-[#1a5276] max-w-[150px] truncate" title={a.paciente}>{a.paciente}</td>
                   <td className="px-2 py-3 text-slate-500">{a.sexo}</td>
