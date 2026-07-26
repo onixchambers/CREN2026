@@ -101,14 +101,40 @@ export default function AsistenciaPage() {
     observaciones: ""
   });
 
+  // Función reutilizable para recargar asistencias desde la BD
+  const recargarAsistencias = async () => {
+    const agRes = await getAsistenciasDB(Date.now().toString());
+    if (agRes.success && agRes.data) {
+      const mapped = agRes.data.map((c: any) => ({
+        id: c.id,
+        fecha: c.fecha,
+        area: c.area || "-",
+        paciente: c.paciente,
+        sexo: c.sexo || "-",
+        edad: c.edad || "-",
+        terapeuta: c.terapeuta,
+        tipoSesion: c.tipoSesion || "-",
+        estado: c.estado,
+        sesiones: c.sesiones || "1",
+        paqueteActual: c.paqueteActual || 1,
+        pago: c.pago || "-",
+        fact: c.fact || "No",
+        subtotal: c.subtotal || "$0.00",
+        total: c.total || "$0.00",
+        saldo: c.saldo || 0,
+        obs: c.obs || "-",
+        creadoPor: c.creadoPor || "-"
+      }));
+      setAsistencias(mapped);
+    }
+  };
+
   useEffect(() => {
     async function loadData() {
       // Cargar pacientes de la BD real
       const res = await getPatients();
       if (res.success && res.data) {
         let validPatients = res.data;
-        // Todos pueden ver todos los pacientes (solicitud del usuario)
-        // Map to expected format
         const mapped = validPatients.map((p: any) => ({
           id: p.id,
           paciente: p.name,
@@ -120,66 +146,37 @@ export default function AsistenciaPage() {
         setPacientes(mapped);
       }
       
-      // Cargar áreas
-        const tRes = await getTerapeutasFull();
-        if (tRes.success && tRes.data) {
-          setTerapeutasFullData(tRes.data);
-          let allAreas: string[] = [];
-          tRes.data.forEach((t: any) => {
-            if (t.especialidad) {
-              const parts = t.especialidad.split(',').map((x: string) => x.trim()).filter(Boolean);
-              allAreas = allAreas.concat(parts);
-            }
-          });
-          const areas = Array.from(new Set(allAreas));
-          
-          if (userRole.toUpperCase() === "TERAPEUTA") {
-            const matched = tRes.data.find((t: any) => t.name.toLowerCase().includes(userName.toLowerCase()) || userName.toLowerCase().includes(t.name.toLowerCase()));
-            const miTerapeutaStr = matched ? matched.name : (tRes.data[0]?.name || userName);
-            const miAreaStr = matched ? matched.especialidad : "";
-            let misAreas: string[] = [];
-            if (miAreaStr) misAreas = miAreaStr.split(',').map((x: string) => x.trim()).filter(Boolean);
-            
-            setAvailableAreas(misAreas.length > 0 ? misAreas : (areas.length > 0 ? areas : ["Psicología", "Lenguaje", "Fisioterapia", "Terapia Ocupacional"]));
-            setTerapeutas([miTerapeutaStr]);
-            setFormData(prev => ({...prev, terapeuta: miTerapeutaStr, area: misAreas[0] || ""}));
-          } else {
-            setAvailableAreas(areas.length > 0 ? areas : ["Psicología", "Lenguaje", "Fisioterapia", "Terapia Ocupacional"]);
-            setTerapeutas(tRes.data.map((t: any) => t.name));
+      // Cargar terapeutas y áreas
+      const tRes = await getTerapeutasFull();
+      if (tRes.success && tRes.data) {
+        setTerapeutasFullData(tRes.data);
+        let allAreas: string[] = [];
+        tRes.data.forEach((t: any) => {
+          if (t.especialidad) {
+            const parts = t.especialidad.split(',').map((x: string) => x.trim()).filter(Boolean);
+            allAreas = allAreas.concat(parts);
           }
-        }
+        });
+        const areas = Array.from(new Set(allAreas));
         
-        // Cargar asistencias reales de la Agenda
-        const agRes = await getAsistenciasDB(Date.now().toString());
-        let agendaAsistencias: any[] = [];
-        if (agRes.success && agRes.data) {
-          agendaAsistencias = agRes.data.map((c: any) => {
-            // Find patient to get sex and age
-            const p = validPatients.find((vp: any) => vp.name === c.paciente);
-            return {
-              id: c.id,
-              fecha: c.fecha,
-              area: c.area || "-",
-              paciente: c.paciente,
-              sexo: p?.sexo || c.sexo,
-              edad: p?.age ? p.age.toString() : c.edad,
-              terapeuta: c.terapeuta,
-              tipoSesion: c.tipoSesion || "-",
-              estado: c.estado,
-              sesiones: c.sesiones || "1",
-              paqueteActual: c.paqueteActual || 1,
-              pago: c.pago || "-",
-              fact: c.fact || "No",
-              subtotal: c.subtotal || "$0.00",
-              total: c.total || "$0.00",
-              saldo: c.saldo || 0,
-              obs: c.obs || "-",
-              creadoPor: c.creadoPor || "-"
-            };
-          });
+        if (userRole.toUpperCase() === "TERAPEUTA") {
+          const matched = tRes.data.find((t: any) => t.name.toLowerCase().includes(userName.toLowerCase()) || userName.toLowerCase().includes(t.name.toLowerCase()));
+          const miTerapeutaStr = matched ? matched.name : (tRes.data[0]?.name || userName);
+          const miAreaStr = matched ? matched.especialidad : "";
+          let misAreas: string[] = [];
+          if (miAreaStr) misAreas = miAreaStr.split(',').map((x: string) => x.trim()).filter(Boolean);
+          
+          setAvailableAreas(misAreas.length > 0 ? misAreas : (areas.length > 0 ? areas : ["Psicología", "Lenguaje", "Fisioterapia", "Terapia Ocupacional"]));
+          setTerapeutas([miTerapeutaStr]);
+          setFormData(prev => ({...prev, terapeuta: miTerapeutaStr, area: misAreas[0] || ""}));
+        } else {
+          setAvailableAreas(areas.length > 0 ? areas : ["Psicología", "Lenguaje", "Fisioterapia", "Terapia Ocupacional"]);
+          setTerapeutas(tRes.data.map((t: any) => t.name));
         }
-
-        setAsistencias(agendaAsistencias);
+      }
+      
+      // Cargar asistencias reales de la BD
+      await recargarAsistencias();
     }
     loadData();
   }, [userName, userRole]);
@@ -300,10 +297,10 @@ export default function AsistenciaPage() {
       return;
     }
 
-    const nuevas = [nuevaAsistencia, ...asistencias];
-    setAsistencias(nuevas);
     alert("Sesión guardada exitosamente en la base de datos");
     handleLimpiarForm();
+    // Recargar desde BD para que el registro persista al cambiar de pestaña
+    await recargarAsistencias();
   };
 
   // --- Lógica de Edición ---
@@ -372,7 +369,7 @@ export default function AsistenciaPage() {
        }
     }
 
-    setAsistencias(nuevasAsistencias);
+    await recargarAsistencias();
     alert("Registro actualizado en la base de datos.");
     setEditingAsistencia(null);
   };
