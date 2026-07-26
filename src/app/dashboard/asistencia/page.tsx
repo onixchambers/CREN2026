@@ -153,12 +153,7 @@ export default function AsistenciaPage() {
           });
         }
 
-        // Cargar asistencias desde localStorage (mock/legacy)
-        const aData = localStorage.getItem("asistenciaData");
-        let localAsist: any[] = [];
-        if (aData) localAsist = JSON.parse(aData);
-        
-        setAsistencias([...agendaAsistencias, ...localAsist]);
+        setAsistencias(agendaAsistencias);
     }
     loadData();
   }, [userName, userRole]);
@@ -221,7 +216,7 @@ export default function AsistenciaPage() {
     });
   };
 
-  const handleGuardar = () => {
+  const handleGuardar = async () => {
     if (!formData.pacienteNombre || !formData.area || !formData.estadoAsistencia || !formData.tipoSesion || !formData.terapeuta) {
       alert("Por favor completa los campos principales (Paciente, Terapeuta, Área, Tipo de Sesión, Estado).");
       return;
@@ -249,10 +244,16 @@ export default function AsistenciaPage() {
       terapeuta: formData.terapeuta
     };
 
+    // Guardar en Base de Datos Real
+    const dbRes = await saveAsistenciaDB(nuevaAsistencia);
+    if (dbRes?.success === false) {
+      alert("Error al guardar en BD: " + dbRes.error);
+      return;
+    }
+
     const nuevas = [nuevaAsistencia, ...asistencias];
     setAsistencias(nuevas);
-    localStorage.setItem("asistenciaData", JSON.stringify(nuevas));
-    alert("Sesión guardada exitosamente");
+    alert("Sesión guardada exitosamente en la base de datos");
     handleLimpiarForm();
   };
 
@@ -285,15 +286,16 @@ export default function AsistenciaPage() {
     }
   };
 
-  const saveEdit = () => {
+  const saveEdit = async () => {
     if (!editingAsistencia) return;
     
     const sub = editForm.subtotal ? parseFloat(editForm.subtotal) : 0;
     const tot = editForm.fact ? sub * 1.16 : sub;
 
+    let asisActualizada = null;
     const nuevasAsistencias = asistencias.map(a => {
       if (a.id === editingAsistencia.id) {
-        return {
+        asisActualizada = {
           ...a,
           fecha: editForm.fecha,
           area: editForm.area,
@@ -308,21 +310,34 @@ export default function AsistenciaPage() {
           creadoPor: a.creadoPor || userName,
           terapeuta: editForm.terapeuta || a.terapeuta
         };
+        return asisActualizada;
       }
       return a;
     });
 
+    if (asisActualizada) {
+       const dbRes = await saveAsistenciaDB(asisActualizada);
+       if (dbRes?.success === false) {
+         alert("Error al actualizar BD: " + dbRes.error);
+         return;
+       }
+    }
+
     setAsistencias(nuevasAsistencias);
-    localStorage.setItem("asistenciaData", JSON.stringify(nuevasAsistencias));
-    alert("Registro actualizado.");
+    alert("Registro actualizado en la base de datos.");
     setEditingAsistencia(null);
   };
 
-  const handleDeleteAsistencia = (id: string) => {
+  const handleDeleteAsistencia = async (id: string) => {
     if (window.confirm("¿Estás seguro de que deseas eliminar este registro de asistencia?")) {
-      const nuevas = asistencias.filter(a => a.id !== id);
-      setAsistencias(nuevas);
-      localStorage.setItem("asistenciaData", JSON.stringify(nuevas));
+      const res = await deleteCita(id);
+      if (res.success) {
+        const nuevas = asistencias.filter(a => a.id !== id);
+        setAsistencias(nuevas);
+        alert("Registro eliminado de la base de datos.");
+      } else {
+        alert("No se pudo eliminar el registro: " + res.error);
+      }
     }
   };
 
