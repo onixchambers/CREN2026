@@ -1,6 +1,7 @@
 "use client";
 import { useState, useEffect } from "react";
 import { useSession } from "next-auth/react";
+import { useRouter } from "next/navigation";
 import { getPatients } from "@/app/actions/pacientes";
 import { getAsistenciasDB } from "@/app/actions/asistencia";
 import { getAgenda } from "@/app/actions/agenda";
@@ -43,6 +44,7 @@ type Asistencia = {
 
 export default function AsistenciaPage() {
   const { data: session } = useSession();
+    const router = useRouter();
   const userName = session?.user?.name || "Administrador";
   const userRole = (session?.user as any)?.role || "ADMIN";
 

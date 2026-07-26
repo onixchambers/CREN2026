@@ -92,7 +92,6 @@ export async function addCita(data: any) {
           patientId: patient.id,
           therapistId: therapistId,
           date: jsDate,
-          time: data.hora,
           status: data.estado || "Ocupado",
           notes: notesJson
         }
