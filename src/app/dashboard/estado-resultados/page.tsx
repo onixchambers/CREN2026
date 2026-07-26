@@ -3,6 +3,9 @@
 import { useState, useEffect } from "react";
 import { getFinanzasMensuales, addGastoOperativo, removeGastoOperativo } from "@/app/actions/finanzas";
 
+export const dynamic = 'force-dynamic';
+export const revalidate = 0;
+
 export default function EstadoResultadosPage() {
   const currentMonth = new Date().toISOString().slice(0, 7); // YYYY-MM
   const [mesActual, setMesActual] = useState(currentMonth);

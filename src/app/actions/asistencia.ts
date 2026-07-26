@@ -5,8 +5,9 @@ import { revalidatePath } from "next/cache";
 
 export async function saveAsistenciaDB(data: any) {
   try {
+    const pacienteStr = data.paciente || data.pacienteNombre;
     // Buscar paciente
-    const patient = await prisma.patient.findFirst({ where: { name: data.paciente } });
+    const patient = await prisma.patient.findFirst({ where: { name: pacienteStr } });
     if (!patient) return { success: false, error: "Paciente no encontrado." };
 
     // Buscar terapeuta
@@ -39,20 +40,21 @@ export async function saveAsistenciaDB(data: any) {
     }
 
     // Datos financieros a guardar
+    const estadoVal = data.estado || data.estadoAsistencia || "";
     const extra = {
       asistenciaGuardada: true,
       fecha: data.fecha,
       area: data.area,
       tipoSesion: data.tipoSesion,
-      estadoAsistencia: data.estado, // Asistio, Cancelo...
-      sesiones: data.sesiones,
-      metodoPago: data.pago,
-      solicitaFactura: data.fact === "Sí",
-      subtotal: parseFloat(data.subtotal.replace("$", "")) || 0,
-      total: parseFloat(data.total.replace("$", "")) || 0,
+      estadoAsistencia: estadoVal,
+      sesiones: data.sesiones || data.numeroSesiones,
+      metodoPago: data.pago || data.metodoPago,
+      solicitaFactura: data.fact === "Sí" || data.solicitaFactura === "Sí",
+      subtotal: data.subtotal ? (typeof data.subtotal === 'string' ? parseFloat(data.subtotal.replace("$", "")) : data.subtotal) : 0,
+      total: data.total ? (typeof data.total === 'string' ? parseFloat(data.total.replace("$", "")) : data.total) : 0,
       obs: data.obs,
       creadoPor: data.creadoPor,
-      pagado: data.estado === "Asistio" || data.estado === "Cancelo sin anticipacion"
+      pagado: estadoVal === "Asistio" || estadoVal === "Cancelo sin anticipacion"
     };
 
     let finalNotes = "";
@@ -66,7 +68,7 @@ export async function saveAsistenciaDB(data: any) {
       await prisma.session.update({
         where: { id: targetSession.id },
         data: {
-          status: data.estado === "Asistio" ? "COMPLETED" : (data.estado.includes("Cancelo") ? "CANCELLED" : targetSession.status),
+          status: estadoVal === "Asistio" ? "COMPLETED" : (estadoVal.includes("Cancelo") ? "CANCELLED" : targetSession.status),
           notes: finalNotes
         }
       });
@@ -75,7 +77,7 @@ export async function saveAsistenciaDB(data: any) {
       await prisma.session.create({
         data: {
           date: jsDate,
-          status: data.estado === "Asistio" ? "COMPLETED" : (data.estado.includes("Cancelo") ? "CANCELLED" : "SCHEDULED"),
+          status: estadoVal === "Asistio" ? "COMPLETED" : (estadoVal.includes("Cancelo") ? "CANCELLED" : "SCHEDULED"),
           notes: finalNotes,
           therapistId,
           patientId: patient.id

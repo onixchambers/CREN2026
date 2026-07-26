@@ -91,7 +91,7 @@ export async function saveSettings(data: {
   expenses: { label: string; amount: number }[];
 }) {
   try {
-    const timeoutPromise = new Promise((_, reject) => setTimeout(() => reject(new Error("La conexión a la base de datos tardó demasiado (Timeout). Revisa tu DATABASE_URL en Vercel.")), 5000));
+    const timeoutPromise = new Promise((_, reject) => setTimeout(() => reject(new Error("La conexión a la base de datos tardó demasiado (Timeout). Revisa tu DATABASE_URL en Vercel.")), 15000));
     
     const dbPromise = (async () => {
       // 1. Process Users
