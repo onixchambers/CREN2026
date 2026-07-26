@@ -20,7 +20,7 @@ export async function saveAsistenciaDB(data: any) {
     if (!therapistId) return { success: false, error: "Terapeuta no encontrado." };
 
     // Construir fecha base (00:00:00) local
-    const jsDate = new Date($(.fecha)T00:00:00);
+    const jsDate = new Date(`${data.fecha}T00:00:00`);
 
     // Intentar buscar una cita existente de este paciente en este día
     // Para simplificar, buscamos todas y comparamos la fecha ignorando la hora
