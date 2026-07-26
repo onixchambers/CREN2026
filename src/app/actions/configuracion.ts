@@ -106,28 +106,29 @@ export async function saveSettings(data: {
         });
       }
 
-      for (const user of data.users) {
-        if (typeof user.id === 'string' && user.id.startsWith('c')) { 
-          await prisma.user.update({
-            where: { id: user.id },
-            data: {
-              name: user.usuario,
-              role: user.rol,
-              password: user.contrasena,
-              especialidad: user.especialidad || "",
-            }
-          });
-        } else { 
-          await prisma.user.create({
-            data: {
-              name: user.usuario,
-              role: user.rol,
-              password: user.contrasena,
-              especialidad: user.especialidad || "",
-            }
-          });
-        }
-      }
+        const userPromises = data.users.map((user: any) => {
+          if (typeof user.id === 'string' && user.id.startsWith('c')) { 
+            return prisma.user.update({
+              where: { id: user.id },
+              data: {
+                name: user.usuario,
+                role: user.rol,
+                password: user.contrasena,
+                especialidad: user.especialidad || "",
+              }
+            });
+          } else { 
+            return prisma.user.create({
+              data: {
+                name: user.usuario,
+                role: user.rol,
+                password: user.contrasena,
+                especialidad: user.especialidad || "",
+              }
+            });
+          }
+        });
+        await Promise.all(userPromises);
 
       // 2. Save SystemSettings
       await prisma.systemSettings.upsert({
