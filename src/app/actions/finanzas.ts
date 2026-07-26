@@ -75,10 +75,9 @@ export async function getFinanzasMensuales(month: string) {
       }
     });
 
-    // Agregar terapeutas de salario base (que tal vez no tuvieron sesiones pero igual cobran)
+    // Agregar TODOS los terapeutas al reporte aunque no tengan sesiones
     const todosTerapeutas = await prisma.user.findMany({ where: { role: "Terapeuta" } });
     todosTerapeutas.forEach(t => {
-      if (t.tipoPago === "Salario Base") {
         if (!terapeutasMap.has(t.id)) {
           terapeutasMap.set(t.id, {
             id: t.id,
@@ -86,17 +85,18 @@ export async function getFinanzasMensuales(month: string) {
             especialidad: t.especialidad,
             sesiones: 0,
             ingresoGenerado: 0,
-            pago: t.salarioBase || 0,
+            pago: t.tipoPago === "Salario Base" ? (t.salarioBase || 0) : 0,
             tipoPago: t.tipoPago,
             porcentaje: t.porcentaje,
             salarioBase: t.salarioBase,
             retieneIVA: t.retieneIVA
           });
         } else {
-          const tData = terapeutasMap.get(t.id);
-          tData.pago = t.salarioBase || 0; // Salario base fijo, independiente de sesiones
+          if (t.tipoPago === "Salario Base") {
+            const tData = terapeutasMap.get(t.id);
+            tData.pago = t.salarioBase || 0; // Salario base fijo, independiente de sesiones
+          }
         }
-      }
     });
 
     const terapeutasData = Array.from(terapeutasMap.values());
