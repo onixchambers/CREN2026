@@ -39,10 +39,42 @@ export async function saveAsistenciaDB(data: any) {
       }
     }
 
+    // Calcular paquete actual
+    let paqueteActual = 1;
+    const sesionesInt = parseInt(data.sesiones || data.numeroSesiones || "1");
+    if (sesionesInt > 1) {
+      // Buscar sesion anterior con el mismo paquete
+      const pastSessions = [...existingSessions].sort((a, b) => b.date.getTime() - a.date.getTime());
+      for (const s of pastSessions) {
+        if (!s.notes) continue;
+        try {
+          const e = JSON.parse(s.notes);
+          if (e.asistenciaGuardada && parseInt(e.sesiones) === sesionesInt && (e.fecha !== data.fecha)) {
+            if (e.paqueteActual && e.paqueteActual < sesionesInt) {
+              paqueteActual = e.paqueteActual + 1;
+              break;
+            }
+          }
+        } catch(err) {}
+      }
+    }
+
+    // Calcular saldo
+    let saldo = 0;
+    const montoP = parseFloat(data.montoPago || "0");
+    const costoS = parseFloat(data.costoSesion || data.precioTerapia || "0");
+    if (costoS > 0 || montoP > 0) {
+      saldo = montoP - costoS;
+    }
+
     // Datos financieros a guardar
     const estadoVal = data.estado || data.estadoAsistencia || "";
     const extra = {
       asistenciaGuardada: true,
+      paqueteActual: paqueteActual,
+      saldo: saldo,
+      montoPago: data.montoPago || "",
+      costoSesion: data.costoSesion || data.precioTerapia || "",
       fecha: data.fecha,
       area: data.area,
       tipoSesion: data.tipoSesion,
@@ -92,6 +124,51 @@ export async function saveAsistenciaDB(data: any) {
     return { success: true };
   } catch (error: any) {
     console.error("Error guardando asistencia:", error);
+    return { success: false, error: error.message };
+  }
+}
+
+
+export async function getAsistenciasDB() {
+  try {
+    const sessions = await prisma.session.findMany({
+      include: { patient: true, therapist: true },
+      orderBy: { date: 'desc' }
+    });
+
+    const asistencias = [];
+    for (const s of sessions) {
+      if (!s.notes) continue;
+      try {
+        const extra = JSON.parse(s.notes);
+        if (extra.asistenciaGuardada) {
+          asistencias.push({
+            id: s.id,
+            fecha: extra.fecha || s.date.toISOString().split("T")[0],
+            area: extra.area || "-",
+            paciente: s.patient?.name || "-",
+            pacienteId: s.patient?.id || "",
+            sexo: s.patient?.sexo || "-",
+            edad: s.patient?.age?.toString() || "-",
+            tipoSesion: extra.tipoSesion || "-",
+            estado: extra.estadoAsistencia || s.status,
+            sesiones: extra.sesiones || "1",
+            paqueteActual: extra.paqueteActual || 1,
+            pago: extra.metodoPago || "-",
+            fact: extra.solicitaFactura ? "Sí" : "No",
+            subtotal: extra.subtotal != null ? "$" + Number(extra.subtotal).toFixed(2) : ".00",
+            total: extra.total != null ? "$" + Number(extra.total).toFixed(2) : ".00",
+            saldo: extra.saldo != null ? extra.saldo : 0,
+            obs: extra.obs || "-",
+            creadoPor: extra.creadoPor || "-",
+            terapeuta: s.therapist?.name || "-"
+          });
+        }
+      } catch (e) {}
+    }
+    return { success: true, data: asistencias };
+  } catch (error: any) {
+    console.error("Error getAsistenciasDB:", error);
     return { success: false, error: error.message };
   }
 }

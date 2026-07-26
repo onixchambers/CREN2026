@@ -2,6 +2,7 @@
 import { useState, useEffect } from "react";
 import { useSession } from "next-auth/react";
 import { getPatients } from "@/app/actions/pacientes";
+import { getAsistenciasDB } from "@/app/actions/asistencia";
 import { getAgenda } from "@/app/actions/agenda";
 import { saveAsistenciaDB } from "@/app/actions/asistencia";
 import { deleteCita } from "@/app/actions/agenda";
@@ -31,6 +32,10 @@ type Asistencia = {
   fact: string;
   subtotal: string;
   total: string;
+  saldo?: number;
+  precioTerapia?: string;
+  montoPago?: string;
+  paqueteActual?: number;
   obs: string;
   creadoPor?: string;
   terapeuta?: string;
@@ -60,6 +65,7 @@ export default function AsistenciaPage() {
   const [filtroEstado, setFiltroEstado] = useState("Todos");
   const [availableAreas, setAvailableAreas] = useState<string[]>(["Psicología", "Lenguaje", "Fisioterapia"]);
   const [terapeutas, setTerapeutas] = useState<string[]>([]);
+  const [terapeutasFullData, setTerapeutasFullData] = useState<any[]>([]);
 
   // Predictivo
   const [showDropdown, setShowDropdown] = useState(false);
@@ -110,24 +116,34 @@ export default function AsistenciaPage() {
       // Cargar áreas
         const tRes = await getTerapeutasFull();
         if (tRes.success && tRes.data) {
-          const areas = Array.from(new Set(tRes.data.map((t: any) => t.especialidad).filter(Boolean)));
+          setTerapeutasFullData(tRes.data);
+          let allAreas: string[] = [];
+          tRes.data.forEach((t: any) => {
+            if (t.especialidad) {
+              const parts = t.especialidad.split(',').map((x: string) => x.trim()).filter(Boolean);
+              allAreas = allAreas.concat(parts);
+            }
+          });
+          const areas = Array.from(new Set(allAreas));
           
           if (userRole.toUpperCase() === "TERAPEUTA") {
             const matched = tRes.data.find((t: any) => t.name.toLowerCase().includes(userName.toLowerCase()) || userName.toLowerCase().includes(t.name.toLowerCase()));
             const miTerapeutaStr = matched ? matched.name : (tRes.data[0]?.name || userName);
             const miAreaStr = matched ? matched.especialidad : "";
+            let misAreas: string[] = [];
+            if (miAreaStr) misAreas = miAreaStr.split(',').map((x: string) => x.trim()).filter(Boolean);
             
-            setAvailableAreas(miAreaStr ? [miAreaStr] : (areas.length > 0 ? areas as string[] : ["Psicología", "Lenguaje", "Fisioterapia", "Terapia Ocupacional"]));
+            setAvailableAreas(misAreas.length > 0 ? misAreas : (areas.length > 0 ? areas : ["Psicología", "Lenguaje", "Fisioterapia", "Terapia Ocupacional"]));
             setTerapeutas([miTerapeutaStr]);
-            setFormData(prev => ({...prev, terapeuta: miTerapeutaStr, area: miAreaStr}));
+            setFormData(prev => ({...prev, terapeuta: miTerapeutaStr, area: misAreas[0] || ""}));
           } else {
-            setAvailableAreas(areas.length > 0 ? areas as string[] : ["Psicología", "Lenguaje", "Fisioterapia", "Terapia Ocupacional"]);
+            setAvailableAreas(areas.length > 0 ? areas : ["Psicología", "Lenguaje", "Fisioterapia", "Terapia Ocupacional"]);
             setTerapeutas(tRes.data.map((t: any) => t.name));
           }
         }
         
         // Cargar asistencias reales de la Agenda
-        const agRes = await getAgenda();
+        const agRes = await getAsistenciasDB();
         let agendaAsistencias: any[] = [];
         if (agRes.success && agRes.data) {
           agendaAsistencias = agRes.data.map((c: any) => {
@@ -136,19 +152,22 @@ export default function AsistenciaPage() {
             return {
               id: c.id,
               fecha: c.fecha,
-              area: "Terapia",
+              area: c.area || "-",
               paciente: c.paciente,
-              sexo: p?.sexo || "N/A",
-              edad: p?.age ? p.age.toString() : "N/A",
+              sexo: p?.sexo || c.sexo,
+              edad: p?.age ? p.age.toString() : c.edad,
               terapeuta: c.terapeuta,
-              tipoSesion: c.tipoServicio || "Individual",
+              tipoSesion: c.tipoSesion || "-",
               estado: c.estado,
-              sesiones: c.frecuencia || "1/1",
-              pago: c.pagado ? "Sí" : "No",
-              fact: "No",
-              subtotal: "$0",
-              obs: c.metodoPago ? `Método: ${c.metodoPago}` : "Desde Agenda",
-              creadoPor: c.terapeuta
+              sesiones: c.sesiones || "1",
+              paqueteActual: c.paqueteActual || 1,
+              pago: c.pago || "-",
+              fact: c.fact || "No",
+              subtotal: c.subtotal || "$0.00",
+              total: c.total || "$0.00",
+              saldo: c.saldo || 0,
+              obs: c.obs || "-",
+              creadoPor: c.creadoPor || "-"
             };
           });
         }
@@ -181,6 +200,27 @@ export default function AsistenciaPage() {
       });
     }
   };
+
+  useEffect(() => {
+    if (userRole.toUpperCase() !== "TERAPEUTA" && formData.terapeuta && terapeutasFullData.length > 0) {
+      const match = terapeutasFullData.find(t => t.name === formData.terapeuta);
+      if (match && match.especialidad) {
+        const parts = match.especialidad.split(',').map((x: string) => x.trim()).filter(Boolean);
+        setAvailableAreas(parts);
+        if (!parts.includes(formData.area)) {
+          setFormData(prev => ({ ...prev, area: parts[0] || "" }));
+        }
+      } else {
+        let allAreas: string[] = [];
+        terapeutasFullData.forEach(t => {
+          if (t.especialidad) {
+            allAreas = allAreas.concat(t.especialidad.split(',').map((x: string) => x.trim()).filter(Boolean));
+          }
+        });
+        setAvailableAreas(Array.from(new Set(allAreas)));
+      }
+    }
+  }, [formData.terapeuta, terapeutasFullData, userRole]);
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
     const { name, value, type } = e.target;
@@ -239,6 +279,8 @@ export default function AsistenciaPage() {
       fact: formData.solicitaFactura ? "Sí" : "No",
       subtotal: `$${sub.toFixed(2)}`,
       total: `$${tot.toFixed(2)}`,
+      precioTerapia: formData.precioTerapia,
+      montoPago: formData.montoPago,
       obs: formData.observaciones || "—",
       creadoPor: userName,
       terapeuta: formData.terapeuta
@@ -341,6 +383,9 @@ export default function AsistenciaPage() {
     }
   };
 
+  const [currentPage, setCurrentPage] = useState(1);
+  const itemsPerPage = 25;
+
   const asistenciasFiltradas = asistencias.filter(a => {
     if (userRole.toUpperCase() === "TERAPEUTA") {
       if (a.terapeuta) {
@@ -357,6 +402,9 @@ export default function AsistenciaPage() {
     if (filtroHasta && a.fecha > filtroHasta) return false;
     return true;
   });
+
+  const indexOfLastItem = currentPage * itemsPerPage;
+  const indexOfFirstItem = indexOfLastItem - itemsPerPage;
 
   return (
     <div className="space-y-6 animate-in fade-in duration-500 max-w-[1400px] mx-auto">
@@ -509,23 +557,50 @@ export default function AsistenciaPage() {
                 <input type="number" name="numeroSesiones" value={formData.numeroSesiones} onChange={handleChange} placeholder="Ej: 10" className="w-full text-sm p-2 border border-slate-300 rounded focus:border-[#2980b9] outline-none text-slate-900" />
               </div>
               <div>
-                <label className="block text-[10px] font-bold text-slate-400 uppercase mb-1">COSTO TOTAL</label>
-                <div className="relative">
-                  <span className="absolute left-2 top-1.5 text-slate-500">$</span>
-                  <input type="number" name="costoTotal" value={formData.costoTotal} onChange={handleChange} placeholder="Ej: 4000" className="w-full text-sm p-2 pl-6 border border-slate-300 rounded focus:border-[#2980b9] outline-none text-slate-900" />
+                <label className="block text-[10px] font-bold text-slate-400 uppercase mb-1">SESIONES RESTANTES</label>
+                <div className="w-full text-sm p-2 border border-slate-300 rounded bg-slate-50 outline-none text-[#2980b9] font-bold text-center">
+                  {(() => {
+                    const lastSession = asistencias.find(a => a.paciente === formData.pacienteNombre);
+                    let curr = 1;
+                    const tot = parseInt(formData.numeroSesiones || "1");
+                    if (lastSession && parseInt(lastSession.sesiones || "1") === tot && lastSession.paqueteActual) {
+                      curr = lastSession.paqueteActual < tot ? lastSession.paqueteActual + 1 : 1;
+                    }
+                    return `${curr}/${tot}`;
+                  })()}
                 </div>
               </div>
             </div>
 
             {/* ROW 3 */}
-            <div className="grid grid-cols-1 md:grid-cols-5 gap-4">
+            <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
               <div>
-                <label className="block text-[10px] font-bold text-slate-400 uppercase mb-1">COSTO POR SESIÓN</label>
-                <input type="text" readOnly value={formData.costoSesion} className="w-full text-sm p-2 border border-slate-300 rounded bg-slate-50 outline-none text-slate-500" />
+                <label className="block text-[10px] font-bold text-slate-400 uppercase mb-1">COSTO TOTAL (PAQUETE)</label>
+                <div className="relative">
+                  <span className="absolute left-2 top-1.5 text-slate-500">$</span>
+                  <input type="text" readOnly value={(() => {
+                    const sesionesInt = parseInt(formData.numeroSesiones || "1");
+                    const precioF = parseFloat(formData.precioTerapia || "0");
+                    return (sesionesInt * precioF).toFixed(2);
+                  })()} className="w-full text-sm p-2 pl-6 border border-slate-300 rounded bg-slate-50 outline-none text-slate-600 font-bold" />
+                </div>
               </div>
               <div>
                 <label className="block text-[10px] font-bold text-slate-400 uppercase mb-1">SALDO DISPONIBLE</label>
-                <input type="text" name="saldoDisponible" value={formData.saldoDisponible} onChange={handleChange} placeholder="Ej: 8" className="w-full text-sm p-2 border border-slate-300 rounded focus:border-[#2980b9] outline-none text-slate-900" />
+                {(() => {
+                  const montoF = parseFloat(formData.montoPago || "0");
+                  const costoSesionF = parseFloat(formData.precioTerapia || "0");
+                  let saldoF = 0;
+                  if (montoF > 0 || costoSesionF > 0) saldoF = montoF - costoSesionF;
+                  const isNeg = saldoF < 0;
+                  return (
+                    <div className="relative">
+                      <span className={`absolute left-2 top-1.5 ${isNeg ? 'text-red-500' : 'text-green-600'}`}>$</span>
+                      <input type="text" readOnly value={Math.abs(saldoF).toFixed(2)} className={`w-full text-sm p-2 pl-6 border ${isNeg ? 'border-red-300 bg-red-50 text-red-700' : 'border-green-300 bg-green-50 text-green-700'} rounded outline-none font-bold`} />
+                      {isNeg && <span className="absolute right-2 top-2 text-red-500 font-bold">-</span>}
+                    </div>
+                  );
+                })()}
               </div>
               <div>
                 <label className="block text-[10px] font-bold text-slate-400 uppercase mb-1">ESTADO ASISTENCIA</label>
@@ -657,8 +732,10 @@ export default function AsistenciaPage() {
                 <th className="px-2 py-3 border-b border-[#0e2f44]">TIPO DE SESIÓN</th>
                 <th className="px-2 py-3 border-b border-[#0e2f44]">ESTADO</th>
                 <th className="px-2 py-3 border-b border-[#0e2f44]">SESIONES</th>
+                <th className="px-2 py-3 border-b border-[#0e2f44]">PAQUETE</th>
                 <th className="px-2 py-3 border-b border-[#0e2f44]">PAGO</th>
                 <th className="px-2 py-3 border-b border-[#0e2f44]">FACT.</th>
+                <th className="px-2 py-3 border-b border-[#0e2f44]">SALDO</th>
                 <th className="px-2 py-3 border-b border-[#0e2f44]">SUBTOTAL</th>
                 <th className="px-2 py-3 border-b border-[#0e2f44]">TOTAL</th>
                 <th className="px-2 py-3 border-b border-[#0e2f44]">OBS</th>
@@ -699,14 +776,31 @@ export default function AsistenciaPage() {
                 </tr>
               )) : (
                 <tr>
-                  <td colSpan={14} className="px-4 py-8 text-center text-slate-400 font-medium">
+                  <td colSpan={16} className="px-4 py-8 text-center text-slate-400 font-medium">
                     Sin registros.
                   </td>
                 </tr>
               )}
+              })()}
             </tbody>
           </table>
         </div>
+        
+        {/* Paginación */}
+        {asistenciasFiltradas.length > itemsPerPage && (
+          <div className="p-4 border-t border-slate-100 flex items-center justify-between">
+            <div className="text-xs text-slate-500">
+              Mostrando {indexOfFirstItem + 1} - {Math.min(indexOfLastItem, asistenciasFiltradas.length)} de {asistenciasFiltradas.length}
+            </div>
+            <div className="flex gap-1">
+              <button onClick={() => setCurrentPage(prev => Math.max(prev - 1, 1))} disabled={currentPage === 1} className="px-3 py-1 border border-slate-300 rounded text-xs font-medium text-slate-600 disabled:opacity-50">Anterior</button>
+              {Array.from({ length: Math.ceil(asistenciasFiltradas.length / itemsPerPage) }, (_, i) => (
+                <button key={i} onClick={() => setCurrentPage(i + 1)} className={`px-3 py-1 border rounded text-xs font-medium ${currentPage === i + 1 ? 'bg-[#0e2f44] text-white border-[#0e2f44]' : 'border-slate-300 text-slate-600'}`}>{i + 1}</button>
+              ))}
+              <button onClick={() => setCurrentPage(prev => Math.min(prev + 1, Math.ceil(asistenciasFiltradas.length / itemsPerPage)))} disabled={currentPage === Math.ceil(asistenciasFiltradas.length / itemsPerPage)} className="px-3 py-1 border border-slate-300 rounded text-xs font-medium text-slate-600 disabled:opacity-50">Siguiente</button>
+            </div>
+          </div>
+        )}
       </div>
 
       {/* MODAL DE EDICIÓN */}
