@@ -28,11 +28,36 @@ export default function DashboardPage() {
   const [pacientes, setPacientes] = useState<any[]>([]);
 
   useEffect(() => {
-    const aData = localStorage.getItem("asistenciaData");
-    if (aData) setAsistencias(JSON.parse(aData));
+    async function loadData() {
+      const { getAgenda } = await import('@/app/actions/agenda');
+      const { getPatients } = await import('@/app/actions/pacientes');
+      
+      const agRes = await getAgenda();
+      if (agRes.success && agRes.data) {
+        // Map raw DB sessions into 'asistencias' structure expected by the Dashboard charts
+        const parsedAsistencias = agRes.data.map((s: any) => {
+          const extra = s.extra || {};
+          return {
+            fecha: extra.fecha || s.fecha,
+            estado: extra.estadoAsistencia || s.estado,
+            total: extra.total ? $+{extra.total} : (s.pagado ? "1" : "0"), // fallback if missing
+            pago: extra.metodoPago || s.metodoPago || "No especificado",
+            terapeuta: s.terapeuta
+          };
+        });
+        setAsistencias(parsedAsistencias);
+      }
 
-    const pData = localStorage.getItem("pacientesData");
-    if (pData) setPacientes(JSON.parse(pData));
+      const pRes = await getPatients();
+      if (pRes.success && pRes.data) {
+        // Map patients DB
+        const parsedPatients = pRes.data.map((p: any) => ({
+          fechaRegistro: p.fechaRegistro || p.createdAt || new Date().toISOString().split("T")[0]
+        }));
+        setPacientes(parsedPatients);
+      }
+    }
+    loadData();
   }, []);
 
   if (status === "loading" || (status === "authenticated" && ((session?.user as any)?.role || "ADMIN").toUpperCase() === "TERAPEUTA")) {
