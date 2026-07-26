@@ -130,7 +130,7 @@ export async function saveAsistenciaDB(data: any) {
 }
 
 
-export async function getAsistenciasDB() {
+export async function getAsistenciasDB(_ts?: string) {
   noStore();
   try {
     const sessions = await prisma.session.findMany({

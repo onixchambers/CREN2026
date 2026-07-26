@@ -145,7 +145,7 @@ export default function AsistenciaPage() {
         }
         
         // Cargar asistencias reales de la Agenda
-        const agRes = await getAsistenciasDB();
+        const agRes = await getAsistenciasDB(Date.now().toString());
         let agendaAsistencias: any[] = [];
         if (agRes.success && agRes.data) {
           agendaAsistencias = agRes.data.map((c: any) => {

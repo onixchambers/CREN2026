@@ -4,12 +4,18 @@ path = 'src/app/actions/asistencia.ts'
 with open(path, 'r', encoding='utf-8') as f:
     c = f.read()
 
-if 'import { unstable_noStore as noStore }' not in c:
-    c = c.replace('import { revalidatePath } from "next/cache";', 'import { revalidatePath } from "next/cache";\nimport { unstable_noStore as noStore } from "next/cache";')
-
-if 'noStore();' not in c and 'export async function getAsistenciasDB()' in c:
-    c = c.replace('export async function getAsistenciasDB() {\n  try {', 'export async function getAsistenciasDB() {\n  noStore();\n  try {')
+c = c.replace('export async function getAsistenciasDB() {', 'export async function getAsistenciasDB(_ts?: string) {')
 
 with open(path, 'w', encoding='utf-8') as f:
     f.write(c)
-print("Updated asistencia.ts")
+
+path2 = 'src/app/dashboard/asistencia/page.tsx'
+with open(path2, 'r', encoding='utf-8') as f:
+    c2 = f.read()
+
+c2 = c2.replace('const agRes = await getAsistenciasDB();', 'const agRes = await getAsistenciasDB(Date.now().toString());')
+
+with open(path2, 'w', encoding='utf-8') as f:
+    f.write(c2)
+
+print("Added timestamp to getAsistenciasDB")
