@@ -247,7 +247,7 @@ export default function AsistenciaPage() {
     // Guardar en Base de Datos Real
     const dbRes = await saveAsistenciaDB(nuevaAsistencia);
     if (dbRes?.success === false) {
-      alert("Error al guardar en BD: " + dbRes.error);
+      alert("Error al guardar en BD: " + (dbRes as any).error);
       return;
     }
 
@@ -318,7 +318,7 @@ export default function AsistenciaPage() {
     if (asisActualizada) {
        const dbRes = await saveAsistenciaDB(asisActualizada);
        if (dbRes?.success === false) {
-         alert("Error al actualizar BD: " + dbRes.error);
+         alert("Error al actualizar BD: " + (dbRes as any).error);
          return;
        }
     }
@@ -336,7 +336,7 @@ export default function AsistenciaPage() {
         setAsistencias(nuevas);
         alert("Registro eliminado de la base de datos.");
       } else {
-        alert("No se pudo eliminar el registro: " + res.error);
+        alert("No se pudo eliminar el registro: " + (res as any).error);
       }
     }
   };
