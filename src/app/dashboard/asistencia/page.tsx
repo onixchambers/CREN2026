@@ -4,6 +4,7 @@ import { useSession } from "next-auth/react";
 import { getPatients } from "@/app/actions/pacientes";
 import { getAgenda } from "@/app/actions/agenda";
 import { saveAsistenciaDB } from "@/app/actions/asistencia";
+import { deleteCita } from "@/app/actions/agenda";
 import { getTerapeutasFull } from "@/app/actions/configuracion";
 import { DateInput } from "@/components/DateInput";
 
@@ -226,7 +227,7 @@ export default function AsistenciaPage() {
       return;
     }
 
-    const sub = formData.costoTotal ? parseFloat(formData.costoTotal) : 0;
+    const sub = formData.montoPago ? parseFloat(formData.montoPago) : 0;
     const tot = formData.solicitaFactura ? sub * 1.16 : sub; // Simulando IVA
 
     const nuevaAsistencia: Asistencia = {
