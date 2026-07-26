@@ -776,7 +776,7 @@ export default function AsistenciaPage() {
                     </div>
                   </td>
                 </tr>
-              ) : (
+              )) : (
                   <tr>
                     <td colSpan={16} className="px-4 py-8 text-center text-slate-400 font-medium">
                       Sin registros.
