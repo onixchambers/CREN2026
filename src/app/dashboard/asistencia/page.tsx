@@ -537,7 +537,7 @@ export default function AsistenciaPage() {
             </div>
 
             {/* ROW 2 */}
-            <div className="grid grid-cols-1 md:grid-cols-5 gap-4">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div>
                 <label className="block text-[10px] font-bold text-slate-400 uppercase mb-1">SEXO DEL PACIENTE</label>
                 <select name="pacienteSexo" value={formData.pacienteSexo} onChange={handleChange} className="w-full text-sm p-2 border border-slate-300 rounded focus:border-[#2980b9] outline-none text-slate-900">
@@ -565,43 +565,17 @@ export default function AsistenciaPage() {
                   <option value="950">$950.00</option>
                 </select>
               </div>
-              <div>
-                <label className="block text-[10px] font-bold text-slate-400 uppercase mb-1">TIPO PAQUETE</label>
-                <select name="tipoPaquete" value={formData.tipoPaquete} onChange={handleChange} className="w-full text-sm p-2 border border-slate-300 rounded focus:border-[#2980b9] outline-none text-slate-900">
-                  <option value="Básico">Básico</option>
-                  <option value="Premium">Premium</option>
-                </select>
-              </div>
-              <div>
-                <label className="block text-[10px] font-bold text-slate-400 uppercase mb-1">NÚMERO DE SESIONES</label>
-                <input type="number" name="numeroSesiones" value={formData.numeroSesiones} onChange={handleChange} placeholder="Ej: 10" className="w-full text-sm p-2 border border-slate-300 rounded focus:border-[#2980b9] outline-none text-slate-900" />
-              </div>
-              <div>
-                <label className="block text-[10px] font-bold text-slate-400 uppercase mb-1">SESIONES RESTANTES</label>
-                <div className="w-full text-sm p-2 border border-slate-300 rounded bg-slate-50 outline-none text-[#2980b9] font-bold text-center">
-                  {(() => {
-                    const lastSession = asistencias.find(a => a.paciente === formData.pacienteNombre);
-                    let curr = 1;
-                    const tot = parseInt(formData.numeroSesiones || "1");
-                    if (lastSession && parseInt(lastSession.sesiones || "1") === tot && lastSession.paqueteActual) {
-                      curr = lastSession.paqueteActual < tot ? lastSession.paqueteActual + 1 : 1;
-                    }
-                    return `${curr}/${tot}`;
-                  })()}
-                </div>
-              </div>
             </div>
 
             {/* ROW 3 */}
-            <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
               <div>
-                <label className="block text-[10px] font-bold text-slate-400 uppercase mb-1">COSTO TOTAL (PAQUETE)</label>
+                <label className="block text-[10px] font-bold text-slate-400 uppercase mb-1">COSTO DE SESIÓN</label>
                 <div className="relative">
                   <span className="absolute left-2 top-1.5 text-slate-500">$</span>
                   <input type="text" readOnly value={(() => {
-                    const sesionesInt = parseInt(formData.numeroSesiones || "1");
                     const precioF = parseFloat(formData.precioTerapia || "0");
-                    return (sesionesInt * precioF).toFixed(2);
+                    return precioF.toFixed(2);
                   })()} className="w-full text-sm p-2 pl-6 border border-slate-300 rounded bg-slate-50 outline-none text-slate-600 font-bold" />
                 </div>
               </div>
