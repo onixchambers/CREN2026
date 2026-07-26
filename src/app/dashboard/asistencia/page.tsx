@@ -292,7 +292,7 @@ export default function AsistenciaPage() {
     const sub = editForm.subtotal ? parseFloat(editForm.subtotal) : 0;
     const tot = editForm.fact ? sub * 1.16 : sub;
 
-    let asisActualizada = null;
+    let asisActualizada: any = null;
     const nuevasAsistencias = asistencias.map(a => {
       if (a.id === editingAsistencia.id) {
         asisActualizada = {
