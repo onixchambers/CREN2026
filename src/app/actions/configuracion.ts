@@ -166,7 +166,7 @@ export async function saveSettings(data: {
         });
       }
 
-      revalidatePath("/dashboard/configuracion");
+      revalidatePath("/dashboard", "layout");
       return { success: true };
     })();
 
