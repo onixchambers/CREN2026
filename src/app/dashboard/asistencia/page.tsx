@@ -780,8 +780,8 @@ export default function AsistenciaPage() {
                     Sin registros.
                   </td>
                 </tr>
-              )}
-              })()}
+              );
+            })()}
             </tbody>
           </table>
         </div>
