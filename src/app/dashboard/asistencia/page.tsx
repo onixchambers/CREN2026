@@ -59,10 +59,15 @@ export default function AsistenciaPage() {
   
   // Filtros de tabla
   const hoy = new Date().toISOString().split("T")[0];
-  const hace30Dias = new Date();
-  hace30Dias.setDate(hace30Dias.getDate() - 30);
-  const hace30DiasStr = hace30Dias.toISOString().split("T")[0];
-  const [filtroDesde, setFiltroDesde] = useState(hace30DiasStr);
+  
+  // By default, show records from the 1st of the current month
+  const getFirstDayOfMonth = () => {
+    const d = new Date();
+    d.setDate(1);
+    return d.toISOString().split("T")[0];
+  };
+  
+  const [filtroDesde, setFiltroDesde] = useState(getFirstDayOfMonth());
   const [filtroHasta, setFiltroHasta] = useState(hoy);
   const [filtroEstado, setFiltroEstado] = useState("Todos");
   const [availableAreas, setAvailableAreas] = useState<string[]>(["Psicología", "Lenguaje", "Fisioterapia"]);
@@ -714,7 +719,7 @@ export default function AsistenciaPage() {
               <svg className="w-3 h-3" fill="currentColor" viewBox="0 0 24 24"><path d="M10 18h4v-2h-4v2zM3 6v2h18V6H3zm3 7h12v-2H6v2z"/></svg>
               Filtrar
             </button>
-            <button type="button" onClick={() => {setFiltroDesde(hace30DiasStr); setFiltroHasta(hoy); setFiltroEstado("Todos");}} className="bg-white border border-slate-300 text-slate-600 hover:bg-slate-50 px-4 py-1.5 rounded text-xs font-semibold flex items-center gap-2 transition-colors">
+            <button type="button" onClick={() => {setFiltroDesde(getFirstDayOfMonth()); setFiltroHasta(hoy); setFiltroEstado("Todos");}} className="bg-white border border-slate-300 text-slate-600 hover:bg-slate-50 px-4 py-1.5 rounded text-xs font-semibold flex items-center gap-2 transition-colors">
               <svg className="w-3 h-3" fill="currentColor" viewBox="0 0 24 24"><path d="M19 6.41L17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z"/></svg>
               Limpiar
             </button>

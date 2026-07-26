@@ -96,6 +96,7 @@ export default function AgendaPage() {
       terapeuta: formData.terapeuta,
       tipoServicio: formData.tipoServicio,
       frecuencia: formData.frecuencia,
+      numeroSesiones: formData.numeroSesiones,
       estado: formData.estado,
       pagado: formData.pagado,
       metodoPago: formData.metodoPago
