@@ -275,7 +275,7 @@ export default function AsistenciaPage() {
       tipoSesion: formData.tipoSesion,
       estado: formData.estadoAsistencia,
       sesiones: formData.numeroSesiones || "1",
-      pago: formData.metodoPago,
+      pago: parseFloat(formData.montoPago || "0") > 0 ? "SÍ" : formData.metodoPago,
       fact: formData.solicitaFactura ? "Sí" : "No",
       subtotal: `$${sub.toFixed(2)}`,
       total: `$${tot.toFixed(2)}`,
@@ -344,7 +344,7 @@ export default function AsistenciaPage() {
           tipoSesion: editForm.tipoSesion,
           estado: editForm.estado,
           sesiones: editForm.sesiones,
-          pago: editForm.pago,
+          pago: parseFloat(editForm.montoPago || "0") > 0 ? "SÍ" : editForm.pago,
           fact: editForm.fact ? "Sí" : "No",
           subtotal: `$${sub.toFixed(2)}`,
           total: `$${tot.toFixed(2)}`,
@@ -883,6 +883,7 @@ export default function AsistenciaPage() {
                     <option value="Efectivo">Efectivo</option>
                     <option value="Transferencia">Transferencia</option>
                     <option value="Tarjeta">Tarjeta</option>
+                    <option value="Mixto">Mixto</option>
                     <option value="Por definir">Por definir</option>
                     <option value="Beca">Beca</option>
                   </select>

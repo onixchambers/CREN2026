@@ -351,16 +351,20 @@ export default function AgendaPage() {
                     <option value="orientacion padres">Orientación Padres</option>
                   </select>
                 </div>
-                <div>
-                  <label className="block text-xs font-semibold text-slate-600 uppercase mb-1">Frecuencia</label>
-                  <select name="frecuencia" value={formData.frecuencia} onChange={handleInputChange} className="w-full text-slate-900 font-medium border border-slate-300 rounded-lg px-3 py-2 outline-none focus:border-[#2980b9]">
-                    <option value="diario">Diario</option>
-                    <option value="semanal">Semanal</option>
-                    <option value="quincenal">Quincenal</option>
-                    <option value="mensual">Mensual</option>
-                    <option value="unica">Única / Ocasional</option>
-                  </select>
-                </div>
+                  <div>
+                    <label className="block text-xs font-semibold text-slate-600 uppercase mb-1">Frecuencia</label>
+                    <select name="frecuencia" value={formData.frecuencia} onChange={handleInputChange} className="w-full text-slate-900 font-medium border border-slate-300 rounded-lg px-3 py-2 outline-none focus:border-[#2980b9]">
+                      <option value="diario">Diario</option>
+                      <option value="semanal">Semanal</option>
+                      <option value="quincenal">Quincenal</option>
+                      <option value="mensual">Mensual</option>
+                      <option value="unica">Única / Ocasional</option>
+                    </select>
+                  </div>
+                  <div>
+                    <label className="block text-xs font-semibold text-slate-600 uppercase mb-1">Número de Sesiones</label>
+                    <input required type="number" min="1" max="100" name="numeroSesiones" value={formData.numeroSesiones} onChange={handleInputChange} className="w-full text-slate-900 font-medium border border-slate-300 rounded-lg px-3 py-2 outline-none focus:border-[#2980b9]" />
+                  </div>
 
                 {/* Estado */}
                 <div className="md:col-span-2">
