@@ -743,7 +743,9 @@ export default function AsistenciaPage() {
               </tr>
             </thead>
             <tbody className="divide-y divide-slate-100">
-              {asistenciasFiltradas.length > 0 ? asistenciasFiltradas.map(a => (
+              {(() => {
+                const currentItems = asistenciasFiltradas.slice(indexOfFirstItem, indexOfLastItem);
+                return currentItems.length > 0 ? currentItems.map(a => (
                 <tr key={a.id} className="hover:bg-slate-50 transition-colors">
                   <td className="px-2 py-3 text-slate-500 font-medium">{formatDateStr(a.fecha)}</td>
                   <td className="px-2 py-3 text-slate-500 max-w-[100px] truncate" title={a.terapeuta}>{a.terapeuta}</td>
@@ -780,8 +782,9 @@ export default function AsistenciaPage() {
                     Sin registros.
                   </td>
                 </tr>
-              );
-            })()}
+              )
+                );
+              })()}
             </tbody>
           </table>
         </div>
