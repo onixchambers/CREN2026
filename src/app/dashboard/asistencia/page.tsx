@@ -76,6 +76,7 @@ export default function AsistenciaPage() {
 
   // Predictivo
   const [showDropdown, setShowDropdown] = useState(false);
+  const [showSegundoPago, setShowSegundoPago] = useState(false);
   
   // Formulario
   const [formData, setFormData] = useState({
@@ -97,6 +98,8 @@ export default function AsistenciaPage() {
     estadoAsistencia: "",
     metodoPago: "",
     montoPago: "",
+    metodoPago2: "",
+    montoPago2: "",
     solicitaFactura: false,
     observaciones: ""
   });
@@ -255,9 +258,12 @@ export default function AsistenciaPage() {
       estadoAsistencia: "",
       metodoPago: "",
       montoPago: "",
+      metodoPago2: "",
+      montoPago2: "",
       solicitaFactura: false,
       observaciones: ""
     });
+    setShowSegundoPago(false);
   };
 
   const handleGuardar = async () => {
@@ -266,8 +272,17 @@ export default function AsistenciaPage() {
       return;
     }
 
-    const sub = formData.montoPago ? parseFloat(formData.montoPago) : 0;
+    const p1 = parseFloat(formData.montoPago || "0");
+    const p2 = showSegundoPago ? parseFloat(formData.montoPago2 || "0") : 0;
+    const sub = p1 + p2;
     const tot = formData.solicitaFactura ? sub * 1.16 : sub; // Simulando IVA
+
+    let metodoPagoFinal = formData.metodoPago;
+    if (showSegundoPago && formData.metodoPago2) {
+      metodoPagoFinal = `Mixto (${formData.metodoPago || 'P1'}: $${p1}, ${formData.metodoPago2}: $${p2})`;
+    } else if (showSegundoPago) {
+      metodoPagoFinal = "Mixto";
+    }
 
     const nuevaAsistencia: Asistencia = {
       id: Date.now().toString(),
@@ -279,12 +294,13 @@ export default function AsistenciaPage() {
       tipoSesion: formData.tipoSesion,
       estado: formData.estadoAsistencia,
       sesiones: formData.numeroSesiones || "1",
-      pago: parseFloat(formData.montoPago || "0") > 0 ? "SÍ" : formData.metodoPago,
+      pago: sub > 0 ? "SÍ" : (metodoPagoFinal || "No"),
       fact: formData.solicitaFactura ? "Sí" : "No",
       subtotal: `$${sub.toFixed(2)}`,
       total: `$${tot.toFixed(2)}`,
       precioTerapia: formData.precioTerapia,
-      montoPago: formData.montoPago,
+      montoPago: sub.toString(),
+      metodoPago: metodoPagoFinal,
       obs: formData.observaciones || "—",
       creadoPor: userName,
       terapeuta: formData.terapeuta
@@ -592,7 +608,9 @@ export default function AsistenciaPage() {
               <div>
                 <label className="block text-[10px] font-bold text-slate-400 uppercase mb-1">SALDO DISPONIBLE</label>
                 {(() => {
-                  const montoF = parseFloat(formData.montoPago || "0");
+                  const p1 = parseFloat(formData.montoPago || "0");
+                  const p2 = showSegundoPago ? parseFloat(formData.montoPago2 || "0") : 0;
+                  const montoF = p1 + p2;
                   const costoSesionF = parseFloat(formData.precioTerapia || "0");
                   let saldoF = 0;
                   if (montoF > 0 || costoSesionF > 0) saldoF = montoF - costoSesionF;
@@ -623,22 +641,64 @@ export default function AsistenciaPage() {
             {/* PAYMENT SECTION */}
             <div className="pt-2">
               <label className="block text-[10px] font-bold text-slate-400 uppercase mb-1">MÉTODO DE PAGO (PAGOS MIXTOS DISPONIBLES)</label>
-              <div className="flex items-center gap-2 max-w-2xl">
-                <select name="metodoPago" value={formData.metodoPago} onChange={handleChange} className="flex-1 text-sm p-2 border border-slate-300 rounded focus:border-[#2980b9] outline-none text-slate-900">
-                  <option value="">Método...</option>
-                  <option value="Efectivo">Efectivo</option>
-                  <option value="Transferencia">Transferencia</option>
-                  <option value="Tarjeta">Tarjeta</option>
-                  <option value="Por definir">Por definir</option>
-                  <option value="Beca">Beca</option>
-                </select>
-                <div className="relative w-32">
-                  <span className="absolute left-2 top-1.5 text-slate-500">$</span>
-                  <input type="number" name="montoPago" value={formData.montoPago} onChange={handleChange} placeholder="0" className="w-full text-sm p-2 pl-6 border border-slate-300 rounded bg-slate-50 outline-none text-slate-900" />
+              <div className="flex flex-col gap-2 max-w-2xl">
+                <div className="flex items-center gap-2">
+                  <select name="metodoPago" value={formData.metodoPago} onChange={handleChange} className="flex-1 text-sm p-2 border border-slate-300 rounded focus:border-[#2980b9] outline-none text-slate-900">
+                    <option value="">Método 1...</option>
+                    <option value="Efectivo">Efectivo</option>
+                    <option value="Transferencia">Transferencia</option>
+                    <option value="Tarjeta">Tarjeta</option>
+                    <option value="Por definir">Por definir</option>
+                    <option value="Beca">Beca</option>
+                  </select>
+                  <div className="relative w-32">
+                    <span className="absolute left-2 top-1.5 text-slate-500">$</span>
+                    <input type="number" name="montoPago" value={formData.montoPago} onChange={handleChange} placeholder="0" className="w-full text-sm p-2 pl-6 border border-slate-300 rounded bg-slate-50 outline-none text-slate-900" />
+                  </div>
+                  <button 
+                    type="button"
+                    onClick={() => {
+                      if (!showSegundoPago) {
+                        setShowSegundoPago(true);
+                        const costo = parseFloat(formData.precioTerapia || "0");
+                        const p1 = parseFloat(formData.montoPago || "0");
+                        const resto = Math.max(0, costo - p1);
+                        if (resto > 0 && !formData.montoPago2) {
+                          setFormData(prev => ({ ...prev, montoPago2: resto.toString() }));
+                        }
+                      } else {
+                        setShowSegundoPago(false);
+                        setFormData(prev => ({ ...prev, metodoPago2: "", montoPago2: "" }));
+                      }
+                    }}
+                    className={`p-2 border rounded transition-colors ${showSegundoPago ? 'bg-red-50 text-red-600 border-red-200 hover:bg-red-100' : 'border-slate-300 text-slate-600 hover:bg-slate-50'}`}
+                    title={showSegundoPago ? "Quitar segundo método de pago" : "Agregar segundo método de pago (Pago Mixto)"}
+                  >
+                    {showSegundoPago ? (
+                      <svg className="w-5 h-5" fill="currentColor" viewBox="0 0 24 24"><path d="M19 13H5v-2h14v2z"/></svg>
+                    ) : (
+                      <svg className="w-5 h-5" fill="currentColor" viewBox="0 0 24 24"><path d="M19 13h-6v6h-2v-6H5v-2h6V5h2v6h6v2z"/></svg>
+                    )}
+                  </button>
                 </div>
-                <button className="p-2 border border-slate-300 rounded hover:bg-slate-50 text-slate-600 transition-colors">
-                  <svg className="w-5 h-5" fill="currentColor" viewBox="0 0 24 24"><path d="M19 13h-6v6h-2v-6H5v-2h6V5h2v6h6v2z"/></svg>
-                </button>
+
+                {showSegundoPago && (
+                  <div className="flex items-center gap-2 animate-in fade-in duration-200">
+                    <select name="metodoPago2" value={formData.metodoPago2} onChange={handleChange} className="flex-1 text-sm p-2 border border-slate-300 rounded focus:border-[#2980b9] outline-none text-slate-900">
+                      <option value="">Método 2 (Pago Mixto)...</option>
+                      <option value="Efectivo">Efectivo</option>
+                      <option value="Transferencia">Transferencia</option>
+                      <option value="Tarjeta">Tarjeta</option>
+                      <option value="Por definir">Por definir</option>
+                      <option value="Beca">Beca</option>
+                    </select>
+                    <div className="relative w-32">
+                      <span className="absolute left-2 top-1.5 text-slate-500">$</span>
+                      <input type="number" name="montoPago2" value={formData.montoPago2} onChange={handleChange} placeholder="Restante" className="w-full text-sm p-2 pl-6 border border-slate-300 rounded bg-slate-50 outline-none text-slate-900" />
+                    </div>
+                    <div className="w-9"></div>
+                  </div>
+                )}
               </div>
             </div>
 
