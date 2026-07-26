@@ -1,6 +1,7 @@
 "use server";
 
 import { prisma } from "@/lib/prisma";
+import { unstable_noStore as noStore } from "next/cache";
 import { revalidatePath } from "next/cache";
 
 export async function createPatient(data: any) {
@@ -58,6 +59,7 @@ export async function createPatient(data: any) {
 }
 
 export async function getPatients() {
+  noStore();
   try {
     const patients = await prisma.patient.findMany({
       orderBy: { createdAt: "desc" }

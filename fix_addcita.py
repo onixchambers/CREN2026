@@ -1,44 +1,21 @@
-"use server";
+﻿import os
 
-import { prisma } from "@/lib/prisma";
+path = 'src/app/actions/agenda.ts'
+with open(path, 'r', encoding='utf-8') as f:
+    c = f.read()
 
-export async function getAgenda() {
-  try {
-    const sessions = await prisma.session.findMany({
-      include: {
-        patient: true,
-        therapist: true
-      }
-    });
+import re
 
-    const citas = sessions.map(s => {
-      let extra = {};
-      try {
-        if (s.notes) extra = JSON.parse(s.notes);
-      } catch (e) {}
+# We will match from `export async function addCita(data: any) {` down to `return { success: true, id: newSession.id };` and `} catch (error: any) {`
+# Since it's easier to just find the block and replace it using string index
+start_str = 'export async function addCita(data: any) {'
+end_str = 'return { success: false, error: error.message };\n  }\n}'
 
-      return {
-        id: s.id,
-        paciente: s.patient?.name || "Desconocido",
-        terapeuta: s.therapist?.name || "Desconocido",
-        fecha: (extra as any).fecha || s.date.toISOString().split("T")[0],
-        hora: (extra as any).hora || "09:00",
-        tipoServicio: (extra as any).tipoServicio || "individual",
-        frecuencia: (extra as any).frecuencia || "semanal",
-        estado: (extra as any).estado || s.status,
-        pagado: (extra as any).pagado || false,
-        metodoPago: (extra as any).metodoPago || ""
-      };
-    });
-
-    return { success: true, data: citas };
-  } catch (error) {
-    console.error("Error obteniendo agenda:", error);
-    return { success: false, error: "Error al cargar la agenda." };
-  }
-}
-
-export async function addCita(data: any) {
+if start_str in c and end_str in c:
+    start_idx = c.find(start_str)
+    end_idx = c.find(end_str) + len(end_str)
+    
+    new_addCita = """export async function addCita(data: any) {
   try {
     const patient = await prisma.patient.findFirst({ where: { name: data.paciente } });
     if (!patient) return { success: false, error: "Paciente no encontrado en DB." };
@@ -128,50 +105,16 @@ export async function addCita(data: any) {
     }
 
     revalidatePath("/dashboard/agenda");
-    return { success: true, citas: createdCitas, id: createdCitas[0]?.id };
+    return { success: true, citas: createdCitas };
   } catch (error: any) {
     console.error("Error addCita:", error);
     return { success: false, error: error.message };
   }
-}
+}"""
+    c = c[:start_idx] + new_addCita + c[end_idx:]
+    print("Replaced addCita")
+else:
+    print("Could not find start or end block")
 
-export async function updateCita(id: string, data: any) {
-  try {
-    const session = await prisma.session.findUnique({ where: { id } });
-    if (!session) return { success: false, error: "Cita no encontrada." };
-
-    let extra = {};
-    try {
-      if (session.notes) extra = JSON.parse(session.notes);
-    } catch (e) {}
-
-    const updatedExtra = { ...extra, ...data };
-    
-    // Si cambia estado
-    let dbStatus = session.status;
-    if (data.estado) dbStatus = data.estado;
-
-    await prisma.session.update({
-      where: { id },
-      data: {
-        status: dbStatus,
-        notes: JSON.stringify(updatedExtra)
-      }
-    });
-
-    return { success: true };
-  } catch (error) {
-    console.error("Error actualizando cita:", error);
-    return { success: false, error: "Error al actualizar la cita." };
-  }
-}
-
-export async function deleteCita(id: string) {
-  try {
-    await prisma.session.delete({ where: { id } });
-    return { success: true };
-  } catch (error) {
-    console.error("Error eliminando cita:", error);
-    return { success: false, error: "Error al eliminar la cita." };
-  }
-}
+with open(path, 'w', encoding='utf-8') as f:
+    f.write(c)

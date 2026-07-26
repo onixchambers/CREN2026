@@ -49,7 +49,7 @@ export default function AgendaPage() {
   const [isEditModalOpen, setIsEditModalOpen] = useState(false);
   const [selectedCita, setSelectedCita] = useState<Cita | null>(null);
   const [formData, setFormData] = useState({
-    paciente: "", fecha: hoy, hora: "09:00", terapeuta: "", tipoServicio: "individual", frecuencia: "semanal", estado: "Ocupado" as Cita["estado"], pagado: false, metodoPago: ""
+    paciente: "", fecha: hoy, hora: "09:00", terapeuta: "", tipoServicio: "individual", frecuencia: "semanal", numeroSesiones: 1, estado: "Ocupado" as Cita["estado"], pagado: false, metodoPago: ""
   });
 
   useEffect(() => {
@@ -102,10 +102,9 @@ export default function AgendaPage() {
     };
     
     const res = await addCita(nuevaCitaObj);
-    if (res.success) {
-      setCitas([...citas, { id: res.id, ...nuevaCitaObj } as Cita]);
+    if (res.success) { if (res.citas) { setCitas([...citas, ...res.citas]); } else { setCitas([...citas, { id: res.id, ...nuevaCitaObj } as Cita]); }
       setIsModalOpen(false);
-      setFormData({ paciente: "", fecha: fechaSeleccionada, hora: "09:00", terapeuta: terapeutas[0] || "", tipoServicio: "individual", frecuencia: "semanal", estado: "Ocupado", pagado: false, metodoPago: "" });
+      setFormData({ paciente: "", fecha: fechaSeleccionada, hora: "09:00", terapeuta: terapeutas[0] || "", tipoServicio: "individual", frecuencia: "semanal", numeroSesiones: 1, estado: "Ocupado", pagado: false, metodoPago: "" });
     } else {
       alert("Error: " + res.error);
     }
