@@ -101,3 +101,29 @@ export async function getHorariosByDate(fecha: string) {
     return { success: false, data: [] };
   }
 }
+
+export async function updateHorario(id: string, horaEntrada: string, horaSalida?: string | null) {
+  try {
+    const actualizado = await prisma.horario.update({
+      where: { id },
+      data: {
+        horaEntrada,
+        horaSalida: horaSalida || null
+      }
+    });
+    return { success: true, data: actualizado };
+  } catch (error: any) {
+    console.error("Error actualizando horario:", error);
+    return { success: false, error: error?.message || "Error al actualizar horario" };
+  }
+}
+
+export async function deleteHorario(id: string) {
+  try {
+    await prisma.horario.delete({ where: { id } });
+    return { success: true };
+  } catch (error: any) {
+    console.error("Error eliminando horario:", error);
+    return { success: false, error: error?.message || "Error al eliminar horario" };
+  }
+}

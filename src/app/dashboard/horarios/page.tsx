@@ -2,7 +2,7 @@
 import { useState, useEffect } from "react";
 import { useSession } from "next-auth/react";
 import { getTerapeutas } from "@/app/actions/configuracion";
-import { registrarEntrada, registrarSalida, getHorariosHoy, getHorariosByDate } from "@/app/actions/horarios";
+import { registrarEntrada, registrarSalida, getHorariosHoy, getHorariosByDate, updateHorario, deleteHorario } from "@/app/actions/horarios";
 import { DateInput } from "@/components/DateInput";
 
 interface Horario {
@@ -28,8 +28,44 @@ export default function HorariosPage() {
   const [horaActual, setHoraActual] = useState("");
   const [terapeutasDisponibles, setTerapeutasDisponibles] = useState<string[]>([]);
   
+  const [isEditModalOpen, setIsEditModalOpen] = useState(false);
+  const [editHorario, setEditHorario] = useState<Horario | null>(null);
+  const [editEntrada, setEditEntrada] = useState("");
+  const [editSalida, setEditSalida] = useState("");
+  
   const hoy = new Date().toLocaleDateString("en-CA");
   const [fechaFiltro, setFechaFiltro] = useState(hoy);
+
+  const handleOpenEditModal = (h: Horario) => {
+    setEditHorario(h);
+    setEditEntrada(h.horaEntrada || "");
+    setEditSalida(h.horaSalida || "");
+    setIsEditModalOpen(true);
+  };
+
+  const handleSaveEdit = async () => {
+    if (!editHorario) return;
+    const res = await updateHorario(editHorario.id, editEntrada, editSalida);
+    if (res.success) {
+      setIsEditModalOpen(false);
+      fetchHorarios(fechaFiltro);
+    } else {
+      alert(res.error || "Error al actualizar horario");
+    }
+  };
+
+  const handleDeleteRecord = async () => {
+    if (!editHorario) return;
+    if (confirm("¿Estás seguro de eliminar este registro de horario?")) {
+      const res = await deleteHorario(editHorario.id);
+      if (res.success) {
+        setIsEditModalOpen(false);
+        fetchHorarios(fechaFiltro);
+      } else {
+        alert(res.error || "Error al eliminar horario");
+      }
+    }
+  };
 
   const fetchHorarios = async (fecha?: string) => {
     const f = fecha || fechaFiltro;
@@ -217,6 +253,17 @@ export default function HorariosPage() {
                         {registro && registro.horaSalida ? `🕒 ${registro.horaSalida}` : (registro ? "En turno..." : "—")}
                       </span>
                     </div>
+
+                    {userRole.toUpperCase() !== "TERAPEUTA" && registro && (
+                      <div className="pt-2 border-t border-slate-100 flex justify-end">
+                        <button 
+                          onClick={() => handleOpenEditModal(registro)}
+                          className="text-xs font-bold text-indigo-600 hover:text-indigo-800 flex items-center gap-1 hover:underline"
+                        >
+                          ✏️ Editar Hora
+                        </button>
+                      </div>
+                    )}
                   </div>
                 </div>
               );
@@ -224,6 +271,65 @@ export default function HorariosPage() {
           </div>
         </div>
       </div>
+
+      {/* MODAL EDITAR HORARIO */}
+      {isEditModalOpen && editHorario && (
+        <div className="fixed inset-0 bg-black/50 backdrop-blur-sm z-50 flex items-center justify-center p-4">
+          <div className="bg-white rounded-xl shadow-xl max-w-md w-full p-6 space-y-4 animate-in zoom-in-95">
+            <div className="flex justify-between items-center border-b pb-3">
+              <h3 className="font-bold text-slate-800 text-base">✏️ Editar Horario - {editHorario.terapeuta}</h3>
+              <button onClick={() => setIsEditModalOpen(false)} className="text-slate-400 hover:text-slate-600 font-bold">&times;</button>
+            </div>
+
+            <div className="space-y-3 text-sm">
+              <div>
+                <label className="block text-xs font-bold text-slate-600 uppercase mb-1">Hora de Entrada</label>
+                <input 
+                  type="time" 
+                  step="1"
+                  value={editEntrada} 
+                  onChange={(e) => setEditEntrada(e.target.value)} 
+                  className="w-full p-2 border border-slate-300 rounded font-bold text-slate-800 outline-none focus:border-indigo-500" 
+                />
+              </div>
+
+              <div>
+                <label className="block text-xs font-bold text-slate-600 uppercase mb-1">Hora de Salida (Opcional)</label>
+                <input 
+                  type="time" 
+                  step="1"
+                  value={editSalida} 
+                  onChange={(e) => setEditSalida(e.target.value)} 
+                  className="w-full p-2 border border-slate-300 rounded font-bold text-slate-800 outline-none focus:border-indigo-500" 
+                />
+              </div>
+            </div>
+
+            <div className="flex justify-between items-center pt-3 border-t">
+              <button 
+                onClick={handleDeleteRecord} 
+                className="px-3 py-1.5 bg-red-50 text-red-600 hover:bg-red-100 rounded text-xs font-bold border border-red-200"
+              >
+                Eliminar Registro
+              </button>
+              <div className="flex gap-2">
+                <button 
+                  onClick={() => setIsEditModalOpen(false)} 
+                  className="px-3 py-1.5 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded text-xs font-bold"
+                >
+                  Cancelar
+                </button>
+                <button 
+                  onClick={handleSaveEdit} 
+                  className="px-4 py-1.5 bg-indigo-600 hover:bg-indigo-700 text-white rounded text-xs font-bold shadow-sm"
+                >
+                  Guardar Cambios
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
