@@ -3,34 +3,7 @@ import { useState, useEffect } from "react";
 import { useSession } from "next-auth/react";
 import { DateInput } from "@/components/DateInput";
 
-const COUNTRY_CODES = [
-  { code: "+52", flag: "🇲🇽", name: "México (+52)", iso: "MX" },
-  { code: "+1", flag: "🇺🇸", name: "Estados Unidos (+1)", iso: "US" },
-  { code: "+1", flag: "🇨🇦", name: "Canadá (+1)", iso: "CA" },
-  { code: "+57", flag: "🇨🇴", name: "Colombia (+57)", iso: "CO" },
-  { code: "+54", flag: "🇦🇷", name: "Argentina (+54)", iso: "AR" },
-  { code: "+56", flag: "🇨🇱", name: "Chile (+56)", iso: "CL" },
-  { code: "+51", flag: "🇵🇪", name: "Perú (+51)", iso: "PE" },
-  { code: "+593", flag: "🇪🇨", name: "Ecuador (+593)", iso: "EC" },
-  { code: "+58", flag: "🇻🇪", name: "Venezuela (+58)", iso: "VE" },
-  { code: "+502", flag: "🇬🇹", name: "Guatemala (+502)", iso: "GT" },
-  { code: "+503", flag: "🇸🇻", name: "El Salvador (+503)", iso: "SV" },
-  { code: "+504", flag: "🇭🇳", name: "Honduras (+504)", iso: "HN" },
-  { code: "+505", flag: "🇳🇮", name: "Nicaragua (+505)", iso: "NI" },
-  { code: "+506", flag: "🇨🇷", name: "Costa Rica (+506)", iso: "CR" },
-  { code: "+507", flag: "🇵🇦", name: "Panamá (+507)", iso: "PA" },
-  { code: "+595", flag: "🇵🇾", name: "Paraguay (+595)", iso: "PY" },
-  { code: "+598", flag: "🇺🇾", name: "Uruguay (+598)", iso: "UY" },
-  { code: "+591", flag: "🇧🇴", name: "Bolivia (+591)", iso: "BO" },
-  { code: "+1", flag: "🇵🇷", name: "Puerto Rico (+1)", iso: "PR" },
-  { code: "+1", flag: "🇩🇴", name: "Rep. Dominicana (+1)", iso: "DO" },
-  { code: "+34", flag: "🇪🇸", name: "España (+34)", iso: "ES" },
-  { code: "+44", flag: "🇬🇧", name: "Reino Unido (+44)", iso: "GB" },
-  { code: "+49", flag: "🇩🇪", name: "Alemania (+49)", iso: "DE" },
-  { code: "+33", flag: "🇫🇷", name: "Francia (+33)", iso: "FR" },
-  { code: "+39", flag: "🇮🇹", name: "Italia (+39)", iso: "IT" },
-  { code: "+55", flag: "🇧🇷", name: "Brasil (+55)", iso: "BR" },
-];
+import { COUNTRY_CODES } from "@/lib/countryCodes";
 
 export default function PreregistrosPage() {
   const { data: session } = useSession();
@@ -421,7 +394,7 @@ export default function PreregistrosPage() {
                       >
                         {COUNTRY_CODES.map((c, i) => (
                           <option key={i} value={c.code}>
-                            {c.flag} {c.code}
+                            {c.flag} {c.name}
                           </option>
                         ))}
                       </select>
@@ -450,7 +423,7 @@ export default function PreregistrosPage() {
                       >
                         {COUNTRY_CODES.map((c, i) => (
                           <option key={i} value={c.code}>
-                            {c.flag} {c.code}
+                            {c.flag} {c.name}
                           </option>
                         ))}
                       </select>
@@ -479,7 +452,7 @@ export default function PreregistrosPage() {
                       >
                         {COUNTRY_CODES.map((c, i) => (
                           <option key={i} value={c.code}>
-                            {c.flag} {c.code}
+                            {c.flag} {c.name}
                           </option>
                         ))}
                       </select>
