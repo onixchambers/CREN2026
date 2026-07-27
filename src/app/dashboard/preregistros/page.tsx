@@ -4,6 +4,7 @@ import { useSession } from "next-auth/react";
 import { DateInput } from "@/components/DateInput";
 
 import { COUNTRY_CODES } from "@/lib/countryCodes";
+import { CountrySelector } from "@/components/CountrySelector";
 
 export default function PreregistrosPage() {
   const { data: session } = useSession();
@@ -387,17 +388,10 @@ export default function PreregistrosPage() {
                   <div>
                     <label className="block text-[10px] font-bold text-slate-500 uppercase mb-1">Número de Contacto</label>
                     <div className="flex gap-1.5">
-                      <select 
+                      <CountrySelector 
                         value={madreCountryCode}
-                        onChange={(e) => setMadreCountryCode(e.target.value)}
-                        className="w-36 text-xs p-2 border border-slate-300 rounded focus:border-[#2980b9] outline-none bg-slate-50 font-medium text-slate-700 cursor-pointer"
-                      >
-                        {COUNTRY_CODES.map((c, i) => (
-                          <option key={i} value={c.code}>
-                            {c.flag} {c.code} ({c.iso})
-                          </option>
-                        ))}
-                      </select>
+                        onChange={(code) => setMadreCountryCode(code)}
+                      />
                       <input type="tel" name="madreContacto" value={formData.madreContacto} onChange={handleInputChange} placeholder="Contacto de la madre" className="flex-1 text-sm p-2 border border-slate-300 rounded focus:border-[#2980b9] outline-none text-slate-900" />
                     </div>
                   </div>
@@ -416,17 +410,10 @@ export default function PreregistrosPage() {
                   <div>
                     <label className="block text-[10px] font-bold text-slate-500 uppercase mb-1">Número de Contacto</label>
                     <div className="flex gap-1.5">
-                      <select 
+                      <CountrySelector 
                         value={padreCountryCode}
-                        onChange={(e) => setPadreCountryCode(e.target.value)}
-                        className="w-36 text-xs p-2 border border-slate-300 rounded focus:border-[#2980b9] outline-none bg-slate-50 font-medium text-slate-700 cursor-pointer"
-                      >
-                        {COUNTRY_CODES.map((c, i) => (
-                          <option key={i} value={c.code}>
-                            {c.flag} {c.code} ({c.iso})
-                          </option>
-                        ))}
-                      </select>
+                        onChange={(code) => setPadreCountryCode(code)}
+                      />
                       <input type="tel" name="padreContacto" value={formData.padreContacto} onChange={handleInputChange} placeholder="Contacto del padre" className="flex-1 text-sm p-2 border border-slate-300 rounded focus:border-[#2980b9] outline-none text-slate-900" />
                     </div>
                   </div>
@@ -445,17 +432,10 @@ export default function PreregistrosPage() {
                   <div>
                     <label className="block text-[10px] font-bold text-slate-500 uppercase mb-1">Número de Contacto</label>
                     <div className="flex gap-1.5">
-                      <select 
+                      <CountrySelector 
                         value={otrosCountryCode}
-                        onChange={(e) => setOtrosCountryCode(e.target.value)}
-                        className="w-36 text-xs p-2 border border-slate-300 rounded focus:border-[#2980b9] outline-none bg-slate-50 font-medium text-slate-700 cursor-pointer"
-                      >
-                        {COUNTRY_CODES.map((c, i) => (
-                          <option key={i} value={c.code}>
-                            {c.flag} {c.code} ({c.iso})
-                          </option>
-                        ))}
-                      </select>
+                        onChange={(code) => setOtrosCountryCode(code)}
+                      />
                       <input type="tel" name="otrosContacto" value={formData.otrosContacto} onChange={handleInputChange} placeholder="Otro contacto" className="flex-1 text-sm p-2 border border-slate-300 rounded focus:border-[#2980b9] outline-none text-slate-900" />
                     </div>
                   </div>
