@@ -420,14 +420,12 @@ export default function AgendaPage() {
                   onChange={e => setSelectedCita({...selectedCita, estado: e.target.value})} 
                   className="w-full text-slate-900 font-medium border border-slate-300 rounded-lg px-3 py-2 outline-none focus:border-[#2980b9]"
                 >
-                  <option value="Ocupado">Ocupado (Confirmado)</option>
-                  <option value="Asistió">Asistió</option>
-                  <option value="Canceló">Canceló</option>
-                  <option value="Faltó">Faltó</option>
-                  <option value="Baja">Baja</option>
+                  <option value="Asistio">Asistio</option>
+                  <option value="Cancelo anticipado">Cancelo anticipado</option>
+                  <option value="Cancelo sin anticipacion">Cancelo sin anticipacion</option>
+                  <option value="Cancelo el centro">Cancelo el centro</option>
                   <option value="Alta">Alta</option>
-                  <option value="Reagendado">Reagendado</option>
-                  <option value="Disponible">Disponible</option>
+                  <option value="Baja">Baja</option>
                 </select>
               </div>
 
