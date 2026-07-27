@@ -57,7 +57,7 @@ export default function PacientesPage() {
 
   const [editingPatient, setEditingPatient] = useState<any>(null);
   const [editForm, setEditForm] = useState({
-    nombre: "", sexo: "", fechaNacimiento: "", precioTerapia: "", metodoPago: ""
+    nombre: "", sexo: "", fechaNacimiento: "", precioTerapia: "", metodoPago: "", estatus: "Activo"
   });
   const [isSaving, setIsSaving] = useState(false);
 
@@ -68,7 +68,8 @@ export default function PacientesPage() {
       sexo: p.sexo || "",
       fechaNacimiento: p.fechaNacimiento || "",
       precioTerapia: p.precioTerapia || "",
-      metodoPago: p.metodoPago || ""
+      metodoPago: p.metodoPago || "",
+      estatus: p.estatus || "Activo"
     });
   };
 
@@ -194,8 +195,12 @@ export default function PacientesPage() {
                   </td>
                   <td className="px-4 py-4 text-slate-500 font-medium">{p.ultima || "—"}</td>
                   <td className="px-4 py-4">
-                    <span className={`text-[11px] font-semibold ${p.estatus === 'Activo' ? 'text-green-500' : 'text-slate-500'}`}>
-                      {p.estatus}
+                    <span className={`text-[10px] font-extrabold px-2.5 py-1 rounded-md uppercase tracking-wider ${
+                      (p.estatus || 'Activo').toLowerCase() === 'activo'
+                        ? 'bg-green-100 text-green-700 border border-green-300'
+                        : 'bg-black text-white border border-black shadow-sm'
+                    }`}>
+                      {p.estatus || 'Activo'}
                     </span>
                   </td>
                   <td className="px-4 py-4" onClick={(e) => e.stopPropagation()}>
@@ -437,7 +442,13 @@ export default function PacientesPage() {
                   <option value="Tarjeta">Tarjeta</option>
                   <option value="Transferencia">Transferencia</option>
                 </select>
-                <p className="text-[10px] text-slate-400 mt-1">Solo se actualizará si seleccionas una opción</p>
+              </div>
+              <div>
+                <label className="block text-xs font-bold text-slate-500 uppercase mb-1">⚙️ Estado del Paciente</label>
+                <select name="estatus" value={editForm.estatus} onChange={handleEditChange} className="w-full text-sm p-2 border border-slate-300 rounded focus:border-[#2980b9] outline-none text-slate-900 font-semibold">
+                  <option value="Activo">Activo (Verde)</option>
+                  <option value="Desactivo">Desactivo (Negro)</option>
+                </select>
               </div>
             </div>
             <div className="p-4 bg-slate-50 border-t border-slate-100">

@@ -81,6 +81,7 @@ export async function updatePatientFast(id: string, data: any) {
         fechaNacimiento: data.fechaNacimiento,
         precioTerapia: data.precioTerapia,
         metodoPago: data.metodoPago,
+        estatus: data.estatus || "Activo",
         // Calcular edad basada en fecha de nacimiento
         age: data.fechaNacimiento ? calculateAge(data.fechaNacimiento) : null
       }
