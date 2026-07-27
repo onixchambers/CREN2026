@@ -21,6 +21,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
     { name: "Dashboard", path: "/dashboard", adminOnly: true },
     { name: "Terapeutas", path: "/dashboard/terapeutas", adminOnly: true },
     { name: "Honorarios", path: "/dashboard/honorarios", adminOnly: true },
+    { name: "Salario", path: "/dashboard/salario", adminOnly: true },
     { name: "Reportes", path: "/dashboard/reportes", adminOnly: true },
     { name: "Estado Resultados", path: "/dashboard/estado-resultados", adminOnly: true },
     { name: "Configuración", path: "/dashboard/configuracion", adminOnly: true },
