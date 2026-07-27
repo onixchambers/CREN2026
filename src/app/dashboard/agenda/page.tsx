@@ -69,7 +69,11 @@ export default function AgendaPage() {
       
       const pacRes = await getPatients();
       if (pacRes.success && pacRes.data) {
-        setPacientes(pacRes.data.map((p: any) => ({ id: p.id, name: p.name })));
+        const activosOnly = pacRes.data.filter((p: any) => {
+          const st = (p.estatus || "Activo").toLowerCase();
+          return st === "activo";
+        });
+        setPacientes(activosOnly.map((p: any) => ({ id: p.id, name: p.name })));
       }
       
       const agendaRes = await getAgenda();

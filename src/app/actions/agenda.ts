@@ -49,6 +49,10 @@ export async function addCita(data: any) {
     const patient = await prisma.patient.findFirst({ where: { name: data.paciente } });
     if (!patient) return { success: false, error: "Paciente no encontrado en DB." };
 
+    if (patient.estatus && patient.estatus.toLowerCase() === "desactivo") {
+      return { success: false, error: "El paciente está Desactivo. Para agendarle citas, primero debes cambiar su estado a Activo en el Directorio de Pacientes." };
+    }
+
     const allUsers = await prisma.user.findMany();
     let therapistId: string | undefined = undefined;
     
