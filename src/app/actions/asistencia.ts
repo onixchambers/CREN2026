@@ -161,6 +161,11 @@ export async function getAsistenciasDB(_ts?: string) {
       records.forEach((rec, index) => {
         const { s, extra } = rec;
         const sessionNum = index + 1;
+        const patientSessions = sessions.filter(x => (s.patientId && x.patientId === s.patientId) || (s.patient?.name && x.patient?.name === s.patient?.name));
+        const totalFromNotes = parseInt(extra.sesiones || extra.numeroSesiones || "1");
+        const totalCount = Math.max(totalFromNotes, patientSessions.length);
+        const displaySesiones = totalCount > 1 ? `${sessionNum}/${totalCount}` : `${sessionNum}`;
+
         asistencias.push({
           id: s.id,
           fecha: extra.fecha || s.date.toISOString().split("T")[0],
@@ -171,7 +176,7 @@ export async function getAsistenciasDB(_ts?: string) {
           edad: s.patient?.age?.toString() || "-",
           tipoSesion: extra.tipoSesion || "-",
           estado: extra.estadoAsistencia || s.status,
-          sesiones: sessionNum.toString(),
+          sesiones: displaySesiones,
           pago: extra.metodoPago || "-",
           fact: extra.solicitaFactura ? "Sí" : "No",
           subtotal: extra.subtotal != null ? "$" + Number(extra.subtotal).toFixed(2) : "$0.00",
