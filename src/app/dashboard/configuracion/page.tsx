@@ -43,11 +43,14 @@ export default function ConfiguracionPage() {
         setIvaRate(res.settings?.ivaRate ?? 16);
         
         const exps = res.expenses || [];
+        let items: any[] = [];
         if (exps.length > 0) {
-          setGastos(exps.map((e: any, i: number) => ({ id: i, label: e.label, val: e.amount?.toString() || "" })));
+          items = exps.map((e: any, i: number) => ({ id: i, label: e.label, val: e.amount?.toString() || "" }));
         } else {
-          setGastos(defaultGastos.map((label, i) => ({ id: i, label, val: "" })));
+          items = defaultGastos.map((label, i) => ({ id: i, label, val: "" }));
         }
+        items.sort((a, b) => (a.label || "").localeCompare(b.label || "", 'es', { sensitivity: 'base' }));
+        setGastos(items);
       } else {
         console.error("Failed to load settings from server", res.error);
         alert("Error al cargar configuración: " + (res.error || "Error desconocido"));
@@ -62,7 +65,9 @@ export default function ConfiguracionPage() {
   const handleSave = async () => {
     setIsSaving(true);
     try {
-      const allExpenses = gastos.map(g => ({ label: g.label, amount: parseFloat(g.val) || 0 }));
+      // Ordenar gastos alfabéticamente antes de guardar
+      const sortedGastos = [...gastos].sort((a, b) => (a.label || "").localeCompare(b.label || "", 'es', { sensitivity: 'base' }));
+      const allExpenses = sortedGastos.map(g => ({ label: g.label, amount: parseFloat(g.val) || 0 }));
 
       const res = await saveSettings({
         users: usuarios,
@@ -96,7 +101,9 @@ export default function ConfiguracionPage() {
   };
 
   const addGasto = () => {
-    setGastos([...gastos, { id: Date.now(), label: "", val: "" }]);
+    const newG = [...gastos, { id: Date.now(), label: "", val: "" }];
+    newG.sort((a, b) => (a.label || "").localeCompare(b.label || "", 'es', { sensitivity: 'base' }));
+    setGastos(newG);
   };
 
   const removeGasto = (id: any) => {
@@ -253,14 +260,37 @@ export default function ConfiguracionPage() {
 
         {/* GASTOS OPERATIVOS */}
         <div className="p-6">
-          <h3 className="text-[#1a5276] font-bold flex items-center gap-2 mb-4">
-            <svg className="w-5 h-5 text-slate-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 17v-2m3 2v-4m3 4v-6m2 10H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" /></svg>
-            Gastos Operativos
-          </h3>
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-4">
+            <h3 className="text-[#1a5276] font-bold flex items-center gap-2">
+              <svg className="w-5 h-5 text-slate-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 17v-2m3 2v-4m3 4v-6m2 10H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" /></svg>
+              Gastos Operativos
+            </h3>
+            
+            <div className="flex items-center gap-2">
+              <span className="text-xs font-bold text-slate-500 uppercase">Mes a configurar:</span>
+              <input type="month" value={month} onChange={(e) => setMonth(e.target.value)} className="p-1.5 border border-slate-300 rounded text-xs font-bold text-[#1a5276] focus:border-blue-500 outline-none" />
+            </div>
+          </div>
 
-          <div className="flex items-center gap-3 mb-6">
-            <span className="text-sm text-slate-700">Mes a configurar:</span>
-            <input type="month" value={month} onChange={(e) => setMonth(e.target.value)} className="p-1.5 border border-slate-300 rounded text-sm text-slate-700 focus:border-blue-500 outline-none text-slate-900" />
+          {/* CUADRO RESUMEN DE TOTAL DE GASTOS OPERATIVOS Y ORDEN ALFABÉTICO */}
+          <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between bg-[#0e2f44] text-white p-4 rounded-xl shadow-sm mb-6 gap-4">
+            <div>
+              <span className="text-xs font-bold uppercase tracking-wider text-slate-300">📊 Suma Total de Gastos Operativos ({month})</span>
+              <p className="text-3xl font-black text-green-400 mt-0.5">
+                ${gastos.reduce((sum, g) => sum + (parseFloat(g.val) || 0), 0).toLocaleString('es-MX', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+              </p>
+            </div>
+            <button 
+              type="button"
+              onClick={() => {
+                const sorted = [...gastos].sort((a, b) => (a.label || "").localeCompare(b.label || "", 'es', { sensitivity: 'base' }));
+                setGastos(sorted);
+              }}
+              className="text-xs px-3.5 py-2 bg-white/10 hover:bg-white/20 border border-white/20 text-white font-bold rounded-lg transition-colors flex items-center gap-1.5"
+            >
+              <svg className="w-4 h-4 text-amber-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 4h13M3 8h9m-9 4h6m4 0l4-4m0 0l4 4m-4-4v12" /></svg>
+              Ordenar Alfabéticamente
+            </button>
           </div>
 
           <div className="grid grid-cols-1 md:grid-cols-2 gap-x-12 gap-y-4 mb-4">
