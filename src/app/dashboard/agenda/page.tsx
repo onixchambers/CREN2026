@@ -89,6 +89,12 @@ export default function AgendaPage() {
   const handleAddCita = async (e: React.FormEvent) => {
     e.preventDefault();
     
+    const hourNum = parseInt((formData.hora || "09:00").split(":")[0]);
+    if (isNaN(hourNum) || hourNum < 7 || hourNum > 22) {
+      alert("Las citas solo pueden agendarse en el horario de 7:00 AM a 10:00 PM.");
+      return;
+    }
+
     const nuevaCitaObj = {
       paciente: formData.paciente,
       fecha: formData.fecha,

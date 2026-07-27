@@ -41,6 +41,11 @@ export async function getAgenda() {
 
 export async function addCita(data: any) {
   try {
+    const hourNum = parseInt((data.hora || "09:00").split(":")[0]);
+    if (isNaN(hourNum) || hourNum < 7 || hourNum > 22) {
+      return { success: false, error: "Las citas solo pueden agendarse entre las 07:00 AM y las 10:00 PM." };
+    }
+
     const patient = await prisma.patient.findFirst({ where: { name: data.paciente } });
     if (!patient) return { success: false, error: "Paciente no encontrado en DB." };
 
