@@ -47,16 +47,19 @@ export async function addCita(data: any) {
     }
 
     let patientId = "";
-    if (data.estado === "Ocupado" || data.estado === "No Disponible" || !data.paciente || data.paciente.trim() === "") {
+    if (data.estado === "Ocupado" || data.estado === "No Disponible" || !data.paciente || data.paciente.trim() === "" || data.paciente === "No Disponible") {
       if (data.estado === "Ocupado") data.estado = "No Disponible";
-      if (!data.paciente || data.paciente.trim() === "") data.paciente = "No Disponible";
+      data.paciente = "No Disponible";
       
-      let patient = await prisma.patient.findFirst({ where: { name: data.paciente } });
+      let patient = await prisma.patient.findFirst({ where: { name: "No Disponible" } });
+      if (!patient) {
+        patient = await prisma.patient.findFirst();
+      }
       if (!patient) {
         patient = await prisma.patient.create({
           data: {
-            name: data.paciente,
-            codigoPaciente: "ND-000",
+            name: "No Disponible",
+            codigoPaciente: `ND-${Date.now()}`,
             telefono: "0000000000",
             estatus: "Activo"
           }
