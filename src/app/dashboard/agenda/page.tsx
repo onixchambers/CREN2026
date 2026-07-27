@@ -49,7 +49,7 @@ export default function AgendaPage() {
   const [isEditModalOpen, setIsEditModalOpen] = useState(false);
   const [selectedCita, setSelectedCita] = useState<Cita | null>(null);
   const [formData, setFormData] = useState({
-    paciente: "", fecha: hoy, hora: "09:00", terapeuta: "", tipoServicio: "individual", frecuencia: "semanal", numeroSesiones: 1, estado: "Ocupado" as Cita["estado"], pagado: false, metodoPago: ""
+    paciente: "", fecha: hoy, hora: "09:00", terapeuta: "", tipoServicio: "individual", frecuencia: "semanal", numeroSesiones: 1, estado: "Disponible" as Cita["estado"], pagado: false, metodoPago: ""
   });
 
   useEffect(() => {
@@ -181,14 +181,15 @@ export default function AgendaPage() {
 
   const getEstadoColor = (estado: string) => {
     switch (estado) {
-      case 'Ocupado': return 'bg-blue-100 text-blue-800 border-blue-300';
+      case 'Ocupado':
+      case 'No Disponible': return 'bg-red-600 text-white border-red-700 font-bold shadow-md';
       case 'Reagendado': return 'bg-orange-100 text-orange-800 border-orange-300';
       case 'Disponible': return 'bg-green-100 text-green-800 border-green-300';
-        case 'Asistió': return 'bg-emerald-100 text-emerald-800 border-emerald-300';
-        case 'Canceló': return 'bg-red-100 text-red-800 border-red-300';
-        case 'Faltó': return 'bg-rose-100 text-rose-800 border-rose-300';
-        case 'Baja': return 'bg-stone-100 text-stone-800 border-stone-300';
-        case 'Alta': return 'bg-teal-100 text-teal-800 border-teal-300';
+      case 'Asistió': return 'bg-emerald-100 text-emerald-800 border-emerald-300';
+      case 'Canceló': return 'bg-red-100 text-red-800 border-red-300';
+      case 'Faltó': return 'bg-rose-100 text-rose-800 border-rose-300';
+      case 'Baja': return 'bg-stone-100 text-stone-800 border-stone-300';
+      case 'Alta': return 'bg-teal-100 text-teal-800 border-teal-300';
       case 'Cancelado': return 'bg-red-100 text-red-800 border-red-300';
       default: return 'bg-slate-100 text-slate-800 border-slate-300';
     }
@@ -260,8 +261,12 @@ export default function AgendaPage() {
                                 title="Eliminar Cita"
                               >&times;</button>
 
-                              <span className="truncate w-full text-center mt-1">{cita.paciente}</span>
-                              <span className="text-[10px] opacity-80 uppercase mt-0.5 truncate w-full text-center">{cita.tipoServicio}</span>
+                              <span className="truncate w-full text-center mt-1 font-bold">
+                                {(cita.estado === "Ocupado" || cita.estado === "No Disponible" || cita.paciente === "No Disponible") ? "No Disponible" : cita.paciente}
+                              </span>
+                              <span className="text-[10px] opacity-80 uppercase mt-0.5 truncate w-full text-center">
+                                {(cita.estado === "Ocupado" || cita.estado === "No Disponible" || cita.paciente === "No Disponible") ? "Bloqueado" : cita.tipoServicio}
+                              </span>
                             </div>
                         ) : (
                           <span className="text-slate-300">—</span>
@@ -289,9 +294,11 @@ export default function AgendaPage() {
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 {/* Paciente y Terapeuta */}
                 <div className="relative">
-                  <label className="block text-xs font-semibold text-slate-600 uppercase mb-1">Nombre del Paciente</label>
+                  <label className="block text-xs font-semibold text-slate-600 uppercase mb-1">
+                    Nombre del Paciente {formData.estado === "Ocupado" && <span className="text-slate-400 font-normal">(Opcional)</span>}
+                  </label>
                   <input 
-                    required 
+                    required={formData.estado === "Disponible"}
                     type="text" 
                     name="paciente" 
                     autoComplete="off"
@@ -303,9 +310,9 @@ export default function AgendaPage() {
                     onFocus={() => setShowDropdown(true)}
                     onBlur={() => setTimeout(() => setShowDropdown(false), 200)}
                     className="w-full text-slate-900 font-medium border border-slate-300 rounded-lg px-3 py-2 outline-none focus:border-[#2980b9]" 
-                    placeholder="Escribir para buscar paciente..." 
+                    placeholder={formData.estado === "Ocupado" ? "No Disponible" : "Escribir para buscar paciente..."} 
                   />
-                  {showDropdown && (
+                  {showDropdown && formData.estado === "Disponible" && (
                     <ul className="absolute z-10 w-full bg-white border border-slate-300 rounded-md mt-1 max-h-48 overflow-y-auto shadow-lg">
                       {pacientes
                         .filter(p => p.name.toLowerCase().includes(formData.paciente.toLowerCase()))
@@ -379,13 +386,16 @@ export default function AgendaPage() {
 
                 {/* Estado */}
                 <div className="md:col-span-2">
-                  <label className="block text-xs font-semibold text-slate-600 uppercase mb-1">Estado</label>
-                  <select name="estado" value={formData.estado} onChange={handleInputChange} className="w-full text-slate-900 font-medium border border-slate-300 rounded-lg px-3 py-2 outline-none focus:border-[#2980b9]">
-                    <option value="Disponible">Disponible (Libre para agendar)</option>
-                    <option value="Ocupado">Ocupado (Confirmado)</option>
-                    <option value="Reagendado">Reagendado</option>
-                    <option value="Cancelado">Cancelado</option>
+                  <label className="block text-xs font-semibold text-slate-600 uppercase mb-1">Estado de la Cita</label>
+                  <select name="estado" value={formData.estado} onChange={handleInputChange} className="w-full text-slate-900 font-bold border border-slate-300 rounded-lg px-3 py-2 outline-none focus:border-[#2980b9]">
+                    <option value="Disponible">Disponible (Permite agendar paciente)</option>
+                    <option value="Ocupado">Ocupado (Terapeuta No Disponible)</option>
                   </select>
+                  {formData.estado === "Ocupado" && (
+                    <p className="text-xs text-red-600 font-bold mt-1.5 flex items-center gap-1">
+                      ⚠️ El terapeuta estará ocupado en estas horas. Aparecerá en rojo como "No Disponible" y no se podrán agendar citas.
+                    </p>
+                  )}
                 </div>
               </div>
               

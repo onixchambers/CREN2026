@@ -46,11 +46,31 @@ export async function addCita(data: any) {
       return { success: false, error: "Las citas solo pueden agendarse entre las 07:00 AM y las 10:00 PM." };
     }
 
-    const patient = await prisma.patient.findFirst({ where: { name: data.paciente } });
-    if (!patient) return { success: false, error: "Paciente no encontrado en DB." };
+    let patientId = "";
+    if (data.estado === "Ocupado" || data.estado === "No Disponible" || !data.paciente || data.paciente.trim() === "") {
+      if (data.estado === "Ocupado") data.estado = "No Disponible";
+      if (!data.paciente || data.paciente.trim() === "") data.paciente = "No Disponible";
+      
+      let patient = await prisma.patient.findFirst({ where: { name: data.paciente } });
+      if (!patient) {
+        patient = await prisma.patient.create({
+          data: {
+            name: data.paciente,
+            codigoPaciente: "ND-000",
+            telefono: "0000000000",
+            estatus: "Activo"
+          }
+        });
+      }
+      patientId = patient.id;
+    } else {
+      const patient = await prisma.patient.findFirst({ where: { name: data.paciente } });
+      if (!patient) return { success: false, error: "Paciente no encontrado en DB." };
 
-    if (patient.estatus && patient.estatus.toLowerCase() === "desactivo") {
-      return { success: false, error: "El paciente está Desactivo. Para agendarle citas, primero debes cambiar su estado a Activo en el Directorio de Pacientes." };
+      if (patient.estatus && patient.estatus.toLowerCase() === "desactivo") {
+        return { success: false, error: "El paciente está Desactivo. Para agendarle citas, primero debes cambiar su estado a Activo en el Directorio de Pacientes." };
+      }
+      patientId = patient.id;
     }
 
     const allUsers = await prisma.user.findMany();
@@ -86,6 +106,22 @@ export async function addCita(data: any) {
       
       const finalDateStr = currentDate.toISOString().split('T')[0];
       const jsDate = new Date(`${finalDateStr}T${data.hora}:00`);
+
+      // Verificar si ya está ocupado en ese horario
+      const existingSession = await prisma.session.findFirst({
+        where: {
+          therapistId: therapistId,
+          date: jsDate
+        }
+      });
+
+      if (existingSession) {
+        let existingNotes: any = {};
+        try { if (existingSession.notes) existingNotes = JSON.parse(existingSession.notes); } catch (e) {}
+        if (existingNotes.estado === "Ocupado" || existingNotes.estado === "No Disponible") {
+          return { success: false, error: `El terapeuta ${data.terapeuta} se encuentra No Disponible en la fecha ${finalDateStr} a las ${data.hora}.` };
+        }
+      }
       
       const notesJson = JSON.stringify({
         fecha: finalDateStr,
@@ -99,10 +135,10 @@ export async function addCita(data: any) {
 
       const newSession = await prisma.session.create({
         data: {
-          patientId: patient.id,
+          patientId: patientId,
           therapistId: therapistId,
           date: jsDate,
-          status: data.estado || "Ocupado",
+          status: data.estado,
           notes: notesJson
         }
       });
