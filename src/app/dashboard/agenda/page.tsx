@@ -220,6 +220,22 @@ export default function AgendaPage() {
     );
   }
 
+  const handleOpenModal = (tName?: string, hStr?: string) => {
+    setFormData({
+      paciente: "",
+      fecha: fechaSeleccionada,
+      hora: hStr || "09:00",
+      terapeuta: tName || terapeutas[0] || "",
+      tipoServicio: "individual",
+      frecuencia: "semanal",
+      numeroSesiones: 1,
+      estado: "Disponible",
+      pagado: false,
+      metodoPago: ""
+    });
+    setIsModalOpen(true);
+  };
+
   return (
     <div className="space-y-6 animate-in fade-in duration-500">
       <div className="flex items-center justify-between">
@@ -227,7 +243,7 @@ export default function AgendaPage() {
           <svg className="w-6 h-6 text-[#1a5276]" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2" /></svg>
           Vista Diaria de la Agenda
         </h2>
-        <button onClick={() => setIsModalOpen(true)} className="bg-[#1a5276] hover:bg-[#0e2f44] text-white px-4 py-2 rounded-lg text-sm font-bold transition-colors">
+        <button onClick={() => handleOpenModal()} className="bg-[#1a5276] hover:bg-[#0e2f44] text-white px-4 py-2 rounded-lg text-sm font-bold transition-colors">
           + Programar Cita
         </button>
       </div>
@@ -286,7 +302,13 @@ export default function AgendaPage() {
                               </span>
                             </div>
                         ) : (
-                          <span className="text-slate-300">—</span>
+                          <div 
+                            onClick={() => handleOpenModal(t, hora)}
+                            className="w-full h-full flex items-center justify-center cursor-pointer hover:bg-blue-50/60 transition-colors group/cell"
+                            title="Haz clic para agendar en esta hora"
+                          >
+                            <span className="text-slate-300 group-hover/cell:text-[#1a5276] font-extrabold text-sm">+</span>
+                          </div>
                         )}
                       </td>
                     );
