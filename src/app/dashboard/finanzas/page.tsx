@@ -1,170 +1,227 @@
 "use client";
-import { useState } from "react";
+
+import { useState, useEffect } from "react";
+import { getFinanzasMensuales, addGastoOperativo, removeGastoOperativo } from "@/app/actions/finanzas";
 import { DateInput } from "@/components/DateInput";
 
-type Movimiento = {
-  id: string;
-  fecha: string;
-  descripcion: string;
-  tipo: "INGRESO" | "GASTO";
-  monto: number;
-};
-
 export default function FinanzasPage() {
+  const currentMonth = new Date().toISOString().slice(0, 7); // YYYY-MM
+  const [mesActual, setMesActual] = useState(currentMonth);
+
+  const getFirstDayOfMonth = () => {
+    const d = new Date();
+    d.setDate(1);
+    return d.toISOString().split("T")[0];
+  };
+  const hoyStr = new Date().toISOString().split("T")[0];
+
+  const [fechaDesde, setFechaDesde] = useState(getFirstDayOfMonth());
+  const [fechaHasta, setFechaHasta] = useState(hoyStr);
+
+  const [datos, setDatos] = useState({
+    ingresosBrutos: 0,
+    nomina: 0,
+    gastosOperativos: 0,
+    gastosList: [] as any[],
+    ivaHonorarios: 0,
+    utilidadNeta: 0,
+    terapeutas: [] as any[]
+  });
+
+  const [loading, setLoading] = useState(true);
+
   const formatDateStr = (dateStr: string) => {
     if (!dateStr) return "-";
     const parts = dateStr.split("-");
-    if (parts.length === 3) return `//`;
+    if (parts.length === 3) return `${parts[2]}/${parts[1]}/${parts[0]}`;
     return dateStr;
   };
-  const [movimientos, setMovimientos] = useState<Movimiento[]>([]);
 
-  const [isModalOpen, setIsModalOpen] = useState(false);
-  const [modalType, setModalType] = useState<"INGRESO" | "GASTO">("INGRESO");
-  
-  const [formData, setFormData] = useState({
-    descripcion: "", monto: "", fecha: new Date().toISOString().split("T")[0]
-  });
-
-  const handleOpenModal = (tipo: "INGRESO" | "GASTO") => {
-    setModalType(tipo);
-    setIsModalOpen(true);
+  const fetchDatos = async () => {
+    setLoading(true);
+    const res = await getFinanzasMensuales(mesActual, fechaDesde, fechaHasta);
+    if (res.success && res.data) {
+      setDatos(res.data);
+    }
+    setLoading(false);
   };
 
-  const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    setFormData({ ...formData, [e.target.name]: e.target.value });
-  };
+  useEffect(() => {
+    fetchDatos();
+  }, [mesActual, fechaDesde, fechaHasta]);
 
-  const handleAddMovimiento = (e: React.FormEvent) => {
-    e.preventDefault();
-    const nuevoMovimiento: Movimiento = {
-      id: Date.now().toString(),
-      fecha: formData.fecha,
-      descripcion: formData.descripcion,
-      tipo: modalType,
-      monto: parseFloat(formData.monto) || 0
-    };
-    
-    setMovimientos([nuevoMovimiento, ...movimientos]);
-    setIsModalOpen(false);
-    setFormData({ descripcion: "", monto: "", fecha: new Date().toISOString().split("T")[0] });
-  };
-
-  const totalIngresos = movimientos.filter(m => m.tipo === "INGRESO").reduce((acc, m) => acc + m.monto, 0);
-  const totalGastos = movimientos.filter(m => m.tipo === "GASTO").reduce((acc, m) => acc + m.monto, 0);
-  const balanceActual = totalIngresos - totalGastos;
+  const gastosTotales = datos.nomina + datos.gastosOperativos;
+  const balanceActual = datos.ingresosBrutos - gastosTotales;
 
   return (
-    <div className="space-y-6 animate-in fade-in duration-500">
-      <div className="flex items-center justify-between">
-        <h2 className="text-xl font-bold text-blue-900">Control Financiero</h2>
-        <div className="flex gap-2">
-          <button onClick={() => handleOpenModal("INGRESO")} className="bg-green-600 hover:bg-green-700 text-white px-4 py-2 rounded-lg text-sm font-bold transition-colors">
-            + Registrar Ingreso
-          </button>
-          <button onClick={() => handleOpenModal("GASTO")} className="bg-red-600 hover:bg-red-700 text-white px-4 py-2 rounded-lg text-sm font-bold transition-colors">
-            - Registrar Gasto
-          </button>
+    <div className="space-y-6 animate-in fade-in duration-500 pb-10">
+      {/* HEADER CON CONTROLES DE FECHA */}
+      <div className="flex flex-col md:flex-row md:items-center justify-between border-b pb-4 gap-4">
+        <div>
+          <h2 className="text-2xl font-bold text-slate-800">Control Financiero - Estado de Cuenta</h2>
+          <p className="text-sm text-slate-500">Resumen de ingresos por pagos de terapeutas, comisiones y gastos operativos</p>
+        </div>
+        <div className="flex flex-wrap items-center gap-3 bg-white p-2.5 rounded-lg shadow-sm border border-slate-200">
+          <div className="flex items-center gap-2">
+            <label className="text-xs font-bold text-slate-500 uppercase">Mes:</label>
+            <input 
+              type="month" 
+              value={mesActual}
+              onChange={(e) => {
+                setMesActual(e.target.value);
+                const [y, m] = e.target.value.split("-");
+                setFechaDesde(`${y}-${m}-01`);
+                const lastDay = new Date(parseInt(y), parseInt(m), 0).getDate();
+                setFechaHasta(`${y}-${m}-${lastDay.toString().padStart(2, '0')}`);
+              }}
+              className="border border-slate-300 rounded px-2.5 py-1 text-xs font-semibold outline-none focus:border-[#2980b9] text-[#1a5276]"
+            />
+          </div>
+          <div className="h-4 w-px bg-slate-200 hidden md:block"></div>
+          <div className="flex items-center gap-1.5">
+            <label className="text-xs font-bold text-slate-500 uppercase">Desde:</label>
+            <DateInput 
+              value={fechaDesde} 
+              onChange={(e) => setFechaDesde(e.target.value)}
+              className="border border-slate-300 rounded px-2 py-1 text-xs font-semibold outline-none focus:border-[#2980b9] text-[#1a5276]"
+            />
+          </div>
+          <div className="flex items-center gap-1.5">
+            <label className="text-xs font-bold text-slate-500 uppercase">Hasta:</label>
+            <DateInput 
+              value={fechaHasta} 
+              onChange={(e) => setFechaHasta(e.target.value)}
+              className="border border-slate-300 rounded px-2 py-1 text-xs font-semibold outline-none focus:border-[#2980b9] text-[#1a5276]"
+            />
+          </div>
         </div>
       </div>
 
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-        <div className="bg-white p-6 rounded-xl border border-slate-200 shadow-sm col-span-2">
-          <h3 className="font-bold text-slate-800 mb-4">Últimos Movimientos</h3>
-          <div className="overflow-x-auto">
-            <table className="w-full text-sm text-left">
-              <thead className="text-xs text-slate-500 border-b border-slate-200">
-                <tr>
-                  <th className="py-2">Fecha</th>
-                  <th className="py-2">Descripción</th>
-                  <th className="py-2">Tipo</th>
-                  <th className="py-2 text-right">Monto</th>
-                </tr>
-              </thead>
-              <tbody className="divide-y divide-slate-100">
-                {movimientos.length > 0 ? (
-                  movimientos.map((mov) => (
-                    <tr key={mov.id}>
-                      <td className="py-3">{formatDateStr(mov.fecha)}</td>
-                      <td className="py-3 font-medium">{mov.descripcion}</td>
-                      <td className="py-3">
-                        <span className={`px-2 py-1 rounded text-xs font-bold ${mov.tipo === 'INGRESO' ? 'text-green-600 bg-green-50' : 'text-red-600 bg-red-50'}`}>
-                          {mov.tipo}
+      {loading ? (
+        <div className="flex justify-center p-10"><div className="animate-spin rounded-full h-10 w-10 border-b-2 border-[#1a5276]"></div></div>
+      ) : (
+        <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
+          
+          {/* TARJETAS PRINCIPALES */}
+          <div className="lg:col-span-12 grid grid-cols-1 md:grid-cols-3 gap-6">
+            {/* INGRESOS TOTALES */}
+            <div className="bg-white p-6 rounded-xl border border-slate-200 shadow-sm flex flex-col justify-between">
+              <div>
+                <span className="text-xs font-bold text-slate-400 uppercase tracking-wider">Ingresos Totales</span>
+                <p className="text-3xl font-extrabold text-green-600 mt-2">
+                  ${datos.ingresosBrutos.toLocaleString('es-MX', {minimumFractionDigits: 2})}
+                </p>
+              </div>
+              <p className="text-xs text-slate-400 mt-3">Pagos de terapias registrados en el periodo</p>
+            </div>
+
+            {/* GASTOS TOTALES */}
+            <div className="bg-white p-6 rounded-xl border border-slate-200 shadow-sm flex flex-col justify-between">
+              <div>
+                <span className="text-xs font-bold text-slate-400 uppercase tracking-wider">Gastos Totales</span>
+                <p className="text-3xl font-extrabold text-red-600 mt-2">
+                  -${gastosTotales.toLocaleString('es-MX', {minimumFractionDigits: 2})}
+                </p>
+              </div>
+              <div className="text-xs text-slate-500 mt-3 space-y-0.5">
+                <div>• Honorarios terapeutas: <strong>${datos.nomina.toLocaleString('es-MX', {minimumFractionDigits: 2})}</strong></div>
+                <div>• Gastos operativos: <strong>${datos.gastosOperativos.toLocaleString('es-MX', {minimumFractionDigits: 2})}</strong></div>
+              </div>
+            </div>
+
+            {/* CUADRO AZUL - BALANCE ACTUAL */}
+            <div className="bg-gradient-to-br from-[#0e2f44] via-[#1a5276] to-[#2980b9] text-white p-6 rounded-xl shadow-lg flex flex-col justify-between">
+              <div>
+                <span className="text-xs font-bold opacity-80 uppercase tracking-wider">Balance Actual</span>
+                <p className="text-4xl font-black mt-2">
+                  ${balanceActual.toLocaleString('es-MX', {minimumFractionDigits: 2})}
+                </p>
+              </div>
+              <p className="text-xs text-white/80 mt-3">
+                Calculado: Ingresos Totales (${datos.ingresosBrutos.toLocaleString()}) - Gastos Totales (${gastosTotales.toLocaleString()})
+              </p>
+            </div>
+          </div>
+
+          {/* DESGLOSE TERAPEUTAS / PAGOS */}
+          <div className="lg:col-span-8 bg-white p-6 rounded-xl border border-slate-200 shadow-sm">
+            <h3 className="font-bold text-slate-800 text-base mb-4 flex items-center gap-2">
+              <svg className="w-5 h-5 text-[#1a5276]" fill="currentColor" viewBox="0 0 24 24"><path d="M16 11c1.66 0 2.99-1.34 2.99-3S17.66 5 16 5c-1.66 0-3 1.34-3 3s1.34 3 3 3zm-8 0c1.66 0 2.99-1.34 2.99-3S9.66 5 8 5C6.34 5 5 6.34 5 8s1.34 3 3 3zm0 2c-2.33 0-7 1.17-7 3.5V19h14v-2.5c0-2.33-4.67-3.5-7-3.5zm8 0c-.29 0-.62.02-.97.05 1.16.84 1.97 1.97 1.97 3.45V19h6v-2.5c0-2.33-4.67-3.5-7-3.5z"/></svg>
+              Ingresos y Honorarios por Terapeuta ({formatDateStr(fechaDesde)} a {formatDateStr(fechaHasta)})
+            </h3>
+            <div className="overflow-x-auto">
+              <table className="w-full text-sm text-left">
+                <thead className="text-xs text-slate-500 uppercase bg-slate-50 border-b border-slate-200">
+                  <tr>
+                    <th className="py-2.5 px-3">Terapeuta</th>
+                    <th className="py-2.5 px-3 text-center">Sesiones</th>
+                    <th className="py-2.5 px-3 text-right">Ingresos Registrados</th>
+                    <th className="py-2.5 px-3 text-right">Comisión (%)</th>
+                    <th className="py-2.5 px-3 text-right">Pago a Terapeuta</th>
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-slate-100">
+                  {datos.terapeutas.map((t, i) => (
+                    <tr key={i} className="hover:bg-slate-50">
+                      <td className="py-3 px-3">
+                        <p className="font-bold text-slate-800">{t.nombre}</p>
+                        <p className="text-xs text-slate-400">{t.especialidad}</p>
+                      </td>
+                      <td className="py-3 px-3 text-center">
+                        <span className="bg-blue-50 text-blue-700 px-2 py-0.5 rounded font-bold text-xs">
+                          {t.sesiones}
                         </span>
                       </td>
-                      <td className={`py-3 text-right font-bold ${mov.tipo === 'INGRESO' ? 'text-slate-700' : 'text-slate-700'}`}>
-                        {mov.tipo === 'INGRESO' ? '+' : '-'}${mov.monto.toLocaleString('es-MX', {minimumFractionDigits: 2})}
+                      <td className="py-3 px-3 text-right font-semibold text-green-600">
+                        ${t.ingresoGenerado.toLocaleString('es-MX', {minimumFractionDigits: 2})}
+                      </td>
+                      <td className="py-3 px-3 text-right text-xs font-medium text-slate-500">
+                        {t.tipoPago === "Porcentaje" ? `${t.porcentaje}%` : `Base $${t.salarioBase}`}
+                      </td>
+                      <td className="py-3 px-3 text-right font-bold text-[#1a5276]">
+                        ${t.pago.toLocaleString('es-MX', {minimumFractionDigits: 2})}
                       </td>
                     </tr>
-                  ))
-                ) : (
-                  <tr>
-                    <td colSpan={4} className="py-6 text-center text-slate-500">No hay movimientos registrados</td>
-                  </tr>
-                )}
-              </tbody>
-            </table>
-          </div>
-        </div>
-
-        <div className="space-y-6">
-          <div className={`text-white p-6 rounded-xl shadow-md ${balanceActual >= 0 ? 'bg-gradient-to-br from-blue-900 to-blue-700' : 'bg-gradient-to-br from-red-600 to-red-400'}`}>
-            <h3 className="text-sm font-semibold opacity-80 uppercase tracking-wider mb-2">Balance Actual</h3>
-            <p className="text-4xl font-extrabold">${balanceActual.toLocaleString('es-MX', {minimumFractionDigits: 2})}</p>
-          </div>
-          
-          <div className="bg-white p-6 rounded-xl border border-slate-200 shadow-sm">
-            <h3 className="font-bold text-slate-800 mb-4">Resumen de Totales</h3>
-            <div className="space-y-3">
-              <div className="flex justify-between text-sm">
-                <span className="text-slate-500">Ingresos Totales:</span>
-                <span className="font-bold text-green-600">${totalIngresos.toLocaleString('es-MX', {minimumFractionDigits: 2})}</span>
-              </div>
-              <div className="flex justify-between text-sm">
-                <span className="text-slate-500">Gastos Totales:</span>
-                <span className="font-bold text-red-600">${totalGastos.toLocaleString('es-MX', {minimumFractionDigits: 2})}</span>
-              </div>
+                  ))}
+                  {datos.terapeutas.length === 0 && (
+                    <tr>
+                      <td colSpan={5} className="py-8 text-center text-slate-400">
+                        Sin pagos ni sesiones registradas en este periodo.
+                      </td>
+                    </tr>
+                  )}
+                </tbody>
+              </table>
             </div>
           </div>
-        </div>
-      </div>
 
-      {/* MODAL PARA MOVIMIENTOS */}
-      {isModalOpen && (
-        <div className="fixed inset-0 bg-slate-900/50 backdrop-blur-sm z-50 flex items-center justify-center p-4 animate-in fade-in">
-          <div className="bg-white rounded-xl shadow-xl w-full max-w-md overflow-hidden">
-            <div className={`px-6 py-4 border-b border-slate-100 flex justify-between items-center ${modalType === 'INGRESO' ? 'bg-green-50' : 'bg-red-50'}`}>
-              <h3 className={`font-bold text-lg ${modalType === 'INGRESO' ? 'text-green-800' : 'text-red-800'}`}>
-                Registrar {modalType.charAt(0) + modalType.slice(1).toLowerCase()}
+          {/* GASTOS OPERATIVOS */}
+          <div className="lg:col-span-4 bg-white p-6 rounded-xl border border-slate-200 shadow-sm flex flex-col justify-between">
+            <div>
+              <h3 className="font-bold text-slate-800 text-base mb-4 flex items-center gap-2">
+                <svg className="w-5 h-5 text-red-500" fill="currentColor" viewBox="0 0 24 24"><path d="M19 13H5v-2h14v2z"/></svg>
+                Gastos Operativos
               </h3>
-              <button onClick={() => setIsModalOpen(false)} className="text-slate-400 hover:text-slate-600 text-xl font-bold">&times;</button>
+              <div className="space-y-2 max-h-60 overflow-y-auto">
+                {datos.gastosList.map((gasto: any, i: number) => (
+                  <div key={i} className="flex justify-between items-center text-xs p-2.5 bg-slate-50 border border-slate-100 rounded">
+                    <span className="font-medium text-slate-700">{gasto.label}</span>
+                    <span className="text-red-600 font-bold">${gasto.amount.toLocaleString('es-MX', {minimumFractionDigits: 2})}</span>
+                  </div>
+                ))}
+                {datos.gastosList.length === 0 && (
+                  <p className="text-xs text-slate-400 text-center py-4">No hay gastos operativos registrados en Configuración.</p>
+                )}
+              </div>
             </div>
-            
-            <form onSubmit={handleAddMovimiento} className="p-6 space-y-4">
-              <div>
-                <label className="block text-xs font-semibold text-slate-600 uppercase mb-1">Descripción</label>
-                <input required type="text" name="descripcion" value={formData.descripcion} onChange={handleInputChange} className="w-full border border-slate-300 rounded-lg px-3 py-2 outline-none focus:border-blue-500" placeholder="Ej. Pago de consulta" />
-              </div>
-              <div className="grid grid-cols-2 gap-4">
-                <div>
-                  <label className="block text-xs font-semibold text-slate-600 uppercase mb-1">Monto ($)</label>
-                  <input required type="number" step="0.01" min="0.01" name="monto" value={formData.monto} onChange={handleInputChange} className="w-full border border-slate-300 rounded-lg px-3 py-2 outline-none focus:border-blue-500" placeholder="0.00" />
-                </div>
-                <div>
-                  <label className="block text-xs font-semibold text-slate-600 uppercase mb-1">Fecha</label>
-                  <DateInput required name="fecha" value={formData.fecha} onChange={handleInputChange} className="w-full border border-slate-300 rounded-lg px-3 py-2 outline-none focus:border-blue-500" />
-                </div>
-              </div>
-              
-              <div className="pt-4 flex gap-3">
-                <button type="button" onClick={() => setIsModalOpen(false)} className="flex-1 py-2 bg-slate-100 text-slate-700 font-semibold rounded-lg hover:bg-slate-200 transition-colors">Cancelar</button>
-                <button type="submit" className={`flex-1 py-2 text-white font-semibold rounded-lg transition-colors ${modalType === 'INGRESO' ? 'bg-green-600 hover:bg-green-700' : 'bg-red-600 hover:bg-red-700'}`}>Guardar</button>
-              </div>
-            </form>
+            <div className="border-t border-slate-100 pt-3 mt-4 flex justify-between items-center text-sm font-bold">
+              <span className="text-slate-600">Total Gastos Operativos:</span>
+              <span className="text-red-600">${datos.gastosOperativos.toLocaleString('es-MX', {minimumFractionDigits: 2})}</span>
+            </div>
           </div>
+
         </div>
       )}
-
     </div>
   );
 }
