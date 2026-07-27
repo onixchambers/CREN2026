@@ -216,8 +216,8 @@ export default function HonorariosPage() {
                 )}
               </tbody>
               {terapeutas.length > 0 && (
-                <tfoot className="bg-slate-900 text-white font-bold text-sm">
-                  <tr className="border-t-2 border-slate-700">
+                <tfoot className="bg-gradient-to-r from-[#0e2f44] via-[#164e63] to-[#0891b2] text-white font-bold text-sm shadow-md">
+                  <tr className="border-t-2 border-[#155e75]">
                     <td colSpan={3} className="p-4 uppercase tracking-wider text-xs text-slate-300 font-black">
                       TOTALES GENERALES
                     </td>
