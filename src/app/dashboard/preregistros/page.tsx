@@ -3,11 +3,65 @@ import { useState, useEffect } from "react";
 import { useSession } from "next-auth/react";
 import { DateInput } from "@/components/DateInput";
 
+const COUNTRY_CODES = [
+  { code: "+52", flag: "🇲🇽", name: "México (+52)", iso: "MX" },
+  { code: "+1", flag: "🇺🇸", name: "Estados Unidos (+1)", iso: "US" },
+  { code: "+1", flag: "🇨🇦", name: "Canadá (+1)", iso: "CA" },
+  { code: "+57", flag: "🇨🇴", name: "Colombia (+57)", iso: "CO" },
+  { code: "+54", flag: "🇦🇷", name: "Argentina (+54)", iso: "AR" },
+  { code: "+56", flag: "🇨🇱", name: "Chile (+56)", iso: "CL" },
+  { code: "+51", flag: "🇵🇪", name: "Perú (+51)", iso: "PE" },
+  { code: "+593", flag: "🇪🇨", name: "Ecuador (+593)", iso: "EC" },
+  { code: "+58", flag: "🇻🇪", name: "Venezuela (+58)", iso: "VE" },
+  { code: "+502", flag: "🇬🇹", name: "Guatemala (+502)", iso: "GT" },
+  { code: "+503", flag: "🇸🇻", name: "El Salvador (+503)", iso: "SV" },
+  { code: "+504", flag: "🇭🇳", name: "Honduras (+504)", iso: "HN" },
+  { code: "+505", flag: "🇳🇮", name: "Nicaragua (+505)", iso: "NI" },
+  { code: "+506", flag: "🇨🇷", name: "Costa Rica (+506)", iso: "CR" },
+  { code: "+507", flag: "🇵🇦", name: "Panamá (+507)", iso: "PA" },
+  { code: "+595", flag: "🇵🇾", name: "Paraguay (+595)", iso: "PY" },
+  { code: "+598", flag: "🇺🇾", name: "Uruguay (+598)", iso: "UY" },
+  { code: "+591", flag: "🇧🇴", name: "Bolivia (+591)", iso: "BO" },
+  { code: "+1", flag: "🇵🇷", name: "Puerto Rico (+1)", iso: "PR" },
+  { code: "+1", flag: "🇩🇴", name: "Rep. Dominicana (+1)", iso: "DO" },
+  { code: "+34", flag: "🇪🇸", name: "España (+34)", iso: "ES" },
+  { code: "+44", flag: "🇬🇧", name: "Reino Unido (+44)", iso: "GB" },
+  { code: "+49", flag: "🇩🇪", name: "Alemania (+49)", iso: "DE" },
+  { code: "+33", flag: "🇫🇷", name: "Francia (+33)", iso: "FR" },
+  { code: "+39", flag: "🇮🇹", name: "Italia (+39)", iso: "IT" },
+  { code: "+55", flag: "🇧🇷", name: "Brasil (+55)", iso: "BR" },
+];
+
 export default function PreregistrosPage() {
   const { data: session } = useSession();
   const userName = session?.user?.name || "Administrador";
   const userRole = (session?.user as any)?.role || "ADMIN";
   const [editingId, setEditingId] = useState<string | null>(null);
+
+  const [madreCountryCode, setMadreCountryCode] = useState("+52");
+  const [padreCountryCode, setPadreCountryCode] = useState("+52");
+  const [otrosCountryCode, setOtrosCountryCode] = useState("+52");
+
+  useEffect(() => {
+    async function detectUserCountry() {
+      try {
+        const res = await fetch("https://ipapi.co/json/", { cache: "no-store" });
+        if (res.ok) {
+          const data = await res.json();
+          const countryIso = data.country_code || data.country;
+          const match = COUNTRY_CODES.find(c => c.iso === countryIso);
+          if (match) {
+            setMadreCountryCode(match.code);
+            setPadreCountryCode(match.code);
+            setOtrosCountryCode(match.code);
+          }
+        }
+      } catch (e) {
+        console.log("IP country detection fallback to +52");
+      }
+    }
+    detectUserCountry();
+  }, []);
 
   const formatDateStr = (dateStr: string) => {
     if (!dateStr) return "-";
@@ -114,10 +168,29 @@ export default function PreregistrosPage() {
 
   const handleEdit = (ficha: any) => {
     setEditingId(ficha.id);
+
+    // Parse country code if present in phone fields
+    const parsePhone = (phoneStr: string, setCode: (c: string) => void) => {
+      if (!phoneStr) return "";
+      const matched = COUNTRY_CODES.find(c => phoneStr.startsWith(c.code));
+      if (matched) {
+        setCode(matched.code);
+        return phoneStr.replace(matched.code, "").trim();
+      }
+      return phoneStr;
+    };
+
+    const mContact = parsePhone(ficha.madreContacto, setMadreCountryCode);
+    const pContact = parsePhone(ficha.padreContacto, setPadreCountryCode);
+    const oContact = parsePhone(ficha.otrosContacto, setOtrosCountryCode);
+
     setFormData({
       ...formData,
       ...ficha,
       nombre: ficha.name || ficha.nombre || "",
+      madreContacto: mContact,
+      padreContacto: pContact,
+      otrosContacto: oContact,
       foto: ficha.foto || ""
     });
     setPhotoPreview(ficha.foto || null);
@@ -162,12 +235,19 @@ export default function PreregistrosPage() {
     }
     
     const { createPatient, updatePatient, getPatients } = await import('@/app/actions/pacientes');
+
+    const finalFormData = {
+      ...formData,
+      madreContacto: formData.madreContacto ? (formData.madreContacto.startsWith('+') ? formData.madreContacto : `${madreCountryCode} ${formData.madreContacto}`) : "",
+      padreContacto: formData.padreContacto ? (formData.padreContacto.startsWith('+') ? formData.padreContacto : `${padreCountryCode} ${formData.padreContacto}`) : "",
+      otrosContacto: formData.otrosContacto ? (formData.otrosContacto.startsWith('+') ? formData.otrosContacto : `${otrosCountryCode} ${formData.otrosContacto}`) : "",
+    };
     
     let result;
     if (editingId) {
-      result = await updatePatient(editingId, formData);
+      result = await updatePatient(editingId, finalFormData);
     } else {
-      result = await createPatient(formData);
+      result = await createPatient(finalFormData);
     }
     
     if (result.success) {
@@ -333,7 +413,20 @@ export default function PreregistrosPage() {
                   </div>
                   <div>
                     <label className="block text-[10px] font-bold text-slate-500 uppercase mb-1">Número de Contacto</label>
-                    <input type="tel" name="madreContacto" value={formData.madreContacto} onChange={handleInputChange} placeholder="Contacto de la madre" className="w-full text-sm p-2 border border-slate-300 rounded focus:border-[#2980b9] outline-none text-slate-900" />
+                    <div className="flex gap-1.5">
+                      <select 
+                        value={madreCountryCode}
+                        onChange={(e) => setMadreCountryCode(e.target.value)}
+                        className="w-28 text-xs p-2 border border-slate-300 rounded focus:border-[#2980b9] outline-none bg-slate-50 font-bold text-slate-800"
+                      >
+                        {COUNTRY_CODES.map((c, i) => (
+                          <option key={i} value={c.code}>
+                            {c.flag} {c.code}
+                          </option>
+                        ))}
+                      </select>
+                      <input type="tel" name="madreContacto" value={formData.madreContacto} onChange={handleInputChange} placeholder="Contacto de la madre" className="flex-1 text-sm p-2 border border-slate-300 rounded focus:border-[#2980b9] outline-none text-slate-900" />
+                    </div>
                   </div>
                   <div className="flex items-center gap-2">
                     <input type="checkbox" name="principalMadre" checked={formData.principalMadre} onChange={handleInputChange} className="w-3 h-3" />
@@ -349,7 +442,20 @@ export default function PreregistrosPage() {
                   </div>
                   <div>
                     <label className="block text-[10px] font-bold text-slate-500 uppercase mb-1">Número de Contacto</label>
-                    <input type="tel" name="padreContacto" value={formData.padreContacto} onChange={handleInputChange} placeholder="Contacto del padre" className="w-full text-sm p-2 border border-slate-300 rounded focus:border-[#2980b9] outline-none text-slate-900" />
+                    <div className="flex gap-1.5">
+                      <select 
+                        value={padreCountryCode}
+                        onChange={(e) => setPadreCountryCode(e.target.value)}
+                        className="w-28 text-xs p-2 border border-slate-300 rounded focus:border-[#2980b9] outline-none bg-slate-50 font-bold text-slate-800"
+                      >
+                        {COUNTRY_CODES.map((c, i) => (
+                          <option key={i} value={c.code}>
+                            {c.flag} {c.code}
+                          </option>
+                        ))}
+                      </select>
+                      <input type="tel" name="padreContacto" value={formData.padreContacto} onChange={handleInputChange} placeholder="Contacto del padre" className="flex-1 text-sm p-2 border border-slate-300 rounded focus:border-[#2980b9] outline-none text-slate-900" />
+                    </div>
                   </div>
                   <div className="flex items-center gap-2">
                     <input type="checkbox" name="principalPadre" checked={formData.principalPadre} onChange={handleInputChange} className="w-3 h-3" />
@@ -365,13 +471,27 @@ export default function PreregistrosPage() {
                   </div>
                   <div>
                     <label className="block text-[10px] font-bold text-slate-500 uppercase mb-1">Número de Contacto</label>
-                    <input type="tel" name="otrosContacto" value={formData.otrosContacto} onChange={handleInputChange} placeholder="Otro contacto" className="w-full text-sm p-2 border border-slate-300 rounded focus:border-[#2980b9] outline-none text-slate-900" />
+                    <div className="flex gap-1.5">
+                      <select 
+                        value={otrosCountryCode}
+                        onChange={(e) => setOtrosCountryCode(e.target.value)}
+                        className="w-28 text-xs p-2 border border-slate-300 rounded focus:border-[#2980b9] outline-none bg-slate-50 font-bold text-slate-800"
+                      >
+                        {COUNTRY_CODES.map((c, i) => (
+                          <option key={i} value={c.code}>
+                            {c.flag} {c.code}
+                          </option>
+                        ))}
+                      </select>
+                      <input type="tel" name="otrosContacto" value={formData.otrosContacto} onChange={handleInputChange} placeholder="Otro contacto" className="flex-1 text-sm p-2 border border-slate-300 rounded focus:border-[#2980b9] outline-none text-slate-900" />
+                    </div>
                   </div>
                   <div className="flex items-center gap-2">
                     <input type="checkbox" name="principalOtros" checked={formData.principalOtros} onChange={handleInputChange} className="w-3 h-3" />
                     <label className="text-[10px] font-bold text-slate-500 uppercase">Contacto Principal</label>
                   </div>
                 </div>
+              </div>
               </div>
 
               <div className="w-full md:w-1/3 mt-2">
