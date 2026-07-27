@@ -492,7 +492,6 @@ export default function PreregistrosPage() {
                   </div>
                 </div>
               </div>
-              </div>
 
               <div className="w-full md:w-1/3 mt-2">
                 <label className="block text-[10px] font-bold text-slate-500 uppercase mb-1">Correo del Contacto Principal</label>
