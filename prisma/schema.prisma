@@ -119,9 +119,11 @@ model SystemSettings {
   ivaRate               Float    @default(16)
   resendApiKey          String   @default("")
   resendDays            Int      @default(1)
+  resendRepeatDays      Int      @default(0)
   resendEnabled         Boolean  @default(false)
   whatsappApiKey        String   @default("")
   whatsappDays          Int      @default(1)
+  whatsappRepeatDays    Int      @default(0)
   whatsappEnabled       Boolean  @default(false)
   updatedAt             DateTime @updatedAt
 }

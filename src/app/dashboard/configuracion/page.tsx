@@ -20,10 +20,12 @@ export default function ConfiguracionPage() {
 
   const [resendApiKey, setResendApiKey] = useState("");
   const [resendDays, setResendDays] = useState<number>(1);
+  const [resendRepeatDays, setResendRepeatDays] = useState<number>(0);
   const [resendEnabled, setResendEnabled] = useState(false);
 
   const [whatsappApiKey, setWhatsappApiKey] = useState("");
   const [whatsappDays, setWhatsappDays] = useState<number>(1);
+  const [whatsappRepeatDays, setWhatsappRepeatDays] = useState<number>(0);
   const [whatsappEnabled, setWhatsappEnabled] = useState(false);
 
   const [showResendKey, setShowResendKey] = useState(false);
@@ -56,10 +58,12 @@ export default function ConfiguracionPage() {
 
         setResendApiKey(res.settings?.resendApiKey || "");
         setResendDays(res.settings?.resendDays ?? 1);
+        setResendRepeatDays(res.settings?.resendRepeatDays ?? 0);
         setResendEnabled(res.settings?.resendEnabled ?? false);
 
         setWhatsappApiKey(res.settings?.whatsappApiKey || "");
         setWhatsappDays(res.settings?.whatsappDays ?? 1);
+        setWhatsappRepeatDays(res.settings?.whatsappRepeatDays ?? 0);
         setWhatsappEnabled(res.settings?.whatsappEnabled ?? false);
         
         const exps = res.expenses || [];
@@ -96,9 +100,11 @@ export default function ConfiguracionPage() {
         ivaRate,
         resendApiKey,
         resendDays,
+        resendRepeatDays,
         resendEnabled,
         whatsappApiKey,
         whatsappDays,
+        whatsappRepeatDays,
         whatsappEnabled,
         month,
         expenses: allExpenses
@@ -332,21 +338,41 @@ export default function ConfiguracionPage() {
                 </div>
               </div>
 
-              <div>
-                <label className="block text-xs font-bold text-slate-700 mb-1">Frecuencia de Recordatorio</label>
-                <select 
-                  value={resendDays}
-                  onChange={(e) => setResendDays(parseInt(e.target.value))}
-                  className="w-full p-2.5 border border-slate-300 rounded-lg text-xs font-bold text-slate-800 focus:border-blue-500 outline-none bg-white"
-                >
-                  <option value={1}>1 día después de la sesión</option>
-                  <option value={2}>2 días después de la sesión</option>
-                  <option value={3}>3 días después de la sesión</option>
-                  <option value={5}>5 días después de la sesión</option>
-                  <option value={7}>7 días después (1 semana)</option>
-                  <option value={15}>15 días después (Quincenal)</option>
-                  <option value={30}>30 días después (Mensual)</option>
-                </select>
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                <div>
+                  <label className="block text-xs font-bold text-slate-700 mb-1">Primer Recordatorio</label>
+                  <select 
+                    value={resendDays}
+                    onChange={(e) => setResendDays(parseInt(e.target.value))}
+                    className="w-full p-2.5 border border-slate-300 rounded-lg text-xs font-bold text-slate-800 focus:border-blue-500 outline-none bg-white"
+                  >
+                    <option value={1}>1 día después de la sesión</option>
+                    <option value={2}>2 días después de la sesión</option>
+                    <option value={3}>3 días después de la sesión</option>
+                    <option value={5}>5 días después de la sesión</option>
+                    <option value={7}>7 días después (1 semana)</option>
+                    <option value={15}>15 días después (Quincenal)</option>
+                    <option value={30}>30 días después (Mensual)</option>
+                  </select>
+                </div>
+
+                <div>
+                  <label className="block text-xs font-bold text-slate-700 mb-1">Repetir Hasta que Pague</label>
+                  <select 
+                    value={resendRepeatDays}
+                    onChange={(e) => setResendRepeatDays(parseInt(e.target.value))}
+                    className="w-full p-2.5 border border-slate-300 rounded-lg text-xs font-bold text-slate-800 focus:border-blue-500 outline-none bg-white"
+                  >
+                    <option value={0}>No repetir (Enviar solo 1 vez)</option>
+                    <option value={1}>Cada 24 horas (Diariamente)</option>
+                    <option value={2}>Cada 2 días</option>
+                    <option value={3}>Cada 3 días</option>
+                    <option value={5}>Cada 5 días</option>
+                    <option value={7}>Cada 7 días (Semanal)</option>
+                    <option value={15}>Cada 15 días (Quincenal)</option>
+                    <option value={30}>Cada 30 días (Mensual)</option>
+                  </select>
+                </div>
               </div>
             </div>
 
@@ -386,21 +412,41 @@ export default function ConfiguracionPage() {
                 </div>
               </div>
 
-              <div>
-                <label className="block text-xs font-bold text-slate-700 mb-1">Frecuencia de Recordatorio</label>
-                <select 
-                  value={whatsappDays}
-                  onChange={(e) => setWhatsappDays(parseInt(e.target.value))}
-                  className="w-full p-2.5 border border-slate-300 rounded-lg text-xs font-bold text-slate-800 focus:border-green-500 outline-none bg-white"
-                >
-                  <option value={1}>1 día después de la sesión</option>
-                  <option value={2}>2 días después de la sesión</option>
-                  <option value={3}>3 días después de la sesión</option>
-                  <option value={5}>5 días después de la sesión</option>
-                  <option value={7}>7 días después (1 semana)</option>
-                  <option value={15}>15 días después (Quincenal)</option>
-                  <option value={30}>30 días después (Mensual)</option>
-                </select>
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                <div>
+                  <label className="block text-xs font-bold text-slate-700 mb-1">Primer Recordatorio</label>
+                  <select 
+                    value={whatsappDays}
+                    onChange={(e) => setWhatsappDays(parseInt(e.target.value))}
+                    className="w-full p-2.5 border border-slate-300 rounded-lg text-xs font-bold text-slate-800 focus:border-green-500 outline-none bg-white"
+                  >
+                    <option value={1}>1 día después de la sesión</option>
+                    <option value={2}>2 días después de la sesión</option>
+                    <option value={3}>3 días después de la sesión</option>
+                    <option value={5}>5 días después de la sesión</option>
+                    <option value={7}>7 días después (1 semana)</option>
+                    <option value={15}>15 días después (Quincenal)</option>
+                    <option value={30}>30 días después (Mensual)</option>
+                  </select>
+                </div>
+
+                <div>
+                  <label className="block text-xs font-bold text-slate-700 mb-1">Repetir Hasta que Pague</label>
+                  <select 
+                    value={whatsappRepeatDays}
+                    onChange={(e) => setWhatsappRepeatDays(parseInt(e.target.value))}
+                    className="w-full p-2.5 border border-slate-300 rounded-lg text-xs font-bold text-slate-800 focus:border-green-500 outline-none bg-white"
+                  >
+                    <option value={0}>No repetir (Enviar solo 1 vez)</option>
+                    <option value={1}>Cada 24 horas (Diariamente)</option>
+                    <option value={2}>Cada 2 días</option>
+                    <option value={3}>Cada 3 días</option>
+                    <option value={5}>Cada 5 días</option>
+                    <option value={7}>Cada 7 días (Semanal)</option>
+                    <option value={15}>Cada 15 días (Quincenal)</option>
+                    <option value={30}>Cada 30 días (Mensual)</option>
+                  </select>
+                </div>
               </div>
             </div>
           </div>
