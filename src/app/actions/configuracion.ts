@@ -30,7 +30,17 @@ export async function getSettings(month: string) {
         if (a.rol !== 'Admin' && b.rol === 'Admin') return 1;
         return 0;
       }),
-      settings: settings || { allowTherapistEdit: true, referenceKeys: "", ivaRate: 16 },
+      settings: settings || {
+        allowTherapistEdit: true,
+        referenceKeys: "",
+        ivaRate: 16,
+        resendApiKey: "",
+        resendDays: 1,
+        resendEnabled: false,
+        whatsappApiKey: "",
+        whatsappDays: 1,
+        whatsappEnabled: false,
+      },
       expenses: expenses,
     };
   } catch (error: any) {
@@ -137,12 +147,24 @@ export async function saveSettings(data: {
           allowTherapistEdit: data.allowTherapistEdit,
           referenceKeys: data.referenceKeys,
           ivaRate: (data as any).ivaRate !== undefined ? parseFloat((data as any).ivaRate) : 16,
+          resendApiKey: (data as any).resendApiKey || "",
+          resendDays: parseInt((data as any).resendDays || 1),
+          resendEnabled: Boolean((data as any).resendEnabled),
+          whatsappApiKey: (data as any).whatsappApiKey || "",
+          whatsappDays: parseInt((data as any).whatsappDays || 1),
+          whatsappEnabled: Boolean((data as any).whatsappEnabled),
         },
         create: {
           id: 1,
           allowTherapistEdit: data.allowTherapistEdit,
           referenceKeys: data.referenceKeys,
           ivaRate: (data as any).ivaRate !== undefined ? parseFloat((data as any).ivaRate) : 16,
+          resendApiKey: (data as any).resendApiKey || "",
+          resendDays: parseInt((data as any).resendDays || 1),
+          resendEnabled: Boolean((data as any).resendEnabled),
+          whatsappApiKey: (data as any).whatsappApiKey || "",
+          whatsappDays: parseInt((data as any).whatsappDays || 1),
+          whatsappEnabled: Boolean((data as any).whatsappEnabled),
         }
       });
 

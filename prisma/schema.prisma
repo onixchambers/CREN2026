@@ -117,6 +117,12 @@ model SystemSettings {
   allowTherapistEdit    Boolean  @default(true)
   referenceKeys         String   @default("")
   ivaRate               Float    @default(16)
+  resendApiKey          String   @default("")
+  resendDays            Int      @default(1)
+  resendEnabled         Boolean  @default(false)
+  whatsappApiKey        String   @default("")
+  whatsappDays          Int      @default(1)
+  whatsappEnabled       Boolean  @default(false)
   updatedAt             DateTime @updatedAt
 }
 

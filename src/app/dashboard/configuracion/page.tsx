@@ -17,6 +17,18 @@ export default function ConfiguracionPage() {
   const [allowTherapistEdit, setAllowTherapistEdit] = useState(true);
   const [referenceKeys, setReferenceKeys] = useState("");
   const [ivaRate, setIvaRate] = useState<number>(16);
+
+  const [resendApiKey, setResendApiKey] = useState("");
+  const [resendDays, setResendDays] = useState<number>(1);
+  const [resendEnabled, setResendEnabled] = useState(false);
+
+  const [whatsappApiKey, setWhatsappApiKey] = useState("");
+  const [whatsappDays, setWhatsappDays] = useState<number>(1);
+  const [whatsappEnabled, setWhatsappEnabled] = useState(false);
+
+  const [showResendKey, setShowResendKey] = useState(false);
+  const [showWaKey, setShowWaKey] = useState(false);
+
   const [month, setMonth] = useState(new Date().toISOString().slice(0, 7));
   
   const [gastos, setGastos] = useState<any[]>([]);
@@ -41,6 +53,14 @@ export default function ConfiguracionPage() {
         setAllowTherapistEdit(res.settings?.allowTherapistEdit ?? true);
         setReferenceKeys(res.settings?.referenceKeys ?? "");
         setIvaRate(res.settings?.ivaRate ?? 16);
+
+        setResendApiKey(res.settings?.resendApiKey || "");
+        setResendDays(res.settings?.resendDays ?? 1);
+        setResendEnabled(res.settings?.resendEnabled ?? false);
+
+        setWhatsappApiKey(res.settings?.whatsappApiKey || "");
+        setWhatsappDays(res.settings?.whatsappDays ?? 1);
+        setWhatsappEnabled(res.settings?.whatsappEnabled ?? false);
         
         const exps = res.expenses || [];
         let items: any[] = [];
@@ -74,6 +94,12 @@ export default function ConfiguracionPage() {
         allowTherapistEdit,
         referenceKeys,
         ivaRate,
+        resendApiKey,
+        resendDays,
+        resendEnabled,
+        whatsappApiKey,
+        whatsappDays,
+        whatsappEnabled,
         month,
         expenses: allExpenses
       } as any);
@@ -256,6 +282,129 @@ export default function ConfiguracionPage() {
           </div>
         </div>
         <hr className="border-slate-100" />
+
+        {/* NOTIFICACIONES Y RECORDATORIOS DE SALDO PENDIENTE */}
+        <div className="p-6 space-y-6">
+          <div className="flex items-center justify-between border-b border-slate-100 pb-3">
+            <h3 className="text-[#1a5276] font-bold flex items-center gap-2 text-base">
+              <svg className="w-5 h-5 text-indigo-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9" /></svg>
+              Notificaciones Automáticas & Recordatorios de Saldo Pendiente
+            </h3>
+            <span className="text-xs px-2.5 py-1 bg-indigo-50 text-indigo-700 font-bold rounded-full border border-indigo-100">
+              Resend & WhatsApp
+            </span>
+          </div>
+
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+            {/* CORREO ELECTRÓNICO (RESEND) */}
+            <div className="bg-slate-50 p-5 rounded-2xl border border-slate-200 space-y-4">
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-2">
+                  <span className="text-xl">📧</span>
+                  <div>
+                    <h4 className="text-sm font-bold text-slate-800">Correo Electrónico (Resend)</h4>
+                    <p className="text-[11px] text-slate-500">Envío automático de cobro vía Resend API</p>
+                  </div>
+                </div>
+                <label className="relative inline-flex items-center cursor-pointer">
+                  <input type="checkbox" checked={resendEnabled} onChange={(e) => setResendEnabled(e.target.checked)} className="sr-only peer" />
+                  <div className="w-9 h-5 bg-slate-300 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-slate-300 after:border after:rounded-full after:h-4 after:w-4 after:transition-all peer-checked:bg-blue-600"></div>
+                </label>
+              </div>
+
+              <div>
+                <label className="block text-xs font-bold text-slate-700 mb-1">API Key de Resend</label>
+                <div className="relative">
+                  <input 
+                    type={showResendKey ? "text" : "password"}
+                    placeholder="re_123456789..."
+                    value={resendApiKey}
+                    onChange={(e) => setResendApiKey(e.target.value)}
+                    className="w-full p-2.5 pr-10 border border-slate-300 rounded-lg text-xs text-slate-900 font-mono focus:border-blue-500 outline-none bg-white"
+                  />
+                  <button 
+                    type="button" 
+                    onClick={() => setShowResendKey(!showResendKey)}
+                    className="absolute right-2.5 top-2.5 text-slate-400 hover:text-slate-600 text-xs font-bold"
+                  >
+                    {showResendKey ? "Ocultar" : "Ver"}
+                  </button>
+                </div>
+              </div>
+
+              <div>
+                <label className="block text-xs font-bold text-slate-700 mb-1">Frecuencia de Recordatorio</label>
+                <select 
+                  value={resendDays}
+                  onChange={(e) => setResendDays(parseInt(e.target.value))}
+                  className="w-full p-2.5 border border-slate-300 rounded-lg text-xs font-bold text-slate-800 focus:border-blue-500 outline-none bg-white"
+                >
+                  <option value={1}>1 día después de la sesión</option>
+                  <option value={2}>2 días después de la sesión</option>
+                  <option value={3}>3 días después de la sesión</option>
+                  <option value={5}>5 días después de la sesión</option>
+                  <option value={7}>7 días después (1 semana)</option>
+                  <option value={15}>15 días después (Quincenal)</option>
+                  <option value={30}>30 días después (Mensual)</option>
+                </select>
+              </div>
+            </div>
+
+            {/* WHATSAPP */}
+            <div className="bg-slate-50 p-5 rounded-2xl border border-slate-200 space-y-4">
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-2">
+                  <span className="text-xl">💬</span>
+                  <div>
+                    <h4 className="text-sm font-bold text-slate-800">WhatsApp</h4>
+                    <p className="text-[11px] text-slate-500">Recordatorios automáticos vía WhatsApp API</p>
+                  </div>
+                </div>
+                <label className="relative inline-flex items-center cursor-pointer">
+                  <input type="checkbox" checked={whatsappEnabled} onChange={(e) => setWhatsappEnabled(e.target.checked)} className="sr-only peer" />
+                  <div className="w-9 h-5 bg-slate-300 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-slate-300 after:border after:rounded-full after:h-4 after:w-4 after:transition-all peer-checked:bg-green-600"></div>
+                </label>
+              </div>
+
+              <div>
+                <label className="block text-xs font-bold text-slate-700 mb-1">API Key / Token de WhatsApp</label>
+                <div className="relative">
+                  <input 
+                    type={showWaKey ? "text" : "password"}
+                    placeholder="Token o API Key de WhatsApp..."
+                    value={whatsappApiKey}
+                    onChange={(e) => setWhatsappApiKey(e.target.value)}
+                    className="w-full p-2.5 pr-10 border border-slate-300 rounded-lg text-xs text-slate-900 font-mono focus:border-green-500 outline-none bg-white"
+                  />
+                  <button 
+                    type="button" 
+                    onClick={() => setShowWaKey(!showWaKey)}
+                    className="absolute right-2.5 top-2.5 text-slate-400 hover:text-slate-600 text-xs font-bold"
+                  >
+                    {showWaKey ? "Ocultar" : "Ver"}
+                  </button>
+                </div>
+              </div>
+
+              <div>
+                <label className="block text-xs font-bold text-slate-700 mb-1">Frecuencia de Recordatorio</label>
+                <select 
+                  value={whatsappDays}
+                  onChange={(e) => setWhatsappDays(parseInt(e.target.value))}
+                  className="w-full p-2.5 border border-slate-300 rounded-lg text-xs font-bold text-slate-800 focus:border-green-500 outline-none bg-white"
+                >
+                  <option value={1}>1 día después de la sesión</option>
+                  <option value={2}>2 días después de la sesión</option>
+                  <option value={3}>3 días después de la sesión</option>
+                  <option value={5}>5 días después de la sesión</option>
+                  <option value={7}>7 días después (1 semana)</option>
+                  <option value={15}>15 días después (Quincenal)</option>
+                  <option value={30}>30 días después (Mensual)</option>
+                </select>
+              </div>
+            </div>
+          </div>
+        </div>
 
 
         {/* GASTOS OPERATIVOS */}
