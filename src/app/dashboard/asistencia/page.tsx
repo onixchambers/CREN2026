@@ -614,7 +614,11 @@ export default function AsistenciaPage() {
 
             {/* PAYMENT SECTION */}
             <div className="pt-2">
-              <label className="block text-[10px] font-bold text-slate-400 uppercase mb-1">MÉTODO DE PAGO (PAGOS MIXTOS DISPONIBLES)</label>
+              <div className="flex items-center gap-2 max-w-2xl mb-1">
+                <label className="flex-1 text-[10px] font-bold text-slate-400 uppercase">MÉTODO DE PAGO (PAGOS MIXTOS DISPONIBLES)</label>
+                <label className="w-32 text-[10px] font-bold text-slate-400 uppercase">PAGO</label>
+                <div className="w-9"></div>
+              </div>
               <div className="flex flex-col gap-2 max-w-2xl">
                 <div className="flex items-center gap-2">
                   <select name="metodoPago" value={formData.metodoPago} onChange={handleChange} className="flex-1 text-sm p-2 border border-slate-300 rounded focus:border-[#2980b9] outline-none text-slate-900">
