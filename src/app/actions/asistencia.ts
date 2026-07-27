@@ -1,4 +1,4 @@
-﻿"use server";
+"use server";
 
 import { prisma } from "@/lib/prisma";
 import { revalidatePath } from "next/cache";
@@ -135,39 +135,57 @@ export async function getAsistenciasDB(_ts?: string) {
   try {
     const sessions = await prisma.session.findMany({
       include: { patient: true, therapist: true },
-      orderBy: { date: 'desc' }
+      orderBy: { date: 'asc' }
     });
 
-    const asistencias = [];
+    const patientAttendanceMap: { [patientKey: string]: any[] } = {};
+
     for (const s of sessions) {
       if (!s.notes) continue;
       try {
         const extra = JSON.parse(s.notes);
         if (extra.asistenciaGuardada) {
-          asistencias.push({
-            id: s.id,
-            fecha: extra.fecha || s.date.toISOString().split("T")[0],
-            area: extra.area || "-",
-            paciente: s.patient?.name || "-",
-            pacienteId: s.patient?.id || "",
-            sexo: s.patient?.sexo || "-",
-            edad: s.patient?.age?.toString() || "-",
-            tipoSesion: extra.tipoSesion || "-",
-            estado: extra.estadoAsistencia || s.status,
-            sesiones: extra.sesiones || "1",
-            paqueteActual: extra.paqueteActual || 1,
-            pago: extra.metodoPago || "-",
-            fact: extra.solicitaFactura ? "Sí" : "No",
-            subtotal: extra.subtotal != null ? "$" + Number(extra.subtotal).toFixed(2) : ".00",
-            total: extra.total != null ? "$" + Number(extra.total).toFixed(2) : ".00",
-            saldo: extra.saldo != null ? extra.saldo : 0,
-            obs: extra.obs || "-",
-            creadoPor: extra.creadoPor || "-",
-            terapeuta: s.therapist?.name || "-"
-          });
+          const patientKey = s.patientId || s.patient?.name || "unknown";
+          if (!patientAttendanceMap[patientKey]) {
+            patientAttendanceMap[patientKey] = [];
+          }
+          patientAttendanceMap[patientKey].push({ s, extra });
         }
       } catch (e) {}
     }
+
+    const asistencias: any[] = [];
+    Object.values(patientAttendanceMap).forEach(records => {
+      records.sort((a, b) => new Date(a.s.date).getTime() - new Date(b.s.date).getTime());
+      
+      records.forEach((rec, index) => {
+        const { s, extra } = rec;
+        const sessionNum = index + 1;
+        asistencias.push({
+          id: s.id,
+          fecha: extra.fecha || s.date.toISOString().split("T")[0],
+          area: extra.area || "-",
+          paciente: s.patient?.name || "-",
+          pacienteId: s.patient?.id || "",
+          sexo: s.patient?.sexo || "-",
+          edad: s.patient?.age?.toString() || "-",
+          tipoSesion: extra.tipoSesion || "-",
+          estado: extra.estadoAsistencia || s.status,
+          sesiones: sessionNum.toString(),
+          pago: extra.metodoPago || "-",
+          fact: extra.solicitaFactura ? "Sí" : "No",
+          subtotal: extra.subtotal != null ? "$" + Number(extra.subtotal).toFixed(2) : "$0.00",
+          total: extra.total != null ? "$" + Number(extra.total).toFixed(2) : "$0.00",
+          saldo: extra.saldo != null ? Number(extra.saldo) : 0,
+          obs: extra.obs || "-",
+          creadoPor: extra.creadoPor || "-",
+          terapeuta: s.therapist?.name || "-"
+        });
+      });
+    });
+
+    asistencias.sort((a, b) => new Date(b.fecha).getTime() - new Date(a.fecha).getTime());
+
     return { success: true, data: asistencias };
   } catch (error: any) {
     console.error("Error getAsistenciasDB:", error);

@@ -774,7 +774,6 @@ export default function AsistenciaPage() {
                 <th className="px-2 py-3 border-b border-[#0e2f44]">TIPO DE SESIÓN</th>
                 <th className="px-2 py-3 border-b border-[#0e2f44]">ESTADO</th>
                 <th className="px-2 py-3 border-b border-[#0e2f44]">SESIONES</th>
-                <th className="px-2 py-3 border-b border-[#0e2f44]">PAQUETE</th>
                 <th className="px-2 py-3 border-b border-[#0e2f44]">PAGO</th>
                 <th className="px-2 py-3 border-b border-[#0e2f44]">FACT.</th>
                 <th className="px-2 py-3 border-b border-[#0e2f44]">SALDO</th>
@@ -801,9 +800,21 @@ export default function AsistenciaPage() {
                       {a.estado}
                     </span>
                   </td>
-                  <td className="px-2 py-3 text-slate-500">{a.sesiones}</td>
+                  <td className="px-2 py-3 text-slate-500 font-bold">{a.sesiones}</td>
                   <td className="px-2 py-3 text-slate-500">{a.pago}</td>
                   <td className="px-2 py-3 text-slate-500">{a.fact}</td>
+                  <td className="px-2 py-3">
+                    {(() => {
+                      const sVal = typeof a.saldo === "number" ? a.saldo : parseFloat(a.saldo || "0");
+                      if (isNaN(sVal) || Math.abs(sVal) < 0.01) {
+                        return <span className="text-slate-800 font-semibold">$0.00</span>;
+                      } else if (sVal < 0) {
+                        return <span className="text-red-600 font-bold">-${Math.abs(sVal).toFixed(2)}</span>;
+                      } else {
+                        return <span className="text-green-600 font-bold">${sVal.toFixed(2)}</span>;
+                      }
+                    })()}
+                  </td>
                   <td className="px-2 py-3 font-medium text-slate-600">{a.subtotal}</td>
                   <td className="px-2 py-3 font-bold text-[#1a5276]">{a.total}</td>
                   <td className="px-2 py-3 text-slate-500 max-w-[100px] truncate" title={a.obs}>{a.obs}</td>
