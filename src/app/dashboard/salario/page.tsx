@@ -152,12 +152,17 @@ export default function SalarioPage() {
               // Honorario terapeuta por esta sesión
               let pagoSesionTerapeuta = 0;
               let ivaSesionRetenido = 0;
+              const hasFactura = a.fact === "Sí" || a.fact === "SI" || a.solicitaFactura === true || a.solicitaFactura === "Sí";
 
               if (t.tipoPago === "Porcentaje") {
                 pagoSesionTerapeuta = precioSession * ((t.porcentaje || 50) / 100);
-                if (t.retieneIVA) {
+                if (hasFactura) {
+                  ivaSesionRetenido = precioSession * 0.16;
+                } else if (t.retieneIVA) {
                   ivaSesionRetenido = pagoSesionTerapeuta * 0.16;
                 }
+              } else if (hasFactura) {
+                ivaSesionRetenido = precioSession * 0.16;
               }
 
               honorariosTotalGen += pagoSesionTerapeuta;
@@ -250,6 +255,10 @@ export default function SalarioPage() {
                     <div className="flex justify-between max-w-xl">
                       <span className="font-semibold">HONORARIOS TERAPEUTA:</span>
                       <span className="font-bold text-slate-800">${honorariosTotalGen.toLocaleString('es-MX', {minimumFractionDigits: 2})}</span>
+                    </div>
+                    <div className="flex justify-between max-w-xl">
+                      <span className="font-semibold text-amber-700">IVA RETENIDO / FACTURADO (16%):</span>
+                      <span className="font-bold text-amber-700">${ivaTotalRetenidoGen.toLocaleString('es-MX', {minimumFractionDigits: 2})}</span>
                     </div>
                   </div>
 

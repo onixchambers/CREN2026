@@ -267,69 +267,86 @@ export default function DashboardPage() {
       ) : (
         <>
           {/* KPIS PRINCIPALES */}
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-5">
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-4">
             {/* INGRESOS */}
-            <div className="bg-white rounded-xl p-5 border border-slate-200 shadow-sm relative overflow-hidden flex flex-col justify-between">
+            <div className="bg-white rounded-xl p-4 border border-slate-200 shadow-sm relative overflow-hidden flex flex-col justify-between">
               <div className="absolute top-0 left-0 right-0 h-1 bg-green-500"></div>
               <div className="flex justify-between items-start">
                 <div>
-                  <p className="text-[11px] font-bold text-slate-400 uppercase tracking-wide">
+                  <p className="text-[10px] font-bold text-slate-400 uppercase tracking-wide">
                     Ingresos {modoFiltro === 'dia' ? 'del Día' : modoFiltro === 'mes' ? 'del Mes' : 'del Año'}
                   </p>
-                  <p className="text-2xl font-black text-slate-800 mt-1">
+                  <p className="text-xl font-black text-slate-800 mt-1">
                     ${finanzas.ingresosBrutos.toLocaleString('es-MX', {minimumFractionDigits: 2})}
                   </p>
                 </div>
-                <div className="p-2 bg-green-50 text-green-600 rounded-lg">
-                  <svg className="w-6 h-6" fill="currentColor" viewBox="0 0 24 24"><path d="M11.8 10.9c-2.27-.59-3-1.2-3-2.15 0-1.09 1.01-1.85 2.7-1.85 1.78 0 2.44.85 2.5 2.1h2.21c-.07-1.72-1.12-3.3-3.21-3.81V3h-3v2.16c-1.94.42-3.5 1.68-3.5 3.61 0 2.31 1.91 3.46 4.7 4.13 2.5.6 3 1.48 3 2.41 0 .69-.49 1.79-2.7 1.79-2.06 0-2.87-.92-2.98-2.1h-2.2c.12 2.19 1.76 3.42 3.68 3.83V21h3v-2.15c1.95-.37 3.5-1.5 3.5-3.55 0-2.84-2.43-3.81-4.7-4.4z"/></svg>
+                <div className="p-1.5 bg-green-50 text-green-600 rounded-lg">
+                  <svg className="w-5 h-5" fill="currentColor" viewBox="0 0 24 24"><path d="M11.8 10.9c-2.27-.59-3-1.2-3-2.15 0-1.09 1.01-1.85 2.7-1.85 1.78 0 2.44.85 2.5 2.1h2.21c-.07-1.72-1.12-3.3-3.21-3.81V3h-3v2.16c-1.94.42-3.5 1.68-3.5 3.61 0 2.31 1.91 3.46 4.7 4.13 2.5.6 3 1.48 3 2.41 0 .69-.49 1.79-2.7 1.79-2.06 0-2.87-.92-2.98-2.1h-2.2c.12 2.19 1.76 3.42 3.68 3.83V21h3v-2.15c1.95-.37 3.5-1.5 3.5-3.55 0-2.84-2.43-3.81-4.7-4.4z"/></svg>
                 </div>
               </div>
-              <p className="text-[11px] text-slate-500 mt-3 font-medium">Recaudación bruta registrada</p>
+              <p className="text-[10px] text-slate-500 mt-2 font-medium">Recaudación bruta</p>
+            </div>
+
+            {/* IVA RECAUDADO / FACTURAS */}
+            <div className="bg-white rounded-xl p-4 border border-slate-200 shadow-sm relative overflow-hidden flex flex-col justify-between">
+              <div className="absolute top-0 left-0 right-0 h-1 bg-amber-500"></div>
+              <div className="flex justify-between items-start">
+                <div>
+                  <p className="text-[10px] font-bold text-slate-400 uppercase tracking-wide">IVA Recaudado (16%)</p>
+                  <p className="text-xl font-black text-amber-600 mt-1">
+                    ${(finanzas.ivaHonorarios || 0).toLocaleString('es-MX', {minimumFractionDigits: 2})}
+                  </p>
+                </div>
+                <div className="p-1.5 bg-amber-50 text-amber-600 rounded-lg">
+                  <svg className="w-5 h-5" fill="currentColor" viewBox="0 0 24 24"><path d="M19 3H5c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h14c1.1 0 2-.9 2-2V5c0-1.1-.9-2-2-2zm-2 10h-4v4h-2v-4H7v-2h4V7h2v4h4v2z"/></svg>
+                </div>
+              </div>
+              <p className="text-[10px] text-amber-700/80 mt-2 font-medium">IVA Facturas emitidas</p>
             </div>
 
             {/* SESIONES ATENDIDAS */}
-            <div className="bg-white rounded-xl p-5 border border-slate-200 shadow-sm relative overflow-hidden flex flex-col justify-between">
+            <div className="bg-white rounded-xl p-4 border border-slate-200 shadow-sm relative overflow-hidden flex flex-col justify-between">
               <div className="absolute top-0 left-0 right-0 h-1 bg-blue-500"></div>
               <div className="flex justify-between items-start">
                 <div>
-                  <p className="text-[11px] font-bold text-slate-400 uppercase tracking-wide">Sesiones Atendidas</p>
-                  <p className="text-2xl font-black text-slate-800 mt-1">{asistidasCount}</p>
+                  <p className="text-[10px] font-bold text-slate-400 uppercase tracking-wide">Sesiones Atendidas</p>
+                  <p className="text-xl font-black text-slate-800 mt-1">{asistidasCount}</p>
                 </div>
-                <div className="p-2 bg-blue-50 text-blue-600 rounded-lg">
-                  <svg className="w-6 h-6" fill="currentColor" viewBox="0 0 24 24"><path d="M19 3h-1V1h-2v2H8V1H6v2H5c-1.11 0-1.99.9-1.99 2L3 19c0 1.1.89 2 2 2h14c1.1 0 2-.9 2-2V5c0-1.1-.9-2-2-2zm0 16H5V8h14v11zM7 10h5v5H7z"/></svg>
+                <div className="p-1.5 bg-blue-50 text-blue-600 rounded-lg">
+                  <svg className="w-5 h-5" fill="currentColor" viewBox="0 0 24 24"><path d="M19 3h-1V1h-2v2H8V1H6v2H5c-1.11 0-1.99.9-1.99 2L3 19c0 1.1.89 2 2 2h14c1.1 0 2-.9 2-2V5c0-1.1-.9-2-2-2zm0 16H5V8h14v11zM7 10h5v5H7z"/></svg>
                 </div>
               </div>
-              <p className="text-[11px] text-slate-500 mt-3 font-medium">Cancelaciones: {canceladasCount}</p>
+              <p className="text-[10px] text-slate-500 mt-2 font-medium">Cancelaciones: {canceladasCount}</p>
             </div>
 
             {/* PACIENTES ACTIVOS */}
-            <div className="bg-white rounded-xl p-5 border border-slate-200 shadow-sm relative overflow-hidden flex flex-col justify-between">
+            <div className="bg-white rounded-xl p-4 border border-slate-200 shadow-sm relative overflow-hidden flex flex-col justify-between">
               <div className="absolute top-0 left-0 right-0 h-1 bg-indigo-500"></div>
               <div className="flex justify-between items-start">
                 <div>
-                  <p className="text-[11px] font-bold text-slate-400 uppercase tracking-wide">Pacientes Registrados</p>
-                  <p className="text-2xl font-black text-slate-800 mt-1">{pacientes.length}</p>
+                  <p className="text-[10px] font-bold text-slate-400 uppercase tracking-wide">Pacientes Registrados</p>
+                  <p className="text-xl font-black text-slate-800 mt-1">{pacientes.length}</p>
                 </div>
-                <div className="p-2 bg-indigo-50 text-indigo-600 rounded-lg">
-                  <svg className="w-6 h-6" fill="currentColor" viewBox="0 0 24 24"><path d="M12 12c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm0 2c-2.67 0-8 1.34-8 4v2h16v-2c0-2.66-5.33-4-8-4z"/></svg>
+                <div className="p-1.5 bg-indigo-50 text-indigo-600 rounded-lg">
+                  <svg className="w-5 h-5" fill="currentColor" viewBox="0 0 24 24"><path d="M12 12c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm0 2c-2.67 0-8 1.34-8 4v2h16v-2c0-2.66-5.33-4-8-4z"/></svg>
                 </div>
               </div>
-              <p className="text-[11px] text-slate-500 mt-3 font-medium">En expediente activo</p>
+              <p className="text-[10px] text-slate-500 mt-2 font-medium">En expediente activo</p>
             </div>
 
             {/* TERAPEUTAS ACTIVOS */}
-            <div className="bg-white rounded-xl p-5 border border-slate-200 shadow-sm relative overflow-hidden flex flex-col justify-between">
+            <div className="bg-white rounded-xl p-4 border border-slate-200 shadow-sm relative overflow-hidden flex flex-col justify-between">
               <div className="absolute top-0 left-0 right-0 h-1 bg-purple-500"></div>
               <div className="flex justify-between items-start">
                 <div>
-                  <p className="text-[11px] font-bold text-slate-400 uppercase tracking-wide">Terapeutas Activos</p>
-                  <p className="text-2xl font-black text-slate-800 mt-1">{terapeutas.length}</p>
+                  <p className="text-[10px] font-bold text-slate-400 uppercase tracking-wide">Terapeutas Activos</p>
+                  <p className="text-xl font-black text-slate-800 mt-1">{terapeutas.length}</p>
                 </div>
-                <div className="p-2 bg-purple-50 text-purple-600 rounded-lg">
-                  <svg className="w-6 h-6" fill="currentColor" viewBox="0 0 24 24"><path d="M16 11c1.66 0 2.99-1.34 2.99-3S17.66 5 16 5c-1.66 0-3 1.34-3 3s1.34 3 3 3zm-8 0c1.66 0 2.99-1.34 2.99-3S9.66 5 8 5C6.34 5 5 6.34 5 8s1.34 3 3 3zm0 2c-2.33 0-7 1.17-7 3.5V19h14v-2.5c0-2.33-4.67-3.5-7-3.5z"/></svg>
+                <div className="p-1.5 bg-purple-50 text-purple-600 rounded-lg">
+                  <svg className="w-5 h-5" fill="currentColor" viewBox="0 0 24 24"><path d="M16 11c1.66 0 2.99-1.34 2.99-3S17.66 5 16 5c-1.66 0-3 1.34-3 3s1.34 3 3 3zm-8 0c1.66 0 2.99-1.34 2.99-3S9.66 5 8 5C6.34 5 5 6.34 5 8s1.34 3 3 3zm0 2c-2.33 0-7 1.17-7 3.5V19h14v-2.5c0-2.33-4.67-3.5-7-3.5z"/></svg>
                 </div>
               </div>
-              <p className="text-[11px] text-slate-500 mt-3 font-medium">Catálogo de especialistas</p>
+              <p className="text-[10px] text-slate-500 mt-2 font-medium">Catálogo de especialistas</p>
             </div>
           </div>
 

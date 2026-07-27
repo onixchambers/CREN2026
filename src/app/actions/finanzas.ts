@@ -170,13 +170,28 @@ export async function getFinanzasMensuales(month: string, fechaDesde?: string, f
     // 3. Cálculos Finales:
     // Regla exacta del usuario: Si sesión cuesta 400 y comision 50%: Terapeuta recibe 200, IVA retenido por CREN es 32 (16% de 200), Utilidad CREN = 400 - 200 - 32 = 168.
     let ivaTotal = 0;
+    let totalIvaFacturas = 0;
+
     terapeutasData.forEach(t => {
-      if (t.retieneIVA) {
-        ivaTotal += (t.ivaRetenido || (t.pago * ivaDec));
+      if (t.ivaRetenido && t.ivaRetenido > 0) {
+        ivaTotal += t.ivaRetenido;
       }
     });
 
-    const utilidadNeta = ingresosBrutos - totalNomina - ivaTotal - totalGastosOperativos;
+    monthSessions.forEach(s => {
+      let extra: any = {};
+      try {
+        if (s.notes) extra = JSON.parse(s.notes);
+      } catch (e) {}
+      const hasFactura = extra.solicitaFactura === true || extra.solicitaFactura === "Sí" || extra.solicitaFactura === "SI" || extra.factura === "Sí" || extra.fact === "Sí";
+      if (hasFactura || (extra.iva && parseFloat(extra.iva) > 0)) {
+        const sIva = extra.iva ? (typeof extra.iva === 'string' ? parseFloat(extra.iva.replace("$", "").replace(",", "")) : Number(extra.iva)) : (parseFloat(extra.total || "0") * ivaDec);
+        totalIvaFacturas += sIva;
+      }
+    });
+
+    const subtotalIngresos = ingresosBrutos - totalIvaFacturas;
+    const utilidadNeta = ingresosBrutos - totalNomina - totalGastosOperativos;
     const utilidadBruta = ingresosBrutos - totalNomina;
     const margenUtilidad = ingresosBrutos > 0 ? (utilidadNeta / ingresosBrutos) * 100 : 0;
 
@@ -184,6 +199,8 @@ export async function getFinanzasMensuales(month: string, fechaDesde?: string, f
       success: true,
       data: {
         ingresosBrutos,
+        subtotalIngresos,
+        totalIvaFacturas,
         nomina: totalNomina,
         gastosOperativos: totalGastosOperativos,
         gastosList: gastos,
@@ -191,7 +208,8 @@ export async function getFinanzasMensuales(month: string, fechaDesde?: string, f
         utilidadNeta: utilidadNeta,
         terapeutas: terapeutasData,
         utilidadBruta,
-        margenUtilidad
+        margenUtilidad,
+        ivaPct
       }
     };
   } catch (error: any) {

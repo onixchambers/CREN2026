@@ -366,12 +366,14 @@ export default function TerapeutasPage() {
                     <th className="py-2.5 px-4 text-center">Retención IVA</th>
                     <th className="py-2.5 px-4 text-center">Sesiones</th>
                     <th className="py-2.5 px-4 text-right">Ingreso Bruto</th>
+                    <th className="py-2.5 px-4 text-right text-amber-600">IVA Retenido (16%)</th>
                     <th className="py-2.5 px-4 text-right">Honorario Neto</th>
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-slate-100">
                   {listTerapeutaFinanzas.map((t: any, i: number) => {
                     const color = terapeutaColorMap[t.nombre] || THERAPIST_COLORS[i % THERAPIST_COLORS.length];
+                    const tieneIVA = t.retieneIVA || t.tieneFacturasEnPeriodo || (t.ivaRetenido && t.ivaRetenido > 0);
                     return (
                       <tr key={t.id || i} className="hover:bg-slate-50">
                         <td className="py-3 px-4">
@@ -391,13 +393,16 @@ export default function TerapeutasPage() {
                           )}
                         </td>
                         <td className="py-3 px-4 text-center">
-                          <span className={`px-2 py-0.5 rounded text-[10px] font-bold ${t.retieneIVA ? 'bg-amber-100 text-amber-800' : 'bg-slate-100 text-slate-500'}`}>
-                            {t.retieneIVA ? 'Sí (16%)' : 'No'}
+                          <span className={`px-2 py-0.5 rounded text-[10px] font-bold ${tieneIVA ? 'bg-amber-100 text-amber-800' : 'bg-slate-100 text-slate-500'}`}>
+                            {tieneIVA ? 'Con IVA' : 'Sin IVA'}
                           </span>
                         </td>
                         <td className="py-3 px-4 text-center font-bold text-slate-800">{t.sesiones}</td>
                         <td className="py-3 px-4 text-right font-semibold text-green-600">
                           ${t.ingresoGenerado.toLocaleString('es-MX', {minimumFractionDigits: 2})}
+                        </td>
+                        <td className="py-3 px-4 text-right font-semibold text-amber-600">
+                          ${(t.ivaRetenido || 0).toLocaleString('es-MX', {minimumFractionDigits: 2})}
                         </td>
                         <td className="py-3 px-4 text-right font-extrabold text-[#1a5276]">
                           ${t.pago.toLocaleString('es-MX', {minimumFractionDigits: 2})}
@@ -407,7 +412,7 @@ export default function TerapeutasPage() {
                   })}
                   {listTerapeutaFinanzas.length === 0 && (
                     <tr>
-                      <td colSpan={8} className="py-6 text-center text-slate-400">No hay terapeutas registradas.</td>
+                      <td colSpan={9} className="py-6 text-center text-slate-400">No hay terapeutas registradas.</td>
                     </tr>
                   )}
                 </tbody>

@@ -103,7 +103,7 @@ export default function FinanzasPage() {
         <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
           
           {/* TARJETAS PRINCIPALES */}
-          <div className="lg:col-span-12 grid grid-cols-1 md:grid-cols-3 gap-6">
+          <div className="lg:col-span-12 grid grid-cols-1 md:grid-cols-4 gap-6">
             {/* INGRESOS TOTALES */}
             <div className="bg-white p-6 rounded-xl border border-slate-200 shadow-sm flex flex-col justify-between">
               <div>
@@ -113,6 +113,17 @@ export default function FinanzasPage() {
                 </p>
               </div>
               <p className="text-xs text-slate-400 mt-3">Pagos de terapias registrados en el periodo</p>
+            </div>
+
+            {/* IVA RETENIDO / FACTURADO */}
+            <div className="bg-white p-6 rounded-xl border border-slate-200 shadow-sm flex flex-col justify-between">
+              <div>
+                <span className="text-xs font-bold text-slate-400 uppercase tracking-wider">IVA Recaudado / Retenido</span>
+                <p className="text-3xl font-extrabold text-amber-600 mt-2">
+                  ${(datos.ivaHonorarios || 0).toLocaleString('es-MX', {minimumFractionDigits: 2})}
+                </p>
+              </div>
+              <p className="text-xs text-amber-700/80 mt-3 font-medium">IVA proveniente de facturas emitidas</p>
             </div>
 
             {/* GASTOS TOTALES */}
@@ -138,7 +149,7 @@ export default function FinanzasPage() {
                 </p>
               </div>
               <p className="text-xs text-white/80 mt-3">
-                Calculado: Ingresos Totales (${datos.ingresosBrutos.toLocaleString()}) - Gastos Totales (${gastosTotales.toLocaleString()})
+                Calculado: Ingresos (${datos.ingresosBrutos.toLocaleString()}) - Gastos (${gastosTotales.toLocaleString()})
               </p>
             </div>
           </div>
@@ -157,6 +168,7 @@ export default function FinanzasPage() {
                     <th className="py-2.5 px-3 text-center">Sesiones</th>
                     <th className="py-2.5 px-3 text-right">Ingresos Registrados</th>
                     <th className="py-2.5 px-3 text-right">Comisión (%)</th>
+                    <th className="py-2.5 px-3 text-right text-amber-600">IVA Retenido (16%)</th>
                     <th className="py-2.5 px-3 text-right">Pago a Terapeuta</th>
                   </tr>
                 </thead>
@@ -178,6 +190,9 @@ export default function FinanzasPage() {
                       <td className="py-3 px-3 text-right text-xs font-medium text-slate-500">
                         {t.tipoPago === "Porcentaje" ? `${t.porcentaje}%` : `Base $${t.salarioBase}`}
                       </td>
+                      <td className="py-3 px-3 text-right font-semibold text-amber-600">
+                        ${(t.ivaRetenido || 0).toLocaleString('es-MX', {minimumFractionDigits: 2})}
+                      </td>
                       <td className="py-3 px-3 text-right font-bold text-[#1a5276]">
                         ${t.pago.toLocaleString('es-MX', {minimumFractionDigits: 2})}
                       </td>
@@ -185,7 +200,7 @@ export default function FinanzasPage() {
                   ))}
                   {datos.terapeutas.length === 0 && (
                     <tr>
-                      <td colSpan={5} className="py-8 text-center text-slate-400">
+                      <td colSpan={6} className="py-8 text-center text-slate-400">
                         Sin pagos ni sesiones registradas en este periodo.
                       </td>
                     </tr>
