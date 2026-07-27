@@ -23,6 +23,7 @@ export default function HorariosPage() {
     if (parts.length === 3) return `${parts[2]}/${parts[1]}/${parts[0]}`;
     return dateStr;
   };
+
   const [horarios, setHorarios] = useState<Horario[]>([]);
   const [terapeutaSeleccionado, setTerapeutaSeleccionado] = useState("");
   const [horaActual, setHoraActual] = useState("");
@@ -36,35 +37,34 @@ export default function HorariosPage() {
   const hoy = new Date().toLocaleDateString("en-CA");
   const [fechaFiltro, setFechaFiltro] = useState(hoy);
 
-  const handleOpenEditModal = (h: Horario) => {
-    setEditHorario(h);
-    setEditEntrada(h.horaEntrada || "");
-    setEditSalida(h.horaSalida || "");
-    setIsEditModalOpen(true);
-  };
+  const calcularHorasTrabajadas = (horaEntrada?: string, horaSalida?: string | null) => {
+    if (!horaEntrada) return null;
+    
+    const parseTime = (timeStr: string) => {
+      const parts = timeStr.split(":").map(Number);
+      return parts[0] * 3600 + (parts[1] || 0) * 60 + (parts[2] || 0);
+    };
 
-  const handleSaveEdit = async () => {
-    if (!editHorario) return;
-    const res = await updateHorario(editHorario.id, editEntrada, editSalida);
-    if (res.success) {
-      setIsEditModalOpen(false);
-      fetchHorarios(fechaFiltro);
+    const startSec = parseTime(horaEntrada);
+    let endSec = 0;
+
+    if (horaSalida) {
+      endSec = parseTime(horaSalida);
+    } else if (horaActual) {
+      endSec = parseTime(horaActual);
     } else {
-      alert(res.error || "Error al actualizar horario");
+      const now = new Date();
+      endSec = now.getHours() * 3600 + now.getMinutes() * 60 + now.getSeconds();
     }
-  };
 
-  const handleDeleteRecord = async () => {
-    if (!editHorario) return;
-    if (confirm("¿Estás seguro de eliminar este registro de horario?")) {
-      const res = await deleteHorario(editHorario.id);
-      if (res.success) {
-        setIsEditModalOpen(false);
-        fetchHorarios(fechaFiltro);
-      } else {
-        alert(res.error || "Error al eliminar horario");
-      }
-    }
+    let diffSec = endSec - startSec;
+    if (diffSec < 0) diffSec += 24 * 3600;
+
+    const hrs = Math.floor(diffSec / 3600);
+    const mins = Math.floor((diffSec % 3600) / 60);
+
+    if (hrs === 0) return `${mins} min`;
+    return `${hrs} hr${hrs > 1 ? 's' : ''}${mins > 0 ? ` ${mins} min` : ''}`;
   };
 
   const fetchHorarios = async (fecha?: string) => {
@@ -110,7 +110,7 @@ export default function HorariosPage() {
       clearInterval(interval);
       clearInterval(syncInterval);
     };
-  }, []);
+  }, [fechaFiltro]);
 
   const handleEntrada = async () => {
     if (!terapeutaSeleccionado) {
@@ -150,12 +150,43 @@ export default function HorariosPage() {
     }
   };
 
+  const handleOpenEditModal = (h: Horario) => {
+    setEditHorario(h);
+    setEditEntrada(h.horaEntrada || "");
+    setEditSalida(h.horaSalida || "");
+    setIsEditModalOpen(true);
+  };
+
+  const handleSaveEdit = async () => {
+    if (!editHorario) return;
+    const res = await updateHorario(editHorario.id, editEntrada, editSalida);
+    if (res.success) {
+      setIsEditModalOpen(false);
+      fetchHorarios(fechaFiltro);
+    } else {
+      alert(res.error || "Error al actualizar horario");
+    }
+  };
+
+  const handleDeleteRecord = async () => {
+    if (!editHorario) return;
+    if (confirm("¿Estás seguro de eliminar este registro de horario?")) {
+      const res = await deleteHorario(editHorario.id);
+      if (res.success) {
+        setIsEditModalOpen(false);
+        fetchHorarios(fechaFiltro);
+      } else {
+        alert(res.error || "Error al eliminar horario");
+      }
+    }
+  };
+
   return (
     <div className="space-y-6 animate-in fade-in duration-500">
       <div className="flex items-center justify-between border-b pb-4">
         <div>
           <h2 className="text-2xl font-bold text-slate-800">Control de Horarios</h2>
-          <p className="text-sm text-slate-500">Registro de entradas y salidas del personal</p>
+          <p className="text-sm text-slate-500">Registro y cálculo de horas trabajadas por turno</p>
         </div>
       </div>
 
@@ -251,6 +282,15 @@ export default function HorariosPage() {
                       <span className="text-xs font-bold text-slate-400 uppercase tracking-wider">Salida</span>
                       <span className={`px-3 py-1 rounded-full text-sm font-bold ${registro && registro.horaSalida ? 'bg-slate-200 text-slate-700' : (registro ? 'bg-blue-100 text-blue-700' : 'bg-slate-100 text-slate-400')}`}>
                         {registro && registro.horaSalida ? `🕒 ${registro.horaSalida}` : (registro ? "En turno..." : "—")}
+                      </span>
+                    </div>
+
+                    <div className="flex justify-between items-center bg-amber-50/80 p-2.5 rounded-lg border border-amber-200/80">
+                      <span className="text-xs font-black text-amber-900 uppercase tracking-wider flex items-center gap-1">
+                        ⏱️ Horas Trabajadas
+                      </span>
+                      <span className="text-xs font-black text-amber-950 px-2.5 py-1 bg-amber-200/80 rounded-md shadow-xs">
+                        {registro ? (calcularHorasTrabajadas(registro.horaEntrada, registro.horaSalida) || "0 min") : "0 min"}
                       </span>
                     </div>
 
