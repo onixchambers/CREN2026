@@ -390,11 +390,11 @@ export default function PreregistrosPage() {
                       <select 
                         value={madreCountryCode}
                         onChange={(e) => setMadreCountryCode(e.target.value)}
-                        className="w-28 text-xs p-2 border border-slate-300 rounded focus:border-[#2980b9] outline-none bg-slate-50 font-bold text-slate-800"
+                        className="w-36 text-xs p-2 border border-slate-300 rounded focus:border-[#2980b9] outline-none bg-slate-50 font-medium text-slate-700 cursor-pointer"
                       >
                         {COUNTRY_CODES.map((c, i) => (
                           <option key={i} value={c.code}>
-                            {c.flag} {c.name}
+                            {c.flag} {c.code} ({c.iso})
                           </option>
                         ))}
                       </select>
@@ -419,11 +419,11 @@ export default function PreregistrosPage() {
                       <select 
                         value={padreCountryCode}
                         onChange={(e) => setPadreCountryCode(e.target.value)}
-                        className="w-28 text-xs p-2 border border-slate-300 rounded focus:border-[#2980b9] outline-none bg-slate-50 font-bold text-slate-800"
+                        className="w-36 text-xs p-2 border border-slate-300 rounded focus:border-[#2980b9] outline-none bg-slate-50 font-medium text-slate-700 cursor-pointer"
                       >
                         {COUNTRY_CODES.map((c, i) => (
                           <option key={i} value={c.code}>
-                            {c.flag} {c.name}
+                            {c.flag} {c.code} ({c.iso})
                           </option>
                         ))}
                       </select>
@@ -448,11 +448,11 @@ export default function PreregistrosPage() {
                       <select 
                         value={otrosCountryCode}
                         onChange={(e) => setOtrosCountryCode(e.target.value)}
-                        className="w-28 text-xs p-2 border border-slate-300 rounded focus:border-[#2980b9] outline-none bg-slate-50 font-bold text-slate-800"
+                        className="w-36 text-xs p-2 border border-slate-300 rounded focus:border-[#2980b9] outline-none bg-slate-50 font-medium text-slate-700 cursor-pointer"
                       >
                         {COUNTRY_CODES.map((c, i) => (
                           <option key={i} value={c.code}>
-                            {c.flag} {c.name}
+                            {c.flag} {c.code} ({c.iso})
                           </option>
                         ))}
                       </select>
