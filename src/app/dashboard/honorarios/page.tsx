@@ -158,9 +158,14 @@ export default function HonorariosPage() {
                       <td className="p-4 font-bold text-slate-900">{t.name}</td>
                       <td className="p-4 text-xs">
                         {t.tipoPago === "Salario Base" ? (
-                          <span className="px-2.5 py-1 bg-blue-50 text-blue-700 rounded-md border border-blue-200 font-semibold">
-                            Salario Base: ${t.salarioBase}
-                          </span>
+                          <div className="flex flex-col gap-0.5">
+                            <span className="px-2.5 py-1 bg-blue-50 text-blue-700 rounded-md border border-blue-200 font-semibold w-fit">
+                              Salario Base: ${t.salarioBase}/mes
+                            </span>
+                            <span className="text-[10px] text-slate-500 font-medium pl-0.5">
+                              📅 Pago quincenal los días 15 y 30 (${((t.salarioBase || 0) / 2).toFixed(2)}/quincena)
+                            </span>
+                          </div>
                         ) : (
                           <span className="px-2.5 py-1 bg-purple-50 text-purple-700 rounded-md border border-purple-200 font-semibold">
                             Porcentaje ({t.porcentaje}%)

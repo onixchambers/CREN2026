@@ -81,6 +81,39 @@ export async function getFinanzasMensuales(month: string, fechaDesde?: string, f
     // Agregar TODOS los terapeutas al reporte aunque no tengan sesiones
     const todosTerapeutas = await prisma.user.findMany({ where: { role: "Terapeuta" } });
     todosTerapeutas.forEach(t => {
+        // Calcular salario base acumulado en las quincenas (15 y 30) del rango de fechas
+        let pagoSalarioBase = 0;
+        if (t.tipoPago === "Salario Base" && t.salarioBase) {
+          if (fechaDesde && fechaHasta) {
+            const dStart = new Date(fechaDesde);
+            const dEnd = new Date(fechaHasta);
+            let cur = new Date(dStart.getFullYear(), dStart.getMonth(), 1);
+            const endMonth = new Date(dEnd.getFullYear(), dEnd.getMonth(), 1);
+
+            while (cur <= endMonth) {
+              const y = cur.getFullYear();
+              const m = (cur.getMonth() + 1).toString().padStart(2, '0');
+              
+              // 1ª Quincena (Día 15)
+              const q1DateStr = `${y}-${m}-15`;
+              if (q1DateStr >= fechaDesde && q1DateStr <= fechaHasta) {
+                pagoSalarioBase += t.salarioBase / 2;
+              }
+
+              // 2ª Quincena (Día 30 o último día)
+              const lastDay = new Date(y, cur.getMonth() + 1, 0).getDate();
+              const q2DateStr = `${y}-${m}-${lastDay.toString().padStart(2, '0')}`;
+              if (q2DateStr >= fechaDesde && q2DateStr <= fechaHasta) {
+                pagoSalarioBase += t.salarioBase / 2;
+              }
+
+              cur.setMonth(cur.getMonth() + 1);
+            }
+          } else {
+            pagoSalarioBase = t.salarioBase; // Pago mensual completo (50% el 15 y 50% el 30)
+          }
+        }
+
         if (!terapeutasMap.has(t.id)) {
           terapeutasMap.set(t.id, {
             id: t.id,
@@ -88,7 +121,7 @@ export async function getFinanzasMensuales(month: string, fechaDesde?: string, f
             especialidad: t.especialidad,
             sesiones: 0,
             ingresoGenerado: 0,
-            pago: t.tipoPago === "Salario Base" ? (t.salarioBase || 0) : 0,
+            pago: t.tipoPago === "Salario Base" ? pagoSalarioBase : 0,
             tipoPago: t.tipoPago,
             porcentaje: t.porcentaje,
             salarioBase: t.salarioBase,
@@ -98,7 +131,7 @@ export async function getFinanzasMensuales(month: string, fechaDesde?: string, f
         } else {
           if (t.tipoPago === "Salario Base") {
             const tData = terapeutasMap.get(t.id);
-            tData.pago = t.salarioBase || 0; // Salario base fijo
+            tData.pago = pagoSalarioBase;
           }
         }
     });
