@@ -16,6 +16,7 @@ export default function ConfiguracionPage() {
   const [usuarios, setUsuarios] = useState<any[]>([]);
   const [allowTherapistEdit, setAllowTherapistEdit] = useState(true);
   const [referenceKeys, setReferenceKeys] = useState("");
+  const [ivaRate, setIvaRate] = useState<number>(16);
   const [month, setMonth] = useState(new Date().toISOString().slice(0, 7));
   
   const [gastos, setGastos] = useState<any[]>([]);
@@ -39,6 +40,7 @@ export default function ConfiguracionPage() {
         ]);
         setAllowTherapistEdit(res.settings?.allowTherapistEdit ?? true);
         setReferenceKeys(res.settings?.referenceKeys ?? "");
+        setIvaRate(res.settings?.ivaRate ?? 16);
         
         const exps = res.expenses || [];
         if (exps.length > 0) {
@@ -66,9 +68,10 @@ export default function ConfiguracionPage() {
         users: usuarios,
         allowTherapistEdit,
         referenceKeys,
+        ivaRate,
         month,
         expenses: allExpenses
-      });
+      } as any);
 
       if (res.success) {
         alert("¡Configuración guardada exitosamente!");
@@ -212,8 +215,8 @@ export default function ConfiguracionPage() {
         <hr className="border-slate-100" />
 
         {/* PERMISOS DEL SISTEMA */}
-        <div className="p-6">
-          <h3 className="text-[#1a5276] font-bold flex items-center gap-2 mb-4">
+        <div className="p-6 space-y-5">
+          <h3 className="text-[#1a5276] font-bold flex items-center gap-2 mb-2">
             <svg className="w-5 h-5 text-amber-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" /></svg>
             Permisos del Sistema
           </h3>
@@ -224,6 +227,25 @@ export default function ConfiguracionPage() {
               <input type="checkbox" checked={allowTherapistEdit} onChange={(e) => setAllowTherapistEdit(e.target.checked)} className="w-4 h-4 text-blue-600 border-slate-300 rounded focus:ring-blue-500" />
               <span className="text-sm text-slate-600">Habilitado</span>
             </label>
+          </div>
+
+          <div className="pt-3 border-t border-slate-100 flex flex-col sm:flex-row sm:items-center justify-between gap-3 max-w-lg bg-amber-50/70 p-4 rounded-xl border border-amber-200">
+            <div>
+              <label className="block text-xs font-black text-amber-900 uppercase tracking-wide">🏷️ Porcentaje de IVA del Sistema (%)</label>
+              <p className="text-[11px] text-amber-800 mt-0.5">Se aplicará globalmente a todas las asistencias, retención de honorarios y reportes de la clínica.</p>
+            </div>
+            <div className="flex items-center gap-1.5 flex-shrink-0">
+              <input 
+                type="number"
+                step="0.1"
+                min="0"
+                max="100"
+                value={ivaRate}
+                onChange={(e) => setIvaRate(parseFloat(e.target.value) || 0)}
+                className="w-24 p-2 border border-amber-300 rounded-lg font-black text-center text-slate-900 bg-white outline-none focus:border-amber-600 text-base shadow-sm"
+              />
+              <span className="font-extrabold text-amber-900 text-base">%</span>
+            </div>
           </div>
         </div>
         <hr className="border-slate-100" />

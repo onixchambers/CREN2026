@@ -35,6 +35,10 @@ export async function getFinanzasMensuales(month: string, fechaDesde?: string, f
     const terapeutasMap = new Map<string, any>();
     
     // 1. Ingresos y Nómina
+    const sysSettings = await prisma.systemSettings.findUnique({ where: { id: 1 } });
+    const ivaPct = (sysSettings?.ivaRate !== undefined && sysSettings?.ivaRate !== null) ? sysSettings.ivaRate : 16;
+    const ivaDec = ivaPct / 100;
+
     monthSessions.forEach(s => {
       let extra: any = {};
       try {
@@ -58,7 +62,8 @@ export async function getFinanzasMensuales(month: string, fechaDesde?: string, f
           tipoPago: s.therapist?.tipoPago || "Porcentaje",
           porcentaje: s.therapist?.porcentaje || 0,
           salarioBase: s.therapist?.salarioBase || 0,
-          retieneIVA: s.therapist?.retieneIVA || false
+          retieneIVA: s.therapist?.retieneIVA || false,
+          ivaRetenido: 0
         });
       }
 
@@ -72,7 +77,7 @@ export async function getFinanzasMensuales(month: string, fechaDesde?: string, f
           let comisionBruta = precioTotal * ((tData.porcentaje || 0) / 100);
           tData.pago += comisionBruta;
           if (tData.retieneIVA) {
-            tData.ivaRetenido = (tData.ivaRetenido || 0) + (comisionBruta * 0.16);
+            tData.ivaRetenido = (tData.ivaRetenido || 0) + (comisionBruta * ivaDec);
           }
         }
       }
@@ -151,7 +156,7 @@ export async function getFinanzasMensuales(month: string, fechaDesde?: string, f
     let ivaTotal = 0;
     terapeutasData.forEach(t => {
       if (t.retieneIVA) {
-        ivaTotal += (t.ivaRetenido || (t.pago * 0.16));
+        ivaTotal += (t.ivaRetenido || (t.pago * ivaDec));
       }
     });
 

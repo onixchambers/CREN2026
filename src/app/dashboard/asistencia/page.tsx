@@ -7,7 +7,7 @@ import { getAsistenciasDB } from "@/app/actions/asistencia";
 import { getAgenda } from "@/app/actions/agenda";
 import { saveAsistenciaDB } from "@/app/actions/asistencia";
 import { deleteCita } from "@/app/actions/agenda";
-import { getTerapeutasFull } from "@/app/actions/configuracion";
+import { getTerapeutasFull, getSystemIvaRate } from "@/app/actions/configuracion";
 import { DateInput } from "@/components/DateInput";
 
 type Paciente = {
@@ -106,7 +106,12 @@ export default function AsistenciaPage() {
 
   // Función reutilizable para recargar asistencias desde la BD
   const recargarAsistencias = async () => {
-    const agRes = await getAsistenciasDB(Date.now().toString());
+    const [agRes, ivaPct] = await Promise.all([
+      getAsistenciasDB(Date.now().toString()),
+      getSystemIvaRate()
+    ]);
+    const ivaDec = (ivaPct || 16) / 100;
+
     if (agRes.success && agRes.data) {
       const mapped = agRes.data.map((c: any) => {
         const isFact = c.fact === "Sí" || c.fact === true;
@@ -115,7 +120,7 @@ export default function AsistenciaPage() {
         let ivaVal = 0;
 
         if (isFact) {
-          ivaVal = totVal * 0.16;
+          ivaVal = totVal * ivaDec;
           subVal = totVal - ivaVal;
         }
 
@@ -291,11 +296,14 @@ export default function AsistenciaPage() {
     const precioTerapia = parseFloat(formData.precioTerapia || "0");
     const totVal = montoPagado > 0 ? montoPagado : precioTerapia;
 
+    const ivaPct = await getSystemIvaRate();
+    const ivaDec = (ivaPct || 16) / 100;
+
     let subVal = totVal;
     let ivaVal = 0;
 
     if (formData.solicitaFactura) {
-      ivaVal = totVal * 0.16;
+      ivaVal = totVal * ivaDec;
       subVal = totVal - ivaVal;
     }
 
@@ -375,11 +383,13 @@ export default function AsistenciaPage() {
     if (!editingAsistencia) return;
     
     const totVal = editForm.subtotal ? parseFloat(editForm.subtotal) : 0;
+    const ivaPct = await getSystemIvaRate();
+    const ivaDec = (ivaPct || 16) / 100;
     let subVal = totVal;
     let ivaVal = 0;
 
     if (editForm.fact) {
-      ivaVal = totVal * 0.16;
+      ivaVal = totVal * ivaDec;
       subVal = totVal - ivaVal;
     }
 

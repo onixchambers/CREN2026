@@ -30,7 +30,7 @@ export async function getSettings(month: string) {
         if (a.rol !== 'Admin' && b.rol === 'Admin') return 1;
         return 0;
       }),
-      settings: settings || { allowTherapistEdit: true, referenceKeys: "" },
+      settings: settings || { allowTherapistEdit: true, referenceKeys: "", ivaRate: 16 },
       expenses: expenses,
     };
   } catch (error: any) {
@@ -136,11 +136,13 @@ export async function saveSettings(data: {
         update: {
           allowTherapistEdit: data.allowTherapistEdit,
           referenceKeys: data.referenceKeys,
+          ivaRate: (data as any).ivaRate !== undefined ? parseFloat((data as any).ivaRate) : 16,
         },
         create: {
           id: 1,
           allowTherapistEdit: data.allowTherapistEdit,
           referenceKeys: data.referenceKeys,
+          ivaRate: (data as any).ivaRate !== undefined ? parseFloat((data as any).ivaRate) : 16,
         }
       });
 
@@ -175,5 +177,14 @@ export async function saveSettings(data: {
   } catch (error: any) {
     console.error("Error saving settings:", error);
     return { success: false, error: "Error de DB: " + (error?.message || String(error)) };
+  }
+}
+
+export async function getSystemIvaRate() {
+  try {
+    const s = await prisma.systemSettings.findUnique({ where: { id: 1 } });
+    return s?.ivaRate !== undefined && s?.ivaRate !== null ? s.ivaRate : 16;
+  } catch (e) {
+    return 16;
   }
 }
