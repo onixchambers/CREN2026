@@ -1,11 +1,29 @@
 "use client";
+
 import { useState, useEffect } from "react";
 import { useSession } from "next-auth/react";
 import { useRouter } from "next/navigation";
+import { getAsistenciasDB } from "@/app/actions/asistencia";
+import { getPatients } from "@/app/actions/pacientes";
+import { getFinanzasMensuales } from "@/app/actions/finanzas";
+import { getTerapeutasFull } from "@/app/actions/configuracion";
 
 export default function DashboardPage() {
   const { data: session, status } = useSession();
   const router = useRouter();
+
+  const currentMonth = new Date().toISOString().slice(0, 7); // YYYY-MM
+  const [loading, setLoading] = useState(true);
+
+  const [asistencias, setAsistencias] = useState<any[]>([]);
+  const [pacientes, setPacientes] = useState<any[]>([]);
+  const [terapeutas, setTerapeutas] = useState<any[]>([]);
+  const [finanzas, setFinanzas] = useState<any>({
+    ingresosBrutos: 0,
+    nomina: 0,
+    gastosOperativos: 0,
+    utilidadNeta: 0
+  });
 
   useEffect(() => {
     if (status === "authenticated") {
@@ -16,340 +34,265 @@ export default function DashboardPage() {
     }
   }, [session, status, router]);
 
-
-
-  const formatDateStr = (dateStr: string) => {
-    if (!dateStr) return "-";
-    const parts = dateStr.split("-");
-    if (parts.length === 3) return `//`;
-    return dateStr;
-  };
-  const [asistencias, setAsistencias] = useState<any[]>([]);
-  const [pacientes, setPacientes] = useState<any[]>([]);
-
   useEffect(() => {
-    async function loadData() {
-      const { getAgenda } = await import('@/app/actions/agenda');
-      const { getPatients } = await import('@/app/actions/pacientes');
-      
-      const agRes = await getAgenda();
-      if (agRes.success && agRes.data) {
-        // Map raw DB sessions into 'asistencias' structure expected by the Dashboard charts
-        const parsedAsistencias = agRes.data.map((s: any) => {
-          const extra = s.extra || {};
-          return {
-            fecha: extra.fecha || s.fecha,
-            estado: extra.estadoAsistencia || s.estado,
-            total: extra.total ? $ + extra.total : (s.pagado ? "1" : "0"), // fallback if missing
-            pago: extra.metodoPago || s.metodoPago || "No especificado",
-            terapeuta: s.terapeuta
-          };
-        });
-        setAsistencias(parsedAsistencias);
-      }
+    async function loadAllData() {
+      setLoading(true);
+      const [asistRes, pacRes, finRes, terRes] = await Promise.all([
+        getAsistenciasDB(),
+        getPatients(),
+        getFinanzasMensuales(currentMonth),
+        getTerapeutasFull()
+      ]);
 
-      const pRes = await getPatients();
-      if (pRes.success && pRes.data) {
-        // Map patients DB
-        const parsedPatients = pRes.data.map((p: any) => ({
-          fechaRegistro: p.fechaRegistro || p.createdAt || new Date().toISOString().split("T")[0]
-        }));
-        setPacientes(parsedPatients);
-      }
+      if (asistRes.success && asistRes.data) setAsistencias(asistRes.data);
+      if (pacRes.success && pacRes.data) setPacientes(pacRes.data);
+      if (finRes.success && finRes.data) setFinanzas(finRes.data);
+      if (terRes.success && terRes.data) setTerapeutas(terRes.data);
+
+      setLoading(false);
     }
-    loadData();
-  }, []);
+    loadAllData();
+  }, [currentMonth]);
 
   if (status === "loading" || (status === "authenticated" && ((session?.user as any)?.role || "ADMIN").toUpperCase() === "TERAPEUTA")) {
     return (
       <div className="flex items-center justify-center min-h-[50vh]">
         <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-[#1a5276]"></div>
-        <span className="ml-3 text-slate-500 font-medium">Redirigiendo a Agenda...</span>
+        <span className="ml-3 text-slate-500 font-medium">Cargando Dashboard...</span>
       </div>
     );
   }
 
-  // Helper functions for dates
-  const todayStr = new Date().toISOString().split("T")[0];
-  const now = new Date();
-  
-  const isToday = (dStr: string) => dStr === todayStr;
-  
-  const getWeekStart = (d: Date) => {
-    const date = new Date(d);
-    const day = date.getDay();
-    const diff = date.getDate() - day + (day === 0 ? -6 : 1); // adjust when day is sunday
-    return new Date(date.setDate(diff)).toISOString().split("T")[0];
-  };
-  const weekStartStr = getWeekStart(now);
+  // Métricas acumuladas del mes actual
+  const asistMes = asistencias.filter(a => a.fecha && a.fecha.startsWith(currentMonth));
+  const asistidasMesCount = asistMes.filter(a => a.estado === "Asistio").length;
+  const canceladasMesCount = asistMes.filter(a => a.estado && a.estado.includes("Cancelo")).length;
 
-  const isThisWeek = (dStr: string) => {
-    return dStr >= weekStartStr && dStr <= todayStr;
-  };
+  // Ingresos por Método de Pago
+  const pagoMetodosMap: { [metodo: string]: number } = {};
+  asistMes.forEach(a => {
+    let m = a.pago || "Sin especificar";
+    if (m.includes("Mixto")) m = "Mixto";
+    const sub = typeof a.saldo === "number" ? (parseFloat(a.total ? a.total.replace("$","") : "0")) : parseFloat(a.subtotal ? a.subtotal.replace("$","") : "0");
+    const amount = isNaN(sub) ? 0 : sub;
+    pagoMetodosMap[m] = (pagoMetodosMap[m] || 0) + amount;
+  });
 
-  const currentMonthStr = todayStr.substring(0, 7); // YYYY-MM
-  const isThisMonth = (dStr: string) => {
-    return dStr.startsWith(currentMonthStr);
-  };
+  // Distribución por Áreas
+  const areasMap: { [area: string]: number } = {};
+  asistMes.forEach(a => {
+    const area = a.area || "Sin Área";
+    areasMap[area] = (areasMap[area] || 0) + 1;
+  });
 
-  const parseMoney = (m: string) => {
-    if (!m) return 0;
-    return parseFloat(m.replace(/[^0-9.-]+/g,""));
-  };
-
-  // --- HOY ---
-  const asistHoy = asistencias.filter(a => isToday(a.fecha));
-  const ingresosHoy = asistHoy.reduce((acc, curr) => acc + parseMoney(curr.total), 0);
-  const sesionesHoy = asistHoy.reduce((acc, curr) => acc + parseInt(curr.sesiones || "1"), 0);
-  const cancelacionesHoy = asistHoy.filter(a => (a.estado || "").includes("Cancelo")).length;
-  const pendientesHoy = asistHoy.filter(a => a.estado === "Pendiente").length;
-  const totalHoyCount = asistHoy.length;
-
-  // --- SEMANA ---
-  const asistSemana = asistencias.filter(a => isThisWeek(a.fecha));
-  const ingresosSemana = asistSemana.reduce((acc, curr) => acc + parseMoney(curr.total), 0);
-  const sesionesSemana = asistSemana.reduce((acc, curr) => acc + parseInt(curr.sesiones || "1"), 0);
-  const cancelacionesSemana = asistSemana.filter(a => (a.estado || "").includes("Cancelo")).length;
-  // terapeutas activos (mocked or extracted from terapeutas)
-  const terapeutasSemana = new Set(asistSemana.map(a => a.terapeuta)).size;
-
-  // --- MES ---
-  const asistMes = asistencias.filter(a => isThisMonth(a.fecha));
-  const ingresosBrutosMes = asistMes.reduce((acc, curr) => acc + parseMoney(curr.total), 0);
-  const ivaMes = asistMes.reduce((acc, curr) => curr.fact === "Sí" ? acc + (parseMoney(curr.total) - parseMoney(curr.subtotal)) : acc, 0);
-  const ingresosNetosMes = ingresosBrutosMes - ivaMes;
-  const sesionesMes = asistMes.reduce((acc, curr) => acc + parseInt(curr.sesiones || "1"), 0);
-  const valoracionesMes = asistMes.filter(a => a.tipoSesion === "Valoracion").length;
-
-  // --- PACIENTES ---
-  const getPatientDateStr = (p: any) => {
-    try {
-      if (p.createdAt) return new Date(p.createdAt).toISOString().split("T")[0];
-      if (p.fechaIngreso) return new Date(p.fechaIngreso).toISOString().split("T")[0];
-      if (p.id && !isNaN(Number(p.id))) return new Date(parseInt(p.id)).toISOString().split("T")[0];
-    } catch (e) {}
-    return "";
-  };
-
-  const pHoy = pacientes.filter(p => isToday(getPatientDateStr(p))).length;
-  const pSemana = pacientes.filter(p => isThisWeek(getPatientDateStr(p))).length;
-  const pMes = pacientes.filter(p => isThisMonth(getPatientDateStr(p))).length;
-  const pTotal = pacientes.length;
-
-  // --- INGRESOS POR MÉTODO (MES) ---
-  const metodosStats = asistMes.reduce((acc, curr) => {
-    const metodo = curr.pago || "Por definir";
-    if (!acc[metodo]) {
-      acc[metodo] = { metodo, sesiones: 0, recibido: 0, esperado: 0 };
-    }
-    const val = parseMoney(curr.total);
-    acc[metodo].sesiones += parseInt(curr.sesiones || "1");
-    acc[metodo].esperado += val;
-    
-    // Considerar recibido si el estado indica que se pagó o asistió
-    if (curr.estado === "Asistio" || curr.estado === "Cancelo sin anticipacion") {
-      acc[metodo].recibido += val;
-    }
-    return acc;
-  }, {} as Record<string, any>);
-  const metodosList = Object.values(metodosStats);
-
-  const KpiCard = ({ title, value, subtext, color }: any) => (
-    <div className="bg-white rounded p-4 border border-slate-200 shadow-sm relative overflow-hidden">
-      <div className={`absolute top-0 left-0 right-0 h-1 ${color}`}></div>
-      <p className="text-[9px] font-bold text-slate-500 uppercase tracking-wide mb-1">{title}</p>
-      <p className="text-xl font-extrabold text-[#0e2f44]">{value}</p>
-      {subtext && <p className="text-[9px] text-slate-400 mt-1">{subtext}</p>}
-    </div>
-  );
-
-  const ChartPlaceholder = ({ title, legend = false, lines = true }: any) => (
-    <div className="bg-white rounded-lg p-5 border border-slate-200 shadow-sm h-64 flex flex-col">
-      <h3 className="text-xs font-bold text-[#1a5276] mb-4">{title}</h3>
-      <div className="flex-1 border-l border-b border-slate-200 relative">
-        {lines && [1, 2, 3, 4, 5].map(i => (
-          <div key={i} className="absolute left-0 right-0 border-t border-slate-100" style={{ bottom: `${i * 20}%` }}></div>
-        ))}
-        {/* Placeholder line at 0 */}
-        <div className="absolute left-0 right-0 bottom-0 border-t-2 border-[#2ecc71] flex items-center justify-between px-2">
-          {[1,2,3,4,5,6,7].map(i => <div key={i} className="w-1.5 h-1.5 rounded-full bg-[#2ecc71] border border-white translate-y-[-50%]"></div>)}
+  return (
+    <div className="space-y-6 animate-in fade-in duration-500 max-w-[1400px] mx-auto pb-10">
+      {/* HEADER */}
+      <div className="flex flex-col md:flex-row md:items-center justify-between border-b pb-4 gap-4">
+        <div>
+          <h2 className="text-2xl font-bold text-slate-800">Dashboard General CREN</h2>
+          <p className="text-sm text-slate-500">Métricas operativas y contables en tiempo real</p>
+        </div>
+        <div className="flex items-center gap-2 bg-white px-3 py-1.5 rounded-lg shadow-sm border border-slate-200 text-xs font-bold text-[#1a5276]">
+          <svg className="w-4 h-4 text-green-500" fill="currentColor" viewBox="0 0 24 24"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-2 15l-5-5 1.41-1.41L10 14.17l7.59-7.59L19 8l-9 9z"/></svg>
+          Periodo Actual: {currentMonth}
         </div>
       </div>
-      {legend && (
-        <div className="mt-4 flex flex-wrap justify-center gap-2 text-[8px] text-slate-500 font-medium">
-          <div className="flex items-center gap-1"><span className="w-4 h-1.5 bg-[#2ecc71]"></span> Asistió</div>
-          <div className="flex items-center gap-1"><span className="w-4 h-1.5 bg-amber-400"></span> Canceló anticipación</div>
-          <div className="flex items-center gap-1"><span className="w-4 h-1.5 bg-red-500"></span> Canceló sin anticipación</div>
-          <div className="flex items-center gap-1"><span className="w-4 h-1.5 bg-purple-500"></span> Canceló el centro</div>
-          <div className="flex items-center gap-1"><span className="w-4 h-1.5 bg-blue-500"></span> Alta</div>
-          <div className="flex items-center gap-1"><span className="w-4 h-1.5 bg-slate-400"></span> Baja</div>
-        </div>
+
+      {loading ? (
+        <div className="flex justify-center p-12"><div className="animate-spin rounded-full h-10 w-10 border-b-2 border-[#1a5276]"></div></div>
+      ) : (
+        <>
+          {/* TARJETAS DE KPIS PRINCIPALES */}
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-5">
+            {/* KPI 1: INGRESOS */}
+            <div className="bg-white rounded-xl p-5 border border-slate-200 shadow-sm relative overflow-hidden flex flex-col justify-between">
+              <div className="absolute top-0 left-0 right-0 h-1 bg-green-500"></div>
+              <div className="flex justify-between items-start">
+                <div>
+                  <p className="text-[11px] font-bold text-slate-400 uppercase tracking-wide">Ingresos del Mes</p>
+                  <p className="text-2xl font-black text-slate-800 mt-1">
+                    ${finanzas.ingresosBrutos.toLocaleString('es-MX', {minimumFractionDigits: 2})}
+                  </p>
+                </div>
+                <div className="p-2 bg-green-50 text-green-600 rounded-lg">
+                  <svg className="w-6 h-6" fill="currentColor" viewBox="0 0 24 24"><path d="M11.8 10.9c-2.27-.59-3-1.2-3-2.15 0-1.09 1.01-1.85 2.7-1.85 1.78 0 2.44.85 2.5 2.1h2.21c-.07-1.72-1.12-3.3-3.21-3.81V3h-3v2.16c-1.94.42-3.5 1.68-3.5 3.61 0 2.31 1.91 3.46 4.7 4.13 2.5.6 3 1.48 3 2.41 0 .69-.49 1.79-2.7 1.79-2.06 0-2.87-.92-2.98-2.1h-2.2c.12 2.19 1.76 3.42 3.68 3.83V21h3v-2.15c1.95-.37 3.5-1.5 3.5-3.55 0-2.84-2.43-3.81-4.7-4.4z"/></svg>
+                </div>
+              </div>
+              <p className="text-[11px] text-slate-500 mt-3 font-medium">Pagos totales de terapias</p>
+            </div>
+
+            {/* KPI 2: SESIONES ATENDIDAS */}
+            <div className="bg-white rounded-xl p-5 border border-slate-200 shadow-sm relative overflow-hidden flex flex-col justify-between">
+              <div className="absolute top-0 left-0 right-0 h-1 bg-blue-500"></div>
+              <div className="flex justify-between items-start">
+                <div>
+                  <p className="text-[11px] font-bold text-slate-400 uppercase tracking-wide">Sesiones Atendidas</p>
+                  <p className="text-2xl font-black text-slate-800 mt-1">
+                    {asistidasMesCount}
+                  </p>
+                </div>
+                <div className="p-2 bg-blue-50 text-blue-600 rounded-lg">
+                  <svg className="w-6 h-6" fill="currentColor" viewBox="0 0 24 24"><path d="M19 3h-1V1h-2v2H8V1H6v2H5c-1.11 0-1.99.9-1.99 2L3 19c0 1.1.89 2 2 2h14c1.1 0 2-.9 2-2V5c0-1.1-.9-2-2-2zm0 16H5V8h14v11zM7 10h5v5H7z"/></svg>
+                </div>
+              </div>
+              <p className="text-[11px] text-slate-500 mt-3 font-medium">Cancelaciones: {canceladasMesCount}</p>
+            </div>
+
+            {/* KPI 3: PACIENTES ACTIVOS */}
+            <div className="bg-white rounded-xl p-5 border border-slate-200 shadow-sm relative overflow-hidden flex flex-col justify-between">
+              <div className="absolute top-0 left-0 right-0 h-1 bg-indigo-500"></div>
+              <div className="flex justify-between items-start">
+                <div>
+                  <p className="text-[11px] font-bold text-slate-400 uppercase tracking-wide">Pacientes Registrados</p>
+                  <p className="text-2xl font-black text-slate-800 mt-1">
+                    {pacientes.length}
+                  </p>
+                </div>
+                <div className="p-2 bg-indigo-50 text-indigo-600 rounded-lg">
+                  <svg className="w-6 h-6" fill="currentColor" viewBox="0 0 24 24"><path d="M12 12c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm0 2c-2.67 0-8 1.34-8 4v2h16v-2c0-2.66-5.33-4-8-4z"/></svg>
+                </div>
+              </div>
+              <p className="text-[11px] text-slate-500 mt-3 font-medium">En expediente general</p>
+            </div>
+
+            {/* KPI 4: TERAPEUTAS ACTIVOS */}
+            <div className="bg-white rounded-xl p-5 border border-slate-200 shadow-sm relative overflow-hidden flex flex-col justify-between">
+              <div className="absolute top-0 left-0 right-0 h-1 bg-purple-500"></div>
+              <div className="flex justify-between items-start">
+                <div>
+                  <p className="text-[11px] font-bold text-slate-400 uppercase tracking-wide">Terapeutas Activos</p>
+                  <p className="text-2xl font-black text-slate-800 mt-1">
+                    {terapeutas.length}
+                  </p>
+                </div>
+                <div className="p-2 bg-purple-50 text-purple-600 rounded-lg">
+                  <svg className="w-6 h-6" fill="currentColor" viewBox="0 0 24 24"><path d="M16 11c1.66 0 2.99-1.34 2.99-3S17.66 5 16 5c-1.66 0-3 1.34-3 3s1.34 3 3 3zm-8 0c1.66 0 2.99-1.34 2.99-3S9.66 5 8 5C6.34 5 5 6.34 5 8s1.34 3 3 3zm0 2c-2.33 0-7 1.17-7 3.5V19h14v-2.5c0-2.33-4.67-3.5-7-3.5z"/></svg>
+                </div>
+              </div>
+              <p className="text-[11px] text-slate-500 mt-3 font-medium">Especialistas registrados</p>
+            </div>
+          </div>
+
+          {/* GRÁFICAS VISUALES Y RECOMENDADAS */}
+          <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
+            
+            {/* GRÁFICA 1: INGRESOS POR MÉTODO DE PAGO */}
+            <div className="lg:col-span-6 bg-white p-6 rounded-xl border border-slate-200 shadow-sm flex flex-col justify-between">
+              <div>
+                <h3 className="font-bold text-[#1a5276] text-base mb-1 flex items-center gap-2">
+                  <svg className="w-5 h-5 text-green-600" fill="currentColor" viewBox="0 0 24 24"><path d="M21 18v1c0 1.1-.9 2-2 2H5c-1.11 0-2-.9-2-2V5c0-1.1.89-2 2-2h14c1.1 0 2 .9 2 2v1h-9c-1.11 0-2 .9-2 2v8c0 1.1.89 2 2 2h9zm-9-2h10V8H12v8zm4-2.5c-.83 0-1.5-.67-1.5-1.5s.67-1.5 1.5-1.5 1.5.67 1.5 1.5-.67 1.5-1.5 1.5z"/></svg>
+                  Distribución de Ingresos por Método de Pago
+                </h3>
+                <p className="text-xs text-slate-400 mb-5">Porcentaje de recaudación en el mes activo</p>
+
+                <div className="space-y-4">
+                  {Object.keys(pagoMetodosMap).length > 0 ? (
+                    Object.entries(pagoMetodosMap).map(([metodo, monto], idx) => {
+                      const pct = finanzas.ingresosBrutos > 0 ? (monto / finanzas.ingresosBrutos) * 100 : 0;
+                      const colors = ["bg-emerald-500", "bg-blue-500", "bg-indigo-500", "bg-purple-500", "bg-amber-500"];
+                      return (
+                        <div key={metodo} className="space-y-1">
+                          <div className="flex justify-between text-xs font-semibold">
+                            <span className="text-slate-700">{metodo}</span>
+                            <span className="text-slate-900">${monto.toLocaleString('es-MX', {minimumFractionDigits: 2})} ({pct.toFixed(1)}%)</span>
+                          </div>
+                          <div className="w-full bg-slate-100 rounded-full h-3 overflow-hidden">
+                            <div className={`h-full ${colors[idx % colors.length]} rounded-full transition-all duration-500`} style={{ width: `${Math.min(100, Math.max(5, pct))}%` }}></div>
+                          </div>
+                        </div>
+                      );
+                    })
+                  ) : (
+                    <p className="text-xs text-slate-400 py-6 text-center">Sin datos de ingresos en el periodo.</p>
+                  )}
+                </div>
+              </div>
+            </div>
+
+            {/* GRÁFICA 2: DISTRIBUCIÓN POR ÁREA DE TERAPIA */}
+            <div className="lg:col-span-6 bg-white p-6 rounded-xl border border-slate-200 shadow-sm flex flex-col justify-between">
+              <div>
+                <h3 className="font-bold text-[#1a5276] text-base mb-1 flex items-center gap-2">
+                  <svg className="w-5 h-5 text-blue-600" fill="currentColor" viewBox="0 0 24 24"><path d="M19 3H5c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h14c1.1 0 2-.9 2-2V5c0-1.1-.9-2-2-2zm-5 14H7v-2h7v2zm3-4H7v-2h10v2zm0-4H7V7h10v2z"/></svg>
+                  Volumen de Sesiones por Área de Atención
+                </h3>
+                <p className="text-xs text-slate-400 mb-5">Cantidad de citas atendidas por especialidad</p>
+
+                <div className="space-y-4">
+                  {Object.keys(areasMap).length > 0 ? (
+                    Object.entries(areasMap).map(([area, cant], idx) => {
+                      const pct = asistMes.length > 0 ? (cant / asistMes.length) * 100 : 0;
+                      const colors = ["bg-sky-500", "bg-indigo-500", "bg-violet-500", "bg-teal-500", "bg-rose-500"];
+                      return (
+                        <div key={area} className="space-y-1">
+                          <div className="flex justify-between text-xs font-semibold">
+                            <span className="text-slate-700">{area}</span>
+                            <span className="text-slate-900">{cant} sesión(es) ({pct.toFixed(1)}%)</span>
+                          </div>
+                          <div className="w-full bg-slate-100 rounded-full h-3 overflow-hidden">
+                            <div className={`h-full ${colors[idx % colors.length]} rounded-full transition-all duration-500`} style={{ width: `${Math.min(100, Math.max(5, pct))}%` }}></div>
+                          </div>
+                        </div>
+                      );
+                    })
+                  ) : (
+                    <p className="text-xs text-slate-400 py-6 text-center">Sin sesiones registradas en el periodo.</p>
+                  )}
+                </div>
+              </div>
+            </div>
+
+          </div>
+
+          {/* TABLA DE ACTIVIDAD RECIENTE */}
+          <div className="bg-white rounded-xl shadow-sm border border-slate-200 overflow-hidden">
+            <div className="p-4 border-b border-slate-100 bg-slate-50 flex justify-between items-center">
+              <h3 className="font-bold text-slate-800 text-sm flex items-center gap-2">
+                <svg className="w-4 h-4 text-slate-500" fill="currentColor" viewBox="0 0 24 24"><path d="M13 3c-4.97 0-9 4.03-9 9H1l3.89 3.89.07.14L9 12H6c0-3.87 3.13-7 7-7s7 3.13 7 7-3.13 7-7 7c-1.93 0-3.68-.79-4.94-2.06l-1.42 1.42C8.27 19.99 10.51 21 13 21c4.97 0 9-4.03 9-9s-4.03-9-9-9zm-1 5v5l4.28 2.54.72-1.21-3.5-2.08V8H12z"/></svg>
+                Última Actividad de Asistencia y Pagos
+              </h3>
+            </div>
+            <div className="overflow-x-auto">
+              <table className="w-full text-xs text-left">
+                <thead className="bg-slate-100 text-slate-600 font-bold uppercase">
+                  <tr>
+                    <th className="py-2.5 px-4">Fecha</th>
+                    <th className="py-2.5 px-4">Paciente</th>
+                    <th className="py-2.5 px-4">Terapeuta</th>
+                    <th className="py-2.5 px-4">Área</th>
+                    <th className="py-2.5 px-4">Estado</th>
+                    <th className="py-2.5 px-4 text-right">Monto</th>
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-slate-100">
+                  {asistencias.slice(0, 8).map((a, i) => (
+                    <tr key={a.id || i} className="hover:bg-slate-50">
+                      <td className="py-2.5 px-4 font-medium text-slate-600">{a.fecha}</td>
+                      <td className="py-2.5 px-4 font-bold text-[#1a5276]">{a.paciente}</td>
+                      <td className="py-2.5 px-4 text-slate-600">{a.terapeuta}</td>
+                      <td className="py-2.5 px-4 text-slate-600">{a.area}</td>
+                      <td className="py-2.5 px-4">
+                        <span className={`px-2 py-0.5 rounded text-[10px] font-bold ${a.estado === 'Asistio' ? 'bg-green-100 text-green-700' : 'bg-slate-100 text-slate-600'}`}>
+                          {a.estado}
+                        </span>
+                      </td>
+                      <td className="py-2.5 px-4 text-right font-bold text-slate-800">
+                        {a.total || "$0.00"}
+                      </td>
+                    </tr>
+                  ))}
+                  {asistencias.length === 0 && (
+                    <tr>
+                      <td colSpan={6} className="py-6 text-center text-slate-400">Sin actividad registrada.</td>
+                    </tr>
+                  )}
+                </tbody>
+              </table>
+            </div>
+          </div>
+        </>
       )}
     </div>
   );
-
-  const formatMoney = (val: number) => new Intl.NumberFormat('es-MX', { style: 'currency', currency: 'MXN' }).format(val);
-
-  return (
-    <div className="space-y-6 animate-in fade-in duration-500 max-w-[1400px] mx-auto bg-[#f8f9fa] p-4 rounded-xl">
-      
-      {/* SECCIÓN: DASHBOARD (HOY) */}
-      <div className="space-y-4">
-        <div className="flex items-center gap-2 mb-2">
-          <svg className="w-4 h-4 text-[#1a5276]" fill="currentColor" viewBox="0 0 24 24"><path d="M19 3H5c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h14c1.1 0 2-.9 2-2V5c0-1.1-.9-2-2-2zM9 17H7v-7h2v7zm4 0h-2V7h2v10zm4 0h-2v-4h2v4z"/></svg>
-          <h2 className="text-[13px] font-bold text-[#1a5276]">Dashboard</h2>
-        </div>
-        
-        <div className="grid grid-cols-1 md:grid-cols-5 gap-3">
-          <KpiCard title="INGRESOS HOY" value={formatMoney(ingresosHoy)} subtext={`${sesionesHoy} sesiones`} color="bg-[#2ecc71]" />
-          <KpiCard title="CANCELACIONES" value={cancelacionesHoy.toString()} color="bg-[#e74c3c]" />
-          <KpiCard title="SESIONES" value={sesionesHoy.toString()} color="bg-[#3498db]" />
-          <KpiCard title="PENDIENTES" value={pendientesHoy.toString()} color="bg-[#00bcd4]" />
-          <KpiCard title="TOTAL HOY" value={totalHoyCount.toString()} color="bg-[#9b59b6]" />
-        </div>
-
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-          <ChartPlaceholder title="Ingresos por Método (Hoy)" lines={false} />
-          <ChartPlaceholder title="Sesiones por Estado (Hoy)" legend={true} lines={false} />
-        </div>
-      </div>
-
-      {/* SECCIÓN: RESUMEN SEMANAL */}
-      <div className="space-y-4 pt-4 border-t border-slate-200">
-        <div className="flex items-center gap-2 mb-2">
-          <svg className="w-4 h-4 text-[#1a5276]" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" /></svg>
-          <h2 className="text-[13px] font-bold text-[#1a5276]">Resumen Semanal</h2>
-        </div>
-
-        <div className="grid grid-cols-1 md:grid-cols-4 gap-3">
-          <KpiCard title="INGRESOS SEMANA" value={formatMoney(ingresosSemana)} color="bg-[#2ecc71]" />
-          <KpiCard title="SESIONES" value={sesionesSemana.toString()} color="bg-[#3498db]" />
-          <KpiCard title="CANCELACIONES" value={cancelacionesSemana.toString()} color="bg-[#e74c3c]" />
-          <KpiCard title="TERAPEUTAS ACTIVOS" value={terapeutasSemana.toString()} color="bg-[#f1c40f]" />
-        </div>
-
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-          <ChartPlaceholder title="Ingresos por Terapeuta (Semana)" />
-          <ChartPlaceholder title="Ingresos Diarios (Semana)" />
-        </div>
-      </div>
-
-      {/* SECCIÓN: RESUMEN MENSUAL */}
-      <div className="space-y-4 pt-4 border-t border-slate-200">
-        <div className="flex items-center justify-between mb-2">
-          <div className="flex items-center gap-2">
-            <svg className="w-4 h-4 text-[#1a5276]" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" /></svg>
-            <h2 className="text-[13px] font-bold text-[#1a5276]">Resumen Mensual</h2>
-          </div>
-          <div className="bg-white border border-slate-200 rounded px-3 py-1 text-xs text-[#1a5276] font-semibold flex items-center gap-2">
-            Mes Actual
-            <svg className="w-3 h-3" fill="currentColor" viewBox="0 0 24 24"><path d="M7 10l5 5 5-5z"/></svg>
-          </div>
-        </div>
-
-        <div className="grid grid-cols-1 md:grid-cols-5 gap-3">
-          <KpiCard title="INGRESOS BRUTOS" value={formatMoney(ingresosBrutosMes)} color="bg-[#3498db]" />
-          <KpiCard title="IVA HONORARIOS" value={formatMoney(ivaMes)} color="bg-[#f1c40f]" />
-          <KpiCard title="INGRESOS NETOS (UTILIDAD)" value={formatMoney(ingresosNetosMes)} color="bg-[#2ecc71]" />
-          <KpiCard title="SESIONES MES" value={sesionesMes.toString()} color="bg-[#9b59b6]" />
-          <KpiCard title="VALORACIONES" value={valoracionesMes.toString()} color="bg-[#3498db]" />
-        </div>
-
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-          <ChartPlaceholder title="Ingresos por Servicio" />
-          <ChartPlaceholder title="Ingresos por Terapeuta" />
-        </div>
-      </div>
-
-      {/* SECCIÓN: INGRESOS POR MÉTODO */}
-      <div className="space-y-4 pt-4 border-t border-slate-200">
-        <div className="flex items-center gap-2 mb-2">
-          <svg className="w-4 h-4 text-[#f1c40f]" fill="currentColor" viewBox="0 0 24 24"><path d="M21 18v1c0 1.1-.9 2-2 2H5c-1.11 0-2-.9-2-2V5c0-1.1.89-2 2-2h14c1.1 0 2 .9 2 2v1h-9c-1.11 0-2 .9-2 2v8c0 1.1.89 2 2 2h9zm-9-2h10V8H12v8zm4-2.5c-.83 0-1.5-.67-1.5-1.5s.67-1.5 1.5-1.5 1.5.67 1.5 1.5-.67 1.5-1.5 1.5z"/></svg>
-          <h2 className="text-[13px] font-bold text-[#1a5276]">Ingresos por Método de Pago (Mes)</h2>
-        </div>
-
-        <div className="bg-white rounded-lg shadow-sm border border-slate-200 overflow-hidden">
-          <table className="w-full text-left text-[9px] uppercase">
-            <thead className="bg-[#0e2f44] text-white font-semibold">
-              <tr>
-                <th className="px-4 py-3">MÉTODO DE PAGO</th>
-                <th className="px-4 py-3">SESIONES</th>
-                <th className="px-4 py-3">MONTO RECIBIDO</th>
-                <th className="px-4 py-3">MONTO ESPERADO</th>
-                <th className="px-4 py-3">EFECTIVIDAD</th>
-              </tr>
-            </thead>
-            <tbody className="divide-y divide-slate-100">
-              {metodosList.length > 0 ? metodosList.map((m: any, idx) => (
-                <tr key={idx} className="hover:bg-slate-50">
-                  <td className="px-4 py-3 font-bold text-[#1a5276]">{m.metodo}</td>
-                  <td className="px-4 py-3 text-slate-500 font-medium">{m.sesiones}</td>
-                  <td className="px-4 py-3 font-bold text-[#27ae60]">{formatMoney(m.recibido)}</td>
-                  <td className="px-4 py-3 font-bold text-slate-600">{formatMoney(m.esperado)}</td>
-                  <td className="px-4 py-3">
-                    <div className="w-full bg-slate-200 rounded-full h-1.5 mt-1">
-                      <div className="bg-[#2ecc71] h-1.5 rounded-full" style={{ width: `${m.esperado > 0 ? (m.recibido / m.esperado) * 100 : 0}%` }}></div>
-                    </div>
-                    <span className="text-[10px] text-slate-500 font-bold mt-1 inline-block">
-                      {m.esperado > 0 ? Math.round((m.recibido / m.esperado) * 100) : 0}%
-                    </span>
-                  </td>
-                </tr>
-              )) : (
-                <tr>
-                  <td colSpan={5} className="px-4 py-6 text-center text-slate-400 font-medium">No hay datos disponibles para este mes.</td>
-                </tr>
-              )}
-            </tbody>
-          </table>
-        </div>
-      </div>
-
-      {/* SECCIÓN: REGISTRO DE NUEVOS PACIENTES */}
-      <div className="space-y-4 pt-4 border-t border-slate-200">
-        <div className="flex items-center justify-between mb-2">
-          <div className="flex items-center gap-2">
-            <svg className="w-4 h-4 text-[#1a5276]" fill="currentColor" viewBox="0 0 24 24"><path d="M16 11c1.66 0 2.99-1.34 2.99-3S17.66 5 16 5c-1.66 0-3 1.34-3 3s1.34 3 3 3zm-8 0c1.66 0 2.99-1.34 2.99-3S9.66 5 8 5C6.34 5 5 6.34 5 8s1.34 3 3 3zm0 2c-2.33 0-7 1.17-7 3.5V19h14v-2.5c0-2.33-4.67-3.5-7-3.5zm8 0c-.29 0-.62.02-.97.05 1.16.84 1.97 1.97 1.97 3.45V19h6v-2.5c0-2.33-4.67-3.5-7-3.5z"/></svg>
-            <h2 className="text-[13px] font-bold text-[#1a5276]">Registro de Nuevos Pacientes</h2>
-          </div>
-          <div className="bg-white border border-slate-200 rounded px-3 py-1 text-xs text-[#1a5276] font-semibold flex items-center gap-2">
-            julio de 2026
-            <svg className="w-3 h-3" fill="currentColor" viewBox="0 0 24 24"><path d="M7 10l5 5 5-5z"/></svg>
-          </div>
-        </div>
-
-        <div className="grid grid-cols-1 md:grid-cols-4 gap-3">
-          <KpiCard title="NUEVOS HOY" value={pHoy.toString()} subtext="Ninguno" color="bg-[#3498db]" />
-          
-          <div className="bg-white rounded p-4 border border-slate-200 shadow-sm relative overflow-hidden flex flex-col justify-between">
-            <div className="absolute top-0 left-0 right-0 h-1 bg-[#9b59b6]"></div>
-            <div>
-              <p className="text-[9px] font-bold text-slate-500 uppercase tracking-wide mb-1">NUEVOS ESTA SEMANA</p>
-              <p className="text-xl font-extrabold text-[#0e2f44]">{pSemana}</p>
-              <p className="text-[9px] text-slate-400 mt-1">Ninguno</p>
-            </div>
-            <select className="mt-2 w-full text-[9px] border border-slate-200 rounded px-2 py-1 outline-none text-slate-900">
-              <option>Ninguno</option>
-            </select>
-          </div>
-
-          <div className="bg-white rounded p-4 border border-slate-200 shadow-sm relative overflow-hidden flex flex-col justify-between">
-            <div className="absolute top-0 left-0 right-0 h-1 bg-[#2ecc71]"></div>
-            <div>
-              <p className="text-[9px] font-bold text-slate-500 uppercase tracking-wide mb-1">NUEVOS ESTE MES</p>
-              <p className="text-xl font-extrabold text-[#0e2f44]">{pMes}</p>
-              <p className="text-[9px] text-slate-400 mt-1">Ninguno</p>
-            </div>
-            <select className="mt-2 w-full text-[9px] border border-slate-200 rounded px-2 py-1 outline-none text-slate-900">
-              <option>Ninguno</option>
-            </select>
-          </div>
-
-          <KpiCard title="TOTAL PACIENTES ÚNICOS" value={pTotal.toString()} subtext="Todos los terapeutas" color="bg-[#1abc9c]" />
-        </div>
-      </div>
-
-    </div>
-  );
 }
-
