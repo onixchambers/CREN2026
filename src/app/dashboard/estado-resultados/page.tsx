@@ -2,11 +2,22 @@
 
 import { useState, useEffect } from "react";
 import { getFinanzasMensuales, addGastoOperativo, removeGastoOperativo } from "@/app/actions/finanzas";
+import { DateInput } from "@/components/DateInput";
 
 export default function EstadoResultadosPage() {
   const currentMonth = new Date().toISOString().slice(0, 7); // YYYY-MM
   const [mesActual, setMesActual] = useState(currentMonth);
   
+  const getFirstDayOfMonth = () => {
+    const d = new Date();
+    d.setDate(1);
+    return d.toISOString().split("T")[0];
+  };
+  const hoyStr = new Date().toISOString().split("T")[0];
+
+  const [fechaDesde, setFechaDesde] = useState(getFirstDayOfMonth());
+  const [fechaHasta, setFechaHasta] = useState(hoyStr);
+
   const [datos, setDatos] = useState({
     ingresosBrutos: 0,
     nomina: 0,
@@ -24,7 +35,7 @@ export default function EstadoResultadosPage() {
 
   const fetchDatos = async () => {
     setLoading(true);
-    const res = await getFinanzasMensuales(mesActual);
+    const res = await getFinanzasMensuales(mesActual, fechaDesde, fechaHasta);
     if (res.success && res.data) {
       setDatos(res.data);
     }
@@ -33,7 +44,7 @@ export default function EstadoResultadosPage() {
 
   useEffect(() => {
     fetchDatos();
-  }, [mesActual]);
+  }, [mesActual, fechaDesde, fechaHasta]);
 
   const handleAddGasto = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -57,16 +68,41 @@ export default function EstadoResultadosPage() {
       <div className="flex flex-col md:flex-row md:items-center justify-between border-b pb-4 gap-4">
         <div>
           <h2 className="text-2xl font-bold text-slate-800">Estado de Resultados y Finanzas</h2>
-          <p className="text-sm text-slate-500">Reporte mensual contable y operativo del CREN</p>
+          <p className="text-sm text-slate-500">Reporte contable y financiero del CREN por rango de fechas</p>
         </div>
-        <div className="flex items-center gap-2 bg-white p-2 rounded-lg shadow-sm border border-slate-200">
-          <label className="text-sm font-bold text-slate-500 uppercase">Mes de Consulta:</label>
-          <input 
-            type="month" 
-            value={mesActual}
-            onChange={(e) => setMesActual(e.target.value)}
-            className="border border-slate-300 rounded px-3 py-1.5 text-sm font-semibold outline-none focus:border-[#2980b9] text-[#1a5276]"
-          />
+        <div className="flex flex-wrap items-center gap-3 bg-white p-2.5 rounded-lg shadow-sm border border-slate-200">
+          <div className="flex items-center gap-2">
+            <label className="text-xs font-bold text-slate-500 uppercase">Mes:</label>
+            <input 
+              type="month" 
+              value={mesActual}
+              onChange={(e) => {
+                setMesActual(e.target.value);
+                const [y, m] = e.target.value.split("-");
+                setFechaDesde(`${y}-${m}-01`);
+                const lastDay = new Date(parseInt(y), parseInt(m), 0).getDate();
+                setFechaHasta(`${y}-${m}-${lastDay.toString().padStart(2, '0')}`);
+              }}
+              className="border border-slate-300 rounded px-2.5 py-1 text-xs font-semibold outline-none focus:border-[#2980b9] text-[#1a5276]"
+            />
+          </div>
+          <div className="h-4 w-px bg-slate-200 hidden md:block"></div>
+          <div className="flex items-center gap-1.5">
+            <label className="text-xs font-bold text-slate-500 uppercase">Desde:</label>
+            <DateInput 
+              value={fechaDesde} 
+              onChange={(e) => setFechaDesde(e.target.value)}
+              className="border border-slate-300 rounded px-2 py-1 text-xs font-semibold outline-none focus:border-[#2980b9] text-[#1a5276]"
+            />
+          </div>
+          <div className="flex items-center gap-1.5">
+            <label className="text-xs font-bold text-slate-500 uppercase">Hasta:</label>
+            <DateInput 
+              value={fechaHasta} 
+              onChange={(e) => setFechaHasta(e.target.value)}
+              className="border border-slate-300 rounded px-2 py-1 text-xs font-semibold outline-none focus:border-[#2980b9] text-[#1a5276]"
+            />
+          </div>
         </div>
       </div>
 
@@ -80,31 +116,31 @@ export default function EstadoResultadosPage() {
             <div className="bg-white rounded-xl shadow-sm border border-slate-200 p-6">
               <h3 className="text-lg font-black text-[#1a5276] mb-6 flex items-center gap-2">
                 <svg className="w-5 h-5 text-green-600" fill="currentColor" viewBox="0 0 24 24"><path d="M11.8 10.9c-2.27-.59-3-1.2-3-2.15 0-1.09 1.01-1.85 2.7-1.85 1.78 0 2.44.85 2.5 2.1h2.21c-.07-1.72-1.12-3.3-3.21-3.81V3h-3v2.16c-1.94.42-3.5 1.68-3.5 3.61 0 2.31 1.91 3.46 4.7 4.13 2.5.6 3 1.48 3 2.41 0 .69-.49 1.79-2.7 1.79-2.06 0-2.87-.92-2.98-2.1h-2.2c.12 2.19 1.76 3.42 3.68 3.83V21h3v-2.15c1.95-.37 3.5-1.5 3.5-3.55 0-2.84-2.43-3.81-4.7-4.4z"/></svg>
-                Balance General ({mesActual})
+                Estado de Cuenta CREN ({fechaDesde} a {fechaHasta})
               </h3>
               
               <table className="w-full text-left text-sm border-collapse">
                 <tbody>
                   {/* Ingresos */}
                   <tr className="bg-green-50/50">
-                    <td className="p-3 font-bold text-slate-500 uppercase text-xs tracking-wider" colSpan={2}>1. INGRESOS</td>
+                    <td className="p-3 font-bold text-slate-500 uppercase text-xs tracking-wider" colSpan={2}>1. INGRESOS TOTALES</td>
                   </tr>
                   <tr className="border-b border-slate-100">
-                    <td className="p-3 pl-6 font-semibold text-slate-700">Ingreso Bruto Terapias</td>
+                    <td className="p-3 pl-6 font-semibold text-slate-700">Pagos de Terapias Registrados</td>
                     <td className="p-3 text-right font-bold text-green-700">${datos.ingresosBrutos.toLocaleString('en-US', {minimumFractionDigits: 2})}</td>
                   </tr>
                   <tr><td colSpan={2} className="h-4"></td></tr>
 
                   {/* Egresos */}
                   <tr className="bg-red-50/50">
-                    <td className="p-3 font-bold text-slate-500 uppercase text-xs tracking-wider" colSpan={2}>2. EGRESOS</td>
+                    <td className="p-3 font-bold text-slate-500 uppercase text-xs tracking-wider" colSpan={2}>2. GASTOS TOTALES</td>
                   </tr>
                   <tr className="border-b border-slate-100">
-                    <td className="p-3 pl-6 text-slate-600">Honorarios Terapeutas</td>
+                    <td className="p-3 pl-6 text-slate-600">Honorarios Terapeutas (Comisiones/Pagos)</td>
                     <td className="p-3 text-right text-red-600 font-medium">-${datos.nomina.toLocaleString('en-US', {minimumFractionDigits: 2})}</td>
                   </tr>
                   <tr className="border-b border-slate-100">
-                    <td className="p-3 pl-6 text-slate-600">Gastos Operativos (Fijos)</td>
+                    <td className="p-3 pl-6 text-slate-600">Gastos Operativos (Configuración)</td>
                     <td className="p-3 text-right text-red-600 font-medium">-${datos.gastosOperativos.toLocaleString('en-US', {minimumFractionDigits: 2})}</td>
                   </tr>
                   <tr><td colSpan={2} className="h-4"></td></tr>
@@ -119,9 +155,9 @@ export default function EstadoResultadosPage() {
                   </tr>
                   <tr><td colSpan={2} className="h-6"></td></tr>
 
-                  {/* Utilidad */}
-                  <tr className="bg-[#1a5276] text-white rounded-lg overflow-hidden">
-                    <td className="p-4 font-bold text-lg rounded-l-lg">UTILIDAD NETA CREN</td>
+                  {/* Cuadro Azul: Balance Actual */}
+                  <tr className="bg-[#1a5276] text-white rounded-lg overflow-hidden shadow-md">
+                    <td className="p-4 font-bold text-base rounded-l-lg">BALANCE ACTUAL CREN</td>
                     <td className="p-4 text-right font-black text-xl rounded-r-lg">${datos.utilidadNeta.toLocaleString('en-US', {minimumFractionDigits: 2})}</td>
                   </tr>
                 </tbody>

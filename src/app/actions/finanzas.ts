@@ -2,9 +2,9 @@
 
 import { prisma } from "@/lib/prisma";
 
-export async function getFinanzasMensuales(month: string) {
+export async function getFinanzasMensuales(month: string, fechaDesde?: string, fechaHasta?: string) {
   try {
-    // 1. Obtener todas las sesiones del mes (Agenda)
+    // 1. Obtener todas las sesiones de la base de datos
     const sessions = await prisma.session.findMany({
       include: {
         patient: true,
@@ -12,17 +12,21 @@ export async function getFinanzasMensuales(month: string) {
       }
     });
 
-    // Filtrar sesiones por mes y pagadas
+    // Filtrar sesiones por rango de fechas o mes de consulta
     const monthSessions = sessions.filter(s => {
       let extra: any = {};
       try {
         if (s.notes) extra = JSON.parse(s.notes);
       } catch (e) {}
 
-      // Extraer mes de la fecha guardada en notes, o usar s.date
       const sessionDateStr = extra.fecha || s.date.toISOString().split("T")[0];
+
+      if (fechaDesde && fechaHasta) {
+        return sessionDateStr >= fechaDesde && sessionDateStr <= fechaHasta && (extra.pagado === true || extra.asistenciaGuardada === true);
+      }
+
       const sessionMonth = sessionDateStr.substring(0, 7); // YYYY-MM
-      return sessionMonth === month && extra.pagado === true;
+      return sessionMonth === month && (extra.pagado === true || extra.asistenciaGuardada === true);
     });
 
     let ingresosBrutos = 0;
@@ -32,14 +36,18 @@ export async function getFinanzasMensuales(month: string) {
     
     // 1. Ingresos y Nómina
     monthSessions.forEach(s => {
-      const precioTotalStr = s.patient.precioTerapia || "0";
-      let precioTotal = parseFloat(precioTotalStr);
-      if (isNaN(precioTotal)) precioTotal = 0;
+      let extra: any = {};
+      try {
+        if (s.notes) extra = JSON.parse(s.notes);
+      } catch (e) {}
+
+      const montoPaid = parseFloat(extra.montoPago || extra.costoSesion || extra.total || s.patient?.precioTerapia || "0");
+      const precioTotal = isNaN(montoPaid) ? 0 : montoPaid;
 
       ingresosBrutos += precioTotal;
 
       const tId = s.therapistId;
-      if (!terapeutasMap.has(tId)) {
+      if (tId && !terapeutasMap.has(tId)) {
         terapeutasMap.set(tId, {
           id: tId,
           nombre: s.therapist?.name || "Desconocido",
@@ -54,23 +62,20 @@ export async function getFinanzasMensuales(month: string) {
         });
       }
 
-      const tData = terapeutasMap.get(tId);
-      tData.sesiones += 1;
-      tData.ingresoGenerado += precioTotal;
-      
-      // Calcular pago (porcentaje sobre TOTAL, como pidió el cliente)
-      if (tData.tipoPago === "Porcentaje") {
-        let comisionBruta = precioTotal * ((tData.porcentaje || 0) / 100);
-        // Si retiene IVA, restarle a su honorario
-        if (tData.retieneIVA) {
-          // IVA inclusivo matemático de la comisión: Base = Comision / 1.16, IVA = Comision - Base
-          // Si dice "Descontar IVA (16%) de su honorario", restamos el 16% o sacamos el inclusivo?
-          // "Para calcular el pago a las terapeutas que cobran por Porcentaje, sobre el pago total del paciente"
-          // "Alguna terapeutas, debe haber una opcion que se coloque un chanco para que aplique el cobro del IVA"
-          const baseComision = comisionBruta / 1.16;
-          tData.pago += baseComision; // Le pagamos el subtotal (quitando IVA)
-        } else {
-          tData.pago += comisionBruta;
+      if (tId) {
+        const tData = terapeutasMap.get(tId);
+        tData.sesiones += 1;
+        tData.ingresoGenerado += precioTotal;
+        
+        // Calcular pago (porcentaje sobre el pago del paciente registrado en Honorarios)
+        if (tData.tipoPago === "Porcentaje") {
+          let comisionBruta = precioTotal * ((tData.porcentaje || 0) / 100);
+          if (tData.retieneIVA) {
+            const baseComision = comisionBruta / 1.16;
+            tData.pago += baseComision;
+          } else {
+            tData.pago += comisionBruta;
+          }
         }
       }
     });
