@@ -45,8 +45,18 @@ export async function getFinanzasMensuales(month: string, fechaDesde?: string, f
         if (s.notes) extra = JSON.parse(s.notes);
       } catch (e) {}
 
-      const montoPaid = parseFloat(extra.montoPago || extra.costoSesion || extra.total || s.patient?.precioTerapia || "0");
+      const montoPaid = parseFloat(extra.total || extra.montoPago || extra.costoSesion || s.patient?.precioTerapia || "0");
       const precioTotal = isNaN(montoPaid) ? 0 : montoPaid;
+
+      // Check if factura was requested in the attendance session
+      const hasFactura = extra.solicitaFactura === true || extra.solicitaFactura === "Sí" || extra.solicitaFactura === "SI" || extra.factura === "Sí" || extra.fact === "Sí";
+
+      let sessionIva = 0;
+      if (extra.iva !== undefined && extra.iva !== null && extra.iva !== "" && extra.iva !== 0) {
+        sessionIva = typeof extra.iva === 'string' ? parseFloat(extra.iva.replace("$", "").replace(",", "")) : Number(extra.iva);
+      } else if (hasFactura) {
+        sessionIva = precioTotal * ivaDec;
+      }
 
       ingresosBrutos += precioTotal;
 
@@ -63,7 +73,8 @@ export async function getFinanzasMensuales(month: string, fechaDesde?: string, f
           porcentaje: s.therapist?.porcentaje || 0,
           salarioBase: s.therapist?.salarioBase || 0,
           retieneIVA: s.therapist?.retieneIVA || false,
-          ivaRetenido: 0
+          ivaRetenido: 0,
+          tieneFacturasEnPeriodo: false
         });
       }
 
@@ -71,13 +82,18 @@ export async function getFinanzasMensuales(month: string, fechaDesde?: string, f
         const tData = terapeutasMap.get(tId);
         tData.sesiones += 1;
         tData.ingresoGenerado += precioTotal;
-        
-        // Calcular pago (porcentaje sobre el pago registrado del paciente)
+
+        if (hasFactura || sessionIva > 0) {
+          tData.tieneFacturasEnPeriodo = true;
+          tData.ivaRetenido += sessionIva;
+        }
+
+        // Calcular pago
         if (tData.tipoPago === "Porcentaje") {
           let comisionBruta = precioTotal * ((tData.porcentaje || 0) / 100);
           tData.pago += comisionBruta;
-          if (tData.retieneIVA) {
-            tData.ivaRetenido = (tData.ivaRetenido || 0) + (comisionBruta * ivaDec);
+          if (tData.retieneIVA && !hasFactura && sessionIva === 0) {
+            tData.ivaRetenido += (comisionBruta * ivaDec);
           }
         }
       }

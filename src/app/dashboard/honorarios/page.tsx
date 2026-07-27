@@ -151,7 +151,8 @@ export default function HonorariosPage() {
                   const sesionesCount = finData.sesiones || 0;
                   const ingresoGenerado = finData.ingresoGenerado || 0;
                   const pagoNeto = finData.pago || (t.tipoPago === "Salario Base" ? (t.salarioBase || 0) : 0);
-                  const ivaRetenido = finData.retieneIVA ? (finData.ivaRetenido || (pagoNeto * 0.16)) : 0;
+                  const ivaRetenido = finData.ivaRetenido !== undefined ? finData.ivaRetenido : (t.retieneIVA ? (pagoNeto * 0.16) : 0);
+                  const tieneIVA = t.retieneIVA || finData.tieneFacturasEnPeriodo || ivaRetenido > 0;
 
                   return (
                     <tr key={i} className="hover:bg-slate-50 transition-colors text-slate-800">
@@ -174,9 +175,9 @@ export default function HonorariosPage() {
                       </td>
                       <td className="p-4 text-xs">
                         {t.tipoPago === "Porcentaje" ? (
-                          t.retieneIVA ? (
+                          tieneIVA ? (
                             <span className="px-2 py-0.5 bg-amber-100 text-amber-800 rounded font-bold">
-                              Descontar IVA (16%)
+                              Con IVA
                             </span>
                           ) : (
                             <span className="px-2 py-0.5 bg-slate-100 text-slate-500 rounded font-medium">
