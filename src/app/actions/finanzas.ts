@@ -67,14 +67,12 @@ export async function getFinanzasMensuales(month: string, fechaDesde?: string, f
         tData.sesiones += 1;
         tData.ingresoGenerado += precioTotal;
         
-        // Calcular pago (porcentaje sobre el pago del paciente registrado en Honorarios)
+        // Calcular pago (porcentaje sobre el pago registrado del paciente)
         if (tData.tipoPago === "Porcentaje") {
           let comisionBruta = precioTotal * ((tData.porcentaje || 0) / 100);
+          tData.pago += comisionBruta;
           if (tData.retieneIVA) {
-            const baseComision = comisionBruta / 1.16;
-            tData.pago += baseComision;
-          } else {
-            tData.pago += comisionBruta;
+            tData.ivaRetenido = (tData.ivaRetenido || 0) + (comisionBruta * 0.16);
           }
         }
       }
@@ -94,12 +92,13 @@ export async function getFinanzasMensuales(month: string, fechaDesde?: string, f
             tipoPago: t.tipoPago,
             porcentaje: t.porcentaje,
             salarioBase: t.salarioBase,
-            retieneIVA: t.retieneIVA
+            retieneIVA: t.retieneIVA,
+            ivaRetenido: 0
           });
         } else {
           if (t.tipoPago === "Salario Base") {
             const tData = terapeutasMap.get(t.id);
-            tData.pago = t.salarioBase || 0; // Salario base fijo, independiente de sesiones
+            tData.pago = t.salarioBase || 0; // Salario base fijo
           }
         }
     });
@@ -114,26 +113,18 @@ export async function getFinanzasMensuales(month: string, fechaDesde?: string, f
     const gastos = gastosData;
     const totalGastosOperativos = gastos.reduce((acc, g) => acc + g.amount, 0);
 
-    // 3. Cálculos Finales
-    // Según la regla matemática: Base = Precio / 1.16. IVA = Precio - Base.
-    // Solo se cobra IVA si la terapia lo causa. Asumiremos que el IVA aplica a los ingresos
-    // generados por terapeutas que tienen "retieneIVA" = true.
+    // 3. Cálculos Finales:
+    // Regla exacta del usuario: Si sesión cuesta 400 y comision 50%: Terapeuta recibe 200, IVA retenido por CREN es 32 (16% de 200), Utilidad CREN = 400 - 200 - 32 = 168.
     let ivaTotal = 0;
     terapeutasData.forEach(t => {
       if (t.retieneIVA) {
-        // Ingreso generado por este terapeuta ya incluye el IVA
-        const ingresoGenerado = t.ingresoGenerado;
-        const subtotal = ingresoGenerado / 1.16;
-        ivaTotal += (ingresoGenerado - subtotal);
+        ivaTotal += (t.ivaRetenido || (t.pago * 0.16));
       }
     });
 
-    // El Subtotal real para la clínica (descontando el IVA cobrado y guardado para pagar al SAT)
-    const ingresosSubtotal = ingresosBrutos - ivaTotal;
-
-    const utilidadBruta = ingresosSubtotal - totalNomina;
-    const utilidadNeta = utilidadBruta - totalGastosOperativos;
-    const margenUtilidad = ingresosSubtotal > 0 ? (utilidadNeta / ingresosSubtotal) * 100 : 0;
+    const utilidadNeta = ingresosBrutos - totalNomina - ivaTotal - totalGastosOperativos;
+    const utilidadBruta = ingresosBrutos - totalNomina;
+    const margenUtilidad = ingresosBrutos > 0 ? (utilidadNeta / ingresosBrutos) * 100 : 0;
 
     return {
       success: true,
