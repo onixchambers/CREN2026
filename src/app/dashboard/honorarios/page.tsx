@@ -215,6 +215,37 @@ export default function HonorariosPage() {
                   </tr>
                 )}
               </tbody>
+              {terapeutas.length > 0 && (
+                <tfoot className="bg-slate-900 text-white font-bold text-sm">
+                  <tr className="border-t-2 border-slate-700">
+                    <td colSpan={3} className="p-4 uppercase tracking-wider text-xs text-slate-300 font-black">
+                      TOTALES GENERALES
+                    </td>
+                    <td className="p-4 text-center font-black text-base text-blue-300">
+                      {terapeutas.reduce((acc, t) => acc + (finanzasMap.get(t.id)?.sesiones || 0), 0)}
+                    </td>
+                    <td className="p-4 text-right font-black text-base text-green-400">
+                      ${terapeutas.reduce((acc, t) => acc + (finanzasMap.get(t.id)?.ingresoGenerado || 0), 0).toLocaleString('es-MX', {minimumFractionDigits: 2})}
+                    </td>
+                    <td className="p-4 text-right font-black text-base text-amber-400">
+                      ${terapeutas.reduce((acc, t) => {
+                        const finData = finanzasMap.get(t.id) || {};
+                        const pagoNeto = finData.pago || (t.tipoPago === "Salario Base" ? (t.salarioBase || 0) : 0);
+                        const ivaRet = finData.ivaRetenido !== undefined ? finData.ivaRetenido : (t.retieneIVA ? (pagoNeto * 0.16) : 0);
+                        return acc + ivaRet;
+                      }, 0).toLocaleString('es-MX', {minimumFractionDigits: 2})}
+                    </td>
+                    <td className="p-4 text-right font-black text-lg text-white">
+                      ${terapeutas.reduce((acc, t) => {
+                        const finData = finanzasMap.get(t.id) || {};
+                        const pagoNeto = finData.pago || (t.tipoPago === "Salario Base" ? (t.salarioBase || 0) : 0);
+                        return acc + pagoNeto;
+                      }, 0).toLocaleString('es-MX', {minimumFractionDigits: 2})}
+                    </td>
+                    <td className="p-4"></td>
+                  </tr>
+                </tfoot>
+              )}
             </table>
           </div>
         </div>
