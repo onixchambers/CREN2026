@@ -45,6 +45,9 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
       ];
       return allowedPaths.includes(tab.path);
     }
+    if (roleUpper === "INVITADO") {
+      return tab.path !== "/dashboard/configuracion";
+    }
     return true;
   });
 
@@ -66,7 +69,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
           </div>
           <div className="flex items-center gap-4">
             <div className="hidden md:flex items-center gap-2 px-4 py-1.5 bg-white/10 rounded-full backdrop-blur-md text-sm">
-              <span className={`px-2 py-0.5 rounded text-xs font-semibold uppercase ${userRole.toUpperCase() === 'ADMIN' ? 'bg-red-500/80' : userRole.toUpperCase() === 'CONTADOR' ? 'bg-amber-500/80' : 'bg-green-500/80'}`}>
+              <span className={`px-2 py-0.5 rounded text-xs font-semibold uppercase ${userRole.toUpperCase() === 'ADMIN' ? 'bg-red-500/80' : userRole.toUpperCase() === 'CONTADOR' ? 'bg-amber-500/80' : userRole.toUpperCase() === 'INVITADO' ? 'bg-blue-500/80' : 'bg-green-500/80'}`}>
                 {userRole}
               </span>
               <span>{userName}</span>
