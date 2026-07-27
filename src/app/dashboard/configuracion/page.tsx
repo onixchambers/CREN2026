@@ -32,6 +32,7 @@ export default function ConfiguracionPage() {
   const [googleDriveClientEmail, setGoogleDriveClientEmail] = useState("");
   const [googleDrivePrivateKey, setGoogleDrivePrivateKey] = useState("");
   const [googleDriveFolderId, setGoogleDriveFolderId] = useState("");
+  const [timezone, setTimezone] = useState("America/Mexico_City");
 
   const [showResendKey, setShowResendKey] = useState(false);
   const [showWaKey, setShowWaKey] = useState(false);
@@ -76,6 +77,7 @@ export default function ConfiguracionPage() {
         setGoogleDriveClientEmail(res.settings?.googleDriveClientEmail || "");
         setGoogleDrivePrivateKey(res.settings?.googleDrivePrivateKey || "");
         setGoogleDriveFolderId(res.settings?.googleDriveFolderId || "");
+        setTimezone(res.settings?.timezone || "America/Mexico_City");
         
         const exps = res.expenses || [];
         let items: any[] = [];
@@ -121,6 +123,7 @@ export default function ConfiguracionPage() {
         googleDriveClientEmail,
         googleDrivePrivateKey,
         googleDriveFolderId,
+        timezone,
         month,
         expenses: allExpenses
       } as any);
@@ -289,7 +292,32 @@ export default function ConfiguracionPage() {
             </label>
           </div>
 
-          <div className="pt-3 border-t border-slate-100 flex flex-col sm:flex-row sm:items-center justify-between gap-3 max-w-lg bg-amber-50/70 p-4 rounded-xl border border-amber-200">
+          <div className="pt-3 border-t border-slate-100 flex flex-col sm:flex-row sm:items-center justify-between gap-3 bg-blue-50/70 p-4 rounded-xl border border-blue-200">
+            <div>
+              <label className="block text-xs font-black text-blue-900 uppercase tracking-wide">🕒 Zona Horaria del Sistema (Uso Horario)</label>
+              <p className="text-[11px] text-blue-800 mt-0.5">Se utilizará para registrar con exactitud los check-in y check-out de Horarios y las fechas de la clínica.</p>
+            </div>
+            <div className="flex items-center gap-1.5 flex-shrink-0">
+              <select 
+                value={timezone}
+                onChange={(e) => setTimezone(e.target.value)}
+                className="p-2 border border-blue-300 rounded-lg font-bold text-xs text-slate-900 bg-white outline-none focus:border-blue-600 shadow-sm"
+              >
+                <option value="America/Mexico_City">🇲🇽 Ciudad de México (UTC-6) [Por Defecto]</option>
+                <option value="America/Cancun">🇲🇽 Cancún / Quintana Roo (UTC-5)</option>
+                <option value="America/Tijuana">🇲🇽 Tijuana / Baja California (UTC-8)</option>
+                <option value="America/Monterrey">🇲🇽 Monterrey (UTC-6)</option>
+                <option value="America/Bogota">🇨🇴 Bogotá / Lima / Quito (UTC-5)</option>
+                <option value="America/Argentina/Buenos_Aires">🇦🇷 Buenos Aires (UTC-3)</option>
+                <option value="America/Santiago">🇨🇱 Santiago (UTC-4 / UTC-3)</option>
+                <option value="America/New_York">🇺🇸 New York / Este (UTC-5)</option>
+                <option value="Europe/Madrid">🇪🇸 Madrid (UTC+1)</option>
+                <option value="UTC">🌐 UTC (Tiempo Universal)</option>
+              </select>
+            </div>
+          </div>
+
+          <div className="pt-3 border-t border-slate-100 flex flex-col sm:flex-row sm:items-center justify-between gap-3 bg-amber-50/70 p-4 rounded-xl border border-amber-200">
             <div>
               <label className="block text-xs font-black text-amber-900 uppercase tracking-wide">🏷️ Porcentaje de IVA del Sistema (%)</label>
               <p className="text-[11px] text-amber-800 mt-0.5">Se aplicará globalmente a todas las asistencias, retención de honorarios y reportes de la clínica.</p>

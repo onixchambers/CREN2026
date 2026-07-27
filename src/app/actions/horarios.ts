@@ -2,11 +2,21 @@
 
 import { prisma } from "@/lib/prisma";
 
+async function getNowInTimezone() {
+  const settings = await prisma.systemSettings.findUnique({ where: { id: 1 } });
+  const tz = settings?.timezone || "America/Mexico_City";
+  const now = new Date();
+  
+  const fecha = now.toLocaleDateString("en-CA", { timeZone: tz });
+  const hora = now.toLocaleTimeString("en-GB", { timeZone: tz, hour12: false });
+  return { fecha, hora, tz };
+}
+
 export async function registrarEntrada(terapeuta: string) {
   try {
-    const hoy = new Date().toLocaleDateString("en-CA");
+    const { fecha: hoy, hora: horaActual } = await getNowInTimezone();
     
-    // First, check if there's already an entry without an exit for today
+    // Check if there's already an entry without an exit for today
     const existente = await prisma.horario.findFirst({
       where: {
         terapeuta: terapeuta,
@@ -23,7 +33,7 @@ export async function registrarEntrada(terapeuta: string) {
       data: {
         terapeuta: terapeuta,
         fecha: hoy,
-        horaEntrada: new Date().toLocaleTimeString('en-US', { hour12: false })
+        horaEntrada: horaActual
       }
     });
 
@@ -36,7 +46,7 @@ export async function registrarEntrada(terapeuta: string) {
 
 export async function registrarSalida(terapeuta: string) {
   try {
-    const hoy = new Date().toLocaleDateString("en-CA");
+    const { fecha: hoy, hora: horaActual } = await getNowInTimezone();
     
     // Find active entry
     const activa = await prisma.horario.findFirst({
@@ -54,7 +64,7 @@ export async function registrarSalida(terapeuta: string) {
     const actualizado = await prisma.horario.update({
       where: { id: activa.id },
       data: {
-        horaSalida: new Date().toLocaleTimeString('en-US', { hour12: false })
+        horaSalida: horaActual
       }
     });
 
@@ -67,7 +77,7 @@ export async function registrarSalida(terapeuta: string) {
 
 export async function getHorariosHoy() {
   try {
-    const hoy = new Date().toLocaleDateString("en-CA");
+    const { fecha: hoy } = await getNowInTimezone();
     const horarios = await prisma.horario.findMany({
       where: { fecha: hoy },
       orderBy: { createdAt: 'desc' }

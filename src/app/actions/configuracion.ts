@@ -46,6 +46,7 @@ export async function getSettings(month: string) {
         googleDriveClientEmail: "",
         googleDrivePrivateKey: "",
         googleDriveFolderId: "",
+        timezone: "America/Mexico_City",
       },
       expenses: expenses,
     };
@@ -165,6 +166,7 @@ export async function saveSettings(data: {
           googleDriveClientEmail: (data as any).googleDriveClientEmail || "",
           googleDrivePrivateKey: (data as any).googleDrivePrivateKey || "",
           googleDriveFolderId: (data as any).googleDriveFolderId || "",
+          timezone: (data as any).timezone || "America/Mexico_City",
         },
         create: {
           id: 1,
@@ -183,6 +185,7 @@ export async function saveSettings(data: {
           googleDriveClientEmail: (data as any).googleDriveClientEmail || "",
           googleDrivePrivateKey: (data as any).googleDrivePrivateKey || "",
           googleDriveFolderId: (data as any).googleDriveFolderId || "",
+          timezone: (data as any).timezone || "America/Mexico_City",
         }
       });
 

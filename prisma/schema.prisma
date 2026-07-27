@@ -129,6 +129,7 @@ model SystemSettings {
   googleDriveClientEmail String  @default("")
   googleDrivePrivateKey String   @default("")
   googleDriveFolderId   String   @default("")
+  timezone              String   @default("America/Mexico_City")
   updatedAt             DateTime @updatedAt
 }
 
