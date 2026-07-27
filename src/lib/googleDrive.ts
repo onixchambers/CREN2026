@@ -1,0 +1,114 @@
+import crypto from "crypto";
+import { prisma } from "@/lib/prisma";
+
+function base64url(str: string): string {
+  return Buffer.from(str)
+    .toString("base64")
+    .replace(/=/g, "")
+    .replace(/\+/g, "-")
+    .replace(/\//g, "_");
+}
+
+async function getGoogleDriveAccessToken(clientEmail: string, privateKey: string): Promise<string> {
+  const formattedKey = privateKey.replace(/\\n/g, "\n");
+  const now = Math.floor(Date.now() / 1000);
+
+  const header = base64url(JSON.stringify({ alg: "RS256", typ: "JWT" }));
+  const claimSet = base64url(
+    JSON.stringify({
+      iss: clientEmail,
+      scope: "https://www.googleapis.com/auth/drive.file https://www.googleapis.com/auth/drive",
+      aud: "https://oauth2.googleapis.com/token",
+      exp: now + 3600,
+      iat: now,
+    })
+  );
+
+  const signatureInput = `${header}.${claimSet}`;
+  const signer = crypto.createSign("RSA-SHA256");
+  signer.update(signatureInput);
+  const signature = signer.sign(formattedKey, "base64url");
+
+  const jwt = `${signatureInput}.${signature}`;
+
+  const res = await fetch("https://oauth2.googleapis.com/token", {
+    method: "POST",
+    headers: { "Content-Type": "application/x-www-form-urlencoded" },
+    body: new URLSearchParams({
+      grant_type: "urn:ietf:params:oauth:grant-type:jwt-bearer",
+      assertion: jwt,
+    }),
+  });
+
+  const data = await res.json();
+  if (!res.ok || !data.access_token) {
+    throw new Error(data.error_description || data.error || "No se pudo autenticar con Google Drive.");
+  }
+
+  return data.access_token;
+}
+
+export async function uploadFileToGoogleDrive(fileBuffer: Buffer, fileName: string, mimeType: string = "application/pdf") {
+  const settings = await prisma.systemSettings.findUnique({ where: { id: 1 } });
+  
+  if (!settings || !settings.googleDriveEnabled || !settings.googleDriveClientEmail || !settings.googleDrivePrivateKey) {
+    return { success: false, error: "Google Drive no está habilitado o configurado en Configuración." };
+  }
+
+  try {
+    const accessToken = await getGoogleDriveAccessToken(
+      settings.googleDriveClientEmail.trim(),
+      settings.googleDrivePrivateKey.trim()
+    );
+
+    const metadata: any = {
+      name: fileName,
+      mimeType: mimeType,
+    };
+
+    if (settings.googleDriveFolderId && settings.googleDriveFolderId.trim().length > 0) {
+      metadata.parents = [settings.googleDriveFolderId.trim()];
+    }
+
+    const boundary = "-------314159265358979323846";
+    const delimiter = `\r\n--${boundary}\r\n`;
+    const closeDelimiter = `\r\n--${boundary}--`;
+
+    const multipartRequestBody = Buffer.concat([
+      Buffer.from(
+        `${delimiter}Content-Type: application/json; charset=UTF-8\r\n\r\n${JSON.stringify(metadata)}`
+      ),
+      Buffer.from(`${delimiter}Content-Type: ${mimeType}\r\n\r\n`),
+      fileBuffer,
+      Buffer.from(closeDelimiter),
+    ]);
+
+    const uploadRes = await fetch(
+      "https://www.googleapis.com/upload/drive/v3/files?uploadType=multipart&fields=id,name,webViewLink,webContentLink",
+      {
+        method: "POST",
+        headers: {
+          Authorization: `Bearer ${accessToken}`,
+          "Content-Type": `multipart/related; boundary=${boundary}`,
+        },
+        body: multipartRequestBody,
+      }
+    );
+
+    const fileData = await uploadRes.json();
+    if (!uploadRes.ok) {
+      throw new Error(fileData.error?.message || "Error al subir archivo a Google Drive.");
+    }
+
+    return {
+      success: true,
+      fileId: fileData.id,
+      fileName: fileData.name,
+      webViewLink: fileData.webViewLink || `https://drive.google.com/file/d/${fileData.id}/view`,
+      webContentLink: fileData.webContentLink,
+    };
+  } catch (error: any) {
+    console.error("Google Drive Upload Error:", error);
+    return { success: false, error: error.message || "Error desconocido al conectar con Google Drive." };
+  }
+}

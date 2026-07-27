@@ -3,6 +3,7 @@ import { useState, useEffect, useRef } from "react";
 import { useSession } from "next-auth/react";
 import { getPatients } from "@/app/actions/pacientes";
 import { DateInput } from "@/components/DateInput";
+import { uploadInformePDFToDrive } from "@/app/actions/informes";
 
 type Informe = {
   id: string;
@@ -13,6 +14,7 @@ type Informe = {
   fechaSubida: string;
   terapeuta?: string;
   data?: string; // Base64 data for download
+  driveLink?: string; // Link to file in Google Drive
 };
 
 type Paciente = {
@@ -112,11 +114,15 @@ export default function InformesPage() {
     document.body.removeChild(a);
   };
 
+  const [isUploading, setIsUploading] = useState(false);
+
   const handleSubirInforme = async () => {
     if (!selectedPaciente || !selectedTipo || files.length === 0) {
       alert("Por favor selecciona paciente, tipo y adjunta al menos un archivo.");
       return;
     }
+
+    setIsUploading(true);
 
     const readAsDataURL = (file: File): Promise<string> => {
       return new Promise((resolve, reject) => {
@@ -133,6 +139,20 @@ export default function InformesPage() {
       const f = files[index];
       try {
         const data = await readAsDataURL(f);
+        
+        // Intentar subir a Google Drive vía Service Account
+        let driveLink: string | undefined = undefined;
+        try {
+          const fd = new FormData();
+          fd.append("file", f);
+          const driveRes = await uploadInformePDFToDrive(fd);
+          if (driveRes.success && driveRes.webViewLink) {
+            driveLink = driveRes.webViewLink;
+          }
+        } catch (err) {
+          console.warn("Subida a Google Drive omitida o falló:", err);
+        }
+
         nuevosInformes.push({
           id: Date.now().toString() + index,
           paciente: selectedPaciente,
@@ -141,7 +161,8 @@ export default function InformesPage() {
           archivoNombre: f.name,
           fechaSubida: new Date().toLocaleDateString(),
           terapeuta: userName,
-          data: data
+          data: data,
+          driveLink: driveLink,
         });
       } catch (error) {
         console.error("Error reading file:", error);
@@ -150,7 +171,6 @@ export default function InformesPage() {
 
     const updated = [...nuevosInformes, ...informes];
     
-    // Si excede el almacenamiento local por tamaño de archivo, se captura el error
     try {
       localStorage.setItem("informesData", JSON.stringify(updated));
       setInformes(updated);
@@ -158,9 +178,11 @@ export default function InformesPage() {
       setSearchInput("");
       setSelectedTipo("");
       setFiles([]);
-      alert("Informe subido exitosamente");
+      alert("¡Informe subido y procesado exitosamente!");
     } catch (error) {
       alert("Error: Archivo muy grande para guardar en modo prueba. Se alcanzó el límite de almacenamiento del navegador.");
+    } finally {
+      setIsUploading(false);
     }
   };
 
@@ -387,11 +409,22 @@ export default function InformesPage() {
                         {inf.fechaSubida && <div className="text-[10px] text-slate-400 mt-0.5 ml-6">Subido el: {inf.fechaSubida}</div>}
                       </td>
                       <td className="px-4 py-3 text-center">
-                        <div className="flex justify-center gap-2">
-                          <button onClick={() => handleDownload(inf)} className="text-slate-400 hover:text-[#1a5276]" title="Descargar">
+                        <div className="flex items-center justify-center gap-2">
+                          {inf.driveLink && (
+                            <a 
+                              href={inf.driveLink} 
+                              target="_blank" 
+                              rel="noopener noreferrer" 
+                              className="px-2 py-1 bg-emerald-50 text-emerald-700 hover:bg-emerald-100 rounded text-xs font-bold flex items-center gap-1 border border-emerald-200 transition-colors"
+                              title="Abrir en Google Drive"
+                            >
+                              <span>📁</span> Drive
+                            </a>
+                          )}
+                          <button onClick={() => handleDownload(inf)} className="text-slate-400 hover:text-[#1a5276] p-1" title="Descargar">
                             <svg className="w-5 h-5 mx-auto" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" /></svg>
                           </button>
-                          <button onClick={() => handleDelete(inf.id)} className="text-red-400 hover:text-red-600" title="Eliminar">
+                          <button onClick={() => handleDelete(inf.id)} className="text-red-400 hover:text-red-600 p-1" title="Eliminar">
                             <svg className="w-5 h-5 mx-auto" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" /></svg>
                           </button>
                         </div>

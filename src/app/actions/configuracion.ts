@@ -42,6 +42,10 @@ export async function getSettings(month: string) {
         whatsappDays: 1,
         whatsappRepeatDays: 0,
         whatsappEnabled: false,
+        googleDriveEnabled: false,
+        googleDriveClientEmail: "",
+        googleDrivePrivateKey: "",
+        googleDriveFolderId: "",
       },
       expenses: expenses,
     };
@@ -157,6 +161,10 @@ export async function saveSettings(data: {
           whatsappDays: parseInt((data as any).whatsappDays || 1),
           whatsappRepeatDays: parseInt((data as any).whatsappRepeatDays || 0),
           whatsappEnabled: Boolean((data as any).whatsappEnabled),
+          googleDriveEnabled: Boolean((data as any).googleDriveEnabled),
+          googleDriveClientEmail: (data as any).googleDriveClientEmail || "",
+          googleDrivePrivateKey: (data as any).googleDrivePrivateKey || "",
+          googleDriveFolderId: (data as any).googleDriveFolderId || "",
         },
         create: {
           id: 1,
@@ -171,6 +179,10 @@ export async function saveSettings(data: {
           whatsappDays: parseInt((data as any).whatsappDays || 1),
           whatsappRepeatDays: parseInt((data as any).whatsappRepeatDays || 0),
           whatsappEnabled: Boolean((data as any).whatsappEnabled),
+          googleDriveEnabled: Boolean((data as any).googleDriveEnabled),
+          googleDriveClientEmail: (data as any).googleDriveClientEmail || "",
+          googleDrivePrivateKey: (data as any).googleDrivePrivateKey || "",
+          googleDriveFolderId: (data as any).googleDriveFolderId || "",
         }
       });
 

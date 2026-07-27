@@ -125,6 +125,10 @@ model SystemSettings {
   whatsappDays          Int      @default(1)
   whatsappRepeatDays    Int      @default(0)
   whatsappEnabled       Boolean  @default(false)
+  googleDriveEnabled    Boolean  @default(false)
+  googleDriveClientEmail String  @default("")
+  googleDrivePrivateKey String   @default("")
+  googleDriveFolderId   String   @default("")
   updatedAt             DateTime @updatedAt
 }
 

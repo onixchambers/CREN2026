@@ -28,8 +28,14 @@ export default function ConfiguracionPage() {
   const [whatsappRepeatDays, setWhatsappRepeatDays] = useState<number>(0);
   const [whatsappEnabled, setWhatsappEnabled] = useState(false);
 
+  const [googleDriveEnabled, setGoogleDriveEnabled] = useState(false);
+  const [googleDriveClientEmail, setGoogleDriveClientEmail] = useState("");
+  const [googleDrivePrivateKey, setGoogleDrivePrivateKey] = useState("");
+  const [googleDriveFolderId, setGoogleDriveFolderId] = useState("");
+
   const [showResendKey, setShowResendKey] = useState(false);
   const [showWaKey, setShowWaKey] = useState(false);
+  const [showDriveKey, setShowDriveKey] = useState(false);
 
   const [month, setMonth] = useState(new Date().toISOString().slice(0, 7));
   
@@ -65,6 +71,11 @@ export default function ConfiguracionPage() {
         setWhatsappDays(res.settings?.whatsappDays ?? 1);
         setWhatsappRepeatDays(res.settings?.whatsappRepeatDays ?? 0);
         setWhatsappEnabled(res.settings?.whatsappEnabled ?? false);
+
+        setGoogleDriveEnabled(res.settings?.googleDriveEnabled ?? false);
+        setGoogleDriveClientEmail(res.settings?.googleDriveClientEmail || "");
+        setGoogleDrivePrivateKey(res.settings?.googleDrivePrivateKey || "");
+        setGoogleDriveFolderId(res.settings?.googleDriveFolderId || "");
         
         const exps = res.expenses || [];
         let items: any[] = [];
@@ -106,6 +117,10 @@ export default function ConfiguracionPage() {
         whatsappDays,
         whatsappRepeatDays,
         whatsappEnabled,
+        googleDriveEnabled,
+        googleDriveClientEmail,
+        googleDrivePrivateKey,
+        googleDriveFolderId,
         month,
         expenses: allExpenses
       } as any);
@@ -453,6 +468,70 @@ export default function ConfiguracionPage() {
                     <option value={30}>Cada 30 días (Mensual)</option>
                   </select>
                 </div>
+              </div>
+            </div>
+          </div>
+
+          {/* GOOGLE DRIVE SERVICE ACCOUNT */}
+          <div className="bg-slate-50 p-5 rounded-2xl border border-slate-200 space-y-4">
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-2">
+                <span className="text-xl">📁</span>
+                <div>
+                  <h4 className="text-sm font-bold text-slate-800">Google Drive API (Cuenta de Servicio / Service Account)</h4>
+                  <p className="text-[11px] text-slate-500">Guardar automáticamente los informes PDF en Google Drive</p>
+                </div>
+              </div>
+              <label className="relative inline-flex items-center cursor-pointer">
+                <input type="checkbox" checked={googleDriveEnabled} onChange={(e) => setGoogleDriveEnabled(e.target.checked)} className="sr-only peer" />
+                <div className="w-9 h-5 bg-slate-300 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-slate-300 after:border after:rounded-full after:h-4 after:w-4 after:transition-all peer-checked:bg-emerald-600"></div>
+              </label>
+            </div>
+
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div>
+                <label className="block text-xs font-bold text-slate-700 mb-1">Correo Electrónico de Cuenta de Servicio (Client Email)</label>
+                <input 
+                  type="text" 
+                  placeholder="ej. servicio-cren@proyecto.iam.gserviceaccount.com"
+                  value={googleDriveClientEmail}
+                  onChange={(e) => setGoogleDriveClientEmail(e.target.value)}
+                  className="w-full p-2.5 border border-slate-300 rounded-lg text-xs text-slate-900 focus:border-emerald-500 outline-none bg-white font-mono"
+                />
+              </div>
+
+              <div>
+                <label className="block text-xs font-bold text-slate-700 mb-1">ID de Carpeta en Google Drive (Opcional)</label>
+                <input 
+                  type="text" 
+                  placeholder="ID de carpeta (ej. 1A2b3C4d5E6f7G...)"
+                  value={googleDriveFolderId}
+                  onChange={(e) => setGoogleDriveFolderId(e.target.value)}
+                  className="w-full p-2.5 border border-slate-300 rounded-lg text-xs text-slate-900 focus:border-emerald-500 outline-none bg-white font-mono"
+                />
+              </div>
+
+              <div className="md:col-span-2">
+                <div className="flex items-center justify-between mb-1">
+                  <label className="block text-xs font-bold text-slate-700">Clave Privada RSA / Private Key (BEGIN PRIVATE KEY)</label>
+                  <button 
+                    type="button" 
+                    onClick={() => setShowDriveKey(!showDriveKey)}
+                    className="text-xs text-emerald-700 hover:underline font-bold"
+                  >
+                    {showDriveKey ? "Ocultar Key" : "Ver Key"}
+                  </button>
+                </div>
+                <textarea 
+                  rows={3}
+                  placeholder="-----BEGIN PRIVATE KEY-----\nMIIEvgIBADANBgkqhkiG9w0BAQEFAASCBKgwggSkAgEAAoIBAQC...\n-----END PRIVATE KEY-----"
+                  value={showDriveKey ? googleDrivePrivateKey : (googleDrivePrivateKey ? "••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••" : "")}
+                  onChange={(e) => setGoogleDrivePrivateKey(e.target.value)}
+                  className="w-full p-2.5 border border-slate-300 rounded-lg text-xs text-slate-900 font-mono focus:border-emerald-500 outline-none bg-white"
+                />
+                <p className="text-[11px] text-slate-500 mt-1">
+                  💡 Pega aquí el valor completo de <code>private_key</code> proveniente del archivo JSON de credenciales de Google Cloud Console.
+                </p>
               </div>
             </div>
           </div>
