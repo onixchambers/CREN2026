@@ -272,7 +272,7 @@ export default function ConfiguracionPage() {
             </div>
           </div>
 
-          {/* CUADRO RESUMEN DE TOTAL DE GASTOS OPERATIVOS Y ORDEN ALFABÉTICO */}
+          {/* CUADRO RESUMEN DE TOTAL DE GASTOS OPERATIVOS Y OPCIONES DE ORDEN */}
           <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between bg-[#0e2f44] text-white p-4 rounded-xl shadow-sm mb-6 gap-4">
             <div>
               <span className="text-xs font-bold uppercase tracking-wider text-slate-300">📊 Suma Total de Gastos Operativos ({month})</span>
@@ -280,17 +280,31 @@ export default function ConfiguracionPage() {
                 ${gastos.reduce((sum, g) => sum + (parseFloat(g.val) || 0), 0).toLocaleString('es-MX', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
               </p>
             </div>
-            <button 
-              type="button"
-              onClick={() => {
-                const sorted = [...gastos].sort((a, b) => (a.label || "").localeCompare(b.label || "", 'es', { sensitivity: 'base' }));
-                setGastos(sorted);
-              }}
-              className="text-xs px-3.5 py-2 bg-white/10 hover:bg-white/20 border border-white/20 text-white font-bold rounded-lg transition-colors flex items-center gap-1.5"
-            >
-              <svg className="w-4 h-4 text-amber-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 4h13M3 8h9m-9 4h6m4 0l4-4m0 0l4 4m-4-4v12" /></svg>
-              Ordenar Alfabéticamente
-            </button>
+            <div className="flex flex-wrap items-center gap-2">
+              <button 
+                type="button"
+                onClick={() => {
+                  const sorted = [...gastos].sort((a, b) => (a.label || "").localeCompare(b.label || "", 'es', { sensitivity: 'base' }));
+                  setGastos(sorted);
+                }}
+                className="text-xs px-3.5 py-2 bg-white/10 hover:bg-white/20 border border-white/20 text-white font-bold rounded-lg transition-colors flex items-center gap-1.5"
+              >
+                <svg className="w-4 h-4 text-amber-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 4h13M3 8h9m-9 4h6m4 0l4-4m0 0l4 4m-4-4v12" /></svg>
+                🔤 Nombre (A-Z)
+              </button>
+              
+              <button 
+                type="button"
+                onClick={() => {
+                  const sorted = [...gastos].sort((a, b) => (parseFloat(b.val) || 0) - (parseFloat(a.val) || 0));
+                  setGastos(sorted);
+                }}
+                className="text-xs px-3.5 py-2 bg-white/10 hover:bg-white/20 border border-white/20 text-white font-bold rounded-lg transition-colors flex items-center gap-1.5"
+              >
+                <svg className="w-4 h-4 text-green-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V6m0 12v-2m0 0c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>
+                💰 Monto (Mayor a Menor)
+              </button>
+            </div>
           </div>
 
           <div className="grid grid-cols-1 md:grid-cols-2 gap-x-12 gap-y-4 mb-4">
