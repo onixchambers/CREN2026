@@ -108,26 +108,39 @@ export default function AsistenciaPage() {
   const recargarAsistencias = async () => {
     const agRes = await getAsistenciasDB(Date.now().toString());
     if (agRes.success && agRes.data) {
-      const mapped = agRes.data.map((c: any) => ({
-        id: c.id,
-        fecha: c.fecha,
-        area: c.area || "-",
-        paciente: c.paciente,
-        sexo: c.sexo || "-",
-        edad: c.edad || "-",
-        terapeuta: c.terapeuta,
-        tipoSesion: c.tipoSesion || "-",
-        estado: c.estado,
-        sesiones: c.sesiones || "1",
-        paqueteActual: c.paqueteActual || 1,
-        pago: c.pago || "-",
-        fact: c.fact || "No",
-        subtotal: c.subtotal || "$0.00",
-        total: c.total || "$0.00",
-        saldo: c.saldo || 0,
-        obs: c.obs || "-",
-        creadoPor: c.creadoPor || "-"
-      }));
+      const mapped = agRes.data.map((c: any) => {
+        const isFact = c.fact === "Sí" || c.fact === true;
+        const totVal = parseFloat((c.total || c.subtotal || "0").toString().replace(/[^0-9.-]+/g, "")) || 0;
+        let subVal = totVal;
+        let ivaVal = 0;
+
+        if (isFact) {
+          ivaVal = totVal * 0.16;
+          subVal = totVal - ivaVal;
+        }
+
+        return {
+          id: c.id,
+          fecha: c.fecha,
+          area: c.area || "-",
+          paciente: c.paciente,
+          sexo: c.sexo || "-",
+          edad: c.edad || "-",
+          terapeuta: c.terapeuta,
+          tipoSesion: c.tipoSesion || "-",
+          estado: c.estado,
+          sesiones: c.sesiones || "1",
+          paqueteActual: c.paqueteActual || 1,
+          pago: c.pago || "-",
+          fact: isFact ? "Sí" : "No",
+          subtotal: `$${subVal.toFixed(2)}`,
+          iva: `$${ivaVal.toFixed(2)}`,
+          total: `$${totVal.toFixed(2)}`,
+          saldo: c.saldo || 0,
+          obs: c.obs || "-",
+          creadoPor: c.creadoPor || "-"
+        };
+      });
       setAsistencias(mapped);
     }
   };
@@ -274,8 +287,17 @@ export default function AsistenciaPage() {
 
     const p1 = parseFloat(formData.montoPago || "0");
     const p2 = showSegundoPago ? parseFloat(formData.montoPago2 || "0") : 0;
-    const sub = p1 + p2;
-    const tot = formData.solicitaFactura ? sub * 1.16 : sub; // Simulando IVA
+    const montoPagado = p1 + p2;
+    const precioTerapia = parseFloat(formData.precioTerapia || "0");
+    const totVal = montoPagado > 0 ? montoPagado : precioTerapia;
+
+    let subVal = totVal;
+    let ivaVal = 0;
+
+    if (formData.solicitaFactura) {
+      ivaVal = totVal * 0.16;
+      subVal = totVal - ivaVal;
+    }
 
     let metodoPagoFinal = formData.metodoPago;
     if (showSegundoPago && formData.metodoPago2) {
@@ -294,12 +316,13 @@ export default function AsistenciaPage() {
       tipoSesion: formData.tipoSesion,
       estado: formData.estadoAsistencia,
       sesiones: formData.numeroSesiones || "1",
-      pago: sub > 0 ? "SÍ" : (metodoPagoFinal || "No"),
+      pago: totVal > 0 ? "SÍ" : (metodoPagoFinal || "No"),
       fact: formData.solicitaFactura ? "Sí" : "No",
-      subtotal: `$${sub.toFixed(2)}`,
-      total: `$${tot.toFixed(2)}`,
+      subtotal: `$${subVal.toFixed(2)}`,
+      iva: `$${ivaVal.toFixed(2)}`,
+      total: `$${totVal.toFixed(2)}`,
       precioTerapia: formData.precioTerapia,
-      montoPago: sub.toString(),
+      montoPago: totVal.toString(),
       metodoPago: metodoPagoFinal,
       obs: formData.observaciones || "—",
       creadoPor: userName,
@@ -333,7 +356,7 @@ export default function AsistenciaPage() {
       sesiones: a.sesiones,
       pago: a.pago,
       fact: a.fact === "Sí",
-      subtotal: a.subtotal.replace('$', ''),
+      subtotal: (a.total || a.subtotal).replace('$', ''),
       obs: a.obs,
       terapeuta: a.terapeuta || ""
     });
@@ -351,8 +374,14 @@ export default function AsistenciaPage() {
   const saveEdit = async () => {
     if (!editingAsistencia) return;
     
-    const sub = editForm.subtotal ? parseFloat(editForm.subtotal) : 0;
-    const tot = editForm.fact ? sub * 1.16 : sub;
+    const totVal = editForm.subtotal ? parseFloat(editForm.subtotal) : 0;
+    let subVal = totVal;
+    let ivaVal = 0;
+
+    if (editForm.fact) {
+      ivaVal = totVal * 0.16;
+      subVal = totVal - ivaVal;
+    }
 
     let asisActualizada: any = null;
     const nuevasAsistencias = asistencias.map(a => {
@@ -366,8 +395,9 @@ export default function AsistenciaPage() {
           sesiones: editForm.sesiones,
           pago: parseFloat(editForm.montoPago || "0") > 0 ? "SÍ" : editForm.pago,
           fact: editForm.fact ? "Sí" : "No",
-          subtotal: `$${sub.toFixed(2)}`,
-          total: `$${tot.toFixed(2)}`,
+          subtotal: `$${subVal.toFixed(2)}`,
+          iva: `$${ivaVal.toFixed(2)}`,
+          total: `$${totVal.toFixed(2)}`,
           obs: editForm.obs || "—",
           creadoPor: a.creadoPor || userName,
           terapeuta: editForm.terapeuta || a.terapeuta
@@ -778,6 +808,7 @@ export default function AsistenciaPage() {
                 <th className="px-2 py-3 border-b border-[#0e2f44]">FACT.</th>
                 <th className="px-2 py-3 border-b border-[#0e2f44]">SALDO</th>
                 <th className="px-2 py-3 border-b border-[#0e2f44]">SUBTOTAL</th>
+                <th className="px-2 py-3 border-b border-[#0e2f44]">IVA</th>
                 <th className="px-2 py-3 border-b border-[#0e2f44]">TOTAL</th>
                 <th className="px-2 py-3 border-b border-[#0e2f44]">OBS</th>
                 <th className="px-2 py-3 border-b border-[#0e2f44]">ACCIONES</th>
@@ -816,6 +847,7 @@ export default function AsistenciaPage() {
                     })()}
                   </td>
                   <td className="px-2 py-3 font-medium text-slate-600">{a.subtotal}</td>
+                  <td className="px-2 py-3 font-semibold text-amber-600">{a.iva || "$0.00"}</td>
                   <td className="px-2 py-3 font-bold text-[#1a5276]">{a.total}</td>
                   <td className="px-2 py-3 text-slate-500 max-w-[100px] truncate" title={a.obs}>{a.obs}</td>
                   <td className="px-2 py-3">
@@ -831,7 +863,7 @@ export default function AsistenciaPage() {
                 </tr>
               )) : (
                   <tr>
-                    <td colSpan={16} className="px-4 py-8 text-center text-slate-400 font-medium">
+                    <td colSpan={17} className="px-4 py-8 text-center text-slate-400 font-medium">
                       Sin registros.
                     </td>
                   </tr>
