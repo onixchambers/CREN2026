@@ -13,6 +13,7 @@ export default function ConfiguracionPage() {
     return dateStr;
   };
   const { data: session } = useSession();
+  const userRole = (session?.user as any)?.role || "ADMIN";
   const isMasterAdmin = session?.user?.name?.toLowerCase() === 'onixchambers';
   const [usuarios, setUsuarios] = useState<any[]>([]);
   const [allowTherapistEdit, setAllowTherapistEdit] = useState(true);
