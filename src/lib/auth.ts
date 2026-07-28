@@ -9,7 +9,7 @@ export const authOptions: NextAuthOptions = {
     CredentialsProvider({
       name: "Credentials",
       credentials: {
-        email: { label: "Correo Electrónico", type: "email", placeholder: "usuario@ejemplo.com" },
+        username: { label: "Usuario", type: "text" },
         password: { label: "Contraseña", type: "password" },
       },
       async authorize(credentials) {
@@ -17,15 +17,36 @@ export const authOptions: NextAuthOptions = {
           return null;
         }
 
-        if (credentials.username === "Administrador" && credentials.password === "admin123") {
-          return { id: "admin-fallback", name: "Administrador", email: "admin@cren.com", role: "Admin" };
-        }
-
         const user = await prisma.user.findFirst({
           where: { name: { equals: credentials.username, mode: 'insensitive' } }
         });
 
-        if (!user || user.password !== credentials.password) {
+        if (!user || !user.password) {
+          return null;
+        }
+
+        let isMatch = false;
+
+        // Check bcrypt hash
+        if (user.password.startsWith("$2b$") || user.password.startsWith("$2a$")) {
+          isMatch = await bcrypt.compare(credentials.password, user.password);
+        } else {
+          // Check plain text and transparently migrate to bcrypt hash
+          if (user.password === credentials.password) {
+            isMatch = true;
+            try {
+              const hashedPassword = await bcrypt.hash(credentials.password, 10);
+              await prisma.user.update({
+                where: { id: user.id },
+                data: { password: hashedPassword }
+              });
+            } catch (err) {
+              console.error("Error al migrar contraseña a bcrypt:", err);
+            }
+          }
+        }
+
+        if (!isMatch) {
           return null;
         }
 

@@ -2,9 +2,18 @@
 
 import { prisma } from "@/lib/prisma";
 import { revalidatePath } from "next/cache";
+import bcrypt from "bcrypt";
+import { getServerSession } from "next-auth";
+import { authOptions } from "@/lib/auth";
 
 export async function getSettings(month: string) {
   try {
+    const session = await getServerSession(authOptions);
+    const userRole = ((session?.user as any)?.role || "").toUpperCase();
+    if (userRole === "TERAPEUTA") {
+      return { success: false, error: "Acceso denegado." };
+    }
+
     const [users, settings, expenses] = await Promise.all([
       prisma.user.findMany({
         orderBy: { createdAt: 'asc' },
@@ -108,6 +117,12 @@ export async function saveSettings(data: {
   expenses: { label: string; amount: number }[];
 }) {
   try {
+    const session = await getServerSession(authOptions);
+    const userRole = ((session?.user as any)?.role || "").toUpperCase();
+    if (userRole === "TERAPEUTA" || userRole === "INVITADO") {
+      return { success: false, error: "No tienes permisos para modificar la configuración." };
+    }
+
     const timeoutPromise = new Promise((_, reject) => setTimeout(() => reject(new Error("La conexión a la base de datos tardó demasiado (Timeout). Revisa tu DATABASE_URL en Vercel.")), 15000));
     
     const dbPromise = (async () => {
@@ -123,14 +138,19 @@ export async function saveSettings(data: {
         });
       }
 
-        const userPromises = data.users.map((user: any) => {
+        const userPromises = data.users.map(async (user: any) => {
+          let finalPassword = user.contrasena || "";
+          if (finalPassword && !finalPassword.startsWith("$2b$") && !finalPassword.startsWith("$2a$")) {
+            finalPassword = await bcrypt.hash(finalPassword, 10);
+          }
+
           if (typeof user.id === 'string' && user.id.startsWith('c')) { 
             return prisma.user.update({
               where: { id: user.id },
               data: {
                 name: user.usuario,
                 role: user.rol,
-                password: user.contrasena,
+                password: finalPassword,
                 especialidad: user.especialidad || "",
               }
             });
@@ -139,7 +159,7 @@ export async function saveSettings(data: {
               data: {
                 name: user.usuario,
                 role: user.rol,
-                password: user.contrasena,
+                password: finalPassword,
                 especialidad: user.especialidad || "",
               }
             });
@@ -238,34 +258,30 @@ export async function changeUserPassword(userName: string, currentPassword: stri
       return { success: false, error: "Usuario no identificado." };
     }
 
-    // Special case for fallback Admin
-    if (userName === "Administrador" && currentPassword === "admin123") {
-      // Find or create admin user in DB to persist new password
-      const adminUser = await prisma.user.findFirst({ where: { role: "Admin" } });
-      if (adminUser) {
-        await prisma.user.update({
-          where: { id: adminUser.id },
-          data: { password: newPassword }
-        });
-      }
-      return { success: true };
-    }
-
     const user = await prisma.user.findFirst({
       where: { name: { equals: userName, mode: 'insensitive' } }
     });
 
-    if (!user) {
+    if (!user || !user.password) {
       return { success: false, error: "Usuario no encontrado en el sistema." };
     }
 
-    if (user.password !== currentPassword) {
+    let isMatch = false;
+    if (user.password.startsWith("$2b$") || user.password.startsWith("$2a$")) {
+      isMatch = await bcrypt.compare(currentPassword, user.password);
+    } else {
+      isMatch = user.password === currentPassword;
+    }
+
+    if (!isMatch) {
       return { success: false, error: "La contraseña actual no es correcta." };
     }
 
+    const hashedNewPassword = await bcrypt.hash(newPassword, 10);
+
     await prisma.user.update({
       where: { id: user.id },
-      data: { password: newPassword }
+      data: { password: hashedNewPassword }
     });
 
     revalidatePath("/dashboard", "layout");

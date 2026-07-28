@@ -1,6 +1,8 @@
 "use server";
 
 import { prisma } from "@/lib/prisma";
+import { getServerSession } from "next-auth";
+import { authOptions } from "@/lib/auth";
 
 async function getNowInTimezone() {
   const settings = await prisma.systemSettings.findUnique({ where: { id: 1 } });
@@ -104,6 +106,12 @@ export async function getHorariosByDate(fecha: string) {
 
 export async function updateHorario(id: string, horaEntrada: string, horaSalida?: string | null) {
   try {
+    const session = await getServerSession(authOptions);
+    const userRole = (session?.user as any)?.role || "";
+    if (userRole.toUpperCase() === "TERAPEUTA") {
+      return { success: false, error: "No tienes permisos de administrador para modificar horarios." };
+    }
+
     const actualizado = await prisma.horario.update({
       where: { id },
       data: {
@@ -120,6 +128,12 @@ export async function updateHorario(id: string, horaEntrada: string, horaSalida?
 
 export async function deleteHorario(id: string) {
   try {
+    const session = await getServerSession(authOptions);
+    const userRole = (session?.user as any)?.role || "";
+    if (userRole.toUpperCase() === "TERAPEUTA") {
+      return { success: false, error: "No tienes permisos de administrador para eliminar horarios." };
+    }
+
     await prisma.horario.delete({ where: { id } });
     return { success: true };
   } catch (error: any) {
