@@ -44,9 +44,19 @@ type Asistencia = {
 
 export default function AsistenciaPage() {
   const { data: session } = useSession();
-    const router = useRouter();
+  const router = useRouter();
   const userName = session?.user?.name || "Administrador";
   const userRole = (session?.user as any)?.role || "ADMIN";
+  const [allowTherapistEdit, setAllowTherapistEdit] = useState(true);
+
+  useEffect(() => {
+    async function loadPermission() {
+      const { getAllowTherapistEdit } = await import('@/app/actions/configuracion');
+      const allowed = await getAllowTherapistEdit();
+      setAllowTherapistEdit(allowed);
+    }
+    loadPermission();
+  }, []);
 
   const formatDateStr = (dateStr: string) => {
     if (!dateStr) return "-";
@@ -355,6 +365,10 @@ export default function AsistenciaPage() {
   const [editForm, setEditForm] = useState<any>({});
 
   const openEditModal = (a: Asistencia) => {
+    if (userRole.toUpperCase() === "TERAPEUTA" && !allowTherapistEdit) {
+      alert("La administración no tiene habilitado el permiso para editar registros de asistencia.");
+      return;
+    }
     setEditingAsistencia(a);
     setEditForm({
       fecha: a.fecha,
@@ -431,6 +445,10 @@ export default function AsistenciaPage() {
   };
 
   const handleDeleteAsistencia = async (id: string) => {
+    if (userRole.toUpperCase() === "TERAPEUTA" && !allowTherapistEdit) {
+      alert("La administración no tiene habilitado el permiso para eliminar registros de asistencia.");
+      return;
+    }
     if (window.confirm("¿Estás seguro de que deseas eliminar este registro de asistencia?")) {
       const res = await deleteCita(id);
       if (res.success) {
@@ -862,12 +880,16 @@ export default function AsistenciaPage() {
                   <td className="px-2 py-3 text-slate-500 max-w-[100px] truncate" title={a.obs}>{a.obs}</td>
                   <td className="px-2 py-3">
                     <div className="flex items-center justify-center gap-2">
-                      <button onClick={() => openEditModal(a)} className="text-slate-400 hover:text-[#1a5276]" title="Editar">
-                        <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 24 24"><path d="M3 17.25V21h3.75L17.81 9.94l-3.75-3.75L3 17.25zM20.71 7.04c.39-.39.39-1.02 0-1.41l-2.34-2.34c-.39-.39-1.02-.39-1.41 0l-1.83 1.83 3.75 3.75 1.83-1.83z"/></svg>
-                      </button>
-                      <button onClick={() => handleDeleteAsistencia(a.id)} className="text-slate-400 hover:text-red-600" title="Eliminar">
-                        <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 24 24"><path d="M6 19c0 1.1.9 2 2 2h8c1.1 0 2-.9 2-2V7H6v12zM19 4h-3.5l-1-1h-5l-1 1H5v2h14V4z"/></svg>
-                      </button>
+                      {(userRole.toUpperCase() !== "TERAPEUTA" || allowTherapistEdit) && (
+                        <button onClick={() => openEditModal(a)} className="text-slate-400 hover:text-[#1a5276]" title="Editar">
+                          <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 24 24"><path d="M3 17.25V21h3.75L17.81 9.94l-3.75-3.75L3 17.25zM20.71 7.04c.39-.39.39-1.02 0-1.41l-2.34-2.34c-.39-.39-1.02-.39-1.41 0l-1.83 1.83 3.75 3.75 1.83-1.83z"/></svg>
+                        </button>
+                      )}
+                      {(userRole.toUpperCase() !== "TERAPEUTA" || allowTherapistEdit) && (
+                        <button onClick={() => handleDeleteAsistencia(a.id)} className="text-slate-400 hover:text-red-600" title="Eliminar">
+                          <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 24 24"><path d="M6 19c0 1.1.9 2 2 2h8c1.1 0 2-.9 2-2V7H6v12zM19 4h-3.5l-1-1h-5l-1 1H5v2h14V4z"/></svg>
+                        </button>
+                      )}
                     </div>
                   </td>
                 </tr>

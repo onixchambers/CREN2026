@@ -2,6 +2,8 @@
 
 import { prisma } from "@/lib/prisma";
 import { revalidatePath } from "next/cache";
+import { getServerSession } from "next-auth";
+import { authOptions } from "@/lib/auth";
 
 export async function getAgenda() {
   try {
@@ -216,6 +218,16 @@ export async function updateCita(id: string, data: any) {
 
 export async function deleteCita(id: string) {
   try {
+    const session = await getServerSession(authOptions);
+    const userRole = ((session?.user as any)?.role || "").toUpperCase();
+    if (userRole === "TERAPEUTA") {
+      const s = await prisma.systemSettings.findUnique({ where: { id: 1 } });
+      const allow = s?.allowTherapistEdit ?? true;
+      if (!allow) {
+        return { success: false, error: "La administración no tiene habilitado el permiso para eliminar registros." };
+      }
+    }
+
     await prisma.session.delete({ where: { id } });
     return { success: true };
   } catch (error) {
