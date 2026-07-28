@@ -3,6 +3,21 @@
 import { prisma } from "@/lib/prisma";
 import { unstable_noStore as noStore } from "next/cache";
 import { revalidatePath } from "next/cache";
+import { getServerSession } from "next-auth";
+import { authOptions } from "@/lib/auth";
+
+async function verifyTherapistPatientPermission() {
+  const session = await getServerSession(authOptions);
+  const userRole = ((session?.user as any)?.role || "").toUpperCase();
+  if (userRole === "TERAPEUTA") {
+    const s = await prisma.systemSettings.findUnique({ where: { id: 1 } });
+    const allow = s?.allowTherapistEdit ?? true;
+    if (!allow) {
+      return { allowed: false, error: "La administración no tiene habilitado el permiso para editar o borrar pacientes." };
+    }
+  }
+  return { allowed: true };
+}
 
 export async function createPatient(data: any) {
   try {
@@ -73,6 +88,9 @@ export async function getPatients() {
 
 export async function updatePatientFast(id: string, data: any) {
   try {
+    const perm = await verifyTherapistPatientPermission();
+    if (!perm.allowed) return { success: false, error: perm.error };
+
     const updated = await prisma.patient.update({
       where: { id },
       data: {
@@ -97,6 +115,9 @@ export async function updatePatientFast(id: string, data: any) {
 
 export async function updatePatient(id: string, data: any) {
   try {
+    const perm = await verifyTherapistPatientPermission();
+    if (!perm.allowed) return { success: false, error: perm.error };
+
     const updated = await prisma.patient.update({
       where: { id },
       data: {
@@ -163,6 +184,9 @@ function calculateAge(birthDateString: string) {
 
 export async function deletePatient(id: string) {
   try {
+    const perm = await verifyTherapistPatientPermission();
+    if (!perm.allowed) return { success: false, error: perm.error };
+
     await prisma.$transaction([
       prisma.session.deleteMany({ where: { patientId: id } }),
       prisma.payment.deleteMany({ where: { patientId: id } }),

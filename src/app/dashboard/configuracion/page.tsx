@@ -3,6 +3,7 @@ import { useState, useEffect } from "react";
 import { useSession } from "next-auth/react";
 import { getSettings, saveSettings } from "@/app/actions/configuracion";
 import { MultiSelect } from "@/components/MultiSelect";
+import { TimezoneSelector } from "@/components/TimezoneSelector";
 
 export default function ConfiguracionPage() {
   const formatDateStr = (dateStr: string) => {
@@ -295,22 +296,10 @@ export default function ConfiguracionPage() {
               <p className="text-[11px] text-blue-800 mt-0.5">Se utilizará para registrar con exactitud los check-in y check-out de Horarios y las fechas de la clínica.</p>
             </div>
             <div className="flex items-center gap-1.5 flex-shrink-0">
-              <select 
+              <TimezoneSelector
                 value={timezone}
-                onChange={(e) => setTimezone(e.target.value)}
-                className="p-2 border border-blue-300 rounded-lg font-bold text-xs text-slate-900 bg-white outline-none focus:border-blue-600 shadow-sm"
-              >
-                <option value="America/Mexico_City">🇲🇽 Ciudad de México (UTC-6) [Por Defecto]</option>
-                <option value="America/Cancun">🇲🇽 Cancún / Quintana Roo (UTC-5)</option>
-                <option value="America/Tijuana">🇲🇽 Tijuana / Baja California (UTC-8)</option>
-                <option value="America/Monterrey">🇲🇽 Monterrey (UTC-6)</option>
-                <option value="America/Bogota">🇨🇴 Bogotá / Lima / Quito (UTC-5)</option>
-                <option value="America/Argentina/Buenos_Aires">🇦🇷 Buenos Aires (UTC-3)</option>
-                <option value="America/Santiago">🇨🇱 Santiago (UTC-4 / UTC-3)</option>
-                <option value="America/New_York">🇺🇸 New York / Este (UTC-5)</option>
-                <option value="Europe/Madrid">🇪🇸 Madrid (UTC+1)</option>
-                <option value="UTC">🌐 UTC (Tiempo Universal)</option>
-              </select>
+                onChange={(tz) => setTimezone(tz)}
+              />
             </div>
           </div>
 

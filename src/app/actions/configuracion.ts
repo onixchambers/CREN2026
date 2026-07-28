@@ -291,3 +291,12 @@ export async function changeUserPassword(userName: string, currentPassword: stri
     return { success: false, error: error?.message || "Error al actualizar contraseña" };
   }
 }
+
+export async function getAllowTherapistEdit() {
+  try {
+    const s = await prisma.systemSettings.findUnique({ where: { id: 1 } });
+    return s?.allowTherapistEdit ?? true;
+  } catch (e) {
+    return true;
+  }
+}

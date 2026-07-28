@@ -1,7 +1,9 @@
 "use client";
+import { useState, useEffect } from "react";
 import { signOut, useSession } from "next-auth/react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
+import { getAllowTherapistEdit } from "@/app/actions/configuracion";
 
 export default function DashboardLayout({ children }: { children: React.ReactNode }) {
   const pathname = usePathname();
@@ -9,6 +11,16 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
   
   const userRole = (session?.user as any)?.role || "ADMIN";
   const userName = session?.user?.name || "Administrador";
+
+  const [allowTherapistEdit, setAllowTherapistEdit] = useState(true);
+
+  useEffect(() => {
+    async function loadPermission() {
+      const allowed = await getAllowTherapistEdit();
+      setAllowTherapistEdit(allowed);
+    }
+    loadPermission();
+  }, []);
 
   const allTabs = [
     { name: "Agenda", path: "/dashboard/agenda", adminOnly: false },
@@ -34,8 +46,11 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
     if (roleUpper === "ADMIN" || roleUpper === "ADMINISTRADOR") {
       return tab.path !== "/dashboard/contrasena";
     }
-    if (roleUpper === "TERAPEUTA" && tab.adminOnly) {
-      return false;
+    if (roleUpper === "TERAPEUTA") {
+      if (tab.path === "/dashboard/pacientes") {
+        return allowTherapistEdit;
+      }
+      if (tab.adminOnly) return false;
     }
     if (roleUpper === "CONTADOR") {
       const allowedPaths = [

@@ -18,7 +18,6 @@ export async function middleware(req: NextRequest) {
 
     // Restrict Admin-only routes for Therapists
     const adminOnlyRoutes = [
-      "/dashboard/pacientes",
       "/dashboard/finanzas",
       "/dashboard/terapeutas",
       "/dashboard/honorarios",
