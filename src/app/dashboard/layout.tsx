@@ -31,6 +31,9 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
   // Filter tabs based on role
   const tabs = allTabs.filter(tab => {
     const roleUpper = userRole.toUpperCase();
+    if (roleUpper === "ADMIN" || roleUpper === "ADMINISTRADOR") {
+      return tab.path !== "/dashboard/contrasena";
+    }
     if (roleUpper === "TERAPEUTA" && tab.adminOnly) {
       return false;
     }
