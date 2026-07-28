@@ -66,7 +66,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
       return allowedPaths.includes(tab.path);
     }
     if (roleUpper === "INVITADO") {
-      return tab.path !== "/dashboard/configuracion";
+      return true;
     }
     return true;
   });

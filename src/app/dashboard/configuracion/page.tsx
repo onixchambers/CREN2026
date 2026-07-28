@@ -101,6 +101,10 @@ export default function ConfiguracionPage() {
   }
 
   const handleSave = async () => {
+    if (userRole.toUpperCase() === "INVITADO") {
+      alert("El usuario con rol de Invitado solo tiene permisos de lectura y no puede modificar ni borrar datos en Configuración.");
+      return;
+    }
     setIsSaving(true);
     try {
       // Ordenar gastos alfabéticamente antes de guardar
@@ -144,20 +148,36 @@ export default function ConfiguracionPage() {
   };
 
   const addUsuario = () => {
+    if (userRole.toUpperCase() === "INVITADO") {
+      alert("El usuario con rol de Invitado no tiene permisos para agregar usuarios.");
+      return;
+    }
     setUsuarios([...usuarios, { id: Date.now(), usuario: "", rol: "Terapeuta", contrasena: "", especialidad: "" }]);
   };
 
   const removeUsuario = (id: any) => {
+    if (userRole.toUpperCase() === "INVITADO") {
+      alert("El usuario con rol de Invitado no tiene permisos para eliminar usuarios.");
+      return;
+    }
     setUsuarios(usuarios.filter(u => u.id !== id));
   };
 
   const addGasto = () => {
+    if (userRole.toUpperCase() === "INVITADO") {
+      alert("El usuario con rol de Invitado no tiene permisos para agregar gastos.");
+      return;
+    }
     const newG = [...gastos, { id: Date.now(), label: "", val: "" }];
     newG.sort((a, b) => (a.label || "").localeCompare(b.label || "", 'es', { sensitivity: 'base' }));
     setGastos(newG);
   };
 
   const removeGasto = (id: any) => {
+    if (userRole.toUpperCase() === "INVITADO") {
+      alert("El usuario con rol de Invitado no tiene permisos para eliminar gastos.");
+      return;
+    }
     setGastos(gastos.filter(g => g.id !== id));
   };
 
@@ -257,8 +277,8 @@ export default function ConfiguracionPage() {
                     />
                   </div>
                 )}
-                {u.usuario?.trim().toLowerCase() !== 'onixchambers' ? (
-                  <button onClick={() => removeUsuario(u.id)} className="p-2 bg-red-500 hover:bg-red-600 text-white rounded transition-colors">
+                {u.usuario?.trim().toLowerCase() !== 'onixchambers' && userRole.toUpperCase() !== 'INVITADO' ? (
+                  <button onClick={() => removeUsuario(u.id)} className="p-2 bg-red-500 hover:bg-red-600 text-white rounded transition-colors" title="Eliminar usuario">
                     <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" /></svg>
                   </button>
                 ) : (
@@ -619,9 +639,11 @@ export default function ConfiguracionPage() {
                   }} className="w-full p-2 pl-6 border border-slate-300 rounded text-sm text-slate-900 focus:border-blue-500 outline-none text-slate-900" />
                 </div>
                 
-                <button onClick={() => removeGasto(gasto.id)} className="p-2 bg-red-50 hover:bg-red-100 text-red-500 rounded transition-colors" title="Eliminar gasto">
-                  <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" /></svg>
-                </button>
+                {userRole.toUpperCase() !== "INVITADO" && (
+                  <button onClick={() => removeGasto(gasto.id)} className="p-2 bg-red-50 hover:bg-red-100 text-red-500 rounded transition-colors" title="Eliminar gasto">
+                    <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" /></svg>
+                  </button>
+                )}
               </div>
             ))}
           </div>
