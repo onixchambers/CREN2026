@@ -1,5 +1,6 @@
 "use client";
 import { useState, useEffect } from "react";
+import { useSession } from "next-auth/react";
 import { DateInput } from "@/components/DateInput";
 
 type Paciente = {
@@ -19,6 +20,10 @@ type Paciente = {
 };
 
 export default function PacientesPage() {
+  const { data: session } = useSession();
+  const userRole = (session?.user as any)?.role || "ADMIN";
+  const [allowTherapistEdit, setAllowTherapistEdit] = useState(true);
+
   const formatDateStr = (dateStr: string) => {
     if (!dateStr) return "-";
     const parts = dateStr.split("-");
@@ -30,14 +35,19 @@ export default function PacientesPage() {
   const [monthTerm, setMonthTerm] = useState("");
 
   useEffect(() => {
-    async function loadPatients() {
+    async function loadData() {
       const { getPatients } = await import('@/app/actions/pacientes');
-      const result = await getPatients();
+      const { getAllowTherapistEdit } = await import('@/app/actions/configuracion');
+      const [result, allowed] = await Promise.all([
+        getPatients(),
+        getAllowTherapistEdit()
+      ]);
       if (result.success && result.data) {
         setPacientes(result.data);
       }
+      setAllowTherapistEdit(allowed);
     }
-    loadPatients();
+    loadData();
   }, []);
 
   const [currentPage, setCurrentPage] = useState(1);
@@ -62,6 +72,10 @@ export default function PacientesPage() {
   const [isSaving, setIsSaving] = useState(false);
 
   const openEditModal = (p: any) => {
+    if (userRole.toUpperCase() === "TERAPEUTA" && !allowTherapistEdit) {
+      alert("La administración no tiene habilitado el permiso para editar pacientes.");
+      return;
+    }
     setEditingPatient(p);
     setEditForm({
       nombre: p.name || "",
@@ -96,7 +110,11 @@ export default function PacientesPage() {
   };
 
   const handleDelete = async (p: any) => {
-    if (confirm("�Est�s seguro de que deseas eliminar este paciente? Esta acci�n no se puede deshacer y borrar� todos sus registros asociados.")) {
+    if (userRole.toUpperCase() === "TERAPEUTA" && !allowTherapistEdit) {
+      alert("La administración no tiene habilitado el permiso para eliminar pacientes.");
+      return;
+    }
+    if (confirm("¿Estás seguro de que deseas eliminar este paciente? Esta acción no se puede deshacer y borrará todos sus registros asociados.")) {
       const { deletePatient, getPatients } = await import('@/app/actions/pacientes');
       const result = await deletePatient(p.id);
       if (result.success) {
@@ -205,12 +223,16 @@ export default function PacientesPage() {
                   </td>
                   <td className="px-4 py-4" onClick={(e) => e.stopPropagation()}>
                     <div className="flex gap-2">
-                      <button onClick={() => openEditModal(p)} title="Editar" className="p-1.5 border border-slate-200 rounded hover:bg-slate-100 text-amber-500 transition-colors">
-                        <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z" /></svg>
-                      </button>
-                      <button onClick={() => handleDelete(p)} title="Borrar" className="p-1.5 border border-slate-200 rounded hover:bg-slate-100 text-red-500 transition-colors">
-                        <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" /></svg>
-                      </button>
+                      {(userRole.toUpperCase() !== "TERAPEUTA" || allowTherapistEdit) && (
+                        <button onClick={() => openEditModal(p)} title="Editar" className="p-1.5 border border-slate-200 rounded hover:bg-slate-100 text-amber-500 transition-colors">
+                          <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z" /></svg>
+                        </button>
+                      )}
+                      {(userRole.toUpperCase() !== "TERAPEUTA" || allowTherapistEdit) && (
+                        <button onClick={() => handleDelete(p)} title="Borrar" className="p-1.5 border border-slate-200 rounded hover:bg-slate-100 text-red-500 transition-colors">
+                          <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" /></svg>
+                        </button>
+                      )}
                     </div>
                   </td>
                 </tr>

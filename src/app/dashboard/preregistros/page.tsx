@@ -11,6 +11,16 @@ export default function PreregistrosPage() {
   const userName = session?.user?.name || "Administrador";
   const userRole = (session?.user as any)?.role || "ADMIN";
   const [editingId, setEditingId] = useState<string | null>(null);
+  const [allowTherapistEdit, setAllowTherapistEdit] = useState(true);
+
+  useEffect(() => {
+    async function loadPermission() {
+      const { getAllowTherapistEdit } = await import('@/app/actions/configuracion');
+      const allowed = await getAllowTherapistEdit();
+      setAllowTherapistEdit(allowed);
+    }
+    loadPermission();
+  }, []);
 
   const [madreCountryCode, setMadreCountryCode] = useState("+52");
   const [padreCountryCode, setPadreCountryCode] = useState("+52");
@@ -141,6 +151,10 @@ export default function PreregistrosPage() {
 
 
   const handleEdit = (ficha: any) => {
+    if (userRole.toUpperCase() === "TERAPEUTA" && !allowTherapistEdit) {
+      alert("La administración no tiene habilitado el permiso para editar o modificar fichas de pacientes.");
+      return;
+    }
     setEditingId(ficha.id);
 
     // Parse country code if present in phone fields
@@ -172,6 +186,10 @@ export default function PreregistrosPage() {
   };
 
   const handleDelete = async (id: string) => {
+    if (userRole.toUpperCase() === "TERAPEUTA" && !allowTherapistEdit) {
+      alert("La administración no tiene habilitado el permiso para eliminar pacientes.");
+      return;
+    }
     if (!confirm("¿Estás seguro de eliminar este paciente permanentemente?")) return;
     const { deletePatient, getPatients } = await import('@/app/actions/pacientes');
     const res = await deletePatient(id);
@@ -554,10 +572,12 @@ export default function PreregistrosPage() {
                     <td className="px-4 py-3 text-slate-500">{f.medicoTratante || "Por asignar"}</td>
                     <td className="px-4 py-3 text-center">
                       <div className="flex justify-center gap-2">
-                        <button onClick={() => handleEdit(f)} className="p-1 text-yellow-500 hover:text-yellow-600 transition-colors" title="Editar">
-                          <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z" /></svg>
-                        </button>
-                        {userRole === "ADMIN" && (
+                        {(userRole.toUpperCase() !== "TERAPEUTA" || allowTherapistEdit) && (
+                          <button onClick={() => handleEdit(f)} className="p-1 text-yellow-500 hover:text-yellow-600 transition-colors" title="Editar">
+                            <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z" /></svg>
+                          </button>
+                        )}
+                        {(userRole === "ADMIN" || userRole === "ADMINISTRADOR" || allowTherapistEdit) && (
                           <button onClick={() => handleDelete(f.id)} className="p-1 text-red-500 hover:text-red-600 transition-colors" title="Eliminar">
                             <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" /></svg>
                           </button>
