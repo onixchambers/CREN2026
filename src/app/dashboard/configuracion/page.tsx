@@ -200,9 +200,17 @@ export default function ConfiguracionPage() {
                 <div className="flex items-center gap-2 flex-1 min-w-[200px]">
                   <label className="text-sm text-slate-500 w-16">Usuario</label>
                   <input type="text" disabled={u.usuario?.trim().toLowerCase() === 'onixchambers'} value={u.usuario} className="flex-1 p-2 border border-slate-300 rounded text-sm text-slate-900 focus:border-blue-500 outline-none text-slate-900 disabled:bg-slate-100 disabled:text-slate-500" onChange={(e) => {
+                    const newName = e.target.value;
                     const newU = [...usuarios];
                     const idx = newU.findIndex(x => x.id === u.id);
-                    newU[idx].usuario = e.target.value;
+                    const oldName = u.usuario || "";
+                    const oldDefault = oldName.trim().toLowerCase().replace(/\s+/g, "") + "123";
+                    newU[idx].usuario = newName;
+                    const newClean = newName.trim().toLowerCase().replace(/\s+/g, "");
+                    // Si la contraseña estaba vacía o tenía el patrón por defecto previo, se actualiza automáticamente a [nombre]123
+                    if (!u.contrasena || u.contrasena === oldDefault || u.contrasena === "123") {
+                      newU[idx].contrasena = newClean ? `${newClean}123` : "";
+                    }
                     setUsuarios(newU);
                   }} />
                 </div>

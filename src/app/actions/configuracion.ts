@@ -231,3 +231,47 @@ export async function getSystemIvaRate() {
     return 16;
   }
 }
+
+export async function changeUserPassword(userName: string, currentPassword: string, newPassword: string) {
+  try {
+    if (!userName) {
+      return { success: false, error: "Usuario no identificado." };
+    }
+
+    // Special case for fallback Admin
+    if (userName === "Administrador" && currentPassword === "admin123") {
+      // Find or create admin user in DB to persist new password
+      const adminUser = await prisma.user.findFirst({ where: { role: "Admin" } });
+      if (adminUser) {
+        await prisma.user.update({
+          where: { id: adminUser.id },
+          data: { password: newPassword }
+        });
+      }
+      return { success: true };
+    }
+
+    const user = await prisma.user.findFirst({
+      where: { name: { equals: userName, mode: 'insensitive' } }
+    });
+
+    if (!user) {
+      return { success: false, error: "Usuario no encontrado en el sistema." };
+    }
+
+    if (user.password !== currentPassword) {
+      return { success: false, error: "La contraseña actual no es correcta." };
+    }
+
+    await prisma.user.update({
+      where: { id: user.id },
+      data: { password: newPassword }
+    });
+
+    revalidatePath("/dashboard", "layout");
+    return { success: true };
+  } catch (error: any) {
+    console.error("Error cambiando contraseña:", error);
+    return { success: false, error: error?.message || "Error al actualizar contraseña" };
+  }
+}
