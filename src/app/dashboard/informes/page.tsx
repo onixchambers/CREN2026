@@ -148,9 +148,13 @@ export default function InformesPage() {
           const driveRes = await uploadInformePDFToDrive(fd);
           if (driveRes.success && driveRes.webViewLink) {
             driveLink = driveRes.webViewLink;
+          } else if (driveRes.error) {
+            console.error("Error al subir a Google Drive:", driveRes.error);
+            alert("Aviso de Google Drive: " + driveRes.error);
           }
-        } catch (err) {
+        } catch (err: any) {
           console.warn("Subida a Google Drive omitida o falló:", err);
+          alert("Error de conexión con Google Drive: " + (err?.message || err?.toString()));
         }
 
         nuevosInformes.push({

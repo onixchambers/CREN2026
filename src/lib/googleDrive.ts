@@ -9,8 +9,19 @@ function base64url(str: string): string {
     .replace(/\//g, "_");
 }
 
+function cleanPrivateKey(key: string): string {
+  if (!key) return "";
+  let k = key.trim();
+  if ((k.startsWith('"') && k.endsWith('"')) || (k.startsWith("'") && k.endsWith("'"))) {
+    k = k.slice(1, -1);
+  }
+  k = k.replaceAll("\\n", "\n");
+  k = k.replaceAll("\r\n", "\n");
+  return k;
+}
+
 async function getGoogleDriveAccessToken(clientEmail: string, privateKey: string): Promise<string> {
-  const formattedKey = privateKey.replace(/\\n/g, "\n");
+  const formattedKey = cleanPrivateKey(privateKey);
   const now = Math.floor(Date.now() / 1000);
 
   const header = base64url(JSON.stringify({ alg: "RS256", typ: "JWT" }));
@@ -52,13 +63,13 @@ export async function uploadFileToGoogleDrive(fileBuffer: Buffer, fileName: stri
   const settings = await prisma.systemSettings.findUnique({ where: { id: 1 } });
   
   if (!settings || !settings.googleDriveEnabled || !settings.googleDriveClientEmail || !settings.googleDrivePrivateKey) {
-    return { success: false, error: "Google Drive no está habilitado o configurado en Configuración." };
+    return { success: false, error: "Google Drive no está habilitado o faltan credenciales en Configuración." };
   }
 
   try {
     const accessToken = await getGoogleDriveAccessToken(
       settings.googleDriveClientEmail.trim(),
-      settings.googleDrivePrivateKey.trim()
+      settings.googleDrivePrivateKey
     );
 
     const metadata: any = {
@@ -104,11 +115,11 @@ export async function uploadFileToGoogleDrive(fileBuffer: Buffer, fileName: stri
       success: true,
       fileId: fileData.id,
       fileName: fileData.name,
-      webViewLink: fileData.webViewLink || `https://drive.google.com/file/d/${fileData.id}/view`,
+      webViewLink: fileData.webViewLink,
       webContentLink: fileData.webContentLink,
     };
   } catch (error: any) {
-    console.error("Google Drive Upload Error:", error);
-    return { success: false, error: error.message || "Error desconocido al conectar con Google Drive." };
+    console.error("Error uploading to Google Drive:", error);
+    return { success: false, error: error?.message || "Error al conectar con Google Drive." };
   }
 }
