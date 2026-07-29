@@ -59,11 +59,7 @@ export default function InformesPage() {
     async function loadData() {
       const res = await getPatients();
       if (res.success && res.data) {
-        let validPatients = res.data;
-        if (userRole.toUpperCase() === "TERAPEUTA") {
-          validPatients = validPatients.filter((p: any) => p.medicoTratante === userName);
-        }
-        const mapped = validPatients.map((p: any) => ({
+        const mapped = res.data.map((p: any) => ({
           id: p.id,
           paciente: p.name
         }));
