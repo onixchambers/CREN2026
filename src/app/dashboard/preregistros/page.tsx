@@ -386,8 +386,8 @@ export default function PreregistrosPage() {
           pdfUrl: "Informes PDF CREN / Lic. " + (formData.medicoTratante || userName) + " Protección de Datos",
         });
 
-        const pdfBlob = new Blob([Buffer.from(htmlBase64, "base64")], { type: "text/html" });
-        const pdfFile = new File([pdfBlob], `Consentimiento_Firmado_${formData.nombre.replace(/\s+/g, "_")}.html`, { type: "text/html" });
+        const pdfBlob = new Blob([Buffer.from(htmlBase64, "base64")], { type: "application/pdf" });
+        const pdfFile = new File([pdfBlob], `Consentimiento_Firmado_${formData.nombre.replace(/\s+/g, "_")}.pdf`, { type: "application/pdf" });
 
         const driveFd = new FormData();
         driveFd.append("file", pdfFile);
