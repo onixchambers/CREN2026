@@ -35,6 +35,13 @@ export default function PreregistrosPage() {
     }
     loadPermission();
     refreshPendingPreRegs();
+
+    // Auto polling cada 3 segundos para detectar registros entrantes en tiempo real
+    const interval = setInterval(() => {
+      refreshPendingPreRegs();
+    }, 3000);
+
+    return () => clearInterval(interval);
   }, []);
 
   const refreshPendingPreRegs = async () => {
@@ -437,7 +444,7 @@ export default function PreregistrosPage() {
         <button
           onClick={handleGenerateQr}
           disabled={loadingQr}
-          className="bg-emerald-600 hover:bg-emerald-700 text-white font-bold px-4 py-2 rounded-lg text-sm shadow flex items-center gap-2 transition"
+          className="bg-emerald-600 hover:bg-emerald-700 text-white font-bold px-4 py-2 rounded-lg text-sm shadow flex items-center gap-2 transition cursor-pointer"
         >
           <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v1m6 11h2m-6 0h-2v4m0-11v3m0 0h.01M12 12h4.01M16 20h4M4 12h4m12 0h.01M5 8h2a1 1 0 001-1V5a1 1 0 00-1-1H5a1 1 0 00-1 1v2a1 1 0 001 1zm12 0h2a1 1 0 001-1V5a1 1 0 00-1-1h-2a1 1 0 00-1 1v2a1 1 0 001 1zM5 20h2a1 1 0 001-1v-2a1 1 0 00-1-1H5a1 1 0 00-1 1v2a1 1 0 001 1z" />
@@ -446,45 +453,45 @@ export default function PreregistrosPage() {
         </button>
       </div>
 
-      {/* BANNER DE PREREGISTROS PENDIENTES RECIBIDOS */}
+      {/* BANNER DE PREREGISTROS PENDIENTES RECIBIDOS EN VERDE Y TIEMPO REAL */}
       {pendingPreRegs.length > 0 && (
-        <div className="bg-amber-50 border border-amber-200 rounded-xl p-4 shadow-sm space-y-3">
+        <div className="bg-emerald-50 border-2 border-emerald-500 rounded-xl p-4 shadow-md space-y-3 animate-in fade-in duration-300">
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-2">
-              <span className="w-3 h-3 rounded-full bg-amber-500 animate-ping"></span>
-              <h3 className="text-sm font-bold text-amber-900">
+              <span className="w-3.5 h-3.5 rounded-full bg-emerald-600 animate-pulse"></span>
+              <h3 className="text-base font-extrabold text-emerald-900">
                 📩 {pendingPreRegs.length} Registro(s) de Consentimiento Firmado(s) Recibidos
               </h3>
             </div>
-            <button onClick={refreshPendingPreRegs} className="text-xs text-amber-700 underline font-semibold">
-              Actualizar lista
+            <button onClick={refreshPendingPreRegs} className="text-xs text-emerald-700 underline font-bold cursor-pointer">
+              🔄 Actualizar
             </button>
           </div>
 
           <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
             {pendingPreRegs.map((preReg) => (
-              <div key={preReg.id} className="bg-white border border-amber-200 rounded-lg p-3 flex items-center justify-between shadow-xs gap-2">
+              <div key={preReg.id} className="bg-white border-2 border-emerald-400 rounded-xl p-3.5 flex items-center justify-between shadow-xs gap-2">
                 <div>
-                  <div className="font-bold text-slate-800 text-sm">{preReg.name}</div>
-                  <div className="text-[11px] text-slate-500">
-                    Terapeuta: <strong>{preReg.medicoTratante || "Sin asignar"}</strong> • {formatDateStr(preReg.createdAt ? preReg.createdAt.toString().split("T")[0] : "")}
+                  <div className="font-extrabold text-slate-900 text-base">{preReg.name}</div>
+                  <div className="text-xs text-slate-600 font-medium">
+                    Terapeuta: <strong>{preReg.medicoTratante || "General"}</strong> • {formatDateStr(preReg.createdAt ? preReg.createdAt.toString().split("T")[0] : "")}
                   </div>
-                  <div className="text-[10px] font-mono text-emerald-600 mt-0.5">
-                    Hash SHA-256: {preReg.cryptoHash ? preReg.cryptoHash.slice(0, 16) + "..." : "Firmado"}
+                  <div className="text-[11px] font-mono text-emerald-700 font-bold mt-0.5">
+                    Hash SHA-256: {preReg.cryptoHash ? preReg.cryptoHash.slice(0, 16) + "..." : "Firmado HD"}
                   </div>
                 </div>
 
-                <div className="flex items-center gap-1.5 shrink-0">
+                <div className="flex items-center gap-2 shrink-0">
                   <button
                     onClick={() => handleLoadPreRegData(preReg)}
-                    className="bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-xs px-3 py-2 rounded-lg shadow flex items-center gap-1 transition"
+                    className="bg-emerald-600 hover:bg-emerald-700 text-white font-extrabold text-sm px-4 py-2 rounded-lg shadow-md flex items-center gap-1.5 transition cursor-pointer"
                   >
-                    <span>⚡ Cargar Datos</span>
+                    <span>⚡ Cargar</span>
                   </button>
                   <button
                     onClick={(e) => handleDiscardPreReg(preReg.id, e)}
-                    title="Descartar de lista"
-                    className="p-1.5 text-slate-400 hover:text-rose-600 border border-slate-200 rounded-lg hover:bg-rose-50 transition"
+                    title="Descartar"
+                    className="p-2 text-slate-400 hover:text-rose-600 border border-slate-300 rounded-lg hover:bg-rose-50 transition cursor-pointer"
                   >
                     ✕
                   </button>
@@ -899,7 +906,7 @@ export default function PreregistrosPage() {
             <div className="flex gap-3 pt-4 border-t border-slate-200">
               <button
                 type="submit"
-                className="bg-[#1a5276] hover:bg-[#0e2f44] text-white font-bold px-6 py-2.5 rounded text-sm shadow transition"
+                className="bg-[#1a5276] hover:bg-[#0e2f44] text-[#ffffff] font-bold px-6 py-2.5 rounded text-sm shadow transition cursor-pointer"
               >
                 {editingId ? "Actualizar Paciente" : "Guardar Paciente y Generar Documentos"}
               </button>
@@ -907,7 +914,7 @@ export default function PreregistrosPage() {
               <button
                 type="button"
                 onClick={handleLimpiar}
-                className="bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold px-4 py-2.5 rounded text-sm transition"
+                className="bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold px-4 py-2.5 rounded text-sm transition cursor-pointer"
               >
                 Limpiar Formulario
               </button>
@@ -939,7 +946,7 @@ export default function PreregistrosPage() {
                   navigator.clipboard.writeText(qrUrl);
                   alert("¡Enlace copiado al portapapeles!");
                 }}
-                className="flex-1 bg-slate-800 text-white font-semibold py-2 rounded-lg text-xs hover:bg-slate-700 transition"
+                className="flex-1 bg-slate-800 text-white font-semibold py-2 rounded-lg text-xs hover:bg-slate-700 transition cursor-pointer"
               >
                 📋 Copiar Enlace
               </button>
@@ -948,13 +955,13 @@ export default function PreregistrosPage() {
                   const text = encodeURIComponent(`Hola! Completa tu registro y firma digital de consentimiento en CREN aquí: ${qrUrl}`);
                   window.open(`https://api.whatsapp.com/send?text=${text}`, "_blank");
                 }}
-                className="flex-1 bg-emerald-600 text-white font-semibold py-2 rounded-lg text-xs hover:bg-emerald-700 transition"
+                className="flex-1 bg-emerald-600 text-white font-semibold py-2 rounded-lg text-xs hover:bg-emerald-700 transition cursor-pointer"
               >
                 💬 WhatsApp
               </button>
             </div>
 
-            <button onClick={() => setShowQrModal(false)} className="w-full text-xs text-slate-400 font-semibold py-1">
+            <button onClick={() => setShowQrModal(false)} className="w-full text-xs text-slate-400 font-semibold py-1 cursor-pointer">
               Cerrar
             </button>
           </div>

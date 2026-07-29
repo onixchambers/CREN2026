@@ -143,8 +143,13 @@ export async function submitPreRegistration(formData: any, clientMetadata: { ip?
 export async function getPendingPreRegistrations() {
   try {
     const list = await (prisma as any).preRegistration.findMany({
-      where: { status: "PENDING" },
-      orderBy: { createdAt: "desc" },
+      where: {
+        status: "PENDING",
+        NOT: {
+          signatureDataUrl: null,
+        },
+      },
+      orderBy: { updatedAt: "desc" },
     });
     return { success: true, data: list };
   } catch (error: any) {
@@ -160,6 +165,7 @@ export async function markPreRegistrationAsLoaded(id: string) {
       data: { status: "LOADED" },
     });
     revalidatePath("/dashboard/pacientes");
+    revalidatePath("/dashboard/preregistros");
     return { success: true };
   } catch (error: any) {
     console.error("Error updating pre-registration status:", error);
