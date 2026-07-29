@@ -16,21 +16,29 @@ export default function LoginPage() {
     setLoading(true);
     setError("");
 
-    const cleanUser = username.trim();
-    const cleanPass = password.trim();
+    try {
+      const cleanUser = username.trim();
+      const cleanPass = password.trim();
 
-    const res = await signIn("credentials", {
-      redirect: false,
-      username: cleanUser,
-      password: cleanPass,
-    });
+      const res = await signIn("credentials", {
+        redirect: false,
+        username: cleanUser,
+        password: cleanPass,
+      });
 
-    if (res?.error) {
-      setError("Credenciales incorrectas");
+      if (res?.error) {
+        setError("Credenciales incorrectas");
+        setLoading(false);
+      } else if (res?.ok) {
+        window.location.assign("/dashboard");
+      } else {
+        setError("Error al iniciar sesión. Inténtalo nuevamente.");
+        setLoading(false);
+      }
+    } catch (err: any) {
+      console.error("Error durante inicio de sesión:", err);
+      setError("Error de comunicación con el servidor.");
       setLoading(false);
-    } else {
-      window.location.href = `/dashboard?t=${Date.now()}`;
-      router.refresh();
     }
   };
 
@@ -49,7 +57,7 @@ export default function LoginPage() {
           </h2>
 
           {error && (
-            <div className="bg-red-50 text-red-600 p-3 rounded-lg text-sm mb-4 text-center">
+            <div className="bg-red-50 text-red-600 p-3 rounded-lg text-sm mb-4 text-center font-medium">
               {error}
             </div>
           )}
@@ -92,9 +100,12 @@ export default function LoginPage() {
             <button
               type="submit"
               disabled={loading}
-              className="w-full bg-[#1a5276] hover:bg-[#0e2f44] text-white font-bold py-3 px-4 rounded-lg transition-colors disabled:opacity-50"
+              className="w-full bg-[#1a5276] hover:bg-[#0e2f44] text-white font-bold py-3 px-4 rounded-lg transition-colors disabled:opacity-50 flex items-center justify-center gap-2"
             >
-              {loading ? "Iniciando..." : "Entrar al Sistema"}
+              {loading && (
+                <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
+              )}
+              {loading ? "Entrando..." : "Entrar al Sistema"}
             </button>
           </form>
         </div>

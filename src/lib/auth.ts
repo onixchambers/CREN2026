@@ -84,5 +84,4 @@ export const authOptions: NextAuthOptions = {
   pages: {
     signIn: "/login",
   },
-  useSecureCookies: process.env.NODE_ENV === "production",
 };
