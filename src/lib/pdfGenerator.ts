@@ -1,4 +1,4 @@
-// Generador de Documento PDF Legal de Consentimiento e Intake para México (Formato Legal 8.5" x 14")
+// Generador de Documento PDF Legal de Consentimiento e Intake para México (Alta Legibilidad HD)
 
 export function generateConsentPdfBase64(data: {
   pacienteNombre: string;
@@ -37,65 +37,64 @@ export function generateConsentPdfBase64(data: {
       <title>Consentimiento Informado - ${data.pacienteNombre}</title>
       <style>
         @page {
-          size: 8.5in 14in; /* Formato Legal 8 1/2 x 14 pulgadas */
-          margin: 0.4in;
+          margin: 0.5in;
         }
         body {
-          font-family: 'Helvetica Neue', Helvetica, Arial, sans-serif;
+          font-family: Arial, Helvetica, sans-serif;
           margin: 0;
-          padding: 20px;
+          padding: 25px;
           color: #0f172a;
           background: #ffffff;
-          font-size: 11px;
-          line-height: 1.45;
-          width: 7.7in; /* Se ajusta a 8.5in menos márgenes */
+          font-size: 13px;
+          line-height: 1.5;
           box-sizing: border-box;
         }
         .header {
           text-align: center;
           border-bottom: 3px double #0e2f44;
-          padding-bottom: 10px;
-          margin-bottom: 15px;
+          padding-bottom: 12px;
+          margin-bottom: 20px;
         }
         .header-title {
-          font-size: 17px;
+          font-size: 20px;
           font-weight: 800;
           color: #0e2f44;
           letter-spacing: 0.5px;
           margin: 0;
         }
         .header-subtitle {
-          font-size: 13px;
+          font-size: 15px;
           font-weight: 700;
           color: #059669;
-          margin-top: 4px;
+          margin-top: 5px;
         }
         .header-legal {
-          font-size: 9.5px;
+          font-size: 11px;
           color: #475569;
-          margin-top: 2px;
+          margin-top: 3px;
         }
         .section-header {
           background: #0e2f44;
           color: #ffffff;
-          font-size: 11px;
+          font-size: 13px;
           font-weight: 700;
-          padding: 5px 10px;
+          padding: 6px 12px;
           border-radius: 4px;
-          margin-top: 14px;
-          margin-bottom: 8px;
+          margin-top: 18px;
+          margin-bottom: 10px;
           text-transform: uppercase;
           letter-spacing: 0.5px;
         }
         .grid-table {
           width: 100%;
           border-collapse: collapse;
-          margin-bottom: 10px;
+          margin-bottom: 12px;
         }
         .grid-table td {
-          padding: 5px 8px;
+          padding: 8px 10px;
           border: 1px solid #cbd5e1;
           vertical-align: top;
+          font-size: 13px;
         }
         .label {
           font-weight: 700;
@@ -103,81 +102,80 @@ export function generateConsentPdfBase64(data: {
         }
         .notice-box {
           background: #fef3c7;
-          border: 1.5px solid #f59e0b;
-          padding: 10px;
-          font-size: 10px;
+          border: 2px solid #f59e0b;
+          padding: 12px;
+          font-size: 12px;
           font-weight: 700;
           color: #78350f;
           border-radius: 6px;
-          margin-top: 12px;
-          line-height: 1.4;
+          margin-top: 16px;
+          line-height: 1.45;
           text-align: justify;
         }
         .legal-terms {
           background: #f8fafc;
           border: 1px solid #cbd5e1;
-          padding: 12px;
+          padding: 14px;
           border-radius: 6px;
-          font-size: 9.5px;
+          font-size: 11.5px;
           color: #334155;
           text-align: justify;
-          margin-top: 10px;
-          line-height: 1.4;
+          margin-top: 14px;
+          line-height: 1.5;
         }
         .legal-terms h4 {
-          margin: 6px 0 2px 0;
+          margin: 8px 0 3px 0;
           color: #0e2f44;
-          font-size: 10px;
+          font-size: 12.5px;
         }
         .signature-container {
-          margin-top: 20px;
+          margin-top: 25px;
           display: flex;
           justify-content: space-between;
           align-items: flex-end;
           page-break-inside: avoid;
         }
         .signature-card {
-          width: 320px;
-          border: 1.5px solid #0e2f44;
+          width: 340px;
+          border: 2px solid #0e2f44;
           border-radius: 8px;
-          padding: 10px;
+          padding: 12px;
           text-align: center;
           background: #ffffff;
         }
         .signature-img {
-          max-height: 110px;
+          max-height: 120px;
           width: auto;
-          max-width: 290px;
+          max-width: 310px;
           display: block;
-          margin: 0 auto 6px auto;
+          margin: 0 auto 8px auto;
           image-rendering: -webkit-optimize-contrast;
-          image-rendering: crisp-edges;
         }
         .signature-line {
-          border-top: 1.5px solid #0e2f44;
-          padding-top: 4px;
+          border-top: 2px solid #0e2f44;
+          padding-top: 6px;
           font-weight: 800;
-          font-size: 10.5px;
+          font-size: 12px;
           color: #0e2f44;
         }
         .audit-box {
           background: #0f172a;
           color: #f8fafc;
-          padding: 12px;
+          padding: 14px;
           border-radius: 8px;
-          margin-top: 20px;
+          margin-top: 25px;
           font-family: 'Courier New', Courier, monospace;
-          font-size: 9.5px;
-          line-height: 1.5;
+          font-size: 11px;
+          line-height: 1.6;
           page-break-inside: avoid;
         }
         .audit-title {
           color: #34d399;
           font-weight: bold;
-          font-size: 10.5px;
+          font-size: 12px;
           border-bottom: 1px solid #334155;
-          padding-bottom: 4px;
-          margin-bottom: 6px;
+          padding-bottom: 6px;
+          margin-bottom: 8px;
         }
         .audit-row {
           word-break: break-all;
@@ -193,7 +191,7 @@ export function generateConsentPdfBase64(data: {
         <div class="header-title">CENTRO DE REHABILITACIÓN NEUROLÓGICA (CREN)</div>
         <div class="header-subtitle">DOCUMENTO OFICIAL DE INTAKE Y CONSENTIMIENTO INFORMADO DE DATOS PERSONALES SENSIBLES DE SALUD</div>
         <div class="header-legal">Validez Jurídica Plena conforme al Código de Comercio (Art. 89-114) y LFPDPPP de los Estados Unidos Mexicanos</div>
-        <div style="font-size:10px; font-weight:bold; color:#0e2f44; margin-top:4px;">FECHA Y HORA DE EMISIÓN: ${fechaEmision}</div>
+        <div style="font-size:11.5px; font-weight:bold; color:#0e2f44; margin-top:6px;">FECHA Y HORA DE EMISIÓN: ${fechaEmision}</div>
       </div>
 
       <div class="section-header">1. FICHA DE IDENTIFICACIÓN DEL PACIENTE</div>
@@ -249,7 +247,7 @@ export function generateConsentPdfBase64(data: {
 
       <div class="signature-container">
         <div>
-          <div style="font-size:10px; color:#475569;">
+          <div style="font-size:11px; color:#475569;">
             Documento Firmado Electrónicamente en Dispositivo Móvil.<br/>
             Estado de Validación: <strong>APROBADO Y SELLADO</strong>
           </div>
@@ -261,7 +259,7 @@ export function generateConsentPdfBase64(data: {
               : `<div style="height:70px; color:#94a3b8; font-style:italic; padding-top:20px;">[ Sin Imagen de Firma ]</div>`
           }
           <div class="signature-line">FIRMA DIGITAL DEL TUTOR / PACIENTE</div>
-          <div style="font-size:8.5px; color:#64748b; margin-top:2px;">Firma Electrónica Simplificada (Código de Comercio Art. 89)</div>
+          <div style="font-size:9.5px; color:#64748b; margin-top:2px;">Firma Electrónica Simplificada (Código de Comercio Art. 89)</div>
         </div>
       </div>
 
