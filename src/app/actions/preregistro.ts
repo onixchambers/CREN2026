@@ -145,9 +145,10 @@ export async function getPendingPreRegistrations() {
     const list = await (prisma as any).preRegistration.findMany({
       where: {
         status: "PENDING",
-        NOT: {
-          signatureDataUrl: null,
-        },
+        AND: [
+          { signatureDataUrl: { not: null } },
+          { signatureDataUrl: { not: "" } },
+        ],
       },
       orderBy: { updatedAt: "desc" },
     });
