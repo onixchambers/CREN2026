@@ -157,3 +157,44 @@ model Horario {
   createdAt   DateTime @default(now())
   updatedAt   DateTime @updatedAt
 }
+
+model PreRegistration {
+  id                    String   @id @default(cuid())
+  token                 String   @unique
+  name                  String
+  fechaNacimiento       String?
+  sexo                  String?
+  fechaIngreso          String?
+  estatus               String   @default("Activo")
+  origen                String   @default("Google")
+  medicoTratante        String?
+  escuela               String?
+
+  madreNombre           String?
+  padreNombre           String?
+  otrosNombre           String?
+  madreContacto         String?
+  padreContacto         String?
+  otrosContacto         String?
+  principalMadre        Boolean  @default(false)
+  principalPadre        Boolean  @default(false)
+  principalOtros        Boolean  @default(false)
+  correoPrincipal       String?
+
+  alergias              Boolean  @default(false)
+  crisis                Boolean  @default(false)
+  convulsiones          Boolean  @default(false)
+  sensibilidad          Boolean  @default(false)
+  riesgoFuga            Boolean  @default(false)
+  noSepara              Boolean  @default(false)
+  otrasAlertas          Boolean  @default(false)
+
+  signatureDataUrl      String?  @db.Text
+  ipAddress             String?
+  userAgent             String?
+  cryptoHash            String?
+  status                String   @default("PENDING") // PENDING, LOADED, CANCELLED
+
+  createdAt             DateTime @default(now())
+  updatedAt             DateTime @updatedAt
+}
