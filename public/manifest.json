@@ -2,7 +2,7 @@
   "name": "CREN - Centro de Rehabilitación Neurológica",
   "short_name": "CREN",
   "description": "Sistema CREN - Centro de Rehabilitación Neurológica",
-  "start_url": "/dashboard",
+  "start_url": "/",
   "display": "standalone",
   "background_color": "#ffffff",
   "theme_color": "#1a5276",
