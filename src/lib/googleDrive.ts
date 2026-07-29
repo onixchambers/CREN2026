@@ -95,7 +95,7 @@ export async function uploadFileToGoogleDrive(fileBuffer: Buffer, fileName: stri
     ]);
 
     const uploadRes = await fetch(
-      "https://www.googleapis.com/upload/drive/v3/files?uploadType=multipart&fields=id,name,webViewLink,webContentLink",
+      "https://www.googleapis.com/upload/drive/v3/files?uploadType=multipart&supportsAllDrives=true&fields=id,name,webViewLink,webContentLink",
       {
         method: "POST",
         headers: {
@@ -109,6 +109,23 @@ export async function uploadFileToGoogleDrive(fileBuffer: Buffer, fileName: stri
     const fileData = await uploadRes.json();
     if (!uploadRes.ok) {
       throw new Error(fileData.error?.message || "Error al subir archivo a Google Drive.");
+    }
+
+    // Set permission so the link is viewable
+    if (fileData.id) {
+      try {
+        await fetch(`https://www.googleapis.com/drive/v3/files/${fileData.id}/permissions?supportsAllDrives=true`, {
+          method: "POST",
+          headers: {
+            Authorization: `Bearer ${accessToken}`,
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({
+            role: "reader",
+            type: "anyone",
+          }),
+        });
+      } catch (e) {}
     }
 
     return {
