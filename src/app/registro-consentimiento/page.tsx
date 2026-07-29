@@ -563,8 +563,8 @@ function RegistroConsentimientoContent() {
             <div className="bg-white rounded-xl overflow-hidden border-2 border-dashed border-slate-400 touch-none relative shadow-xs">
               <canvas
                 ref={canvasRef}
-                width={360}
-                height={160}
+                width={800}
+                height={350}
                 onMouseDown={startDrawing}
                 onMouseMove={draw}
                 onMouseUp={stopDrawing}

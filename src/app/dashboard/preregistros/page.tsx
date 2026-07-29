@@ -360,7 +360,9 @@ export default function PreregistrosPage() {
             signatureDataUrl: selectedPreReg.signatureDataUrl,
             cryptoHash: selectedPreReg.cryptoHash,
             signedAt: selectedPreReg.updatedAt || selectedPreReg.createdAt,
-            ipAddress: selectedPreReg.ipAddress,
+            ipAddress: selectedPreReg.ipAddress || "Dispositivo Móvil",
+            userAgent: selectedPreReg.userAgent || "Móvil Paciente",
+            pdfUrl: "Informes PDF CREN / " + (formData.medicoTratante || userName) + " Protección de Datos",
           });
 
           const pdfBlob = new Blob([Buffer.from(htmlBase64, "base64")], { type: "application/pdf" });
