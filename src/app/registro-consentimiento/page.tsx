@@ -1,10 +1,10 @@
 "use client";
 
-import { useState, useRef, useEffect } from "react";
+import { useState, useRef, useEffect, Suspense } from "react";
 import { useSearchParams } from "next/navigation";
 import { submitPreRegistration } from "@/app/actions/preregistro";
 
-export default function RegistroConsentimientoPage() {
+function RegistroConsentimientoContent() {
   const searchParams = useSearchParams();
   const tokenParam = searchParams.get("token") || "";
   const terapeutaParam = searchParams.get("terapeuta") || "Administrador";
@@ -555,5 +555,13 @@ export default function RegistroConsentimientoPage() {
         </button>
       </form>
     </div>
+  );
+}
+
+export default function RegistroConsentimientoPage() {
+  return (
+    <Suspense fallback={<div className="min-h-screen bg-slate-900 text-white flex items-center justify-center p-4">Cargando formulario de consentimiento...</div>}>
+      <RegistroConsentimientoContent />
+    </Suspense>
   );
 }
