@@ -87,9 +87,36 @@ export async function uploadFileToGoogleDrive(fileBuffer: Buffer, fileName: stri
   }
 
   try {
+    // 1. Check if Google Apps Script Webhook URL is configured (Instant 5TB upload without OAuth errors)
+    const webhookUrl = (settings as any).googleDriveWebhookUrl;
+    if (webhookUrl && webhookUrl.trim().length > 0) {
+      const response = await fetch(webhookUrl.trim(), {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          fileName: fileName,
+          mimeType: mimeType,
+          base64: fileBuffer.toString("base64"),
+        }),
+      });
+
+      const scriptData = await response.json();
+      if (scriptData.success && scriptData.webViewLink) {
+        return {
+          success: true,
+          fileId: scriptData.fileId || "gdrive",
+          fileName: fileName,
+          webViewLink: scriptData.webViewLink,
+          webContentLink: scriptData.webViewLink,
+        };
+      } else if (scriptData.error) {
+        throw new Error(scriptData.error);
+      }
+    }
+
+    // 2. Fallback to OAuth 2.0 Refresh Token or Service Account
     let accessToken = "";
 
-    // Prefer OAuth 2.0 Refresh Token (uses personal 5 TB quota of user directly)
     if (settings.googleDriveRefreshToken && settings.googleDriveClientId && settings.googleDriveClientSecret) {
       accessToken = await getGoogleDriveAccessTokenFromOAuth(
         settings.googleDriveClientId,
