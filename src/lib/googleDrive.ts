@@ -80,16 +80,25 @@ async function getGoogleDriveAccessTokenFromOAuth(clientId: string, clientSecret
 }
 
 export async function uploadFileToGoogleDrive(fileBuffer: Buffer, fileName: string, mimeType: string = "application/pdf") {
-  const settings = await prisma.systemSettings.findUnique({ where: { id: 1 } });
-  
+  // Query raw SQL to fetch all columns from PostgreSQL table regardless of prisma compilation
+  let settings: any = null;
+  try {
+    const rows: any[] = await prisma.$queryRaw`SELECT * FROM "SystemSettings" WHERE id = 1 LIMIT 1;`;
+    if (rows && rows.length > 0) {
+      settings = rows[0];
+    }
+  } catch (e) {
+    settings = await prisma.systemSettings.findUnique({ where: { id: 1 } });
+  }
+
   if (!settings || !settings.googleDriveEnabled) {
     return { success: false, error: "Google Drive no está habilitado en Configuración." };
   }
 
   try {
     // 1. Check if Google Apps Script Webhook URL is configured (Instant 5TB upload without OAuth errors)
-    const webhookUrl = (settings as any).googleDriveWebhookUrl;
-    if (webhookUrl && webhookUrl.trim().length > 0) {
+    const webhookUrl = settings.googleDriveWebhookUrl;
+    if (webhookUrl && typeof webhookUrl === "string" && webhookUrl.trim().length > 0) {
       const response = await fetch(webhookUrl.trim(), {
         method: "POST",
         headers: { "Content-Type": "application/json" },
