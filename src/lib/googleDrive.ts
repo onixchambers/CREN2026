@@ -79,7 +79,7 @@ async function getGoogleDriveAccessTokenFromOAuth(clientId: string, clientSecret
   return data.access_token;
 }
 
-export async function uploadFileToGoogleDrive(fileBuffer: Buffer, fileName: string, mimeType: string = "application/pdf") {
+export async function uploadFileToGoogleDrive(fileBuffer: Buffer, fileName: string, mimeType: string = "application/pdf", terapeutaName?: string) {
   // Query raw SQL to fetch all columns from PostgreSQL table regardless of prisma compilation
   let settings: any = null;
   try {
@@ -106,6 +106,7 @@ export async function uploadFileToGoogleDrive(fileBuffer: Buffer, fileName: stri
           fileName: fileName,
           mimeType: mimeType,
           base64: fileBuffer.toString("base64"),
+          terapeutaName: terapeutaName || "",
         }),
       });
 

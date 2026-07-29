@@ -145,6 +145,7 @@ export default function InformesPage() {
         try {
           const fd = new FormData();
           fd.append("file", f);
+          fd.append("terapeutaName", userName || "General");
           const driveRes = await uploadInformePDFToDrive(fd);
           if (driveRes.success && driveRes.webViewLink) {
             driveLink = driveRes.webViewLink;
