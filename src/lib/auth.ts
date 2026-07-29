@@ -17,8 +17,11 @@ export const authOptions: NextAuthOptions = {
           return null;
         }
 
+        const cleanUsername = credentials.username.trim();
+        const cleanPassword = credentials.password.trim();
+
         const user = await prisma.user.findFirst({
-          where: { name: { equals: credentials.username, mode: 'insensitive' } }
+          where: { name: { equals: cleanUsername, mode: 'insensitive' } }
         });
 
         if (!user || !user.password) {
@@ -29,13 +32,13 @@ export const authOptions: NextAuthOptions = {
 
         // Check bcrypt hash
         if (user.password.startsWith("$2b$") || user.password.startsWith("$2a$")) {
-          isMatch = await bcrypt.compare(credentials.password, user.password);
+          isMatch = await bcrypt.compare(cleanPassword, user.password);
         } else {
           // Check plain text and transparently migrate to bcrypt hash
-          if (user.password === credentials.password) {
+          if (user.password === cleanPassword || user.password === credentials.password) {
             isMatch = true;
             try {
-              const hashedPassword = await bcrypt.hash(credentials.password, 10);
+              const hashedPassword = await bcrypt.hash(cleanPassword, 10);
               await prisma.user.update({
                 where: { id: user.id },
                 data: { password: hashedPassword }
@@ -81,15 +84,5 @@ export const authOptions: NextAuthOptions = {
   pages: {
     signIn: "/login",
   },
-  cookies: {
-    sessionToken: {
-      name: process.env.NODE_ENV === "production" ? "__Secure-next-auth.session-token" : "next-auth.session-token",
-      options: {
-        httpOnly: true,
-        sameSite: "lax",
-        path: "/",
-        secure: process.env.NODE_ENV === "production",
-      },
-    },
-  },
+  useSecureCookies: process.env.NODE_ENV === "production",
 };
