@@ -20,7 +20,7 @@ function cleanPrivateKey(key: string): string {
   return k;
 }
 
-async function getGoogleDriveAccessToken(clientEmail: string, privateKey: string): Promise<string> {
+async function getGoogleDriveAccessTokenFromServiceAccount(clientEmail: string, privateKey: string): Promise<string> {
   const formattedKey = cleanPrivateKey(privateKey);
   const now = Math.floor(Date.now() / 1000);
 
@@ -53,7 +53,27 @@ async function getGoogleDriveAccessToken(clientEmail: string, privateKey: string
 
   const data = await res.json();
   if (!res.ok || !data.access_token) {
-    throw new Error(data.error_description || data.error || "No se pudo autenticar con Google Drive.");
+    throw new Error(data.error_description || data.error || "No se pudo autenticar con Google Drive (Service Account).");
+  }
+
+  return data.access_token;
+}
+
+async function getGoogleDriveAccessTokenFromOAuth(clientId: string, clientSecret: string, refreshToken: string): Promise<string> {
+  const res = await fetch("https://oauth2.googleapis.com/token", {
+    method: "POST",
+    headers: { "Content-Type": "application/x-www-form-urlencoded" },
+    body: new URLSearchParams({
+      client_id: clientId.trim(),
+      client_secret: clientSecret.trim(),
+      refresh_token: refreshToken.trim(),
+      grant_type: "refresh_token",
+    }),
+  });
+
+  const data = await res.json();
+  if (!res.ok || !data.access_token) {
+    throw new Error(data.error_description || data.error || "Error al renovar token de acceso de Google Drive (OAuth 2.0).");
   }
 
   return data.access_token;
@@ -62,15 +82,28 @@ async function getGoogleDriveAccessToken(clientEmail: string, privateKey: string
 export async function uploadFileToGoogleDrive(fileBuffer: Buffer, fileName: string, mimeType: string = "application/pdf") {
   const settings = await prisma.systemSettings.findUnique({ where: { id: 1 } });
   
-  if (!settings || !settings.googleDriveEnabled || !settings.googleDriveClientEmail || !settings.googleDrivePrivateKey) {
-    return { success: false, error: "Google Drive no está habilitado o faltan credenciales en Configuración." };
+  if (!settings || !settings.googleDriveEnabled) {
+    return { success: false, error: "Google Drive no está habilitado en Configuración." };
   }
 
   try {
-    const accessToken = await getGoogleDriveAccessToken(
-      settings.googleDriveClientEmail.trim(),
-      settings.googleDrivePrivateKey
-    );
+    let accessToken = "";
+
+    // Prefer OAuth 2.0 Refresh Token (uses personal 5 TB quota of user directly)
+    if (settings.googleDriveRefreshToken && settings.googleDriveClientId && settings.googleDriveClientSecret) {
+      accessToken = await getGoogleDriveAccessTokenFromOAuth(
+        settings.googleDriveClientId,
+        settings.googleDriveClientSecret,
+        settings.googleDriveRefreshToken
+      );
+    } else if (settings.googleDriveClientEmail && settings.googleDrivePrivateKey) {
+      accessToken = await getGoogleDriveAccessTokenFromServiceAccount(
+        settings.googleDriveClientEmail.trim(),
+        settings.googleDrivePrivateKey
+      );
+    } else {
+      return { success: false, error: "Faltan credenciales de Google Drive en Configuración." };
+    }
 
     const metadata: any = {
       name: fileName,
