@@ -223,6 +223,14 @@ export default function PreregistrosPage() {
     window.scrollTo({ top: 0, behavior: "smooth" });
   };
 
+  const handleDiscardPreReg = async (id: string, e: React.MouseEvent) => {
+    e.stopPropagation();
+    if (confirm("¿Deseas quitar este consentimiento cargado de la lista pendiente?")) {
+      await markPreRegistrationAsLoaded(id);
+      refreshPendingPreRegs();
+    }
+  };
+
   const handleEdit = (ficha: any) => {
     if (userRole.toUpperCase() === "TERAPEUTA" && !allowTherapistEdit) {
       alert("La administración no tiene habilitado el permiso para editar o modificar fichas de pacientes.");
@@ -282,10 +290,11 @@ export default function PreregistrosPage() {
     setSearchQuery("");
     setPhotoPreview(null);
     setFormData({
-      ...formData,
       nombre: "",
       fechaNacimiento: "",
       sexo: "Masculino",
+      fechaIngreso: new Date().toISOString().split("T")[0],
+      estatus: "Activo",
       origen: "Google",
       medicoTratante: userName,
       escuela: "",
@@ -379,15 +388,19 @@ export default function PreregistrosPage() {
             console.log("PDF de Protección de Datos guardado en Google Drive:", driveRes.webViewLink);
           }
 
+          // Eliminar el registro procesado de la lista de pendientes
           await markPreRegistrationAsLoaded(selectedPreReg.id);
-          refreshPendingPreRegs();
+          await refreshPendingPreRegs();
         } catch (driveErr) {
           console.warn("Error al subir PDF de protección de datos a Google Drive:", driveErr);
         }
       }
 
       alert(editingId ? "¡Ficha actualizada exitosamente!" : "¡Paciente registrado exitosamente en la base de datos!");
+      
+      // RESETEAR EL FORMULARIO AL 100% PARA EL SIGUIENTE PACIENTE
       handleLimpiar();
+      
       const updated = await getPatients();
       if (updated.success && updated.data) {
         setFichas(updated.data);
@@ -445,7 +458,7 @@ export default function PreregistrosPage() {
 
           <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
             {pendingPreRegs.map((preReg) => (
-              <div key={preReg.id} className="bg-white border border-amber-200 rounded-lg p-3 flex items-center justify-between shadow-xs">
+              <div key={preReg.id} className="bg-white border border-amber-200 rounded-lg p-3 flex items-center justify-between shadow-xs gap-2">
                 <div>
                   <div className="font-bold text-slate-800 text-sm">{preReg.name}</div>
                   <div className="text-[11px] text-slate-500">
@@ -455,12 +468,22 @@ export default function PreregistrosPage() {
                     Hash SHA-256: {preReg.cryptoHash ? preReg.cryptoHash.slice(0, 16) + "..." : "Firmado"}
                   </div>
                 </div>
-                <button
-                  onClick={() => handleLoadPreRegData(preReg)}
-                  className="bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-xs px-3 py-2 rounded-lg shadow flex items-center gap-1 transition"
-                >
-                  <span>⚡ Cargar Datos</span>
-                </button>
+
+                <div className="flex items-center gap-1.5 shrink-0">
+                  <button
+                    onClick={() => handleLoadPreRegData(preReg)}
+                    className="bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-xs px-3 py-2 rounded-lg shadow flex items-center gap-1 transition"
+                  >
+                    <span>⚡ Cargar Datos</span>
+                  </button>
+                  <button
+                    onClick={(e) => handleDiscardPreReg(preReg.id, e)}
+                    title="Descartar de lista"
+                    className="p-1.5 text-slate-400 hover:text-rose-600 border border-slate-200 rounded-lg hover:bg-rose-50 transition"
+                  >
+                    ✕
+                  </button>
+                </div>
               </div>
             ))}
           </div>
@@ -629,7 +652,7 @@ export default function PreregistrosPage() {
               </div>
             </div>
 
-            {/* SECCIÓN 2: CONTACTOS */}
+            {/* SECCIÓN 2: CONTACTOS CON CAMPOS DE TELÉFONO VISIBLES Y FUNCIONALES */}
             <div>
               <h3 className="text-xs font-bold uppercase tracking-wider text-[#1a5276] border-b border-slate-200 pb-2 mb-4">
                 2. CONTACTOS DE FAMILIARES Y TUTORES
@@ -645,15 +668,23 @@ export default function PreregistrosPage() {
                     value={formData.madreNombre}
                     onChange={handleInputChange}
                     placeholder="Nombre de la madre"
-                    className="w-full p-2 border border-slate-300 rounded text-xs text-slate-900 bg-white"
+                    className="w-full p-2 border border-slate-300 rounded text-xs text-slate-900 bg-white outline-none"
                   />
-                  <CountrySelector
-                    selectedCode={madreCountryCode}
-                    onSelectCode={setMadreCountryCode}
-                    phoneValue={formData.madreContacto}
-                    onPhoneChange={(val) => setFormData({ ...formData, madreContacto: val })}
-                    placeholder="Contacto de la madre"
-                  />
+                  <label className="block text-xs font-bold text-slate-700 uppercase pt-1">Número de Contacto</label>
+                  <div className="flex gap-2">
+                    <CountrySelector
+                      value={madreCountryCode}
+                      onChange={(code) => setMadreCountryCode(code)}
+                    />
+                    <input
+                      type="tel"
+                      name="madreContacto"
+                      value={formData.madreContacto}
+                      onChange={handleInputChange}
+                      placeholder="Contacto de la madre"
+                      className="flex-1 p-2 border border-slate-300 rounded text-xs text-slate-900 bg-white focus:border-blue-500 outline-none"
+                    />
+                  </div>
                   <label className="flex items-center gap-2 text-xs text-slate-700 cursor-pointer pt-1">
                     <input
                       type="checkbox"
@@ -682,15 +713,23 @@ export default function PreregistrosPage() {
                     value={formData.padreNombre}
                     onChange={handleInputChange}
                     placeholder="Nombre del padre"
-                    className="w-full p-2 border border-slate-300 rounded text-xs text-slate-900 bg-white"
+                    className="w-full p-2 border border-slate-300 rounded text-xs text-slate-900 bg-white outline-none"
                   />
-                  <CountrySelector
-                    selectedCode={padreCountryCode}
-                    onSelectCode={setPadreCountryCode}
-                    phoneValue={formData.padreContacto}
-                    onPhoneChange={(val) => setFormData({ ...formData, padreContacto: val })}
-                    placeholder="Contacto del padre"
-                  />
+                  <label className="block text-xs font-bold text-slate-700 uppercase pt-1">Número de Contacto</label>
+                  <div className="flex gap-2">
+                    <CountrySelector
+                      value={padreCountryCode}
+                      onChange={(code) => setPadreCountryCode(code)}
+                    />
+                    <input
+                      type="tel"
+                      name="padreContacto"
+                      value={formData.padreContacto}
+                      onChange={handleInputChange}
+                      placeholder="Contacto del padre"
+                      className="flex-1 p-2 border border-slate-300 rounded text-xs text-slate-900 bg-white focus:border-blue-500 outline-none"
+                    />
+                  </div>
                   <label className="flex items-center gap-2 text-xs text-slate-700 cursor-pointer pt-1">
                     <input
                       type="checkbox"
@@ -719,15 +758,23 @@ export default function PreregistrosPage() {
                     value={formData.otrosNombre}
                     onChange={handleInputChange}
                     placeholder="Otro contacto"
-                    className="w-full p-2 border border-slate-300 rounded text-xs text-slate-900 bg-white"
+                    className="w-full p-2 border border-slate-300 rounded text-xs text-slate-900 bg-white outline-none"
                   />
-                  <CountrySelector
-                    selectedCode={otrosCountryCode}
-                    onSelectCode={setOtrosCountryCode}
-                    phoneValue={formData.otrosContacto}
-                    onPhoneChange={(val) => setFormData({ ...formData, otrosContacto: val })}
-                    placeholder="Otro teléfono"
-                  />
+                  <label className="block text-xs font-bold text-slate-700 uppercase pt-1">Número de Contacto</label>
+                  <div className="flex gap-2">
+                    <CountrySelector
+                      value={otrosCountryCode}
+                      onChange={(code) => setOtrosCountryCode(code)}
+                    />
+                    <input
+                      type="tel"
+                      name="otrosContacto"
+                      value={formData.otrosContacto}
+                      onChange={handleInputChange}
+                      placeholder="Otro teléfono"
+                      className="flex-1 p-2 border border-slate-300 rounded text-xs text-slate-900 bg-white focus:border-blue-500 outline-none"
+                    />
+                  </div>
                   <label className="flex items-center gap-2 text-xs text-slate-700 cursor-pointer pt-1">
                     <input
                       type="checkbox"

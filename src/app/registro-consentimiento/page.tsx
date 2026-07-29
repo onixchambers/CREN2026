@@ -55,7 +55,7 @@ function RegistroConsentimientoContent() {
   const [submittedData, setSubmittedData] = useState<any>(null);
   const [errorMsg, setErrorMsg] = useState("");
 
-  // Setup Canvas para celular
+  // Setup Canvas para celular con trazo fino HD
   useEffect(() => {
     const canvas = canvasRef.current;
     if (!canvas) return;
@@ -63,16 +63,19 @@ function RegistroConsentimientoContent() {
     if (!ctx) return;
 
     ctx.strokeStyle = "#0f172a";
-    ctx.lineWidth = 2.5;
+    ctx.lineWidth = 3;
     ctx.lineCap = "round";
     ctx.lineJoin = "round";
   }, []);
 
-  const getTouchPos = (canvasDom: HTMLCanvasElement, touchEvent: TouchEvent) => {
+  // Cálculo exacto de coordenadas relativas con escala para eliminar desfases
+  const getCanvasPos = (canvasDom: HTMLCanvasElement, clientX: number, clientY: number) => {
     const rect = canvasDom.getBoundingClientRect();
+    const scaleX = canvasDom.width / rect.width;
+    const scaleY = canvasDom.height / rect.height;
     return {
-      x: touchEvent.touches[0].clientX - rect.left,
-      y: touchEvent.touches[0].clientY - rect.top,
+      x: (clientX - rect.left) * scaleX,
+      y: (clientY - rect.top) * scaleY,
     };
   };
 
@@ -85,12 +88,10 @@ function RegistroConsentimientoContent() {
     if (!ctx) return;
 
     ctx.beginPath();
-    if (e.touches && e.touches[0]) {
-      const pos = getTouchPos(canvas, e.nativeEvent);
-      ctx.moveTo(pos.x, pos.y);
-    } else {
-      ctx.moveTo(e.nativeEvent.offsetX, e.nativeEvent.offsetY);
-    }
+    const clientX = e.touches && e.touches[0] ? e.touches[0].clientX : e.clientX;
+    const clientY = e.touches && e.touches[0] ? e.touches[0].clientY : e.clientY;
+    const pos = getCanvasPos(canvas, clientX, clientY);
+    ctx.moveTo(pos.x, pos.y);
   };
 
   const draw = (e: any) => {
@@ -102,11 +103,12 @@ function RegistroConsentimientoContent() {
 
     if (e.touches && e.touches[0]) {
       e.preventDefault();
-      const pos = getTouchPos(canvas, e.nativeEvent);
-      ctx.lineTo(pos.x, pos.y);
-    } else {
-      ctx.lineTo(e.nativeEvent.offsetX, e.nativeEvent.offsetY);
     }
+
+    const clientX = e.touches && e.touches[0] ? e.touches[0].clientX : e.clientX;
+    const clientY = e.touches && e.touches[0] ? e.touches[0].clientY : e.clientY;
+    const pos = getCanvasPos(canvas, clientX, clientY);
+    ctx.lineTo(pos.x, pos.y);
     ctx.stroke();
   };
 
@@ -472,7 +474,7 @@ function RegistroConsentimientoContent() {
               </div>
 
               <div>
-                <strong className="text-slate-900">1. Marco Legal y Marco Conceptual</strong>
+                <strong className="text-slate-900">1. Marco Legal y Conceptual</strong>
                 <p>El presente contrato de adhesión regula el acceso y uso de la aplicación móvil (en adelante, la "Aplicación"), operada por Centro de Rehabilitación Neurológica CREN (en adelante, el "Prestador" o la "Empresa"), dentro del territorio de los Estados Unidos Mexicanos. Este documento se formula en riguroso cumplimiento de la legislación mexicana aplicable, incluyendo de manera enunciativa más no limitativa:</p>
                 <ul className="list-disc pl-4 space-y-0.5">
                   <li>Ley Federal de Protección al Consumidor (LFPC) y sus disposiciones relativas a las transacciones efectuadas a través del uso de medios electrónicos, ópticos o de cualquier otra tecnología (Capítulo VIII BIS).</li>
@@ -545,7 +547,7 @@ function RegistroConsentimientoContent() {
             </span>
           </label>
 
-          {/* Lienzo Canvas Firma */}
+          {/* Lienzo Canvas Firma Táctil */}
           <div className="space-y-1">
             <div className="flex justify-between items-center text-xs">
               <label className="font-bold text-slate-800">Dibuje su firma aquí con el dedo o stylus *</label>
@@ -572,7 +574,7 @@ function RegistroConsentimientoContent() {
                 onTouchStart={startDrawing}
                 onTouchMove={draw}
                 onTouchEnd={stopDrawing}
-                className="w-full h-40 cursor-crosshair bg-white"
+                className="w-full h-44 cursor-crosshair bg-white"
               />
               {!hasSignature && (
                 <div className="absolute inset-0 pointer-events-none flex items-center justify-center text-slate-400 text-xs font-semibold">
