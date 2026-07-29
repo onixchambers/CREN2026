@@ -369,7 +369,6 @@ export default function PreregistrosPage() {
           const driveFd = new FormData();
           driveFd.append("file", pdfFile);
 
-          // Folder format requested by user: '[Terapeuta] Protección de Datos' (ej. Karla Protección de Datos)
           const subfolderName = `${formData.medicoTratante || userName} Protección de Datos`;
           driveFd.append("terapeutaName", subfolderName);
 
@@ -378,7 +377,6 @@ export default function PreregistrosPage() {
             console.log("PDF de Protección de Datos guardado en Google Drive:", driveRes.webViewLink);
           }
 
-          // Marcar preregistro como cargado
           await markPreRegistrationAsLoaded(selectedPreReg.id);
           refreshPendingPreRegs();
         } catch (driveErr) {
@@ -509,11 +507,38 @@ export default function PreregistrosPage() {
           </div>
 
           <form onSubmit={handleSubmit} className="space-y-6">
-            {/* SECCIÓN 1: DATOS PERSONALES */}
+            {/* SECCIÓN 1: DATOS PERSONALES Y FOTOGRAFÍA EN LA PARTE SUPERIOR */}
             <div>
               <h3 className="text-xs font-bold uppercase tracking-wider text-[#1a5276] border-b border-slate-200 pb-2 mb-4">
-                1. DATOS DEL PACIENTE
+                1. DATOS DEL PACIENTE Y FOTOGRAFÍA
               </h3>
+
+              {/* FOTOGRAFÍA EN LA PARTE SUPERIOR (TAMAÑO ORIGINAL EN FORMATO ANTERIOR) */}
+              <div className="mb-6 p-4 bg-slate-50 border border-slate-200 rounded-xl flex flex-col sm:flex-row items-center gap-6">
+                <div className="w-36 h-36 rounded-xl border-2 border-slate-300 overflow-hidden bg-white flex items-center justify-center shadow-md shrink-0 relative">
+                  {photoPreview ? (
+                    <img src={photoPreview} alt="Foto Paciente" className="w-full h-full object-cover" />
+                  ) : (
+                    <div className="text-center p-2 text-slate-400">
+                      <svg className="w-12 h-12 mx-auto text-slate-300" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
+                      </svg>
+                      <span className="text-[11px] font-medium block mt-1">Sin Foto</span>
+                    </div>
+                  )}
+                </div>
+
+                <div className="space-y-2 text-center sm:text-left">
+                  <label className="block text-xs font-bold text-slate-700 uppercase">Fotografía del Paciente (Formato Anterior)</label>
+                  <input
+                    type="file"
+                    accept="image/*"
+                    onChange={handlePhotoChange}
+                    className="text-xs text-slate-600 file:mr-3 file:py-2 file:px-4 file:rounded-lg file:border-0 file:text-xs file:font-bold file:bg-[#1a5276] file:text-white hover:file:bg-[#0e2f44] cursor-pointer"
+                  />
+                  <p className="text-[11px] text-slate-500">Selecciona o toma una foto clara del rostro del paciente.</p>
+                </div>
+              </div>
 
               <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
                 <div className="md:col-span-2">
@@ -734,10 +759,10 @@ export default function PreregistrosPage() {
               </div>
             </div>
 
-            {/* SECCIÓN 3: ALERTAS MÉRICAS */}
+            {/* SECCIÓN 3: ALERTAS MÉDICAS */}
             <div>
               <h3 className="text-xs font-bold uppercase tracking-wider text-[#1a5276] border-b border-slate-200 pb-2 mb-4">
-                3. ALERTAS MÉRICAS OPERATIVAS
+                3. ALERTAS MÉDICAS OPERATIVAS
               </h3>
 
               <div className="flex flex-wrap gap-4 text-xs font-bold text-slate-700">
@@ -768,22 +793,13 @@ export default function PreregistrosPage() {
               </div>
             </div>
 
-            {/* SECCIÓN 4: VERIFICACIÓN TERAPEUTA Y DOCUMENTOS */}
+            {/* SECCIÓN 4: VERIFICACIÓN TERAPEUTA Y OBSERVACIONES */}
             <div>
               <h3 className="text-xs font-bold uppercase tracking-wider text-[#1a5276] border-b border-slate-200 pb-2 mb-4">
-                4. VERIFICACIÓN DE DOCUMENTOS Y FOTO (VERIFICACIÓN TERAPEUTA / ADMIN)
+                4. VERIFICACIÓN DE DOCUMENTOS Y OBSERVACIONES ADMINISTRATIVAS
               </h3>
 
-              <div className="grid grid-cols-1 md:grid-cols-3 gap-6 items-center">
-                {/* Foto */}
-                <div>
-                  <label className="block text-xs font-bold text-slate-700 mb-2 uppercase">Fotografía del Paciente</label>
-                  <input type="file" accept="image/*" onChange={handlePhotoChange} className="text-xs text-slate-600" />
-                  {photoPreview && (
-                    <img src={photoPreview} alt="Foto Preview" className="w-20 h-20 rounded-full object-cover mt-2 border border-slate-300" />
-                  )}
-                </div>
-
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-6 items-center">
                 {/* Ganchos manuales de verificación */}
                 <div className="space-y-3 bg-amber-50 p-4 rounded-xl border border-amber-200">
                   <div className="text-xs font-bold text-amber-900 uppercase">Ganchos de Verificación Manual (Terapeuta):</div>
