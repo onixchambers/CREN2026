@@ -326,7 +326,7 @@ export default function ConfiguracionPage() {
                       type="email"
                       placeholder="ejemplo@correo.com"
                       value={u.email || ""}
-                      className="w-full p-2 border border-slate-300 rounded text-xs text-slate-900 focus:border-blue-500 outline-none bg-white font-medium"
+                      className="w-full p-2 border border-slate-300 rounded text-[11px] text-slate-900 focus:border-blue-500 outline-none bg-white font-medium"
                       onChange={(e) => {
                         const newU = [...usuarios];
                         const idx = newU.findIndex(x => x.id === u.id);
@@ -920,7 +920,7 @@ export default function ConfiguracionPage() {
                       setUsuarios(newU);
                     }
                   }}
-                  className="w-full p-2.5 border border-slate-300 rounded-lg text-sm text-slate-900 focus:border-blue-500 outline-none bg-slate-50 focus:bg-white font-medium"
+                  className="w-full p-2.5 border border-slate-300 rounded-lg text-xs text-slate-900 focus:border-blue-500 outline-none bg-slate-50 focus:bg-white font-medium"
                 />
               </div>
 
