@@ -21,6 +21,25 @@ async function verifyTherapistPatientPermission() {
 
 export async function createPatient(data: any) {
   try {
+    const patientName = (data.nombre || "").trim();
+    if (!patientName) {
+      return { success: false, error: "El nombre del paciente es obligatorio." };
+    }
+
+    // Prevención de duplicación: Si ya se creó un paciente con el mismo nombre en los últimos 30 segundos, retornar el existente
+    const thirtySecsAgo = new Date(Date.now() - 30 * 1000);
+    const existingRecent = await prisma.patient.findFirst({
+      where: {
+        name: { equals: patientName, mode: 'insensitive' },
+        createdAt: { gte: thirtySecsAgo }
+      }
+    });
+
+    if (existingRecent) {
+      console.log(`Deduplicación de paciente activa para '${patientName}'`);
+      return { success: true, data: existingRecent, isDuplicatePrevented: true };
+    }
+
     const patient = await prisma.patient.create({
       data: {
         name: data.nombre,

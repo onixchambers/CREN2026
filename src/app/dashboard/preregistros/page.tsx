@@ -155,6 +155,7 @@ export default function PreregistrosPage() {
   const [showDropdown, setShowDropdown] = useState(false);
   const [photoPreview, setPhotoPreview] = useState<string | null>(null);
   const [currentPage, setCurrentPage] = useState(1);
+  const [isSubmitting, setIsSubmitting] = useState(false);
 
   const handlePhotoChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
@@ -377,6 +378,8 @@ export default function PreregistrosPage() {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    if (isSubmitting) return;
+
     if (!formData.nombre) {
       alert("El nombre del paciente es obligatorio.");
       return;
@@ -388,87 +391,93 @@ export default function PreregistrosPage() {
       }
     }
 
-    const { createPatient, updatePatient, getPatients } = await import("@/app/actions/pacientes");
+    setIsSubmitting(true);
 
-    const finalFormData = {
-      ...formData,
-      madreContacto: formData.madreContacto ? (formData.madreContacto.startsWith("+") ? formData.madreContacto : `${madreCountryCode} ${formData.madreContacto}`) : "",
-      padreContacto: formData.padreContacto ? (formData.padreContacto.startsWith("+") ? formData.padreContacto : `${padreCountryCode} ${formData.padreContacto}`) : "",
-      otrosContacto: formData.otrosContacto ? (formData.otrosContacto.startsWith("+") ? formData.otrosContacto : `${otrosCountryCode} ${formData.otrosContacto}`) : "",
-    };
+    try {
+      const { createPatient, updatePatient, getPatients } = await import("@/app/actions/pacientes");
 
-    let result;
-    if (editingId) {
-      result = await updatePatient(editingId, finalFormData);
-    } else {
-      result = await createPatient(finalFormData);
-    }
+      const finalFormData = {
+        ...formData,
+        madreContacto: formData.madreContacto ? (formData.madreContacto.startsWith("+") ? formData.madreContacto : `${madreCountryCode} ${formData.madreContacto}`) : "",
+        padreContacto: formData.padreContacto ? (formData.padreContacto.startsWith("+") ? formData.padreContacto : `${padreCountryCode} ${formData.padreContacto}`) : "",
+        otrosContacto: formData.otrosContacto ? (formData.otrosContacto.startsWith("+") ? formData.otrosContacto : `${otrosCountryCode} ${formData.otrosContacto}`) : "",
+      };
 
-    if (result.success) {
-      // SIEMPRE subir el PDF oficial de Protección de Datos a Google Drive al presionar Guardar Paciente
-      try {
-        const signatureUrl = selectedPreReg?.signatureDataUrl || "";
-        const cryptoHash = selectedPreReg?.cryptoHash || "";
-        const signedTimestamp = selectedPreReg?.updatedAt || selectedPreReg?.createdAt || new Date().toISOString();
-        const ip = selectedPreReg?.ipAddress || "Ficha ID CREN";
-        const ua = selectedPreReg?.userAgent || "Navegador CREN";
-
-        const rawDocName = formData.medicoTratante || userName;
-        const isDocNonTherapist = ["administrador", "admin", "contador", "invitado", "general"].some(kw => rawDocName.toLowerCase().includes(kw));
-        const displayDocName = isDocNonTherapist ? rawDocName.replace(/^lic\.\s*/i, "") : (rawDocName.toLowerCase().startsWith("lic.") ? rawDocName : `Lic. ${rawDocName}`);
-
-        const htmlBase64 = generateConsentPdfBase64({
-          pacienteNombre: formData.nombre,
-          fechaNacimiento: formData.fechaNacimiento,
-          sexo: formData.sexo,
-          medicoTratante: formData.medicoTratante || userName,
-          escuela: formData.escuela,
-          madreNombre: formData.madreNombre,
-          madreContacto: formData.madreContacto,
-          padreNombre: formData.padreNombre,
-          padreContacto: formData.padreContacto,
-          correoPrincipal: formData.correoPrincipal,
-          signatureDataUrl: signatureUrl,
-          cryptoHash: cryptoHash,
-          signedAt: signedTimestamp,
-          ipAddress: ip,
-          userAgent: ua,
-          pdfUrl: "Informes PDF CREN / " + displayDocName + " Protección de Datos",
-        });
-
-        const pdfBlob = new Blob([Buffer.from(htmlBase64, "base64")], { type: "application/pdf" });
-        const pdfFile = new File([pdfBlob], `Consentimiento_Firmado_${formData.nombre.replace(/\s+/g, "_")}.pdf`, { type: "application/pdf" });
-
-        const driveFd = new FormData();
-        driveFd.append("file", pdfFile);
-
-        const subfolderName = `${formData.medicoTratante || userName} Protección de Datos`;
-        driveFd.append("terapeutaName", subfolderName);
-
-        const driveRes = await uploadInformePDFToDrive(driveFd);
-        if (driveRes.success) {
-          console.log("PDF de Protección de Datos guardado exitosamente en Google Drive:", driveRes.webViewLink);
-        }
-
-        if (selectedPreReg?.id) {
-          await markPreRegistrationAsLoaded(selectedPreReg.id);
-          await refreshPendingPreRegs();
-        }
-      } catch (driveErr) {
-        console.warn("Error al subir PDF de protección de datos a Google Drive:", driveErr);
+      let result;
+      if (editingId) {
+        result = await updatePatient(editingId, finalFormData);
+      } else {
+        result = await createPatient(finalFormData);
       }
 
-      alert(editingId ? "¡Ficha actualizada exitosamente!" : "¡Paciente registrado exitosamente en la base de datos!");
-      
-      // RESETEAR EL FORMULARIO AL 100% PARA EL SIGUIENTE PACIENTE
-      handleLimpiar();
-      
-      const updated = await getPatients();
-      if (updated.success && updated.data) {
-        setFichas(updated.data);
+      if (result.success) {
+        // SIEMPRE subir el PDF oficial de Protección de Datos a Google Drive al presionar Guardar Paciente
+        try {
+          const signatureUrl = selectedPreReg?.signatureDataUrl || "";
+          const cryptoHash = selectedPreReg?.cryptoHash || "";
+          const signedTimestamp = selectedPreReg?.updatedAt || selectedPreReg?.createdAt || new Date().toISOString();
+          const ip = selectedPreReg?.ipAddress || "Ficha ID CREN";
+          const ua = selectedPreReg?.userAgent || "Navegador CREN";
+
+          const rawDocName = formData.medicoTratante || userName;
+          const isDocNonTherapist = ["administrador", "admin", "contador", "invitado", "general"].some(kw => rawDocName.toLowerCase().includes(kw));
+          const displayDocName = isDocNonTherapist ? rawDocName.replace(/^lic\.\s*/i, "") : (rawDocName.toLowerCase().startsWith("lic.") ? rawDocName : `Lic. ${rawDocName}`);
+
+          const htmlBase64 = generateConsentPdfBase64({
+            pacienteNombre: formData.nombre,
+            fechaNacimiento: formData.fechaNacimiento,
+            sexo: formData.sexo,
+            medicoTratante: formData.medicoTratante || userName,
+            escuela: formData.escuela,
+            madreNombre: formData.madreNombre,
+            madreContacto: formData.madreContacto,
+            padreNombre: formData.padreNombre,
+            padreContacto: formData.padreContacto,
+            correoPrincipal: formData.correoPrincipal,
+            signatureDataUrl: signatureUrl,
+            cryptoHash: cryptoHash,
+            signedAt: signedTimestamp,
+            ipAddress: ip,
+            userAgent: ua,
+            pdfUrl: "Informes PDF CREN / " + displayDocName + " Protección de Datos",
+          });
+
+          const pdfBlob = new Blob([Buffer.from(htmlBase64, "base64")], { type: "application/pdf" });
+          const pdfFile = new File([pdfBlob], `Consentimiento_Firmado_${formData.nombre.replace(/\s+/g, "_")}.pdf`, { type: "application/pdf" });
+
+          const driveFd = new FormData();
+          driveFd.append("file", pdfFile);
+
+          const subfolderName = `${formData.medicoTratante || userName} Protección de Datos`;
+          driveFd.append("terapeutaName", subfolderName);
+
+          const driveRes = await uploadInformePDFToDrive(driveFd);
+          if (driveRes.success) {
+            console.log("PDF de Protección de Datos guardado exitosamente en Google Drive:", driveRes.webViewLink);
+          }
+
+          if (selectedPreReg?.id) {
+            await markPreRegistrationAsLoaded(selectedPreReg.id);
+            await refreshPendingPreRegs();
+          }
+        } catch (driveErr) {
+          console.warn("Error al subir PDF de protección de datos a Google Drive:", driveErr);
+        }
+
+        alert(editingId ? "¡Ficha actualizada exitosamente!" : "¡Paciente registrado exitosamente en la base de datos!");
+        
+        // RESETEAR EL FORMULARIO AL 100% PARA EL SIGUIENTE PACIENTE
+        handleLimpiar();
+        
+        const updated = await getPatients();
+        if (updated.success && updated.data) {
+          setFichas(updated.data);
+        }
+      } else {
+        alert(result.error);
       }
-    } else {
-      alert(result.error);
+    } finally {
+      setIsSubmitting(false);
     }
   };
 
@@ -983,9 +992,10 @@ export default function PreregistrosPage() {
             <div className="flex gap-3 pt-4 border-t border-slate-200">
               <button
                 type="submit"
-                className="bg-[#1a5276] hover:bg-[#0e2f44] text-[#ffffff] font-bold px-6 py-2.5 rounded text-sm shadow transition cursor-pointer"
+                disabled={isSubmitting}
+                className="bg-[#1a5276] hover:bg-[#0e2f44] text-[#ffffff] font-bold px-6 py-2.5 rounded text-sm shadow transition cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed"
               >
-                {editingId ? "Actualizar Paciente" : "Guardar Paciente y Generar Documentos"}
+                {isSubmitting ? "Guardando y Generando Documento..." : (editingId ? "Actualizar Paciente" : "Guardar Paciente y Generar Documentos")}
               </button>
 
               <button
