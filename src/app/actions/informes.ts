@@ -36,3 +36,17 @@ export async function uploadInformePDFToDrive(formData: FormData) {
     return { success: false, error: error?.message || "Error al subir a Google Drive" };
   }
 }
+
+export async function uploadConsentPDFAction(data: { htmlBase64: string; fileName: string; terapeutaName: string }) {
+  try {
+    const { htmlBase64, fileName, terapeutaName } = data;
+    if (!htmlBase64) return { success: false, error: "No base64 data" };
+
+    const buffer = Buffer.from(htmlBase64, "base64");
+    const res = await uploadFileToGoogleDrive(buffer, fileName, "application/pdf", terapeutaName);
+    return res;
+  } catch (error: any) {
+    console.error("Error in uploadConsentPDFAction:", error);
+    return { success: false, error: error?.message || "Error al subir PDF a Google Drive" };
+  }
+}

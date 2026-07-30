@@ -10,7 +10,7 @@ import {
   getPendingPreRegistrations,
   markPreRegistrationAsLoaded,
 } from "@/app/actions/preregistro";
-import { uploadInformePDFToDrive } from "@/app/actions/informes";
+import { uploadInformePDFToDrive, uploadConsentPDFAction } from "@/app/actions/informes";
 import { generateConsentPdfBase64 } from "@/lib/pdfGenerator";
 
 export default function PreregistrosPage() {
@@ -442,16 +442,14 @@ export default function PreregistrosPage() {
             pdfUrl: "Informes PDF CREN / " + displayDocName + " Protección de Datos",
           });
 
-          const pdfBlob = await (await fetch(`data:application/pdf;base64,${htmlBase64}`)).blob();
-          const pdfFile = new File([pdfBlob], `Consentimiento_Firmado_${formData.nombre.replace(/\s+/g, "_")}.pdf`, { type: "application/pdf" });
-
-          const driveFd = new FormData();
-          driveFd.append("file", pdfFile);
-
           const subfolderName = `${formData.medicoTratante || userName} Protección de Datos`;
-          driveFd.append("terapeutaName", subfolderName);
+          const fileName = `Consentimiento_Firmado_${(formData.nombre || "Paciente").replace(/\s+/g, "_")}.pdf`;
 
-          const driveRes = await uploadInformePDFToDrive(driveFd);
+          const driveRes = await uploadConsentPDFAction({
+            htmlBase64,
+            fileName,
+            terapeutaName: subfolderName
+          });
           if (driveRes.success) {
             console.log("PDF de Protección de Datos guardado exitosamente en Google Drive:", driveRes.webViewLink);
           }
