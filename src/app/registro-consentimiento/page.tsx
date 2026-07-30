@@ -223,7 +223,7 @@ function RegistroConsentimientoContent() {
 
       if (res.success) {
         setSubmittedData({
-          paciente: nombre,
+          paciente: nombreCompleto,
           hash: res.cryptoHash,
           fecha: res.signedAt,
         });
