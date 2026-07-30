@@ -77,9 +77,36 @@ export async function getPatients() {
   noStore();
   try {
     const patients = await prisma.patient.findMany({
+      include: {
+        sessions: {
+          include: { therapist: true }
+        }
+      },
       orderBy: { createdAt: "desc" }
     });
-    return { success: true, data: patients };
+
+    const mapped = patients.map(p => {
+      const sessionTherapists = p.sessions
+        .map(s => {
+          let extraName = "";
+          try {
+            if (s.notes) {
+              const extra = JSON.parse(s.notes);
+              extraName = extra.terapeuta || "";
+            }
+          } catch(e) {}
+          return [s.therapist?.name, extraName];
+        })
+        .flat()
+        .filter(Boolean) as string[];
+
+      return {
+        ...p,
+        sessionTherapists: Array.from(new Set(sessionTherapists))
+      };
+    });
+
+    return { success: true, data: mapped };
   } catch (error) {
     console.error("Error fetching patients:", error);
     return { success: false, error: "Error al cargar los pacientes." };

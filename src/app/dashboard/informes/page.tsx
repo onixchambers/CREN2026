@@ -61,8 +61,18 @@ export default function InformesPage() {
       if (res.success && res.data) {
         let list = res.data;
         if (userRole.toUpperCase() === "TERAPEUTA") {
-          // La terapeuta solo ve los pacientes asignados a ella
-          list = list.filter((p: any) => p.medicoTratante === userName || p.terapeuta === userName);
+          const userLower = userName.trim().toLowerCase();
+          list = list.filter((p: any) => {
+            const medLower = (p.medicoTratante || "").trim().toLowerCase();
+            const terLower = (p.terapeuta || "").trim().toLowerCase();
+            const isMed = medLower && (medLower.includes(userLower) || userLower.includes(medLower));
+            const isTer = terLower && (terLower.includes(userLower) || userLower.includes(terLower));
+            const hasSession = Array.isArray(p.sessionTherapists) && p.sessionTherapists.some((st: string) => {
+              const stLower = st.trim().toLowerCase();
+              return stLower.includes(userLower) || userLower.includes(stLower);
+            });
+            return isMed || isTer || hasSession;
+          });
         }
         const mapped = list.map((p: any) => ({
           id: p.id,

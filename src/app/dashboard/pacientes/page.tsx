@@ -49,10 +49,21 @@ export default function PacientesPage() {
 
   const [viewingPatient, setViewingPatient] = useState<any>(null);
 
-  // Filtro de Privacidad: Terapeutas solo ven sus propios pacientes
+  // Filtro de Privacidad: Terapeutas ven pacientes asignados o con sesiones registradas
   const pacientesFiltrados = pacientes.filter(p => {
     if (userRole.toUpperCase() === "TERAPEUTA") {
-      if (p.medicoTratante !== userName && p.terapeuta !== userName) {
+      const userLower = userName.trim().toLowerCase();
+      const medLower = (p.medicoTratante || "").trim().toLowerCase();
+      const terLower = (p.terapeuta || "").trim().toLowerCase();
+      
+      const isMedMatch = medLower && (medLower.includes(userLower) || userLower.includes(medLower));
+      const isTerMatch = terLower && (terLower.includes(userLower) || userLower.includes(terLower));
+      const hasSession = Array.isArray(p.sessionTherapists) && p.sessionTherapists.some((st: string) => {
+        const stLower = st.trim().toLowerCase();
+        return stLower.includes(userLower) || userLower.includes(stLower);
+      });
+
+      if (!isMedMatch && !isTerMatch && !hasSession) {
         return false;
       }
     }
