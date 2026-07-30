@@ -270,22 +270,6 @@ export default function ConfiguracionPage() {
                   </div>
                 </div>
 
-                <div className="flex items-center gap-2 flex-1 min-w-[200px]">
-                  <label className="text-sm text-slate-500 w-20">Contraseña</label>
-                  <input 
-                    type="password" 
-                    placeholder="Nueva clave" 
-                    value={u.contrasena || ""} 
-                    className="flex-1 p-2 border border-slate-300 rounded text-sm text-slate-900 focus:border-blue-500 outline-none" 
-                    onChange={(e) => {
-                      const newU = [...usuarios];
-                      const idx = newU.findIndex(x => x.id === u.id);
-                      newU[idx].contrasena = e.target.value;
-                      setUsuarios(newU);
-                    }} 
-                  />
-                </div>
-
                 {u.rol === 'Terapeuta' && (
                   <div className="flex items-center gap-2 flex-1 min-w-[200px]">
                     <label className="text-sm text-slate-500 w-24">Especialidades</label>
