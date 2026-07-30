@@ -264,7 +264,7 @@ export default function ConfiguracionPage() {
               <div key={u.id} className="p-3 bg-slate-50 border border-slate-200 rounded-xl space-y-3">
                 <div className="flex flex-wrap items-center gap-3">
                   {/* Photo Upload Avatar */}
-                  <div className="relative group shrink-0" title="Subir o cambiar foto de perfil">
+                  <div className="relative group shrink-0 self-end mb-0.5" title="Subir o cambiar foto de perfil">
                     <input
                       type="file"
                       accept="image/*"
@@ -284,9 +284,9 @@ export default function ConfiguracionPage() {
                     />
                     <label htmlFor={`userPhoto_${u.id}`} className="cursor-pointer block relative">
                       {u.image ? (
-                        <img src={u.image} alt="User Avatar" className="w-10 h-10 rounded-full object-cover border-2 border-[#1a5276] shadow-xs" />
+                        <img src={u.image} alt="User Avatar" className="w-9 h-9 rounded-full object-cover border-2 border-[#1a5276] shadow-xs" />
                       ) : (
-                        <div className="w-10 h-10 rounded-full bg-white border border-slate-300 flex items-center justify-center font-bold text-slate-600 text-xs shadow-xs">
+                        <div className="w-9 h-9 rounded-full bg-white border border-slate-300 flex items-center justify-center font-bold text-slate-600 text-xs shadow-xs">
                           {u.usuario ? u.usuario.charAt(0).toUpperCase() : "U"}
                         </div>
                       )}
@@ -297,13 +297,13 @@ export default function ConfiguracionPage() {
                   </div>
 
                   {/* Nombre de Usuario */}
-                  <div className="flex items-center gap-2 flex-1 min-w-[170px]">
-                    <label className="text-xs font-bold text-slate-600 w-14">Usuario</label>
+                  <div className="flex flex-col gap-1 w-[150px] shrink-0">
+                    <label className="text-[11px] font-bold text-slate-600">Usuario</label>
                     <input
                       type="text"
                       disabled={u.usuario?.trim().toLowerCase() === 'onixchambers'}
                       value={u.usuario}
-                      className="flex-1 p-2 border border-slate-300 rounded text-xs text-slate-900 focus:border-blue-500 outline-none bg-white disabled:bg-slate-100 disabled:text-slate-500 font-semibold"
+                      className="w-full p-2 border border-slate-300 rounded text-xs text-slate-900 focus:border-blue-500 outline-none bg-white disabled:bg-slate-100 disabled:text-slate-500 font-semibold"
                       onChange={(e) => {
                         const newName = e.target.value;
                         const newU = [...usuarios];
@@ -321,13 +321,13 @@ export default function ConfiguracionPage() {
                   </div>
 
                   {/* Correo Electrónico */}
-                  <div className="flex items-center gap-2 flex-1 min-w-[190px]">
-                    <label className="text-xs font-bold text-slate-600 w-12">Correo</label>
+                  <div className="flex flex-col gap-1 flex-1 min-w-[240px]">
+                    <label className="text-[11px] font-bold text-slate-600">Correo</label>
                     <input
                       type="email"
                       placeholder="ejemplo@correo.com"
                       value={u.email || ""}
-                      className="flex-1 p-2 border border-slate-300 rounded text-xs text-slate-900 focus:border-blue-500 outline-none bg-white font-medium"
+                      className="w-full p-2 border border-slate-300 rounded text-xs text-slate-900 focus:border-blue-500 outline-none bg-white font-medium"
                       onChange={(e) => {
                         const newU = [...usuarios];
                         const idx = newU.findIndex(x => x.id === u.id);
@@ -338,13 +338,13 @@ export default function ConfiguracionPage() {
                   </div>
 
                   {/* Contacto / Teléfono */}
-                  <div className="flex items-center gap-2 flex-1 min-w-[160px]">
-                    <label className="text-xs font-bold text-slate-600 w-14">Contacto</label>
+                  <div className="flex flex-col gap-1 w-[140px] shrink-0">
+                    <label className="text-[11px] font-bold text-slate-600">Contacto</label>
                     <input
                       type="tel"
                       placeholder="Ej. +507 61234567"
                       value={u.phone || ""}
-                      className="flex-1 p-2 border border-slate-300 rounded text-xs text-slate-900 focus:border-blue-500 outline-none bg-white font-medium"
+                      className="w-full p-2 border border-slate-300 rounded text-xs text-slate-900 focus:border-blue-500 outline-none bg-white font-medium"
                       onChange={(e) => {
                         const newU = [...usuarios];
                         const idx = newU.findIndex(x => x.id === u.id);
@@ -355,8 +355,8 @@ export default function ConfiguracionPage() {
                   </div>
 
                   {/* Rol */}
-                  <div className="flex items-center gap-2 min-w-[130px]">
-                    <label className="text-xs font-bold text-slate-600 w-8">Rol</label>
+                  <div className="flex flex-col gap-1 w-[120px] shrink-0">
+                    <label className="text-[11px] font-bold text-slate-600">Rol</label>
                     <select
                       disabled={u.usuario?.trim().toLowerCase() === 'onixchambers'}
                       value={u.rol}
@@ -377,7 +377,7 @@ export default function ConfiguracionPage() {
 
                   {/* Botón Borrar */}
                   {u.usuario?.trim().toLowerCase() !== 'onixchambers' && userRole.toUpperCase() !== 'INVITADO' && (
-                    <button onClick={() => removeUsuario(u.id)} className="p-2 bg-red-500 hover:bg-red-600 text-white rounded transition-colors" title="Eliminar usuario">
+                    <button onClick={() => removeUsuario(u.id)} className="p-2 bg-red-500 hover:bg-red-600 text-white rounded transition-colors self-end mb-0.5" title="Eliminar usuario">
                       <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" /></svg>
                     </button>
                   )}
