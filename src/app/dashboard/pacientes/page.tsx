@@ -360,17 +360,43 @@ export default function PacientesPage() {
                       const file = e.target.files?.[0];
                       if (file && viewingPatient) {
                         const reader = new FileReader();
-                        reader.onloadend = async () => {
-                          const base64 = reader.result as string;
-                          setViewingPatient((prev: any) => ({ ...prev, foto: base64 }));
-                          setPacientes((prev) =>
-                            prev.map((p) => (p.id === viewingPatient.id ? { ...p, foto: base64 } : p))
-                          );
-                          const { updatePatientPhoto } = await import("@/app/actions/pacientes");
-                          const res = await updatePatientPhoto(viewingPatient.id, base64);
-                          if (!res.success) {
-                            alert(res.error || "Error al actualizar la foto.");
-                          }
+                        reader.onload = (event) => {
+                          const img = new Image();
+                          img.onload = async () => {
+                            const canvas = document.createElement("canvas");
+                            const maxDim = 300;
+                            let width = img.width;
+                            let height = img.height;
+                            if (width > height) {
+                              if (width > maxDim) {
+                                height = Math.round((height * maxDim) / width);
+                                width = maxDim;
+                              }
+                            } else {
+                              if (height > maxDim) {
+                                width = Math.round((width * maxDim) / height);
+                                height = maxDim;
+                              }
+                            }
+                            canvas.width = width;
+                            canvas.height = height;
+                            const ctx = canvas.getContext("2d");
+                            let base64 = event.target?.result as string;
+                            if (ctx) {
+                              ctx.drawImage(img, 0, 0, width, height);
+                              base64 = canvas.toDataURL("image/jpeg", 0.85);
+                            }
+                            setViewingPatient((prev: any) => ({ ...prev, foto: base64 }));
+                            setPacientes((prev) =>
+                              prev.map((p) => (p.id === viewingPatient.id ? { ...p, foto: base64 } : p))
+                            );
+                            const { updatePatientPhoto } = await import("@/app/actions/pacientes");
+                            const res = await updatePatientPhoto(viewingPatient.id, base64);
+                            if (!res.success) {
+                              alert(res.error || "Error al actualizar la foto.");
+                            }
+                          };
+                          img.src = event.target?.result as string;
                         };
                         reader.readAsDataURL(file);
                       }

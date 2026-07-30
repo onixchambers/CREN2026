@@ -48,6 +48,42 @@ export default function ConfiguracionPage() {
   const [isLoading, setIsLoading] = useState(true);
   const [isSaving, setIsSaving] = useState(false);
 
+  const compressProfileImage = (file: File, callback: (base64: string) => void) => {
+    const reader = new FileReader();
+    reader.onload = (e) => {
+      const img = new Image();
+      img.onload = () => {
+        const canvas = document.createElement("canvas");
+        const maxDim = 250;
+        let width = img.width;
+        let height = img.height;
+        if (width > height) {
+          if (width > maxDim) {
+            height = Math.round((height * maxDim) / width);
+            width = maxDim;
+          }
+        } else {
+          if (height > maxDim) {
+            width = Math.round((width * maxDim) / height);
+            height = maxDim;
+          }
+        }
+        canvas.width = width;
+        canvas.height = height;
+        const ctx = canvas.getContext("2d");
+        if (ctx) {
+          ctx.drawImage(img, 0, 0, width, height);
+          const compressed = canvas.toDataURL("image/jpeg", 0.85);
+          callback(compressed);
+        } else {
+          callback(e.target?.result as string);
+        }
+      };
+      img.src = e.target?.result as string;
+    };
+    reader.readAsDataURL(file);
+  };
+
   const defaultGastos = ["Contador", "Consultorio 7", "Consultorio 2", "Teléfono", "IMSS", "Celular", "Prest. Monterrey", "Hosting", "Material", "Google One", "Consultorio 5", "Consultorio 6", "Servicios prof.", "Limpieza", "4%", "Seguros", "Prest. Banamex", "Limpieza Prod.", "SAT", "Facturama"];
 
   useEffect(() => {
@@ -237,15 +273,12 @@ export default function ConfiguracionPage() {
                       onChange={(e) => {
                         const file = e.target.files?.[0];
                         if (file) {
-                          const reader = new FileReader();
-                          reader.onloadend = () => {
-                            const base64 = reader.result as string;
+                          compressProfileImage(file, (base64) => {
                             const newU = [...usuarios];
                             const idx = newU.findIndex(x => x.id === u.id);
                             newU[idx].image = base64;
                             setUsuarios(newU);
-                          };
-                          reader.readAsDataURL(file);
+                          });
                         }
                       }}
                     />
