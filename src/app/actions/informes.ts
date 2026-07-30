@@ -11,10 +11,19 @@ export async function uploadInformePDFToDrive(formData: FormData) {
       return { success: false, error: "No se recibió ningún archivo." };
     }
 
-    // Asegurar que la carpeta del terapeuta siempre inicie con 'Lic.' (ej. Lic. Karla, Lic. Fernanda)
     const cleanName = terapeutaName.trim();
-    if (cleanName && !cleanName.toLowerCase().startsWith("lic.")) {
+    const lowerName = cleanName.toLowerCase();
+
+    // Palabras clave de roles que NO deben llevar el prefijo 'Lic.'
+    const nonTherapistKeywords = ["administrador", "admin", "contador", "invitado", "general", "sistema"];
+    const isNonTherapist = nonTherapistKeywords.some(kw => lowerName.includes(kw));
+
+    if (cleanName && !isNonTherapist && !lowerName.startsWith("lic.")) {
+      // Solo agregar 'Lic.' cuando corresponda a usuarios registrados como Terapeuta
       terapeutaName = `Lic. ${cleanName}`;
+    } else if (isNonTherapist) {
+      // Mantener nombre limpio sin 'Lic.' para Administrador, Contador e Invitado
+      terapeutaName = cleanName.replace(/^lic\.\s*/i, "");
     }
 
     const arrayBuffer = await file.arrayBuffer();

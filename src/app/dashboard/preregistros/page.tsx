@@ -374,6 +374,10 @@ export default function PreregistrosPage() {
         const ip = selectedPreReg?.ipAddress || "Ficha ID CREN";
         const ua = selectedPreReg?.userAgent || "Navegador CREN";
 
+        const rawDocName = formData.medicoTratante || userName;
+        const isDocNonTherapist = ["administrador", "admin", "contador", "invitado", "general"].some(kw => rawDocName.toLowerCase().includes(kw));
+        const displayDocName = isDocNonTherapist ? rawDocName.replace(/^lic\.\s*/i, "") : (rawDocName.toLowerCase().startsWith("lic.") ? rawDocName : `Lic. ${rawDocName}`);
+
         const htmlBase64 = generateConsentPdfBase64({
           pacienteNombre: formData.nombre,
           fechaNacimiento: formData.fechaNacimiento,
@@ -390,7 +394,7 @@ export default function PreregistrosPage() {
           signedAt: signedTimestamp,
           ipAddress: ip,
           userAgent: ua,
-          pdfUrl: "Informes PDF CREN / Lic. " + (formData.medicoTratante || userName) + " Protección de Datos",
+          pdfUrl: "Informes PDF CREN / " + displayDocName + " Protección de Datos",
         });
 
         const pdfBlob = new Blob([Buffer.from(htmlBase64, "base64")], { type: "application/pdf" });
