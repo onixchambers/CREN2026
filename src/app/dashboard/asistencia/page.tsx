@@ -24,12 +24,14 @@ type Asistencia = {
   fecha: string;
   area: string;
   paciente: string;
+  pacienteId?: string;
   sexo: string;
   edad: string;
   tipoSesion: string;
   estado: string;
   sesiones: string;
   pago: string;
+  metodoPago?: string;
   fact: string;
   subtotal: string;
   total: string;
@@ -511,6 +513,15 @@ export default function AsistenciaPage() {
   const itemsPerPage = 25;
 
   const asistenciasFiltradas = asistencias.filter(a => {
+    // Ocultar si el paciente tiene estatus 'Inactivo' en la pestaña de Pacientes
+    const matchPatient = pacientes.find(p => 
+      (a.pacienteId && p.id === a.pacienteId) || 
+      (p.paciente && p.paciente.trim().toLowerCase() === (a.paciente || "").trim().toLowerCase())
+    );
+    if (matchPatient && (matchPatient.estatus || "Activo").trim().toLowerCase() === "inactivo") {
+      return false;
+    }
+
     if (userRole.toUpperCase() === "TERAPEUTA") {
       const teraLower = (a.terapeuta || "").trim().toLowerCase();
       const userLower = userName.trim().toLowerCase();
@@ -889,6 +900,7 @@ export default function AsistenciaPage() {
                 <th className="px-2 py-3 border-b border-[#0e2f44]">TIPO DE SESIÓN</th>
                 <th className="px-2 py-3 border-b border-[#0e2f44]">ESTADO</th>
                 <th className="px-2 py-3 border-b border-[#0e2f44]">SESIONES</th>
+                <th className="px-2 py-3 border-b border-[#0e2f44]">MÉTODO DE PAGO</th>
                 <th className="px-2 py-3 border-b border-[#0e2f44]">PAGO</th>
                 <th className="px-2 py-3 border-b border-[#0e2f44]">FACT.</th>
                 <th className="px-2 py-3 border-b border-[#0e2f44]">SALDO</th>
@@ -917,7 +929,12 @@ export default function AsistenciaPage() {
                     </span>
                   </td>
                   <td className="px-2 py-3 text-slate-500 font-bold">{a.sesiones}</td>
-                  <td className="px-2 py-3 text-slate-500">{a.pago}</td>
+                  <td className="px-2 py-3">
+                    <span className="bg-blue-50 text-blue-700 border border-blue-200 px-2 py-0.5 rounded font-semibold text-[11px] whitespace-nowrap">
+                      {a.metodoPago || "Efectivo"}
+                    </span>
+                  </td>
+                  <td className="px-2 py-3 text-slate-500">{a.pago || "SÍ"}</td>
                   <td className="px-2 py-3 text-slate-500">{a.fact}</td>
                   <td className="px-2 py-3">
                     {(() => {

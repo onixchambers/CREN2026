@@ -175,6 +175,8 @@ export async function getAsistenciasDB(_ts?: string) {
         const totalCount = Math.max(totalFromNotes, patientSessions.length);
         const displaySesiones = totalCount > 1 ? `${sessionNum}/${totalCount}` : `${sessionNum}`;
 
+        const metodoPagoStr = extra.metodoPago2 ? `${extra.metodoPago} + ${extra.metodoPago2}` : (extra.metodoPago || extra.pago || "Efectivo");
+
         asistencias.push({
           id: s.id,
           fecha: extra.fecha || s.date.toISOString().split("T")[0],
@@ -186,7 +188,8 @@ export async function getAsistenciasDB(_ts?: string) {
           tipoSesion: extra.tipoSesion || "-",
           estado: extra.estadoAsistencia || s.status,
           sesiones: displaySesiones,
-          pago: extra.metodoPago || "-",
+          pago: extra.pago || "SÍ",
+          metodoPago: metodoPagoStr,
           fact: extra.solicitaFactura ? "Sí" : "No",
           subtotal: extra.subtotal != null ? "$" + Number(extra.subtotal).toFixed(2) : "$0.00",
           total: extra.total != null ? "$" + Number(extra.total).toFixed(2) : "$0.00",
@@ -198,7 +201,12 @@ export async function getAsistenciasDB(_ts?: string) {
       });
     });
 
-    asistencias.sort((a, b) => new Date(b.fecha).getTime() - new Date(a.fecha).getTime());
+    asistencias.sort((a, b) => {
+      const timeA = new Date(a.fecha).getTime();
+      const timeB = new Date(b.fecha).getTime();
+      if (timeB !== timeA) return timeB - timeA;
+      return (b.id || "").localeCompare(a.id || "");
+    });
 
     return { success: true, data: asistencias };
   } catch (error: any) {
