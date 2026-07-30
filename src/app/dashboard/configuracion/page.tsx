@@ -268,6 +268,8 @@ export default function ConfiguracionPage() {
                       <svg className="w-4 h-4 text-slate-500 absolute left-2.5 top-2.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" /></svg>
                     )}
                   </div>
+                </div>
+
                 <div className="flex items-center gap-2 flex-1 min-w-[200px]">
                   <label className="text-sm text-slate-500 w-20">Contraseña</label>
                   <input 
