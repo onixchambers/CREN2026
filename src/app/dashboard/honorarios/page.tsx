@@ -1,11 +1,16 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { getTerapeutasFull, updateTerapeutaConfig } from "@/app/actions/configuracion";
+import { useSession } from "next-auth/react";
+import { getTerapeutasFull, updateTerapeutaConfig, getAllowTherapistEdit } from "@/app/actions/configuracion";
 import { getFinanzasMensuales } from "@/app/actions/finanzas";
 import { DateInput } from "@/components/DateInput";
 
 export default function HonorariosPage() {
+  const { data: session } = useSession();
+  const userRole = (session?.user as any)?.role || "ADMIN";
+  const [allowTherapistEdit, setAllowTherapistEdit] = useState(true);
+
   const currentMonth = new Date().toISOString().slice(0, 7); // YYYY-MM
   const [mesActual, setMesActual] = useState(currentMonth);
 
@@ -39,13 +44,15 @@ export default function HonorariosPage() {
 
   async function loadData() {
     setIsLoading(true);
-    const [terRes, finRes] = await Promise.all([
+    const [terRes, finRes, allowed] = await Promise.all([
       getTerapeutasFull(),
-      getFinanzasMensuales(mesActual, fechaDesde, fechaHasta)
+      getFinanzasMensuales(mesActual, fechaDesde, fechaHasta),
+      getAllowTherapistEdit()
     ]);
 
     if (terRes.success && terRes.data) setTerapeutas(terRes.data);
     if (finRes.success && finRes.data) setFinanzasData(finRes.data);
+    setAllowTherapistEdit(allowed);
 
     setIsLoading(false);
   }
@@ -62,6 +69,10 @@ export default function HonorariosPage() {
 
   const handleSaveConfig = async () => {
     if (!editingTerapeuta) return;
+    if ((userRole.toUpperCase() === "TERAPEUTA" || userRole.toUpperCase() === "INVITADO") && !allowTherapistEdit) {
+      alert("La administración no ha habilitado el permiso para modificar la configuración de honorarios.");
+      return;
+    }
     setIsSaving(true);
     const res = await updateTerapeutaConfig(editingTerapeuta.id, editForm);
     if (res.success) {
@@ -199,12 +210,16 @@ export default function HonorariosPage() {
                         ${pagoNeto.toLocaleString('es-MX', {minimumFractionDigits: 2})}
                       </td>
                       <td className="p-4 text-center">
-                        <button 
-                          onClick={() => handleEditClick(t)}
-                          className="text-xs px-3 py-1.5 bg-blue-50 text-blue-600 hover:bg-blue-100 rounded-md font-semibold transition-colors"
-                        >
-                          Configurar
-                        </button>
+                        {((userRole.toUpperCase() !== "TERAPEUTA" && userRole.toUpperCase() !== "INVITADO") || allowTherapistEdit) ? (
+                          <button 
+                            onClick={() => handleEditClick(t)}
+                            className="text-xs px-3 py-1.5 bg-blue-50 text-blue-600 hover:bg-blue-100 rounded-md font-semibold transition-colors cursor-pointer"
+                          >
+                            Configurar
+                          </button>
+                        ) : (
+                          <span className="text-xs text-slate-400 italic font-medium">Sin permiso</span>
+                        )}
                       </td>
                     </tr>
                   );

@@ -94,6 +94,16 @@ export async function getTerapeutasFull() {
 
 export async function updateTerapeutaConfig(id: string, data: any) {
   try {
+    const session = await getServerSession(authOptions);
+    const userRole = ((session?.user as any)?.role || "").toUpperCase();
+    if (userRole === "TERAPEUTA" || userRole === "INVITADO") {
+      const s = await prisma.systemSettings.findUnique({ where: { id: 1 } });
+      const allow = s?.allowTherapistEdit ?? true;
+      if (!allow) {
+        return { success: false, error: "La administración no ha habilitado el permiso para modificar la configuración de honorarios." };
+      }
+    }
+
     await prisma.user.update({
       where: { id },
       data: {
