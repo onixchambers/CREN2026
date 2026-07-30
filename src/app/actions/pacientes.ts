@@ -30,7 +30,7 @@ export async function createPatient(data: any) {
     const thirtySecsAgo = new Date(Date.now() - 30 * 1000);
     const existingRecent = await prisma.patient.findFirst({
       where: {
-        name: { contains: patientName, mode: 'insensitive' },
+        name: patientName,
         createdAt: { gte: thirtySecsAgo }
       }
     });

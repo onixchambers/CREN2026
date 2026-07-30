@@ -442,7 +442,7 @@ export default function PreregistrosPage() {
             pdfUrl: "Informes PDF CREN / " + displayDocName + " Protección de Datos",
           });
 
-          const pdfBlob = new Blob([Buffer.from(htmlBase64, "base64")], { type: "application/pdf" });
+          const pdfBlob = await (await fetch(`data:application/pdf;base64,${htmlBase64}`)).blob();
           const pdfFile = new File([pdfBlob], `Consentimiento_Firmado_${formData.nombre.replace(/\s+/g, "_")}.pdf`, { type: "application/pdf" });
 
           const driveFd = new FormData();
