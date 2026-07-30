@@ -357,3 +357,36 @@ export async function getCurrentUserProfile() {
     return { success: false };
   }
 }
+
+export async function updateOwnUserProfile(data: { email?: string; phone?: string; image?: string }) {
+  try {
+    const session = await getServerSession(authOptions);
+    if (!session?.user?.name) {
+      return { success: false, error: "No autenticado" };
+    }
+
+    const cleanName = session.user.name.trim();
+    const user = await prisma.user.findFirst({
+      where: { name: { equals: cleanName, mode: "insensitive" } }
+    });
+
+    if (!user) {
+      return { success: false, error: "Usuario no encontrado" };
+    }
+
+    await prisma.user.update({
+      where: { id: user.id },
+      data: {
+        email: data.email !== undefined ? data.email : user.email,
+        phone: data.phone !== undefined ? data.phone : user.phone,
+        image: data.image !== undefined ? data.image : user.image,
+      }
+    });
+
+    revalidatePath("/dashboard", "layout");
+    return { success: true };
+  } catch (error: any) {
+    console.error("Error al actualizar perfil de usuario:", error);
+    return { success: false, error: error?.message || "Error al actualizar perfil" };
+  }
+}
