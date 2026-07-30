@@ -30,13 +30,13 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
     { name: "Estado de Cuenta", path: "/dashboard/finanzas", adminOnly: true },
     { name: "Informes", path: "/dashboard/informes", adminOnly: false },
     { name: "Horarios", path: "/dashboard/horarios", adminOnly: false },
+    { name: "Contraseña", path: "/dashboard/contrasena", adminOnly: false },
     { name: "Dashboard", path: "/dashboard", adminOnly: true },
     { name: "Terapeutas", path: "/dashboard/terapeutas", adminOnly: true },
     { name: "Honorarios", path: "/dashboard/honorarios", adminOnly: true },
     { name: "Salario", path: "/dashboard/salario", adminOnly: true },
     { name: "Reportes", path: "/dashboard/reportes", adminOnly: true },
     { name: "Estado Resultados", path: "/dashboard/estado-resultados", adminOnly: true },
-    { name: "Contraseña", path: "/dashboard/contrasena", adminOnly: false },
     { name: "Configuración", path: "/dashboard/configuracion", adminOnly: true },
   ];
 
@@ -44,8 +44,10 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
   const tabs = allTabs.filter(tab => {
     const roleUpper = userRole.toUpperCase();
 
-    // Todos los roles (ADMIN, TERAPEUTA, CONTADOR, INVITADO) pueden cambiar su contraseña
-    if (tab.path === "/dashboard/contrasena") return true;
+    // Habilitar 'Contraseña' de forma universal para TODOS los usuarios (ADMIN, TERAPEUTA, CONTADOR, INVITADO)
+    if (tab.path === "/dashboard/contrasena") {
+      return true;
+    }
 
     // El usuario INVITADO NO tiene acceso a Configuración
     if (roleUpper === "INVITADO" && tab.path === "/dashboard/configuracion") {
