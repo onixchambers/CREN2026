@@ -228,16 +228,21 @@ export default function PacientesPage() {
 
                 return (
                   <tr key={p.id} className="hover:bg-slate-50 transition-colors cursor-pointer" onClick={() => setViewingPatient(p)}>
-                    <td className="px-4 py-4 text-left font-bold text-slate-800">
-                      <div className="max-w-[170px] leading-tight flex items-center gap-2">
+                    <td className="px-4 py-3.5 text-left">
+                      <div className="flex items-center gap-2.5">
                         {p.foto ? (
-                          <img src={p.foto} alt="Foto" className="w-8 h-8 rounded-full object-cover shrink-0" />
+                          <img src={p.foto} alt="Foto" className="w-9 h-9 rounded-full object-cover shrink-0 border border-slate-200" />
                         ) : (
-                          <div className="w-8 h-8 rounded-full bg-slate-200 flex items-center justify-center font-bold text-slate-600 text-xs shrink-0">
-                            {p.name ? p.name.charAt(0) : "P"}
+                          <div className="w-9 h-9 rounded-full bg-slate-100 border border-slate-300 flex items-center justify-center font-bold text-slate-600 text-xs shrink-0">
+                            {p.name ? p.name.charAt(0).toUpperCase() : "P"}
                           </div>
                         )}
-                        <span className="truncate">{p.name}</span>
+                        <div className="max-w-[180px] leading-snug">
+                          <div className="font-bold text-slate-900 text-xs truncate">{p.name}</div>
+                          <div className="text-[10px] font-medium text-[#1a5276] truncate flex items-center gap-1">
+                            <span>🩺 {p.sessionTherapists && p.sessionTherapists.length > 0 ? p.sessionTherapists.join(", ") : (p.medicoTratante || "Sin asignar")}</span>
+                          </div>
+                        </div>
                       </div>
                     </td>
                     <td className="px-2 py-4 text-slate-600 font-bold">
