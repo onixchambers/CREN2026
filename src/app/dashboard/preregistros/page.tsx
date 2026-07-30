@@ -103,6 +103,8 @@ export default function PreregistrosPage() {
   };
 
   const [formData, setFormData] = useState({
+    nombres: "",
+    apellidos: "",
     nombre: "",
     fechaNacimiento: "",
     sexo: "Masculino",
@@ -194,12 +196,29 @@ export default function PreregistrosPage() {
 
   const searchResults = getFilteredPatients();
 
+  const splitName = (fullName: string) => {
+    const parts = (fullName || "").trim().split(" ");
+    if (parts.length > 1) {
+      const mid = Math.ceil(parts.length / 2);
+      return {
+        nombres: parts.slice(0, mid).join(" "),
+        apellidos: parts.slice(mid).join(" ")
+      };
+    }
+    return { nombres: fullName || "", apellidos: "" };
+  };
+
   // Cargar datos de Preregistro llenado por paciente en Ficha ID
   const handleLoadPreRegData = (preReg: any) => {
     setSelectedPreReg(preReg);
+    const fullName = preReg.name || preReg.nombre || "";
+    const { nombres, apellidos } = splitName(fullName);
+
     setFormData({
       ...formData,
-      nombre: preReg.name || "",
+      nombres,
+      apellidos,
+      nombre: fullName,
       fechaNacimiento: preReg.fechaNacimiento || "",
       sexo: preReg.sexo || "Masculino",
       fechaIngreso: preReg.fechaIngreso || new Date().toISOString().split("T")[0],
@@ -230,7 +249,7 @@ export default function PreregistrosPage() {
       // Se mantienen DESMARCADOS para que la terapeuta los verifique manualmente
       reglamentoFirmado: false,
       consentimientoFirmado: false,
-      observacionesAdmin: "",
+      observacionesAdmin: preReg.observacionesAdmin || "",
       foto: "",
     });
 
@@ -266,10 +285,15 @@ export default function PreregistrosPage() {
     const pContact = parsePhone(ficha.padreContacto, setPadreCountryCode);
     const oContact = parsePhone(ficha.otrosContacto, setOtrosCountryCode);
 
+    const fullName = ficha.name || ficha.nombre || "";
+    const { nombres, apellidos } = splitName(fullName);
+
     setFormData({
       ...formData,
       ...ficha,
-      nombre: ficha.name || ficha.nombre || "",
+      nombres,
+      apellidos,
+      nombre: fullName,
       madreContacto: mContact,
       padreContacto: pContact,
       otrosContacto: oContact,
@@ -334,6 +358,21 @@ export default function PreregistrosPage() {
       observacionesAdmin: "",
       foto: "",
     });
+  };
+
+  const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
+    const { name, value, type } = e.target;
+    if (type === "checkbox") {
+      setFormData(prev => ({ ...prev, [name]: (e.target as HTMLInputElement).checked }));
+    } else {
+      setFormData(prev => {
+        const next = { ...prev, [name]: value };
+        if (name === "nombres" || name === "apellidos") {
+          next.nombre = `${next.nombres || ""} ${next.apellidos || ""}`.trim();
+        }
+        return next;
+      });
+    }
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -589,15 +628,28 @@ export default function PreregistrosPage() {
               </div>
 
               <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
-                <div className="md:col-span-2">
-                  <label className="block text-xs font-bold text-slate-700 mb-1 uppercase">Nombre Completo *</label>
+                <div>
+                  <label className="block text-xs font-bold text-slate-700 mb-1 uppercase">Nombres *</label>
                   <input
                     type="text"
                     required
-                    name="nombre"
-                    value={formData.nombre}
+                    name="nombres"
+                    value={formData.nombres}
                     onChange={handleInputChange}
-                    placeholder="Nombre del paciente"
+                    placeholder="Nombres del paciente"
+                    className="w-full p-2 border border-slate-300 rounded text-sm text-slate-900 focus:border-blue-500 outline-none"
+                  />
+                </div>
+
+                <div>
+                  <label className="block text-xs font-bold text-slate-700 mb-1 uppercase">Apellidos *</label>
+                  <input
+                    type="text"
+                    required
+                    name="apellidos"
+                    value={formData.apellidos}
+                    onChange={handleInputChange}
+                    placeholder="Apellidos del paciente"
                     className="w-full p-2 border border-slate-300 rounded text-sm text-slate-900 focus:border-blue-500 outline-none"
                   />
                 </div>

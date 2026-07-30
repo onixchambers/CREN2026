@@ -11,7 +11,8 @@ function RegistroConsentimientoContent() {
   const tokenParam = searchParams.get("token") || "";
   const terapeutaParam = searchParams.get("terapeuta") || "Administrador";
 
-  const [nombre, setNombre] = useState("");
+  const [nombres, setNombres] = useState("");
+  const [apellidos, setApellidos] = useState("");
   const [fechaNacimiento, setFechaNacimiento] = useState("");
   const [sexo, setSexo] = useState("Masculino");
   const hoy = new Date().toISOString().split("T")[0];
@@ -69,6 +70,7 @@ function RegistroConsentimientoContent() {
   const [riesgoFuga, setRiesgoFuga] = useState(false);
   const [noSepara, setNoSepara] = useState(false);
   const [otrasAlertas, setOtrasAlertas] = useState(false);
+  const [observacionesAdmin, setObservacionesAdmin] = useState("");
 
   // Consentimiento legal México CREN
   const [aceptoTerminos, setAceptoTerminos] = useState(false);
@@ -157,8 +159,10 @@ function RegistroConsentimientoContent() {
     if (submitting) return; // Bloqueo de múltiples clics simultáneos
     setErrorMsg("");
 
-    if (!nombre.trim()) {
-      setErrorMsg("Por favor ingresa el Nombre Completo del paciente.");
+    const nombreCompleto = `${nombres.trim()} ${apellidos.trim()}`.trim();
+
+    if (!nombres.trim() || !apellidos.trim()) {
+      setErrorMsg("Por favor ingresa tanto los Nombres como los Apellidos del paciente.");
       return;
     }
 
@@ -184,7 +188,7 @@ function RegistroConsentimientoContent() {
 
       const payload = {
         token: tokenParam,
-        nombre,
+        nombre: nombreCompleto,
         fechaNacimiento,
         sexo,
         fechaIngreso,
@@ -208,6 +212,7 @@ function RegistroConsentimientoContent() {
         riesgoFuga,
         noSepara,
         otrasAlertas,
+        observacionesAdmin,
         signatureDataUrl,
       };
 
@@ -313,16 +318,29 @@ function RegistroConsentimientoContent() {
             <h3 className="text-xs font-extrabold uppercase tracking-wider text-[#1a5276]">1. Datos Generales del Paciente</h3>
           </div>
 
-          <div>
-            <label className="block text-xs font-bold text-slate-800 mb-1">Nombre Completo *</label>
-            <input
-              type="text"
-              required
-              value={nombre}
-              onChange={(e) => setNombre(e.target.value)}
-              placeholder="Nombre y Apellidos del paciente"
-              className="w-full bg-white border border-slate-300 rounded-xl p-3 text-sm text-slate-900 font-medium placeholder:text-slate-400 focus:border-[#1a5276] outline-none shadow-xs"
-            />
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+            <div>
+              <label className="block text-xs font-bold text-slate-800 mb-1">Nombres *</label>
+              <input
+                type="text"
+                required
+                value={nombres}
+                onChange={(e) => setNombres(e.target.value)}
+                placeholder="Ingresa los nombres"
+                className="w-full bg-white border border-slate-300 rounded-xl p-3 text-sm text-slate-900 font-medium placeholder:text-slate-400 focus:border-[#1a5276] outline-none shadow-xs"
+              />
+            </div>
+            <div>
+              <label className="block text-xs font-bold text-slate-800 mb-1">Apellidos *</label>
+              <input
+                type="text"
+                required
+                value={apellidos}
+                onChange={(e) => setApellidos(e.target.value)}
+                placeholder="Ingresa los apellidos"
+                className="w-full bg-white border border-slate-300 rounded-xl p-3 text-sm text-slate-900 font-medium placeholder:text-slate-400 focus:border-[#1a5276] outline-none shadow-xs"
+              />
+            </div>
           </div>
 
           <div className="grid grid-cols-2 gap-3">
@@ -482,7 +500,23 @@ function RegistroConsentimientoContent() {
               <input type="checkbox" checked={noSepara} onChange={(e) => setNoSepara(e.target.checked)} className="accent-[#1a5276]" />
               <span>No se separa de mamá</span>
             </label>
+            <label className="flex items-center gap-2 bg-slate-50 p-2.5 rounded-lg border border-slate-200 font-semibold text-slate-800 cursor-pointer col-span-2 sm:col-span-1">
+              <input type="checkbox" checked={otrasAlertas} onChange={(e) => setOtrasAlertas(e.target.checked)} className="accent-[#1a5276]" />
+              <span>Otros</span>
+            </label>
           </div>
+          {otrasAlertas && (
+            <div className="pt-2">
+              <label className="block text-xs font-bold text-slate-800 mb-1">Escribir otra alerta u observación:</label>
+              <input
+                type="text"
+                value={observacionesAdmin}
+                onChange={(e) => setObservacionesAdmin(e.target.value)}
+                placeholder="Especificar otra condición u observación..."
+                className="w-full bg-white border border-slate-300 rounded-xl p-3 text-xs text-slate-900 font-medium placeholder:text-slate-400 focus:border-[#1a5276] outline-none shadow-xs"
+              />
+            </div>
+          )}
         </div>
 
         {/* Sección 4: Aviso de Privacidad Oficial CREN */}
