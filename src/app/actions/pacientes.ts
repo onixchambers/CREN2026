@@ -105,23 +105,92 @@ export async function getPatients() {
     });
 
     const mapped = patients.map(p => {
-      const sessionTherapists = p.sessions
-        .map(s => {
-          let extraName = "";
+      const sessionTherapists: string[] = [];
+      let asistenciasCount = 0;
+      let valoracionesCount = 0;
+      let totalPagadoSum = 0;
+      let totalCostoSum = 0;
+      let lastPaymentDate = "";
+      let lastPaymentAmount = 0;
+      let lastMetodoPago = p.metodoPago || "Efectivo";
+      const pricesSet = new Set<number>();
+
+      // Si el paciente tiene precio configurado por defecto
+      if (p.precioTerapia) {
+        const baseP = parseFloat(p.precioTerapia);
+        if (!isNaN(baseP) && baseP > 0) pricesSet.add(baseP);
+      }
+
+      // Procesar todas las sesiones registradas en Asistencia
+      for (const s of p.sessions) {
+        let extraName = "";
+        let parsedNotes: any = null;
+        if (s.notes) {
           try {
-            if (s.notes) {
-              const extra = JSON.parse(s.notes);
-              extraName = extra.terapeuta || "";
+            parsedNotes = JSON.parse(s.notes);
+            extraName = parsedNotes.terapeuta || "";
+          } catch (e) {}
+        }
+
+        if (s.therapist?.name) sessionTherapists.push(s.therapist.name);
+        if (extraName) sessionTherapists.push(extraName);
+
+        if (parsedNotes) {
+          const est = (parsedNotes.estadoAsistencia || "").toLowerCase();
+          const isAttended = est === "asistio" || est === "cancelo sin anticipacion" || s.status === "COMPLETED";
+          if (isAttended) {
+            asistenciasCount++;
+          }
+
+          const tipo = (parsedNotes.tipoSesion || "").toLowerCase();
+          const area = (parsedNotes.area || "").toLowerCase();
+          if (tipo.includes("valoraci") || area.includes("valoraci")) {
+            valoracionesCount++;
+          }
+
+          const costo = parseFloat(parsedNotes.costoSesion || parsedNotes.precioTerapia || "0");
+          if (!isNaN(costo) && costo > 0) {
+            pricesSet.add(costo);
+            if (isAttended) totalCostoSum += costo;
+          }
+
+          const monto = parseFloat(parsedNotes.montoPago || "0");
+          if (!isNaN(monto) && monto > 0) {
+            totalPagadoSum += monto;
+            lastPaymentAmount = monto;
+            if (parsedNotes.fecha) {
+              const parts = parsedNotes.fecha.split("-");
+              lastPaymentDate = parts.length === 3 ? `${parts[2]}/${parts[1]}/${parts[0]}` : parsedNotes.fecha;
             }
-          } catch(e) {}
-          return [s.therapist?.name, extraName];
-        })
-        .flat()
-        .filter(Boolean) as string[];
+          }
+
+          if (parsedNotes.metodoPago) {
+            lastMetodoPago = parsedNotes.metodoPago;
+          }
+        }
+      }
+
+      // Formatear precioTerapia: si hay varios montos (ej. 500 y 900) -> "500 / 900"
+      const sortedPrices = Array.from(pricesSet).sort((a, b) => a - b);
+      const precioTerapiaDisplay = sortedPrices.length > 0 
+        ? sortedPrices.map(pr => `${pr}`).join(" / ")
+        : (p.precioTerapia || "500");
+
+      const saldoCalculado = totalPagadoSum - totalCostoSum;
 
       return {
         ...p,
-        sessionTherapists: Array.from(new Set(sessionTherapists))
+        sessionTherapists: Array.from(new Set(sessionTherapists)),
+        asistencias: asistenciasCount,
+        valoraciones: valoracionesCount,
+        totalPagado: totalPagadoSum.toFixed(2),
+        totalCosto: totalCostoSum.toFixed(2),
+        saldoCalculado: saldoCalculado.toFixed(2),
+        precioTerapia: precioTerapiaDisplay,
+        metodoPago: lastMetodoPago,
+        ultima: lastPaymentAmount > 0 
+          ? `$${lastPaymentAmount.toFixed(2)}${lastPaymentDate ? ` (${lastPaymentDate})` : ""}`
+          : "—"
       };
     });
 

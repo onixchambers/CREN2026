@@ -141,11 +141,16 @@ export default function PacientesPage() {
 
   // Cálculo de Saldo (Pendiente en Rojo negativo, A Favor en Verde positivo, $0 gris al día)
   const renderSaldo = (p: any) => {
-    const asistencias = p.asistencias || 0;
-    const precio = parseFloat(p.precioTerapia || "500") || 500;
-    const pagado = parseFloat((p.totalPagado || "0").toString().replace(/[^0-9.]/g, "")) || 0;
-    const costoGenerado = asistencias * precio;
-    const diferencia = pagado - costoGenerado;
+    let diferencia = 0;
+    if (p.saldoCalculado !== undefined && p.saldoCalculado !== null) {
+      diferencia = parseFloat(p.saldoCalculado);
+    } else {
+      const asistencias = p.asistencias || 0;
+      const precio = parseFloat((p.precioTerapia || "500").split("/")[0]) || 500;
+      const pagado = parseFloat((p.totalPagado || "0").toString().replace(/[^0-9.]/g, "")) || 0;
+      const costoGenerado = asistencias * precio;
+      diferencia = pagado - costoGenerado;
+    }
 
     if (diferencia < 0) {
       return (
@@ -257,7 +262,9 @@ export default function PacientesPage() {
                       {renderSaldo(p)}
                     </td>
                     <td className="px-4 py-4 font-bold text-[#1a5276]">
-                      ${precio}
+                      {precio.includes("/")
+                        ? precio.split(" / ").map((val: string) => `$${val.replace("$", "")}`).join(" / ")
+                        : (precio.startsWith("$") ? precio : `$${precio}`)}
                     </td>
                     <td className="px-4 py-4">
                       <span className="bg-blue-50 text-blue-700 border border-blue-200 px-2.5 py-1 rounded-full text-[11px] font-semibold whitespace-nowrap">
