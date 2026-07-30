@@ -341,6 +341,15 @@ export async function getAllowTherapistEdit() {
   }
 }
 
+export async function getSystemTimezone() {
+  try {
+    const s = await prisma.systemSettings.findUnique({ where: { id: 1 } });
+    return s?.timezone || "America/Panama";
+  } catch (e) {
+    return "America/Panama";
+  }
+}
+
 export async function getCurrentUserProfile() {
   try {
     const session = await getServerSession(authOptions);

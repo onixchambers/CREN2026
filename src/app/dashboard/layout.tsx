@@ -4,6 +4,7 @@ import { signOut, useSession } from "next-auth/react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { getAllowTherapistEdit } from "@/app/actions/configuracion";
+import { getPhonePlaceholder } from "@/lib/phonePlaceholder";
 
 export default function DashboardLayout({ children }: { children: React.ReactNode }) {
   const pathname = usePathname();
@@ -16,6 +17,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
   const userImage = profileData.image || session?.user?.image;
 
   const [allowTherapistEdit, setAllowTherapistEdit] = useState(true);
+  const [systemTimezone, setSystemTimezone] = useState("America/Panama");
   const [showProfileModal, setShowProfileModal] = useState(false);
   const [isSavingProfile, setIsSavingProfile] = useState(false);
 
@@ -24,8 +26,12 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
       const allowed = await getAllowTherapistEdit();
       setAllowTherapistEdit(allowed);
 
-      const { getCurrentUserProfile } = await import("@/app/actions/configuracion");
-      const res = await getCurrentUserProfile();
+      const { getCurrentUserProfile, getSystemTimezone } = await import("@/app/actions/configuracion");
+      const [res, tz] = await Promise.all([
+        getCurrentUserProfile(),
+        getSystemTimezone()
+      ]);
+      setSystemTimezone(tz);
       if (res.success && res.user) {
         setProfileData({ email: res.user.email, image: res.user.image, phone: res.user.phone });
       }
@@ -270,7 +276,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
                 </label>
                 <input
                   type="tel"
-                  placeholder="Ej. +507 61234567"
+                  placeholder={getPhonePlaceholder(systemTimezone)}
                   value={profileData.phone || ""}
                   onChange={(e) => setProfileData((prev) => ({ ...prev, phone: e.target.value }))}
                   className="w-full p-2.5 border border-slate-300 rounded-lg text-sm text-slate-900 focus:border-blue-500 outline-none bg-slate-50 focus:bg-white transition-colors"

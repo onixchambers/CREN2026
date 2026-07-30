@@ -4,6 +4,7 @@ import { useSession } from "next-auth/react";
 import { getSettings, saveSettings } from "@/app/actions/configuracion";
 import { MultiSelect } from "@/components/MultiSelect";
 import { TimezoneSelector } from "@/components/TimezoneSelector";
+import { getPhonePlaceholder } from "@/lib/phonePlaceholder";
 
 export default function ConfiguracionPage() {
   const formatDateStr = (dateStr: string) => {
@@ -339,7 +340,7 @@ export default function ConfiguracionPage() {
                     <label className="text-[11px] font-bold text-slate-600">Contacto</label>
                     <input
                       type="tel"
-                      placeholder="Ej. +507 61234567"
+                      placeholder={getPhonePlaceholder(timezone)}
                       value={u.phone || ""}
                       className="w-full p-2 border border-slate-300 rounded text-xs text-slate-900 focus:border-blue-500 outline-none bg-white font-medium"
                       onChange={(e) => {
@@ -912,7 +913,7 @@ export default function ConfiguracionPage() {
                 <label className="text-xs font-bold text-slate-600">Contacto / Teléfono</label>
                 <input
                   type="tel"
-                  placeholder="Ej. +507 61234567"
+                  placeholder={getPhonePlaceholder(timezone)}
                   value={viewingUserModal.phone || ""}
                   onChange={(e) => {
                     const val = e.target.value;

@@ -2,9 +2,11 @@
 
 import { useState, useRef, useEffect, Suspense } from "react";
 import { useSearchParams } from "next/navigation";
-import { submitPreRegistration } from "@/app/actions/preregistro";
+import { submitPreRegistration, getPublicSystemTimezone } from "@/app/actions/preregistro";
 import { CountrySelector } from "@/components/CountrySelector";
 import { COUNTRY_CODES } from "@/lib/countryCodes";
+import { DateInput } from "@/components/DateInput";
+import { getPhonePlaceholder } from "@/lib/phonePlaceholder";
 
 function RegistroConsentimientoContent() {
   const searchParams = useSearchParams();
@@ -26,9 +28,14 @@ function RegistroConsentimientoContent() {
   const [padreCountryCode, setPadreCountryCode] = useState("+52");
   const [otrosCountryCode, setOtrosCountryCode] = useState("+52");
 
+  const [systemTimezone, setSystemTimezone] = useState("America/Panama");
+
   useEffect(() => {
-    async function detectUserCountry() {
+    async function initPage() {
       try {
+        const tz = await getPublicSystemTimezone();
+        setSystemTimezone(tz);
+
         const res = await fetch("https://ipapi.co/json/", { cache: "no-store" });
         if (res.ok) {
           const data = await res.json();
@@ -41,10 +48,10 @@ function RegistroConsentimientoContent() {
           }
         }
       } catch (e) {
-        console.log("Fallback IP detection to +52 Mexico");
+        console.log("Fallback IP detection");
       }
     }
-    detectUserCountry();
+    initPage();
   }, []);
 
   const handlePhoneInput = (val: string, setCode: (c: string) => void, setPhone: (p: string) => void) => {
@@ -427,7 +434,7 @@ function RegistroConsentimientoContent() {
                 type="tel"
                 value={madreContacto}
                 onChange={(e) => handlePhoneInput(e.target.value, setMadreCountryCode, setMadreContacto)}
-                placeholder="61234567"
+                placeholder={getPhonePlaceholder(systemTimezone)}
                 className="flex-1 bg-white border border-slate-300 rounded-lg p-2.5 text-xs text-slate-900 font-medium placeholder:text-slate-400 outline-none"
               />
             </div>
@@ -456,7 +463,7 @@ function RegistroConsentimientoContent() {
                 type="tel"
                 value={padreContacto}
                 onChange={(e) => handlePhoneInput(e.target.value, setPadreCountryCode, setPadreContacto)}
-                placeholder="61234567"
+                placeholder={getPhonePlaceholder(systemTimezone)}
                 className="flex-1 bg-white border border-slate-300 rounded-lg p-2.5 text-xs text-slate-900 font-medium placeholder:text-slate-400 outline-none"
               />
             </div>

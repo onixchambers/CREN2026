@@ -175,3 +175,12 @@ export async function markPreRegistrationAsLoaded(id: string) {
     return { success: false, error: error?.message };
   }
 }
+
+export async function getPublicSystemTimezone() {
+  try {
+    const s = await prisma.systemSettings.findUnique({ where: { id: 1 } });
+    return s?.timezone || "America/Panama";
+  } catch (e) {
+    return "America/Panama";
+  }
+}

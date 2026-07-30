@@ -11,7 +11,8 @@ import {
   markPreRegistrationAsLoaded,
 } from "@/app/actions/preregistro";
 import { uploadInformePDFToDrive, uploadConsentPDFAction } from "@/app/actions/informes";
-import { generateConsentPdfBase64 } from "@/lib/pdfGenerator";
+import { getPhonePlaceholder } from "@/lib/phonePlaceholder";
+import { getSystemTimezone } from "@/app/actions/configuracion";
 
 export default function PreregistrosPage() {
   const { data: session } = useSession();
@@ -141,6 +142,7 @@ export default function PreregistrosPage() {
     foto: "",
   });
 
+  const [systemTimezone, setSystemTimezone] = useState("America/Panama");
   const [fichas, setFichas] = useState<any[]>([]);
   const [searchQuery, setSearchQuery] = useState("");
   const [showDropdown, setShowDropdown] = useState(false);
@@ -167,7 +169,11 @@ export default function PreregistrosPage() {
   useEffect(() => {
     async function loadPatients() {
       const { getPatients } = await import("@/app/actions/pacientes");
-      const result = await getPatients();
+      const [result, tz] = await Promise.all([
+        getPatients(),
+        getSystemTimezone()
+      ]);
+      setSystemTimezone(tz);
       if (result.success && result.data) {
         setFichas(result.data);
       }
@@ -781,7 +787,7 @@ export default function PreregistrosPage() {
                       name="madreContacto"
                       value={formData.madreContacto}
                       onChange={handleInputChange}
-                      placeholder="61234567"
+                      placeholder={getPhonePlaceholder(systemTimezone)}
                       className="flex-1 p-2 border border-slate-300 rounded text-xs text-slate-900 bg-white focus:border-blue-500 outline-none"
                     />
                   </div>
@@ -826,7 +832,7 @@ export default function PreregistrosPage() {
                       name="padreContacto"
                       value={formData.padreContacto}
                       onChange={handleInputChange}
-                      placeholder="61234567"
+                      placeholder={getPhonePlaceholder(systemTimezone)}
                       className="flex-1 p-2 border border-slate-300 rounded text-xs text-slate-900 bg-white focus:border-blue-500 outline-none"
                     />
                   </div>
@@ -871,7 +877,7 @@ export default function PreregistrosPage() {
                       name="otrosContacto"
                       value={formData.otrosContacto}
                       onChange={handleInputChange}
-                      placeholder="Otro teléfono"
+                      placeholder={getPhonePlaceholder(systemTimezone)}
                       className="flex-1 p-2 border border-slate-300 rounded text-xs text-slate-900 bg-white focus:border-blue-500 outline-none"
                     />
                   </div>

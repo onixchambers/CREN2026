@@ -1,13 +1,31 @@
 import React from 'react';
 
-interface DateInputProps extends Omit<React.InputHTMLAttributes<HTMLInputElement>, 'type'> {
+interface DateInputProps extends Omit<React.InputHTMLAttributes<HTMLInputElement>, 'type' | 'onChange'> {
+  onChange?: (val: any) => void;
 }
 
-export function DateInput(props: DateInputProps) {
+export function DateInput({ onChange, value, ...props }: DateInputProps) {
+  let formattedValue = "";
+  if (typeof value === "string") {
+    if (value.includes("T")) {
+      formattedValue = value.split("T")[0];
+    } else {
+      formattedValue = value;
+    }
+  } else if (value) {
+    formattedValue = String(value);
+  }
+
   return (
     <input
       type="date"
       {...props}
+      value={formattedValue}
+      onChange={(e) => {
+        if (onChange) {
+          onChange(e.target.value);
+        }
+      }}
       className={props.className || "w-full text-sm p-2 border border-slate-300 rounded focus:border-[#2980b9] outline-none text-slate-700 bg-white"}
     />
   );
