@@ -329,3 +329,24 @@ export async function deletePatient(id: string) {
     return { success: false, error: "Error de DB al borrar paciente: " + (error?.message || String(error)) };
   }
 }
+
+export async function updatePatientStatus(id: string, estatus: string) {
+  try {
+    const session = await getServerSession(authOptions);
+    if (!session?.user) {
+      return { success: false, error: "No autenticado." };
+    }
+
+    const updated = await prisma.patient.update({
+      where: { id },
+      data: { estatus: estatus || "Activo" }
+    });
+
+    revalidatePath("/dashboard/pacientes");
+    revalidatePath("/dashboard");
+    return { success: true, data: updated };
+  } catch (error: any) {
+    console.error("Error updating patient status:", error);
+    return { success: false, error: error?.message || "Error al actualizar estado del paciente." };
+  }
+}
