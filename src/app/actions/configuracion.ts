@@ -329,3 +329,31 @@ export async function getAllowTherapistEdit() {
     return true;
   }
 }
+
+export async function getCurrentUserProfile() {
+  try {
+    const session = await getServerSession(authOptions);
+    if (!session?.user?.name) return { success: false };
+
+    const dbUser = await prisma.user.findFirst({
+      where: { name: { equals: session.user.name, mode: "insensitive" } },
+      select: { email: true, image: true, phone: true, role: true, name: true }
+    });
+
+    if (dbUser) {
+      return {
+        success: true,
+        user: {
+          name: dbUser.name,
+          email: dbUser.email || session.user.email || "",
+          image: dbUser.image || "",
+          phone: dbUser.phone || "",
+          role: dbUser.role || (session.user as any).role
+        }
+      };
+    }
+    return { success: false };
+  } catch (error) {
+    return { success: false };
+  }
+}

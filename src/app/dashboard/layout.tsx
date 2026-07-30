@@ -11,8 +11,9 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
   
   const userRole = (session?.user as any)?.role || "ADMIN";
   const userName = session?.user?.name || "Administrador";
-  const userEmail = session?.user?.email;
-  const userImage = session?.user?.image;
+  const [profileData, setProfileData] = useState<{ email?: string; image?: string }>({});
+  const userEmail = profileData.email || session?.user?.email;
+  const userImage = profileData.image || session?.user?.image;
 
   const [allowTherapistEdit, setAllowTherapistEdit] = useState(true);
 
@@ -20,9 +21,15 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
     async function loadPermission() {
       const allowed = await getAllowTherapistEdit();
       setAllowTherapistEdit(allowed);
+
+      const { getCurrentUserProfile } = await import("@/app/actions/configuracion");
+      const res = await getCurrentUserProfile();
+      if (res.success && res.user) {
+        setProfileData({ email: res.user.email, image: res.user.image });
+      }
     }
     loadPermission();
-  }, []);
+  }, [session]);
 
   const allTabs = [
     { name: "Agenda", path: "/dashboard/agenda", adminOnly: false },
