@@ -42,6 +42,7 @@ export default function ConfiguracionPage() {
   const [showDriveKey, setShowDriveKey] = useState(false);
 
   const [month, setMonth] = useState(new Date().toISOString().slice(0, 7));
+  const [viewingUserModal, setViewingUserModal] = useState<any | null>(null);
   
   const [gastos, setGastos] = useState<any[]>([]);
   
@@ -263,37 +264,22 @@ export default function ConfiguracionPage() {
               }).map((u) => (
               <div key={u.id} className="p-3 bg-slate-50 border border-slate-200 rounded-xl space-y-3">
                 <div className="flex flex-wrap items-center gap-3">
-                  {/* Photo Upload Avatar */}
-                  <div className="relative group shrink-0 self-end mb-0.5" title="Subir o cambiar foto de perfil">
-                    <input
-                      type="file"
-                      accept="image/*"
-                      id={`userPhoto_${u.id}`}
-                      className="hidden"
-                      onChange={(e) => {
-                        const file = e.target.files?.[0];
-                        if (file) {
-                          compressProfileImage(file, (base64) => {
-                            const newU = [...usuarios];
-                            const idx = newU.findIndex(x => x.id === u.id);
-                            newU[idx].image = base64;
-                            setUsuarios(newU);
-                          });
-                        }
-                      }}
-                    />
-                    <label htmlFor={`userPhoto_${u.id}`} className="cursor-pointer block relative">
-                      {u.image ? (
-                        <img src={u.image} alt="User Avatar" className="w-9 h-9 rounded-full object-cover border-2 border-[#1a5276] shadow-xs" />
-                      ) : (
-                        <div className="w-9 h-9 rounded-full bg-white border border-slate-300 flex items-center justify-center font-bold text-slate-600 text-xs shadow-xs">
-                          {u.usuario ? u.usuario.charAt(0).toUpperCase() : "U"}
-                        </div>
-                      )}
-                      <div className="absolute inset-0 rounded-full bg-black/40 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity">
-                        <span className="text-white text-[10px] font-bold">📷</span>
+                  {/* Photo Upload Avatar / Click to enlarge */}
+                  <div 
+                    onClick={() => setViewingUserModal(u)}
+                    className="relative group shrink-0 self-end mb-0.5 cursor-pointer" 
+                    title="Haz clic para agrandar foto y ver/editar perfil completo"
+                  >
+                    {u.image ? (
+                      <img src={u.image} alt="User Avatar" className="w-9 h-9 rounded-full object-cover border-2 border-[#1a5276] shadow-xs group-hover:scale-105 transition-transform" />
+                    ) : (
+                      <div className="w-9 h-9 rounded-full bg-white border border-slate-300 flex items-center justify-center font-bold text-slate-600 text-xs shadow-xs group-hover:scale-105 transition-transform">
+                        {u.usuario ? u.usuario.charAt(0).toUpperCase() : "U"}
                       </div>
-                    </label>
+                    )}
+                    <div className="absolute inset-0 rounded-full bg-black/40 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity">
+                      <span className="text-white text-[10px] font-bold">🔍</span>
+                    </div>
                   </div>
 
                   {/* Nombre de Usuario */}
@@ -802,6 +788,147 @@ export default function ConfiguracionPage() {
         )}
 
       </div>
+
+      {/* MODAL PERFIL ENGRANDECIDO (AL HACER CLIC EN LA FOTO DE CUALQUIER USUARIO) */}
+      {viewingUserModal && (
+        <div className="fixed inset-0 z-50 bg-black/60 backdrop-blur-xs flex items-center justify-center p-4">
+          <div className="bg-white rounded-2xl max-w-md w-full p-6 space-y-5 shadow-2xl animate-in zoom-in-95 duration-200 text-slate-900 border border-slate-100">
+            <div className="flex justify-between items-center border-b border-slate-100 pb-3">
+              <div className="flex items-center gap-2">
+                <span className="text-xl">👤</span>
+                <h3 className="text-lg font-bold text-[#1a5276]">Perfil de {viewingUserModal.usuario}</h3>
+              </div>
+              <button
+                onClick={() => setViewingUserModal(null)}
+                className="text-slate-400 hover:text-slate-600 font-bold p-1 rounded-lg hover:bg-slate-100 text-sm"
+              >
+                ✕
+              </button>
+            </div>
+
+            {/* Foto Agrandada Editable */}
+            <div className="flex flex-col items-center justify-center gap-2">
+              <div className="relative group cursor-pointer" title="Haz clic para cambiar foto de perfil">
+                <input
+                  type="file"
+                  accept="image/*"
+                  id="modalPhotoInput"
+                  className="hidden"
+                  onChange={(e) => {
+                    const file = e.target.files?.[0];
+                    if (file) {
+                      compressProfileImage(file, (base64) => {
+                        setViewingUserModal((prev: any) => ({ ...prev, image: base64 }));
+                        const newU = [...usuarios];
+                        const idx = newU.findIndex(x => x.id === viewingUserModal.id);
+                        if (idx !== -1) {
+                          newU[idx].image = base64;
+                          setUsuarios(newU);
+                        }
+                      });
+                    }
+                  }}
+                />
+                <label htmlFor="modalPhotoInput" className="cursor-pointer block relative">
+                  {viewingUserModal.image ? (
+                    <img
+                      src={viewingUserModal.image}
+                      alt="User Avatar"
+                      className="w-28 h-28 rounded-full object-cover border-4 border-[#1a5276] shadow-md"
+                    />
+                  ) : (
+                    <div className="w-28 h-28 rounded-full bg-slate-100 border-2 border-slate-300 flex items-center justify-center font-extrabold text-slate-600 text-4xl shadow-inner">
+                      {viewingUserModal.usuario ? viewingUserModal.usuario.charAt(0).toUpperCase() : "U"}
+                    </div>
+                  )}
+                  <div className="absolute inset-0 rounded-full bg-black/40 flex flex-col items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity">
+                    <span className="text-white text-base font-bold">📷</span>
+                    <span className="text-white text-[11px] font-semibold">Cambiar Foto</span>
+                  </div>
+                </label>
+              </div>
+              <div className="text-center">
+                <span className={`inline-block px-2.5 py-0.5 mt-1 rounded text-xs font-extrabold uppercase ${viewingUserModal.rol === 'Admin' ? 'bg-red-500/10 text-red-700 border border-red-200' : viewingUserModal.rol === 'Contador' ? 'bg-amber-500/10 text-amber-700 border border-amber-200' : viewingUserModal.rol === 'Invitado' ? 'bg-blue-500/10 text-blue-700 border border-blue-200' : 'bg-emerald-500/10 text-emerald-700 border border-emerald-200'}`}>
+                  {viewingUserModal.rol}
+                </span>
+              </div>
+            </div>
+
+            {/* Formulario Editable */}
+            <div className="space-y-4 pt-1">
+              <div className="flex flex-col gap-1">
+                <label className="text-xs font-bold text-slate-600">Usuario</label>
+                <input
+                  type="text"
+                  disabled={viewingUserModal.usuario?.trim().toLowerCase() === 'onixchambers'}
+                  value={viewingUserModal.usuario}
+                  onChange={(e) => {
+                    const val = e.target.value;
+                    setViewingUserModal((prev: any) => ({ ...prev, usuario: val }));
+                    const newU = [...usuarios];
+                    const idx = newU.findIndex(x => x.id === viewingUserModal.id);
+                    if (idx !== -1) {
+                      newU[idx].usuario = val;
+                      setUsuarios(newU);
+                    }
+                  }}
+                  className="w-full p-2.5 border border-slate-300 rounded-lg text-sm text-slate-900 focus:border-blue-500 outline-none bg-slate-50 focus:bg-white font-semibold disabled:opacity-50"
+                />
+              </div>
+
+              <div className="flex flex-col gap-1">
+                <label className="text-xs font-bold text-slate-600">Correo Electrónico</label>
+                <input
+                  type="email"
+                  placeholder="ejemplo@correo.com"
+                  value={viewingUserModal.email || ""}
+                  onChange={(e) => {
+                    const val = e.target.value;
+                    setViewingUserModal((prev: any) => ({ ...prev, email: val }));
+                    const newU = [...usuarios];
+                    const idx = newU.findIndex(x => x.id === viewingUserModal.id);
+                    if (idx !== -1) {
+                      newU[idx].email = val;
+                      setUsuarios(newU);
+                    }
+                  }}
+                  className="w-full p-2.5 border border-slate-300 rounded-lg text-sm text-slate-900 focus:border-blue-500 outline-none bg-slate-50 focus:bg-white font-medium"
+                />
+              </div>
+
+              <div className="flex flex-col gap-1">
+                <label className="text-xs font-bold text-slate-600">Contacto / Teléfono</label>
+                <input
+                  type="tel"
+                  placeholder="Ej. +507 61234567"
+                  value={viewingUserModal.phone || ""}
+                  onChange={(e) => {
+                    const val = e.target.value;
+                    setViewingUserModal((prev: any) => ({ ...prev, phone: val }));
+                    const newU = [...usuarios];
+                    const idx = newU.findIndex(x => x.id === viewingUserModal.id);
+                    if (idx !== -1) {
+                      newU[idx].phone = val;
+                      setUsuarios(newU);
+                    }
+                  }}
+                  className="w-full p-2.5 border border-slate-300 rounded-lg text-sm text-slate-900 focus:border-blue-500 outline-none bg-slate-50 focus:bg-white font-medium"
+                />
+              </div>
+            </div>
+
+            {/* Acciones */}
+            <div className="flex justify-end gap-2 pt-3 border-t border-slate-100">
+              <button
+                onClick={() => setViewingUserModal(null)}
+                className="px-5 py-2.5 bg-[#1a5276] hover:bg-[#0e2f44] text-white rounded-lg text-xs font-bold transition-colors shadow-xs"
+              >
+                Listo
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
