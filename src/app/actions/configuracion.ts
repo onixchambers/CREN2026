@@ -42,8 +42,8 @@ export async function getSettings(month: string) {
           const role = (r || "").toLowerCase();
           if (role === 'admin') return 1;
           if (role === 'invitado') return 2;
-          if (role === 'terapeuta') return 3;
-          if (role === 'contador') return 4;
+          if (role === 'contador') return 3;
+          if (role === 'terapeuta') return 4;
           return 5;
         };
         return getWeight(a.rol) - getWeight(b.rol);
