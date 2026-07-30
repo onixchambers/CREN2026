@@ -9,11 +9,11 @@ import { authOptions } from "@/lib/auth";
 async function verifyTherapistPatientPermission() {
   const session = await getServerSession(authOptions);
   const userRole = ((session?.user as any)?.role || "").toUpperCase();
-  if (userRole === "TERAPEUTA") {
+  if (userRole === "TERAPEUTA" || userRole === "INVITADO") {
     const s = await prisma.systemSettings.findUnique({ where: { id: 1 } });
     const allow = s?.allowTherapistEdit ?? true;
     if (!allow) {
-      return { allowed: false, error: "La administración no tiene habilitado el permiso para editar o borrar pacientes." };
+      return { allowed: false, error: "La administración no tiene habilitado el permiso para editar o borrar en esta sección." };
     }
   }
   return { allowed: true };

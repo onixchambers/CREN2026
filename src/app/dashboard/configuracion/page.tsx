@@ -433,7 +433,7 @@ export default function ConfiguracionPage() {
           </h3>
           
           <div className="flex items-center gap-3">
-            <span className="text-sm font-medium text-slate-700">Permitir a terapeutas editar Pacientes</span>
+            <span className="text-sm font-medium text-slate-700">Permitir a terapeutas e Invitados editar Pacientes</span>
             <label className="flex items-center gap-2 cursor-pointer">
               <input type="checkbox" checked={allowTherapistEdit} onChange={(e) => setAllowTherapistEdit(e.target.checked)} className="w-4 h-4 text-blue-600 border-slate-300 rounded focus:ring-blue-500" />
               <span className="text-sm text-slate-600">Habilitado</span>
