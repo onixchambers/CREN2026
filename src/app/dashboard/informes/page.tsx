@@ -59,7 +59,12 @@ export default function InformesPage() {
     async function loadData() {
       const res = await getPatients();
       if (res.success && res.data) {
-        const mapped = res.data.map((p: any) => ({
+        let list = res.data;
+        if (userRole.toUpperCase() === "TERAPEUTA") {
+          // La terapeuta solo ve los pacientes asignados a ella
+          list = list.filter((p: any) => p.medicoTratante === userName || p.terapeuta === userName);
+        }
+        const mapped = list.map((p: any) => ({
           id: p.id,
           paciente: p.name
         }));
