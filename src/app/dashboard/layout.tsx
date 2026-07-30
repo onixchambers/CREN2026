@@ -11,6 +11,8 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
   
   const userRole = (session?.user as any)?.role || "ADMIN";
   const userName = session?.user?.name || "Administrador";
+  const userEmail = session?.user?.email;
+  const userImage = session?.user?.image;
 
   const [allowTherapistEdit, setAllowTherapistEdit] = useState(true);
 
@@ -93,11 +95,23 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
             </div>
           </div>
           <div className="flex items-center gap-4">
-            <div className="hidden md:flex items-center gap-2 px-4 py-1.5 bg-white/10 rounded-full backdrop-blur-md text-sm">
-              <span className={`px-2 py-0.5 rounded text-xs font-semibold uppercase ${userRole.toUpperCase() === 'ADMIN' ? 'bg-red-500/80' : userRole.toUpperCase() === 'CONTADOR' ? 'bg-amber-500/80' : userRole.toUpperCase() === 'INVITADO' ? 'bg-blue-500/80' : 'bg-green-500/80'}`}>
+            <div className="hidden md:flex items-center gap-2.5 px-3.5 py-1.5 bg-white/10 rounded-full backdrop-blur-md text-xs border border-white/10 shadow-xs">
+              {userImage ? (
+                <img src={userImage} alt="Avatar" className="w-6 h-6 rounded-full object-cover border border-white/40 shrink-0" />
+              ) : (
+                <div className="w-6 h-6 rounded-full bg-white/20 flex items-center justify-center font-extrabold text-white text-[10px] shrink-0">
+                  {userName ? userName.charAt(0).toUpperCase() : "U"}
+                </div>
+              )}
+              <span className={`px-2 py-0.5 rounded text-[10px] font-extrabold uppercase ${userRole.toUpperCase() === 'ADMIN' ? 'bg-red-500/80' : userRole.toUpperCase() === 'CONTADOR' ? 'bg-amber-500/80' : userRole.toUpperCase() === 'INVITADO' ? 'bg-blue-500/80' : 'bg-emerald-500/80'}`}>
                 {userRole}
               </span>
-              <span>{userName}</span>
+              <span className="font-bold">{userName}</span>
+              {userEmail && (
+                <span className="text-[11px] opacity-90 border-l border-white/20 pl-2 text-cyan-100 font-mono">
+                  {userEmail}
+                </span>
+              )}
             </div>
             <button
               onClick={() => signOut({ callbackUrl: "/login" })}

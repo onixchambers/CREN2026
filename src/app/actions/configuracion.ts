@@ -34,6 +34,9 @@ export async function getSettings(month: string) {
         rol: u.role,
         contrasena: u.password || "",
         especialidad: u.especialidad || "",
+        email: u.email || "",
+        phone: u.phone || "",
+        image: u.image || "",
       })).sort((a, b) => {
         if (a.rol === 'Admin' && b.rol !== 'Admin') return -1;
         if (a.rol !== 'Admin' && b.rol === 'Admin') return 1;
@@ -152,6 +155,9 @@ export async function saveSettings(data: {
                 role: user.rol,
                 password: finalPassword,
                 especialidad: user.especialidad || "",
+                email: user.email || null,
+                phone: user.phone || null,
+                image: user.image || null,
               }
             });
           } else { 
@@ -161,6 +167,9 @@ export async function saveSettings(data: {
                 role: user.rol,
                 password: finalPassword,
                 especialidad: user.especialidad || "",
+                email: user.email || null,
+                phone: user.phone || null,
+                image: user.image || null,
               }
             });
           }

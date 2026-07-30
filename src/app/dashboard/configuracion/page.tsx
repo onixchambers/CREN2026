@@ -225,54 +225,134 @@ export default function ConfiguracionPage() {
                 if (a.rol !== 'Admin' && b.rol === 'Admin') return 1;
                 return 0;
               }).map((u) => (
-              <div key={u.id} className="flex flex-wrap items-center gap-4 py-2 border-b border-slate-50 last:border-0">
-                <div className="flex items-center gap-2 flex-1 min-w-[200px]">
-                  <label className="text-sm text-slate-500 w-16">Usuario</label>
-                  <input type="text" disabled={u.usuario?.trim().toLowerCase() === 'onixchambers'} value={u.usuario} className="flex-1 p-2 border border-slate-300 rounded text-sm text-slate-900 focus:border-blue-500 outline-none text-slate-900 disabled:bg-slate-100 disabled:text-slate-500" onChange={(e) => {
-                    const newName = e.target.value;
-                    const newU = [...usuarios];
-                    const idx = newU.findIndex(x => x.id === u.id);
-                    const oldName = u.usuario || "";
-                    const oldDefault = oldName.trim().toLowerCase().replace(/\s+/g, "") + "123";
-                    newU[idx].usuario = newName;
-                    const newClean = newName.trim().toLowerCase().replace(/\s+/g, "");
-                    // Si la contraseña estaba vacía o tenía el patrón por defecto previo, se actualiza automáticamente a [nombre]123
-                    if (!u.contrasena || u.contrasena === oldDefault || u.contrasena === "123") {
-                      newU[idx].contrasena = newClean ? `${newClean}123` : "";
-                    }
-                    setUsuarios(newU);
-                  }} />
-                </div>
-                
-                <div className="flex items-center gap-2 flex-1 min-w-[200px]">
-                  <label className="text-sm text-slate-500 w-8">Rol</label>
-                  <div className="relative flex-1">
-                    <select disabled={u.usuario?.trim().toLowerCase() === 'onixchambers'} value={u.rol} className="w-full p-2 pl-8 border border-slate-300 rounded text-sm text-slate-900 focus:border-blue-500 outline-none appearance-none bg-white disabled:opacity-50" onChange={(e) => {
-                      const newU = [...usuarios];
-                      const idx = newU.findIndex(x => x.id === u.id);
-                      newU[idx].rol = e.target.value;
-                      setUsuarios(newU);
-                    }}>
+              <div key={u.id} className="p-3 bg-slate-50 border border-slate-200 rounded-xl space-y-3">
+                <div className="flex flex-wrap items-center gap-3">
+                  {/* Photo Upload Avatar */}
+                  <div className="relative group shrink-0" title="Subir o cambiar foto de perfil">
+                    <input
+                      type="file"
+                      accept="image/*"
+                      id={`userPhoto_${u.id}`}
+                      className="hidden"
+                      onChange={(e) => {
+                        const file = e.target.files?.[0];
+                        if (file) {
+                          const reader = new FileReader();
+                          reader.onloadend = () => {
+                            const base64 = reader.result as string;
+                            const newU = [...usuarios];
+                            const idx = newU.findIndex(x => x.id === u.id);
+                            newU[idx].image = base64;
+                            setUsuarios(newU);
+                          };
+                          reader.readAsDataURL(file);
+                        }
+                      }}
+                    />
+                    <label htmlFor={`userPhoto_${u.id}`} className="cursor-pointer block relative">
+                      {u.image ? (
+                        <img src={u.image} alt="User Avatar" className="w-10 h-10 rounded-full object-cover border-2 border-[#1a5276] shadow-xs" />
+                      ) : (
+                        <div className="w-10 h-10 rounded-full bg-white border border-slate-300 flex items-center justify-center font-bold text-slate-600 text-xs shadow-xs">
+                          {u.usuario ? u.usuario.charAt(0).toUpperCase() : "U"}
+                        </div>
+                      )}
+                      <div className="absolute inset-0 rounded-full bg-black/40 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity">
+                        <span className="text-white text-[10px] font-bold">📷</span>
+                      </div>
+                    </label>
+                  </div>
+
+                  {/* Nombre de Usuario */}
+                  <div className="flex items-center gap-2 flex-1 min-w-[170px]">
+                    <label className="text-xs font-bold text-slate-600 w-14">Usuario</label>
+                    <input
+                      type="text"
+                      disabled={u.usuario?.trim().toLowerCase() === 'onixchambers'}
+                      value={u.usuario}
+                      className="flex-1 p-2 border border-slate-300 rounded text-xs text-slate-900 focus:border-blue-500 outline-none bg-white disabled:bg-slate-100 disabled:text-slate-500 font-semibold"
+                      onChange={(e) => {
+                        const newName = e.target.value;
+                        const newU = [...usuarios];
+                        const idx = newU.findIndex(x => x.id === u.id);
+                        const oldName = u.usuario || "";
+                        const oldDefault = oldName.trim().toLowerCase().replace(/\s+/g, "") + "123";
+                        newU[idx].usuario = newName;
+                        const newClean = newName.trim().toLowerCase().replace(/\s+/g, "");
+                        if (!u.contrasena || u.contrasena === oldDefault || u.contrasena === "123") {
+                          newU[idx].contrasena = newClean ? `${newClean}123` : "";
+                        }
+                        setUsuarios(newU);
+                      }}
+                    />
+                  </div>
+
+                  {/* Correo Electrónico */}
+                  <div className="flex items-center gap-2 flex-1 min-w-[190px]">
+                    <label className="text-xs font-bold text-slate-600 w-12">Correo</label>
+                    <input
+                      type="email"
+                      placeholder="ejemplo@correo.com"
+                      value={u.email || ""}
+                      className="flex-1 p-2 border border-slate-300 rounded text-xs text-slate-900 focus:border-blue-500 outline-none bg-white font-medium"
+                      onChange={(e) => {
+                        const newU = [...usuarios];
+                        const idx = newU.findIndex(x => x.id === u.id);
+                        newU[idx].email = e.target.value;
+                        setUsuarios(newU);
+                      }}
+                    />
+                  </div>
+
+                  {/* Contacto / Teléfono */}
+                  <div className="flex items-center gap-2 flex-1 min-w-[160px]">
+                    <label className="text-xs font-bold text-slate-600 w-14">Contacto</label>
+                    <input
+                      type="tel"
+                      placeholder="Ej. +507 61234567"
+                      value={u.phone || ""}
+                      className="flex-1 p-2 border border-slate-300 rounded text-xs text-slate-900 focus:border-blue-500 outline-none bg-white font-medium"
+                      onChange={(e) => {
+                        const newU = [...usuarios];
+                        const idx = newU.findIndex(x => x.id === u.id);
+                        newU[idx].phone = e.target.value;
+                        setUsuarios(newU);
+                      }}
+                    />
+                  </div>
+
+                  {/* Rol */}
+                  <div className="flex items-center gap-2 min-w-[130px]">
+                    <label className="text-xs font-bold text-slate-600 w-8">Rol</label>
+                    <select
+                      disabled={u.usuario?.trim().toLowerCase() === 'onixchambers'}
+                      value={u.rol}
+                      className="w-full p-2 border border-slate-300 rounded text-xs text-slate-900 focus:border-blue-500 outline-none bg-white font-semibold disabled:opacity-50"
+                      onChange={(e) => {
+                        const newU = [...usuarios];
+                        const idx = newU.findIndex(x => x.id === u.id);
+                        newU[idx].rol = e.target.value;
+                        setUsuarios(newU);
+                      }}
+                    >
                       <option value="Admin">Admin</option>
                       <option value="Terapeuta">Terapeuta</option>
                       <option value="Contador">Contador</option>
                       <option value="Invitado">Invitado</option>
                     </select>
-                    {u.rol === 'Admin' ? (
-                      <svg className="w-4 h-4 text-amber-500 absolute left-2.5 top-2.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 7a2 2 0 012 2m4 0a6 6 0 01-7.743 5.743L11 17H9v2H7v2H4a1 1 0 01-1-1v-2.586a1 1 0 01.293-.707l5.964-5.964A6 6 0 1121 9z" /></svg>
-                    ) : u.rol === 'Contador' ? (
-                      <svg className="w-4 h-4 text-green-600 absolute left-2.5 top-2.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 7h6m0 10v-3m-3 3h.01M9 17h.01M9 14h.01M12 14h.01M15 11h.01M12 11h.01M9 11h.01M7 21h10a2 2 0 002-2V5a2 2 0 00-2-2H7a2 2 0 00-2 2v14a2 2 0 002 2z" /></svg>
-                    ) : u.rol === 'Invitado' ? (
-                      <svg className="w-4 h-4 text-blue-500 absolute left-2.5 top-2.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" /><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" /></svg>
-                    ) : (
-                      <svg className="w-4 h-4 text-slate-500 absolute left-2.5 top-2.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" /></svg>
-                    )}
                   </div>
+
+                  {/* Botón Borrar */}
+                  {u.usuario?.trim().toLowerCase() !== 'onixchambers' && userRole.toUpperCase() !== 'INVITADO' && (
+                    <button onClick={() => removeUsuario(u.id)} className="p-2 bg-red-500 hover:bg-red-600 text-white rounded transition-colors" title="Eliminar usuario">
+                      <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" /></svg>
+                    </button>
+                  )}
                 </div>
 
                 {u.rol === 'Terapeuta' && (
-                  <div className="flex items-center gap-2 flex-1 min-w-[200px]">
-                    <label className="text-sm text-slate-500 w-24">Especialidades</label>
+                  <div className="flex items-center gap-2 pt-2 border-t border-slate-200">
+                    <label className="text-xs font-bold text-slate-600 w-24">Especialidades</label>
                     <MultiSelect 
                       options={["Psicología", "Lenguaje", "Neurodesarrollo", "Fisioterapia", "Asesoría de crianza", "Rehabilitación", "Otro"]}
                       selected={u.especialidad ? u.especialidad.split(',').filter(Boolean) : []}
@@ -284,13 +364,6 @@ export default function ConfiguracionPage() {
                       }}
                     />
                   </div>
-                )}
-                {u.usuario?.trim().toLowerCase() !== 'onixchambers' && userRole.toUpperCase() !== 'INVITADO' ? (
-                  <button onClick={() => removeUsuario(u.id)} className="p-2 bg-red-500 hover:bg-red-600 text-white rounded transition-colors" title="Eliminar usuario">
-                    <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" /></svg>
-                  </button>
-                ) : (
-                  <div className="w-8 h-8"></div>
                 )}
               </div>
             ))}
