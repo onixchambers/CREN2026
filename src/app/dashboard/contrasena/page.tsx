@@ -55,7 +55,7 @@ export default function CambiarContrasenaPage() {
     try {
       const res = await changeUserPassword(userName, currentPassword, newPassword);
       if (res.success) {
-        setSuccessMessage("¡Tu contraseña ha sido actualizada exitosamente! El administrador podrá visualizar los cambios.");
+        setSuccessMessage("¡Tu contraseña ha sido actualizada exitosamente!");
         setCurrentPassword("");
         setNewPassword("");
         setConfirmPassword("");

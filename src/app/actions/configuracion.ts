@@ -254,13 +254,33 @@ export async function getSystemIvaRate() {
 
 export async function changeUserPassword(userName: string, currentPassword: string, newPassword: string) {
   try {
-    if (!userName) {
-      return { success: false, error: "Usuario no identificado." };
-    }
+    const session = await getServerSession(authOptions);
+    const sessionName = session?.user?.name || "";
+    const sessionEmail = session?.user?.email || "";
+    const sessionRole = ((session?.user as any)?.role || "").toUpperCase();
 
-    const user = await prisma.user.findFirst({
-      where: { name: { equals: userName, mode: 'insensitive' } }
+    // Buscar el usuario en base a nombre de sesión, nombre recibido o email
+    let user = await prisma.user.findFirst({
+      where: {
+        OR: [
+          ...(userName ? [{ name: { equals: userName, mode: 'insensitive' as const } }] : []),
+          ...(sessionName ? [{ name: { equals: sessionName, mode: 'insensitive' as const } }] : []),
+          ...(sessionEmail ? [{ email: { equals: sessionEmail, mode: 'insensitive' as const } }] : []),
+        ]
+      }
     });
+
+    // Búsqueda de respaldo si el rol es Administrador
+    if (!user && (sessionRole === "ADMIN" || sessionRole === "ADMINISTRADOR")) {
+      user = await prisma.user.findFirst({
+        where: {
+          OR: [
+            { role: { equals: "Admin", mode: 'insensitive' as const } },
+            { role: { equals: "ADMINISTRADOR", mode: 'insensitive' as const } }
+          ]
+        }
+      });
+    }
 
     if (!user || !user.password) {
       return { success: false, error: "Usuario no encontrado en el sistema." };
