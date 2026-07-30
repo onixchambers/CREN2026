@@ -27,7 +27,6 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
     { name: "Asistencia", path: "/dashboard/asistencia", adminOnly: false },
     { name: "Ficha ID", path: "/dashboard/preregistros", adminOnly: false },
     { name: "Pacientes", path: "/dashboard/pacientes", adminOnly: false },
-    { name: "Contraseña", path: "/dashboard/contrasena", adminOnly: false },
     { name: "Informes", path: "/dashboard/informes", adminOnly: false },
     { name: "Horarios", path: "/dashboard/horarios", adminOnly: false },
     { name: "Estado de Cuenta", path: "/dashboard/finanzas", adminOnly: true },
@@ -37,6 +36,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
     { name: "Salario", path: "/dashboard/salario", adminOnly: true },
     { name: "Reportes", path: "/dashboard/reportes", adminOnly: true },
     { name: "Estado Resultados", path: "/dashboard/estado-resultados", adminOnly: true },
+    { name: "Contraseña", path: "/dashboard/contrasena", adminOnly: false },
     { name: "Configuración", path: "/dashboard/configuracion", adminOnly: true },
   ];
 
