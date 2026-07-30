@@ -188,6 +188,7 @@ model PreRegistration {
   riesgoFuga            Boolean  @default(false)
   noSepara              Boolean  @default(false)
   otrasAlertas          Boolean  @default(false)
+  observacionesAdmin    String?
 
   signatureDataUrl      String?  @db.Text
   ipAddress             String?

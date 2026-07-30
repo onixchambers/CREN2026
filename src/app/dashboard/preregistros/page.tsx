@@ -206,6 +206,21 @@ export default function PreregistrosPage() {
     const fullName = preReg.name || preReg.nombre || "";
     const { nombres, apellidos } = splitName(fullName);
 
+    const parsePhone = (phoneStr: string, setCode: (c: string) => void) => {
+      if (!phoneStr) return "";
+      const cleaned = phoneStr.trim();
+      const matched = COUNTRY_CODES.find((c) => cleaned.startsWith(c.code));
+      if (matched) {
+        setCode(matched.code);
+        return cleaned.replace(matched.code, "").trim();
+      }
+      return cleaned;
+    };
+
+    const mContact = parsePhone(preReg.madreContacto, setMadreCountryCode);
+    const pContact = parsePhone(preReg.padreContacto, setPadreCountryCode);
+    const oContact = parsePhone(preReg.otrosContacto, setOtrosCountryCode);
+
     setFormData({
       ...formData,
       nombres,
@@ -221,9 +236,9 @@ export default function PreregistrosPage() {
       madreNombre: preReg.madreNombre || "",
       padreNombre: preReg.padreNombre || "",
       otrosNombre: preReg.otrosNombre || "",
-      madreContacto: preReg.madreContacto || "",
-      padreContacto: preReg.padreContacto || "",
-      otrosContacto: preReg.otrosContacto || "",
+      madreContacto: mContact,
+      padreContacto: pContact,
+      otrosContacto: oContact,
 
       principalMadre: preReg.principalMadre || false,
       principalPadre: preReg.principalPadre || false,
@@ -352,13 +367,25 @@ export default function PreregistrosPage() {
     });
   };
 
-  const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
+  const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement>) => {
     const { name, value, type } = e.target;
     if (type === "checkbox") {
       setFormData(prev => ({ ...prev, [name]: (e.target as HTMLInputElement).checked }));
     } else {
       setFormData(prev => {
-        const next = { ...prev, [name]: value };
+        let newValue = value;
+        if (name === "madreContacto" || name === "padreContacto" || name === "otrosContacto") {
+          const cleaned = value.trim();
+          const matched = COUNTRY_CODES.find((c) => cleaned.startsWith(c.code));
+          if (matched) {
+            if (name === "madreContacto") setMadreCountryCode(matched.code);
+            if (name === "padreContacto") setPadreCountryCode(matched.code);
+            if (name === "otrosContacto") setOtrosCountryCode(matched.code);
+            newValue = cleaned.replace(matched.code, "").trim();
+          }
+        }
+
+        const next = { ...prev, [name]: newValue };
         if (name === "nombres" || name === "apellidos") {
           next.nombre = `${next.nombres || ""} ${next.apellidos || ""}`.trim();
         }
@@ -754,7 +781,7 @@ export default function PreregistrosPage() {
                       name="madreContacto"
                       value={formData.madreContacto}
                       onChange={handleInputChange}
-                      placeholder="Contacto de la madre"
+                      placeholder="61234567"
                       className="flex-1 p-2 border border-slate-300 rounded text-xs text-slate-900 bg-white focus:border-blue-500 outline-none"
                     />
                   </div>
@@ -799,7 +826,7 @@ export default function PreregistrosPage() {
                       name="padreContacto"
                       value={formData.padreContacto}
                       onChange={handleInputChange}
-                      placeholder="Contacto del padre"
+                      placeholder="61234567"
                       className="flex-1 p-2 border border-slate-300 rounded text-xs text-slate-900 bg-white focus:border-blue-500 outline-none"
                     />
                   </div>

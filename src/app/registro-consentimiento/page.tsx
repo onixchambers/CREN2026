@@ -47,6 +47,17 @@ function RegistroConsentimientoContent() {
     detectUserCountry();
   }, []);
 
+  const handlePhoneInput = (val: string, setCode: (c: string) => void, setPhone: (p: string) => void) => {
+    const cleaned = val.trim();
+    const matched = COUNTRY_CODES.find((c) => cleaned.startsWith(c.code));
+    if (matched) {
+      setCode(matched.code);
+      setPhone(cleaned.replace(matched.code, "").trim());
+    } else {
+      setPhone(val);
+    }
+  };
+
   // Contactos
   const [madreNombre, setMadreNombre] = useState("");
   const [madreContacto, setMadreContacto] = useState("");
@@ -415,12 +426,12 @@ function RegistroConsentimientoContent() {
               <input
                 type="tel"
                 value={madreContacto}
-                onChange={(e) => setMadreContacto(e.target.value)}
-                placeholder="Número de contacto"
+                onChange={(e) => handlePhoneInput(e.target.value, setMadreCountryCode, setMadreContacto)}
+                placeholder="61234567"
                 className="flex-1 bg-white border border-slate-300 rounded-lg p-2.5 text-xs text-slate-900 font-medium placeholder:text-slate-400 outline-none"
               />
             </div>
-            <label className="flex items-center gap-2 text-xs text-slate-700 font-semibold cursor-pointer pt-1">
+            <label className="flex items-center gap-2 text-xs text-[#1a5276] font-semibold cursor-pointer pt-1">
               <input type="checkbox" checked={principalMadre} onChange={(e) => {
                 setPrincipalMadre(e.target.checked);
                 if (e.target.checked) { setPrincipalPadre(false); setPrincipalOtros(false); }
@@ -444,8 +455,8 @@ function RegistroConsentimientoContent() {
               <input
                 type="tel"
                 value={padreContacto}
-                onChange={(e) => setPadreContacto(e.target.value)}
-                placeholder="Número de contacto"
+                onChange={(e) => handlePhoneInput(e.target.value, setPadreCountryCode, setPadreContacto)}
+                placeholder="61234567"
                 className="flex-1 bg-white border border-slate-300 rounded-lg p-2.5 text-xs text-slate-900 font-medium placeholder:text-slate-400 outline-none"
               />
             </div>
