@@ -338,7 +338,45 @@ export default function PacientesPage() {
           <div className="bg-white rounded-xl max-w-lg w-full p-6 space-y-4 shadow-2xl animate-in zoom-in-95 duration-200">
             <div className="flex justify-between items-start border-b border-slate-200 pb-3">
               <div className="flex items-center gap-3">
-                {viewingPatient.foto && <img src={viewingPatient.foto} alt="Foto" className="w-12 h-12 rounded-full object-cover border border-slate-300" />}
+                <div className="relative group cursor-pointer" title="Hacer clic para subir o cambiar foto del paciente">
+                  <input
+                    type="file"
+                    accept="image/*"
+                    id="photoUploadInput"
+                    className="hidden"
+                    onChange={async (e) => {
+                      const file = e.target.files?.[0];
+                      if (file && viewingPatient) {
+                        const reader = new FileReader();
+                        reader.onloadend = async () => {
+                          const base64 = reader.result as string;
+                          setViewingPatient((prev: any) => ({ ...prev, foto: base64 }));
+                          setPacientes((prev) =>
+                            prev.map((p) => (p.id === viewingPatient.id ? { ...p, foto: base64 } : p))
+                          );
+                          const { updatePatientPhoto } = await import("@/app/actions/pacientes");
+                          const res = await updatePatientPhoto(viewingPatient.id, base64);
+                          if (!res.success) {
+                            alert(res.error || "Error al actualizar la foto.");
+                          }
+                        };
+                        reader.readAsDataURL(file);
+                      }
+                    }}
+                  />
+                  <label htmlFor="photoUploadInput" className="cursor-pointer relative block">
+                    {viewingPatient.foto ? (
+                      <img src={viewingPatient.foto} alt="Foto" className="w-14 h-14 rounded-full object-cover border-2 border-[#1a5276] shadow-sm" />
+                    ) : (
+                      <div className="w-14 h-14 rounded-full bg-slate-100 border-2 border-dashed border-slate-300 flex items-center justify-center text-slate-400 font-bold text-xl hover:bg-slate-200 transition-colors">
+                        {viewingPatient.name ? viewingPatient.name.charAt(0).toUpperCase() : "📷"}
+                      </div>
+                    )}
+                    <div className="absolute inset-0 rounded-full bg-black/40 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity">
+                      <span className="text-white text-[10px] font-bold text-center leading-tight">📷 Cambiar</span>
+                    </div>
+                  </label>
+                </div>
                 <div>
                   <h3 className="text-lg font-bold text-slate-800">{viewingPatient.name}</h3>
                   <p className="text-xs text-slate-500">Médico Tratante: {viewingPatient.medicoTratante || "Sin asignar"}</p>

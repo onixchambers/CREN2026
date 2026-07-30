@@ -216,6 +216,21 @@ export async function updatePatient(id: string, data: any) {
   }
 }
 
+export async function updatePatientPhoto(id: string, foto: string) {
+  try {
+    const updated = await prisma.patient.update({
+      where: { id },
+      data: { foto }
+    });
+    revalidatePath("/dashboard/pacientes");
+    revalidatePath("/dashboard/preregistros");
+    return { success: true, data: updated };
+  } catch (error: any) {
+    console.error("Error updating patient photo:", error);
+    return { success: false, error: "Error al actualizar foto de paciente: " + (error?.message || String(error)) };
+  }
+}
+
 // Helper para calcular edad
 function calculateAge(birthDateString: string) {
   const birth = new Date(birthDateString);
