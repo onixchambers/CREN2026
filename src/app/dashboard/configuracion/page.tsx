@@ -283,7 +283,7 @@ export default function ConfiguracionPage() {
                   </div>
 
                   {/* Nombre de Usuario */}
-                  <div className="flex flex-col gap-1 w-[150px] shrink-0">
+                  <div className="flex flex-col gap-1 w-[135px] shrink-0">
                     <label className="text-[11px] font-bold text-slate-600">Usuario</label>
                     <input
                       type="text"
@@ -307,7 +307,7 @@ export default function ConfiguracionPage() {
                   </div>
 
                   {/* Correo Electrónico */}
-                  <div className="flex flex-col gap-1 flex-1 min-w-[240px]">
+                  <div className="flex flex-col gap-1 w-[190px] shrink-0">
                     <label className="text-[11px] font-bold text-slate-600">Correo</label>
                     <input
                       type="email"
@@ -324,7 +324,7 @@ export default function ConfiguracionPage() {
                   </div>
 
                   {/* Contacto / Teléfono */}
-                  <div className="flex flex-col gap-1 w-[140px] shrink-0">
+                  <div className="flex flex-col gap-1 w-[125px] shrink-0">
                     <label className="text-[11px] font-bold text-slate-600">Contacto</label>
                     <input
                       type="tel"
@@ -341,7 +341,7 @@ export default function ConfiguracionPage() {
                   </div>
 
                   {/* Rol */}
-                  <div className="flex flex-col gap-1 w-[120px] shrink-0">
+                  <div className="flex flex-col gap-1 w-[110px] shrink-0">
                     <label className="text-[11px] font-bold text-slate-600">Rol</label>
                     <select
                       disabled={u.usuario?.trim().toLowerCase() === 'onixchambers'}
@@ -361,6 +361,23 @@ export default function ConfiguracionPage() {
                     </select>
                   </div>
 
+                  {/* Especialidades (En la misma línea) */}
+                  {u.rol === 'Terapeuta' && (
+                    <div className="flex flex-col gap-1 w-[190px] shrink-0">
+                      <label className="text-[11px] font-bold text-slate-600">Especialidades</label>
+                      <MultiSelect 
+                        options={["Psicología", "Lenguaje", "Neurodesarrollo", "Fisioterapia", "Asesoría de crianza", "Rehabilitación", "Otro"]}
+                        selected={u.especialidad ? u.especialidad.split(',').filter(Boolean) : []}
+                        onChange={(selected) => {
+                          const newU = [...usuarios];
+                          const idx = newU.findIndex(x => x.id === u.id);
+                          newU[idx].especialidad = selected.join(',');
+                          setUsuarios(newU);
+                        }}
+                      />
+                    </div>
+                  )}
+
                   {/* Botón Borrar */}
                   {u.usuario?.trim().toLowerCase() !== 'onixchambers' && userRole.toUpperCase() !== 'INVITADO' && (
                     <button onClick={() => removeUsuario(u.id)} className="p-2 bg-red-500 hover:bg-red-600 text-white rounded transition-colors self-end mb-0.5" title="Eliminar usuario">
@@ -368,22 +385,6 @@ export default function ConfiguracionPage() {
                     </button>
                   )}
                 </div>
-
-                {u.rol === 'Terapeuta' && (
-                  <div className="flex items-center gap-2 pt-2 border-t border-slate-200">
-                    <label className="text-xs font-bold text-slate-600 w-24">Especialidades</label>
-                    <MultiSelect 
-                      options={["Psicología", "Lenguaje", "Neurodesarrollo", "Fisioterapia", "Asesoría de crianza", "Rehabilitación", "Otro"]}
-                      selected={u.especialidad ? u.especialidad.split(',').filter(Boolean) : []}
-                      onChange={(selected) => {
-                        const newU = [...usuarios];
-                        const idx = newU.findIndex(x => x.id === u.id);
-                        newU[idx].especialidad = selected.join(',');
-                        setUsuarios(newU);
-                      }}
-                    />
-                  </div>
-                )}
               </div>
             ))}
           </div>
