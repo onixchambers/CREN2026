@@ -11,12 +11,21 @@ export async function saveAsistenciaDB(data: any) {
     const patient = await prisma.patient.findFirst({ where: { name: pacienteStr } });
     if (!patient) return { success: false, error: "Paciente no encontrado." };
 
-    // Buscar terapeuta
+    // Buscar terapeuta asignado o especificado
     const allUsers = await prisma.user.findMany();
     let therapistId = "";
-    const match = allUsers.find(u => (u.name || "").trim().toLowerCase() === (data.terapeuta || "").trim().toLowerCase());
-    if (match) therapistId = match.id;
-    else if (allUsers.length > 0) therapistId = allUsers[0].id;
+    const targetTherapist = (data.terapeuta || patient.medicoTratante || "").trim().toLowerCase();
+
+    const match = allUsers.find(u => (u.name || "").trim().toLowerCase() === targetTherapist);
+    if (match) {
+      therapistId = match.id;
+    } else if (patient.medicoTratante) {
+      const medMatch = allUsers.find(u => (u.name || "").trim().toLowerCase() === patient.medicoTratante.trim().toLowerCase());
+      if (medMatch) therapistId = medMatch.id;
+      else if (allUsers.length > 0) therapistId = allUsers[0].id;
+    } else if (allUsers.length > 0) {
+      therapistId = allUsers[0].id;
+    }
     
     if (!therapistId) return { success: false, error: "Terapeuta no encontrado." };
 

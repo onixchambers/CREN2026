@@ -480,7 +480,7 @@ function RegistroConsentimientoContent() {
             </label>
             <label className="flex items-center gap-2 bg-slate-50 p-2.5 rounded-lg border border-slate-200 font-semibold text-slate-800 cursor-pointer">
               <input type="checkbox" checked={noSepara} onChange={(e) => setNoSepara(e.target.checked)} className="accent-[#1a5276]" />
-              <span>No Separa de Mamá</span>
+              <span>No se separa de mamá</span>
             </label>
           </div>
         </div>

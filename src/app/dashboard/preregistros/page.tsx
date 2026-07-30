@@ -860,8 +860,22 @@ export default function PreregistrosPage() {
                 </label>
                 <label className="flex items-center gap-2 cursor-pointer bg-slate-50 px-3 py-2 rounded border border-slate-200">
                   <input type="checkbox" name="noSepara" checked={formData.noSepara} onChange={handleInputChange} className="rounded text-blue-600" />
-                  <span>No Separa de Mamá</span>
+                  <span>No se separa de mamá</span>
                 </label>
+                <div className="flex items-center gap-2 bg-slate-50 px-3 py-2 rounded border border-slate-200 flex-1 min-w-[240px]">
+                  <label className="flex items-center gap-2 cursor-pointer shrink-0">
+                    <input type="checkbox" name="otrasAlertas" checked={formData.otrasAlertas} onChange={handleInputChange} className="rounded text-blue-600" />
+                    <span className="font-bold text-xs">Otros:</span>
+                  </label>
+                  <input
+                    type="text"
+                    name="observacionesAdmin"
+                    value={formData.observacionesAdmin}
+                    onChange={handleInputChange}
+                    placeholder="Escribe comentarios u otras observaciones..."
+                    className="flex-1 p-1 text-xs border border-slate-300 rounded text-slate-900 bg-white outline-none"
+                  />
+                </div>
               </div>
             </div>
 

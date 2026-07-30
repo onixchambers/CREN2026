@@ -212,6 +212,14 @@ export default function AsistenciaPage() {
     loadData();
   }, [userName, userRole]);
 
+  const normalizeSexo = (rawSexo: string) => {
+    if (!rawSexo || rawSexo === "—") return "—";
+    const s = rawSexo.trim().toUpperCase();
+    if (s.startsWith("M") || s === "MASCULINO") return "M";
+    if (s.startsWith("F") || s === "FEMENINO") return "F";
+    return rawSexo;
+  };
+
   const handlePacienteChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const val = e.target.value;
     const p = pacientes.find(x => x.paciente === val);
@@ -220,8 +228,8 @@ export default function AsistenciaPage() {
         ...formData,
         pacienteId: p.id,
         pacienteNombre: p.paciente,
-        pacienteNac: p.nac !== "�" ? p.nac : "",
-        pacienteSexo: p.sexo,
+        pacienteNac: p.nac !== "—" ? p.nac : "",
+        pacienteSexo: normalizeSexo(p.sexo),
         pacienteEdad: p.edad
       });
     } else {
@@ -466,14 +474,18 @@ export default function AsistenciaPage() {
 
   const asistenciasFiltradas = asistencias.filter(a => {
     if (userRole.toUpperCase() === "TERAPEUTA") {
-      if (a.terapeuta) {
-        if (a.terapeuta !== userName) return false;
-      } else if (a.creadoPor) {
-        if (a.creadoPor !== userName) return false;
-      } else {
-        const isMine = pacientes.some(p => p.paciente === a.paciente && p.medicoTratante?.trim().toLowerCase() === userName.trim().toLowerCase());
-        if (!isMine) return false;
-      }
+      const teraLower = (a.terapeuta || "").trim().toLowerCase();
+      const userLower = userName.trim().toLowerCase();
+      const creadoLower = (a.creadoPor || "").trim().toLowerCase();
+      
+      const isForMe = teraLower.includes(userLower) || userLower.includes(teraLower);
+      const isByMe = creadoLower.includes(userLower) || userLower.includes(creadoLower);
+      const isMyPatient = pacientes.some(p => 
+        p.paciente.trim().toLowerCase() === (a.paciente || "").trim().toLowerCase() && 
+        p.medicoTratante && (p.medicoTratante.trim().toLowerCase().includes(userLower) || userLower.includes(p.medicoTratante.trim().toLowerCase()))
+      );
+
+      if (!isForMe && !isByMe && !isMyPatient) return false;
     }
     if (filtroEstado !== "Todos" && a.estado !== filtroEstado) return false;
     if (filtroDesde && a.fecha < filtroDesde) return false;
@@ -573,7 +585,7 @@ export default function AsistenciaPage() {
                               pacienteId: p.id,
                               pacienteNombre: p.paciente,
                               pacienteNac: p.nac !== "—" ? p.nac : "",
-                              pacienteSexo: p.sexo,
+                              pacienteSexo: normalizeSexo(p.sexo),
                               pacienteEdad: p.edad
                             });
                             setShowDropdown(false);
@@ -600,8 +612,10 @@ export default function AsistenciaPage() {
                 <label className="block text-[10px] font-bold text-slate-400 uppercase mb-1">SEXO DEL PACIENTE</label>
                 <select name="pacienteSexo" value={formData.pacienteSexo} onChange={handleChange} className="w-full text-sm p-2 border border-slate-300 rounded focus:border-[#2980b9] outline-none text-slate-900">
                   <option value="">Seleccionar...</option>
-                  <option value="M">M</option>
-                  <option value="F">F</option>
+                  <option value="M">M (Masculino)</option>
+                  <option value="F">F (Femenino)</option>
+                  <option value="Masculino">Masculino</option>
+                  <option value="Femenino">Femenino</option>
                   <option value="—">—</option>
                 </select>
               </div>
