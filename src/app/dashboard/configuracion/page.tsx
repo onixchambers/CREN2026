@@ -258,9 +258,15 @@ export default function ConfiguracionPage() {
           
           <div className="space-y-4 mb-4">
             {[...usuarios].sort((a, b) => {
-                if (a.rol === 'Admin' && b.rol !== 'Admin') return -1;
-                if (a.rol !== 'Admin' && b.rol === 'Admin') return 1;
-                return 0;
+                const getWeight = (r: string) => {
+                  const role = (r || "").toLowerCase();
+                  if (role === 'admin') return 1;
+                  if (role === 'invitado') return 2;
+                  if (role === 'terapeuta') return 3;
+                  if (role === 'contador') return 4;
+                  return 5;
+                };
+                return getWeight(a.rol) - getWeight(b.rol);
               }).map((u) => (
               <div key={u.id} className="p-3 bg-slate-50 border border-slate-200 rounded-xl space-y-3">
                 <div className="flex flex-wrap items-center gap-3">

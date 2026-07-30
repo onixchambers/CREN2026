@@ -38,9 +38,15 @@ export async function getSettings(month: string) {
         phone: u.phone || "",
         image: u.image || "",
       })).sort((a, b) => {
-        if (a.rol === 'Admin' && b.rol !== 'Admin') return -1;
-        if (a.rol !== 'Admin' && b.rol === 'Admin') return 1;
-        return 0;
+        const getWeight = (r: string) => {
+          const role = (r || "").toLowerCase();
+          if (role === 'admin') return 1;
+          if (role === 'invitado') return 2;
+          if (role === 'terapeuta') return 3;
+          if (role === 'contador') return 4;
+          return 5;
+        };
+        return getWeight(a.rol) - getWeight(b.rol);
       }),
       settings: settings || {
         allowTherapistEdit: true,
