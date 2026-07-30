@@ -6,7 +6,9 @@ import { changeUserPassword } from "@/app/actions/configuracion";
 
 export default function CambiarContrasenaPage() {
   const { data: session } = useSession();
-  const userName = session?.user?.name || "";
+  const userName = session?.user?.name || "Administrador";
+  const userRole = ((session?.user as any)?.role || "ADMIN").toUpperCase();
+  const isAdmin = userRole === "ADMIN" || userRole === "ADMINISTRADOR";
 
   const [currentPassword, setCurrentPassword] = useState("");
   const [newPassword, setNewPassword] = useState("");
@@ -16,11 +18,13 @@ export default function CambiarContrasenaPage() {
   const [showNew, setShowNew] = useState(false);
   const [showConfirm, setShowConfirm] = useState(false);
 
+  const [showAdminConfirmModal, setShowAdminConfirmModal] = useState(false);
+
   const [isLoading, setIsLoading] = useState(false);
   const [errorMessage, setErrorMessage] = useState("");
   const [successMessage, setSuccessMessage] = useState("");
 
-  const handleSubmit = async (e: React.FormEvent) => {
+  const handlePreSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     setErrorMessage("");
     setSuccessMessage("");
@@ -50,12 +54,22 @@ export default function CambiarContrasenaPage() {
       return;
     }
 
+    if (isAdmin) {
+      // Si el perfil es Administrador, solicita la confirmación formal de cambio de contraseña
+      setShowAdminConfirmModal(true);
+    } else {
+      executePasswordChange();
+    }
+  };
+
+  const executePasswordChange = async () => {
+    setShowAdminConfirmModal(false);
     setIsLoading(true);
 
     try {
       const res = await changeUserPassword(userName, currentPassword, newPassword);
       if (res.success) {
-        setSuccessMessage("¡Tu contraseña ha sido actualizada exitosamente!");
+        setSuccessMessage(`¡La contraseña del usuario ${isAdmin ? "Administrador" : userName} ha sido actualizada exitosamente!`);
         setCurrentPassword("");
         setNewPassword("");
         setConfirmPassword("");
@@ -80,7 +94,9 @@ export default function CambiarContrasenaPage() {
         </div>
         <div>
           <h2 className="text-xl font-bold text-[#1a5276]">Cambiar Contraseña</h2>
-          <p className="text-xs text-slate-500">Actualiza la clave de acceso de tu usuario ({userName})</p>
+          <p className="text-xs text-slate-500">
+            Actualiza la clave de acceso para tu cuenta de {isAdmin ? "Administrador" : "usuario"} ({userName})
+          </p>
         </div>
       </div>
 
@@ -100,7 +116,7 @@ export default function CambiarContrasenaPage() {
           </div>
         )}
 
-        <form onSubmit={handleSubmit} className="space-y-5">
+        <form onSubmit={handlePreSubmit} className="space-y-5">
           {/* Renglón 1: Contraseña Actual */}
           <div>
             <label className="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-1.5">
@@ -118,7 +134,7 @@ export default function CambiarContrasenaPage() {
               <button
                 type="button"
                 onClick={() => setShowCurrent(!showCurrent)}
-                className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600 text-xs font-semibold"
+                className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600 text-xs font-semibold cursor-pointer"
               >
                 {showCurrent ? "🙈 Ocultar" : "👁️ Ver"}
               </button>
@@ -142,7 +158,7 @@ export default function CambiarContrasenaPage() {
               <button
                 type="button"
                 onClick={() => setShowNew(!showNew)}
-                className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600 text-xs font-semibold"
+                className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600 text-xs font-semibold cursor-pointer"
               >
                 {showNew ? "🙈 Ocultar" : "👁️ Ver"}
               </button>
@@ -166,7 +182,7 @@ export default function CambiarContrasenaPage() {
               <button
                 type="button"
                 onClick={() => setShowConfirm(!showConfirm)}
-                className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600 text-xs font-semibold"
+                className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600 text-xs font-semibold cursor-pointer"
               >
                 {showConfirm ? "🙈 Ocultar" : "👁️ Ver"}
               </button>
@@ -178,7 +194,7 @@ export default function CambiarContrasenaPage() {
             <button
               type="submit"
               disabled={isLoading}
-              className="w-full py-3 bg-[#1a5276] hover:bg-[#143d59] disabled:opacity-50 text-white font-bold rounded-lg shadow-md hover:shadow-lg transition-all flex items-center justify-center gap-2 text-sm"
+              className="w-full py-3 bg-[#1a5276] hover:bg-[#143d59] disabled:opacity-50 text-white font-bold rounded-lg shadow-md hover:shadow-lg transition-all flex items-center justify-center gap-2 text-sm cursor-pointer"
             >
               {isLoading ? (
                 <>
@@ -196,10 +212,48 @@ export default function CambiarContrasenaPage() {
 
         <div className="pt-4 border-t border-slate-100">
           <p className="text-[11px] text-slate-400 text-center">
-            * Nota: Los cambios de contraseña serán visibles inmediatamente para el Administrador del sistema en la pestaña de Configuración.
+            * Nota: Los cambios de contraseña surtirán efecto de inmediato en tu cuenta.
           </p>
         </div>
       </div>
+
+      {/* MODAL DE CONFIRMACIÓN PARA ADMINISTRADOR */}
+      {showAdminConfirmModal && (
+        <div className="fixed inset-0 z-50 bg-black/60 backdrop-blur-xs flex items-center justify-center p-4">
+          <div className="bg-white rounded-2xl max-w-md w-full p-6 space-y-5 shadow-2xl animate-in zoom-in-95 duration-200">
+            <div className="flex items-center gap-3 border-b border-slate-100 pb-3">
+              <div className="p-3 bg-amber-100 text-amber-700 rounded-full">
+                <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
+                </svg>
+              </div>
+              <div>
+                <h3 className="text-base font-bold text-slate-800">Confirmación de Seguridad</h3>
+                <p className="text-xs text-slate-500">Perfil de Administrador ({userName})</p>
+              </div>
+            </div>
+
+            <p className="text-sm text-slate-600 leading-relaxed">
+              ¿Estás seguro de que deseas cambiar la contraseña del perfil de <strong>Administrador</strong> por la nueva clave especificada?
+            </p>
+
+            <div className="flex gap-3 pt-2">
+              <button
+                onClick={executePasswordChange}
+                className="flex-1 py-2.5 bg-[#1a5276] hover:bg-[#0e2f44] text-white font-bold rounded-lg text-xs transition-colors shadow-sm cursor-pointer"
+              >
+                Sí, Confirmar y Actualizar
+              </button>
+              <button
+                onClick={() => setShowAdminConfirmModal(false)}
+                className="flex-1 py-2.5 bg-slate-100 hover:bg-slate-200 text-slate-700 font-semibold rounded-lg text-xs transition-colors cursor-pointer"
+              >
+                Cancelar
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
