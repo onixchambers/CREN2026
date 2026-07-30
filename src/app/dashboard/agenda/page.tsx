@@ -107,8 +107,11 @@ export default function AgendaPage() {
     }
   };
 
+  const [isSubmittingCita, setIsSubmittingCita] = useState(false);
+
   const handleAddCita = async (e: React.FormEvent) => {
     e.preventDefault();
+    if (isSubmittingCita) return;
     
     const hourNum = parseInt((formData.hora || "09:00").split(":")[0]);
     if (isNaN(hourNum) || hourNum < 7 || hourNum > 22) {
@@ -116,25 +119,36 @@ export default function AgendaPage() {
       return;
     }
 
-    const nuevaCitaObj = {
-      paciente: formData.paciente,
-      fecha: formData.fecha,
-      hora: formData.hora,
-      terapeuta: formData.terapeuta,
-      tipoServicio: formData.tipoServicio,
-      frecuencia: formData.frecuencia,
-      numeroSesiones: formData.numeroSesiones,
-      estado: formData.estado,
-      pagado: formData.pagado,
-      metodoPago: formData.metodoPago
-    };
-    
-    const res = await addCita(nuevaCitaObj);
-    if (res.success) { if (res.citas) { setCitas([...citas, ...res.citas]); } else { setCitas([...citas, { id: res.id, ...nuevaCitaObj } as Cita]); }
-      setIsModalOpen(false);
-      setFormData({ paciente: "", fecha: fechaSeleccionada, hora: "09:00", terapeuta: terapeutas[0] || "", tipoServicio: "individual", frecuencia: "semanal", numeroSesiones: 1, estado: "Ocupado", pagado: false, metodoPago: "" });
-    } else {
-      alert("Error: " + res.error);
+    setIsSubmittingCita(true);
+
+    try {
+      const nuevaCitaObj = {
+        paciente: formData.paciente,
+        fecha: formData.fecha,
+        hora: formData.hora,
+        terapeuta: formData.terapeuta,
+        tipoServicio: formData.tipoServicio,
+        frecuencia: formData.frecuencia,
+        numeroSesiones: formData.numeroSesiones,
+        estado: formData.estado,
+        pagado: formData.pagado,
+        metodoPago: formData.metodoPago
+      };
+      
+      const res = await addCita(nuevaCitaObj);
+      if (res.success) { 
+        if (res.citas) { 
+          setCitas([...citas, ...res.citas]); 
+        } else { 
+          setCitas([...citas, { id: res.id, ...nuevaCitaObj } as Cita]); 
+        }
+        setIsModalOpen(false);
+        setFormData({ paciente: "", fecha: fechaSeleccionada, hora: "09:00", terapeuta: terapeutas[0] || "", tipoServicio: "individual", frecuencia: "semanal", numeroSesiones: 1, estado: "Ocupado", pagado: false, metodoPago: "" });
+      } else {
+        alert("Error: " + res.error);
+      }
+    } finally {
+      setIsSubmittingCita(false);
     }
   };
   

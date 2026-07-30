@@ -21,18 +21,12 @@ type Paciente = {
 
 export default function PacientesPage() {
   const { data: session } = useSession();
+  const userName = session?.user?.name || "";
   const userRole = (session?.user as any)?.role || "ADMIN";
   const [allowTherapistEdit, setAllowTherapistEdit] = useState(true);
 
-  const formatDateStr = (dateStr: string) => {
-    if (!dateStr) return "-";
-    const parts = dateStr.split("-");
-    if (parts.length === 3) return `//`;
-    return dateStr;
-  };
   const [pacientes, setPacientes] = useState<any[]>([]);
   const [searchTerm, setSearchTerm] = useState("");
-  const [monthTerm, setMonthTerm] = useState("");
 
   useEffect(() => {
     async function loadData() {
@@ -55,7 +49,13 @@ export default function PacientesPage() {
 
   const [viewingPatient, setViewingPatient] = useState<any>(null);
 
+  // Filtro de Privacidad: Terapeutas solo ven sus propios pacientes
   const pacientesFiltrados = pacientes.filter(p => {
+    if (userRole.toUpperCase() === "TERAPEUTA") {
+      if (p.medicoTratante !== userName && p.terapeuta !== userName) {
+        return false;
+      }
+    }
     return p.name?.toLowerCase().includes(searchTerm.toLowerCase());
   });
 
@@ -67,7 +67,7 @@ export default function PacientesPage() {
 
   const [editingPatient, setEditingPatient] = useState<any>(null);
   const [editForm, setEditForm] = useState({
-    nombre: "", sexo: "", fechaNacimiento: "", precioTerapia: "", metodoPago: "", estatus: "Activo"
+    nombre: "", sexo: "", fechaNacimiento: "", precioTerapia: "500", metodoPago: "", estatus: "Activo"
   });
   const [isSaving, setIsSaving] = useState(false);
 
@@ -81,7 +81,7 @@ export default function PacientesPage() {
       nombre: p.name || "",
       sexo: p.sexo || "",
       fechaNacimiento: p.fechaNacimiento || "",
-      precioTerapia: p.precioTerapia || "",
+      precioTerapia: p.precioTerapia || "500",
       metodoPago: p.metodoPago || "",
       estatus: p.estatus || "Activo"
     });
@@ -92,7 +92,7 @@ export default function PacientesPage() {
   };
 
   const saveEdit = async () => {
-    if (!editingPatient) return;
+    if (!editingPatient || isSaving) return;
     setIsSaving(true);
     const { updatePatientFast, getPatients } = await import('@/app/actions/pacientes');
     const result = await updatePatientFast(editingPatient.id, editForm);
@@ -114,49 +114,74 @@ export default function PacientesPage() {
       alert("La administración no tiene habilitado el permiso para eliminar pacientes.");
       return;
     }
-    if (confirm("¿Estás seguro de que deseas eliminar este paciente? Esta acción no se puede deshacer y borrará todos sus registros asociados.")) {
-      const { deletePatient, getPatients } = await import('@/app/actions/pacientes');
-      const result = await deletePatient(p.id);
-      if (result.success) {
-        alert("Paciente eliminado.");
-        const updated = await getPatients();
-        if (updated.success && updated.data) {
-          setPacientes(updated.data);
-        }
-      } else {
-        alert(result.error);
+    if (!confirm(`¿Estás seguro de eliminar a ${p.name}?`)) return;
+    const { deletePatient, getPatients } = await import('@/app/actions/pacientes');
+    const result = await deletePatient(p.id);
+    if (result.success) {
+      alert("Paciente eliminado.");
+      const updated = await getPatients();
+      if (updated.success && updated.data) {
+        setPacientes(updated.data);
       }
+    } else {
+      alert(result.error);
+    }
+  };
+
+  // Cálculo de Saldo (Pendiente en Rojo negativo, A Favor en Verde positivo, $0 gris al día)
+  const renderSaldo = (p: any) => {
+    const asistencias = p.asistencias || 0;
+    const precio = parseFloat(p.precioTerapia || "500") || 500;
+    const pagado = parseFloat((p.totalPagado || "0").toString().replace(/[^0-9.]/g, "")) || 0;
+    const costoGenerado = asistencias * precio;
+    const diferencia = pagado - costoGenerado;
+
+    if (diferencia < 0) {
+      return (
+        <span className="font-extrabold text-rose-600 bg-rose-50 px-2 py-0.5 rounded border border-rose-200">
+          -${Math.abs(diferencia).toFixed(2)}
+        </span>
+      );
+    } else if (diferencia > 0) {
+      return (
+        <span className="font-extrabold text-emerald-600 bg-emerald-50 px-2 py-0.5 rounded border border-emerald-200">
+          +${diferencia.toFixed(2)}
+        </span>
+      );
+    } else {
+      return (
+        <span className="font-bold text-slate-500 bg-slate-100 px-2 py-0.5 rounded">
+          $0.00
+        </span>
+      );
     }
   };
 
   return (
-    <div className="space-y-6 animate-in fade-in duration-500 max-w-[1400px] mx-auto">
-      
+    <div className="space-y-6 animate-in fade-in duration-500 max-w-[1200px] mx-auto pb-12">
       {/* HEADER */}
-      <div className="flex items-center gap-2 pb-2">
-        <svg className="w-6 h-6 text-[#1a5276]" fill="currentColor" viewBox="0 0 24 24"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm0 3c1.66 0 3 1.34 3 3s-1.34 3-3 3-3-1.34-3-3 1.34-3 3-3zm0 14.2c-2.5 0-4.71-1.28-6-3.22.03-1.99 4-3.08 6-3.08 1.99 0 5.97 1.09 6 3.08-1.29 1.94-3.5 3.22-6 3.22z"/></svg>
-        <h2 className="text-xl font-bold text-[#1a5276]">Directorio de Pacientes</h2>
+      <div className="flex flex-wrap items-center justify-between gap-4 pb-2 border-b border-slate-200">
+        <div className="flex items-center gap-2">
+          <svg className="w-6 h-6 text-slate-700" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197M13 7a4 4 0 11-8 0 4 4 0 018 0z" />
+          </svg>
+          <h2 className="text-xl font-bold text-[#0e2f44]">Directorio de Pacientes</h2>
+        </div>
       </div>
 
       <div className="bg-white rounded-xl shadow-sm border border-slate-200 overflow-hidden">
-        
-        {/* BARRA DE BÚSQUEDA */}
-        <div className="p-4 flex flex-wrap items-center gap-4">
+        {/* BUSCADOR Y FILTROS */}
+        <div className="p-4 bg-slate-50 border-b border-slate-200 flex flex-wrap gap-4 items-center justify-between">
           <div className="flex items-center gap-2">
-            <label className="text-sm font-semibold text-slate-500">Buscar:</label>
-            <input 
-              type="text" 
-              placeholder="Nombre..."
+            <label className="text-xs font-bold text-slate-700 uppercase">Buscar Paciente:</label>
+            <input
+              type="text"
+              placeholder="Escribe un nombre..."
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
-              className="border border-slate-300 rounded px-3 py-1.5 text-sm outline-none focus:border-[#2980b9] w-48 text-slate-700"
+              className="border border-slate-300 rounded px-3 py-1.5 text-sm outline-none focus:border-[#2980b9] w-64 text-slate-900 bg-white"
             />
           </div>
-          
-          <button className="bg-[#1a5276] hover:bg-[#0e2f44] text-white px-4 py-1.5 rounded text-sm font-semibold flex items-center gap-2 transition-colors">
-            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" /></svg>
-            Buscar
-          </button>
         </div>
 
         {/* TABLA PRINCIPAL */}
@@ -168,78 +193,98 @@ export default function PacientesPage() {
                 <th className="px-2 py-4 border-b border-[#0e2f44]">SEXO</th>
                 <th className="px-2 py-4 border-b border-[#0e2f44]">NAC.</th>
                 <th className="px-2 py-4 border-b border-[#0e2f44]">EDAD</th>
-                <th className="px-2 py-4 border-b border-[#0e2f44]">ASISTENCIAS</th>
-                <th className="px-2 py-4 border-b border-[#0e2f44]">SESIONES</th>
+                <th className="px-2 py-4 border-b border-[#0e2f44]">ASISTENCIA</th>
                 <th className="px-2 py-4 border-b border-[#0e2f44]">VALORACIONES</th>
                 <th className="px-4 py-4 border-b border-[#0e2f44]">TOTAL PAGADO</th>
-                <th className="px-4 py-4 border-b border-[#0e2f44]">PRECIO</th>
+                <th className="px-4 py-4 border-b border-[#0e2f44]">SALDO</th>
+                <th className="px-4 py-4 border-b border-[#0e2f44]">PRECIO TERAPIA</th>
                 <th className="px-4 py-4 border-b border-[#0e2f44]">MÉTODO</th>
-                <th className="px-4 py-4 border-b border-[#0e2f44]">ÚLTIMA</th>
+                <th className="px-4 py-4 border-b border-[#0e2f44]">ÚLTIMO PAGO</th>
                 <th className="px-4 py-4 border-b border-[#0e2f44]">ESTADO</th>
                 <th className="px-4 py-4 border-b border-[#0e2f44]">ACCIONES</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-slate-100">
-              {paginatedPacientes.length > 0 ? paginatedPacientes.map((p) => (
-                <tr key={p.id} className="hover:bg-slate-50 transition-colors cursor-pointer" onClick={() => setViewingPatient(p)}>
-                  <td className="px-4 py-4 text-left font-bold text-slate-800">
-                    <div className="max-w-[150px] leading-tight flex items-center gap-2">
-                      {p.foto && <img src={p.foto} alt="Foto" className="w-8 h-8 rounded-full object-cover" />}
-                      {p.name}
-                    </div>
-                  </td>
-                  <td className="px-2 py-4 text-slate-500">
-                    <span className="text-base">{p.sexo === 'M' ? '♂' : p.sexo === 'F' ? '♀' : '⚥'}</span>
-                  </td>
-                  <td className="px-2 py-4 text-slate-400">{p.fechaNacimiento || "—"}</td>
-                  <td className="px-2 py-4 text-slate-400">{p.age || "—"}</td>
-                  <td className="px-2 py-4">
-                    <span className="bg-[#e6f4ea] text-[#1e8e3e] px-2.5 py-0.5 rounded text-[11px] font-bold">
-                      {p.asistencias || 0}
-                    </span>
-                  </td>
-                  <td className="px-2 py-4 text-slate-400">{p.sesiones || "—"}</td>
-                  <td className="px-2 py-4">
-                    <span className="bg-[#fce8f3] text-[#c5221f] px-2.5 py-0.5 rounded text-[11px] font-bold">
-                      {p.valoraciones || 0}
-                    </span>
-                  </td>
-                  <td className="px-4 py-4 text-slate-600 font-medium">{p.totalPagado || "$0.00"}</td>
-                  <td className="px-4 py-4 font-bold text-[#1a5276]">{p.precioTerapia ? `$${p.precioTerapia}` : "Por definir"}</td>
-                  <td className="px-4 py-4">
-                    <span className="bg-blue-50 text-blue-600 border border-blue-100 px-3 py-1 rounded-full text-[10px] font-medium whitespace-nowrap">
-                      {p.metodoPago || "Por definir"}
-                    </span>
-                  </td>
-                  <td className="px-4 py-4 text-slate-500 font-medium">{p.ultima || "—"}</td>
-                  <td className="px-4 py-4">
-                    <span className={`text-[10px] font-extrabold px-2.5 py-1 rounded-md uppercase tracking-wider ${
-                      (p.estatus || 'Activo').toLowerCase() === 'activo'
-                        ? 'bg-green-100 text-green-700 border border-green-300'
-                        : 'bg-black text-white border border-black shadow-sm'
-                    }`}>
-                      {p.estatus || 'Activo'}
-                    </span>
-                  </td>
-                  <td className="px-4 py-4" onClick={(e) => e.stopPropagation()}>
-                    <div className="flex gap-2">
-                      {(userRole.toUpperCase() !== "TERAPEUTA" || allowTherapistEdit) && (
-                        <button onClick={() => openEditModal(p)} title="Editar" className="p-1.5 border border-slate-200 rounded hover:bg-slate-100 text-amber-500 transition-colors">
-                          <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z" /></svg>
-                        </button>
-                      )}
-                      {(userRole.toUpperCase() !== "TERAPEUTA" || allowTherapistEdit) && (
-                        <button onClick={() => handleDelete(p)} title="Borrar" className="p-1.5 border border-slate-200 rounded hover:bg-slate-100 text-red-500 transition-colors">
-                          <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" /></svg>
-                        </button>
-                      )}
-                    </div>
-                  </td>
-                </tr>
-              )) : (
+              {paginatedPacientes.length > 0 ? paginatedPacientes.map((p) => {
+                const asistencias = p.asistencias || 0;
+                const totalSesiones = parseInt(p.sesiones || p.totalSesiones || "10", 10) || 10;
+                const precio = p.precioTerapia || "500";
+
+                return (
+                  <tr key={p.id} className="hover:bg-slate-50 transition-colors cursor-pointer" onClick={() => setViewingPatient(p)}>
+                    <td className="px-4 py-4 text-left font-bold text-slate-800">
+                      <div className="max-w-[170px] leading-tight flex items-center gap-2">
+                        {p.foto ? (
+                          <img src={p.foto} alt="Foto" className="w-8 h-8 rounded-full object-cover shrink-0" />
+                        ) : (
+                          <div className="w-8 h-8 rounded-full bg-slate-200 flex items-center justify-center font-bold text-slate-600 text-xs shrink-0">
+                            {p.name ? p.name.charAt(0) : "P"}
+                          </div>
+                        )}
+                        <span className="truncate">{p.name}</span>
+                      </div>
+                    </td>
+                    <td className="px-2 py-4 text-slate-600 font-bold">
+                      {p.sexo === 'M' || p.sexo === 'Masculino' ? '♂ M' : '♀ F'}
+                    </td>
+                    <td className="px-2 py-4 text-slate-500">{p.fechaNacimiento || "—"}</td>
+                    <td className="px-2 py-4 text-slate-500">{p.age || "—"}</td>
+                    <td className="px-2 py-4">
+                      <span className="bg-[#e6f4ea] text-[#1e8e3e] px-2.5 py-1 rounded text-xs font-extrabold shadow-xs">
+                        {asistencias}/{totalSesiones}
+                      </span>
+                    </td>
+                    <td className="px-2 py-4">
+                      <span className="bg-purple-50 text-purple-700 border border-purple-200 px-2.5 py-1 rounded text-xs font-bold">
+                        {p.valoraciones || 0}
+                      </span>
+                    </td>
+                    <td className="px-4 py-4 text-slate-800 font-extrabold">
+                      {p.totalPagado ? `$${p.totalPagado}` : "$0.00"}
+                    </td>
+                    <td className="px-4 py-4">
+                      {renderSaldo(p)}
+                    </td>
+                    <td className="px-4 py-4 font-bold text-[#1a5276]">
+                      ${precio}
+                    </td>
+                    <td className="px-4 py-4">
+                      <span className="bg-blue-50 text-blue-700 border border-blue-200 px-2.5 py-1 rounded-full text-[11px] font-semibold whitespace-nowrap">
+                        {p.metodoPago || "Efectivo"}
+                      </span>
+                    </td>
+                    <td className="px-4 py-4 text-slate-700 font-bold">
+                      {p.ultima || "$0.00"}
+                    </td>
+                    <td className="px-4 py-4">
+                      <span className={`text-[10px] font-extrabold px-2.5 py-1 rounded-md uppercase tracking-wider ${
+                        (p.estatus || 'Activo').toLowerCase() === 'activo'
+                          ? 'bg-emerald-100 text-emerald-800 border border-emerald-300'
+                          : 'bg-slate-800 text-white border border-slate-900 shadow-sm'
+                      }`}>
+                        {p.estatus || 'Activo'}
+                      </span>
+                    </td>
+                    <td className="px-4 py-4" onClick={(e) => e.stopPropagation()}>
+                      <div className="flex gap-1.5 justify-center">
+                        {(userRole.toUpperCase() !== "TERAPEUTA" || allowTherapistEdit) && (
+                          <button onClick={() => openEditModal(p)} title="Editar" className="p-1.5 border border-slate-200 rounded-lg hover:bg-amber-50 text-amber-600 transition-colors cursor-pointer">
+                            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z" /></svg>
+                          </button>
+                        )}
+                        {(userRole.toUpperCase() !== "TERAPEUTA" || allowTherapistEdit) && (
+                          <button onClick={() => handleDelete(p)} title="Borrar" className="p-1.5 border border-slate-200 rounded-lg hover:bg-rose-50 text-rose-600 transition-colors cursor-pointer">
+                            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" /></svg>
+                          </button>
+                        )}
+                      </div>
+                    </td>
+                  </tr>
+                );
+              }) : (
                 <tr>
                   <td colSpan={13} className="px-4 py-8 text-center text-slate-400 font-medium border border-t-0 border-slate-200">
-                    Sin pacientes registrados. Ve a "Ficha de Identificación" para agregar uno.
+                    Sin pacientes asignados o registrados.
                   </td>
                 </tr>
               )}
@@ -258,17 +303,17 @@ export default function PacientesPage() {
             <button 
               disabled={currentPage === 1}
               onClick={() => setCurrentPage(prev => prev - 1)}
-              className="px-4 py-2 border border-slate-300 rounded text-sm font-semibold text-slate-600 disabled:opacity-50 hover:bg-slate-50 transition-colors"
+              className="px-3 py-1 border border-slate-300 rounded text-sm disabled:opacity-50 hover:bg-slate-50"
             >
               Anterior
             </button>
-            <div className="px-4 py-2 text-sm font-bold text-[#1a5276]">
+            <span className="px-3 py-1 text-sm font-semibold text-slate-700">
               Página {currentPage} de {totalPages}
-            </div>
+            </span>
             <button 
               disabled={currentPage === totalPages}
               onClick={() => setCurrentPage(prev => prev + 1)}
-              className="px-4 py-2 border border-slate-300 rounded text-sm font-semibold text-slate-600 disabled:opacity-50 hover:bg-slate-50 transition-colors"
+              className="px-3 py-1 border border-slate-300 rounded text-sm disabled:opacity-50 hover:bg-slate-50"
             >
               Siguiente
             </button>
@@ -276,206 +321,109 @@ export default function PacientesPage() {
         </div>
       )}
 
-      {/* MODAL VISTA DETALLADA */}
+      {/* MODAL DETALLES DEL PACIENTE */}
       {viewingPatient && (
-        <div className="fixed inset-0 bg-black/60 flex items-center justify-center z-50 p-4 animate-in fade-in" onClick={() => setViewingPatient(null)}>
-          <div className="bg-white rounded-2xl shadow-2xl w-full max-w-4xl max-h-[90vh] overflow-y-auto" onClick={e => e.stopPropagation()}>
-            <div className="sticky top-0 bg-white border-b border-slate-200 p-4 flex justify-between items-center z-10">
-              <h3 className="font-bold text-xl text-[#1a5276]">Expediente Completo del Paciente</h3>
-              <button onClick={() => setViewingPatient(null)} className="p-2 bg-slate-100 hover:bg-slate-200 text-slate-600 rounded-full transition-colors">
-                <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" /></svg>
-              </button>
-            </div>
-            
-            <div className="p-8">
-              <div className="flex flex-col md:flex-row gap-8 mb-8">
-                {/* Foto */}
-                <div className="flex-shrink-0 flex flex-col items-center">
-                  <div className="w-32 h-32 md:w-48 md:h-48 rounded-2xl border-4 border-slate-100 shadow-sm overflow-hidden bg-slate-50 flex items-center justify-center">
-                    {viewingPatient.foto ? (
-                      <img src={viewingPatient.foto} alt="Foto" className="w-full h-full object-cover" />
-                    ) : (
-                      <svg className="w-16 h-16 text-slate-300" fill="currentColor" viewBox="0 0 24 24"><path d="M12 12c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm0 2c-2.67 0-8 1.34-8 4v2h16v-2c0-2.66-5.33-4-8-4z"/></svg>
-                    )}
-                  </div>
-                  <div className="mt-4 flex gap-2">
-                    <span className={`px-3 py-1 rounded-full text-xs font-bold ${viewingPatient.estatus === 'Activo' ? 'bg-green-100 text-green-700' : 'bg-slate-200 text-slate-700'}`}>
-                      {viewingPatient.estatus || 'Activo'}
-                    </span>
-                    <span className="px-3 py-1 rounded-full bg-blue-50 text-blue-700 text-xs font-bold uppercase tracking-wider">
-                      {viewingPatient.origen || 'Google'}
-                    </span>
-                  </div>
-                </div>
-
-                {/* Info Principal */}
-                <div className="flex-grow space-y-6">
-                  <div>
-                    <h2 className="text-3xl font-black text-slate-800 tracking-tight">{viewingPatient.name}</h2>
-                    <p className="text-lg text-[#1a5276] font-medium mt-1">Terapeuta: {viewingPatient.medicoTratante || "No asignado"}</p>
-                  </div>
-                  
-                  <div className="grid grid-cols-2 md:grid-cols-4 gap-4 bg-slate-50 p-4 rounded-xl border border-slate-100">
-                    <div>
-                      <p className="text-[10px] font-bold text-slate-400 uppercase">Edad</p>
-                      <p className="font-semibold text-slate-800">{viewingPatient.age || "N/A"}</p>
-                    </div>
-                    <div>
-                      <p className="text-[10px] font-bold text-slate-400 uppercase">Sexo</p>
-                      <p className="font-semibold text-slate-800">{viewingPatient.sexo === 'M' ? 'Masculino' : viewingPatient.sexo === 'F' ? 'Femenino' : 'N/A'}</p>
-                    </div>
-                    <div>
-                      <p className="text-[10px] font-bold text-slate-400 uppercase">Fecha Nac.</p>
-                      <p className="font-semibold text-slate-800">{viewingPatient.fechaNacimiento || "N/A"}</p>
-                    </div>
-                    <div>
-                      <p className="text-[10px] font-bold text-slate-400 uppercase">Fecha Ingreso</p>
-                      <p className="font-semibold text-slate-800">{viewingPatient.fechaIngreso || "N/A"}</p>
-                    </div>
-                  </div>
-                  
-                  <div>
-                    <h4 className="text-sm font-bold text-slate-800 border-b border-slate-200 pb-2 mb-3">Información de Contacto</h4>
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                      {viewingPatient.madreNombre && (
-                        <div className={`p-3 rounded-lg border ${viewingPatient.principalMadre ? 'bg-amber-50 border-amber-200' : 'bg-white border-slate-200'}`}>
-                          <p className="text-[10px] font-bold text-slate-400 uppercase mb-1">Madre {viewingPatient.principalMadre && '⭐ (Principal)'}</p>
-                          <p className="font-bold text-slate-800 text-sm">{viewingPatient.madreNombre}</p>
-                          <p className="text-slate-600 text-sm">{viewingPatient.madreContacto}</p>
-                        </div>
-                      )}
-                      {viewingPatient.padreNombre && (
-                        <div className={`p-3 rounded-lg border ${viewingPatient.principalPadre ? 'bg-amber-50 border-amber-200' : 'bg-white border-slate-200'}`}>
-                          <p className="text-[10px] font-bold text-slate-400 uppercase mb-1">Padre {viewingPatient.principalPadre && '⭐ (Principal)'}</p>
-                          <p className="font-bold text-slate-800 text-sm">{viewingPatient.padreNombre}</p>
-                          <p className="text-slate-600 text-sm">{viewingPatient.padreContacto}</p>
-                        </div>
-                      )}
-                      {viewingPatient.otrosNombre && (
-                        <div className={`p-3 rounded-lg border ${viewingPatient.principalOtros ? 'bg-amber-50 border-amber-200' : 'bg-white border-slate-200'}`}>
-                          <p className="text-[10px] font-bold text-slate-400 uppercase mb-1">Otro Contacto {viewingPatient.principalOtros && '⭐ (Principal)'}</p>
-                          <p className="font-bold text-slate-800 text-sm">{viewingPatient.otrosNombre}</p>
-                          <p className="text-slate-600 text-sm">{viewingPatient.otrosContacto}</p>
-                        </div>
-                      )}
-                      {viewingPatient.correoPrincipal && (
-                        <div className="p-3 rounded-lg bg-blue-50 border border-blue-100 md:col-span-2">
-                          <p className="text-[10px] font-bold text-slate-400 uppercase mb-1">Correo Electrónico (Facturación)</p>
-                          <p className="font-bold text-blue-900 text-sm">{viewingPatient.correoPrincipal}</p>
-                        </div>
-                      )}
-                    </div>
-                  </div>
-                </div>
-              </div>
-
-              {/* Alertas */}
-              <div className="mb-8">
-                <h4 className="text-sm font-bold text-slate-800 border-b border-slate-200 pb-2 mb-3">Alertas Clínicas y Operativas</h4>
-                <div className="flex flex-wrap gap-2">
-                  {viewingPatient.alergias && <span className="px-3 py-1 bg-red-100 text-red-700 rounded-full text-xs font-bold flex items-center gap-1"><svg className="w-3 h-3" fill="currentColor" viewBox="0 0 24 24"><path d="M12 2L1 21h22L12 2zm1 14h-2v-2h2v2zm0-4h-2V7h2v5z"/></svg> Alergias</span>}
-                  {viewingPatient.crisis && <span className="px-3 py-1 bg-red-100 text-red-700 rounded-full text-xs font-bold flex items-center gap-1"><svg className="w-3 h-3" fill="currentColor" viewBox="0 0 24 24"><path d="M12 2L1 21h22L12 2zm1 14h-2v-2h2v2zm0-4h-2V7h2v5z"/></svg> Crisis</span>}
-                  {viewingPatient.convulsiones && <span className="px-3 py-1 bg-red-100 text-red-700 rounded-full text-xs font-bold flex items-center gap-1"><svg className="w-3 h-3" fill="currentColor" viewBox="0 0 24 24"><path d="M12 2L1 21h22L12 2zm1 14h-2v-2h2v2zm0-4h-2V7h2v5z"/></svg> Convulsiones</span>}
-                  {viewingPatient.sensibilidad && <span className="px-3 py-1 bg-amber-100 text-amber-700 rounded-full text-xs font-bold flex items-center gap-1">⚠️ Sensibilidad Sensorial</span>}
-                  {viewingPatient.riesgoFuga && <span className="px-3 py-1 bg-amber-100 text-amber-700 rounded-full text-xs font-bold flex items-center gap-1">⚠️ Riesgo de Fuga</span>}
-                  {viewingPatient.noSepara && <span className="px-3 py-1 bg-amber-100 text-amber-700 rounded-full text-xs font-bold flex items-center gap-1">⚠️ No se separa de mamá</span>}
-                  {viewingPatient.otrasAlertas && <span className="px-3 py-1 bg-amber-100 text-amber-700 rounded-full text-xs font-bold flex items-center gap-1">⚠️ Otras Alertas</span>}
-                  {!viewingPatient.alergias && !viewingPatient.crisis && !viewingPatient.convulsiones && !viewingPatient.sensibilidad && !viewingPatient.riesgoFuga && !viewingPatient.noSepara && !viewingPatient.otrasAlertas && (
-                    <span className="text-slate-400 text-sm italic">No hay alertas registradas para este paciente.</span>
-                  )}
-                </div>
-              </div>
-
-              {/* Legal y Admin */}
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+        <div className="fixed inset-0 z-50 bg-black/50 flex items-center justify-center p-4">
+          <div className="bg-white rounded-xl max-w-lg w-full p-6 space-y-4 shadow-2xl animate-in zoom-in-95 duration-200">
+            <div className="flex justify-between items-start border-b border-slate-200 pb-3">
+              <div className="flex items-center gap-3">
+                {viewingPatient.foto && <img src={viewingPatient.foto} alt="Foto" className="w-12 h-12 rounded-full object-cover border border-slate-300" />}
                 <div>
-                  <h4 className="text-sm font-bold text-slate-800 border-b border-slate-200 pb-2 mb-3">Documentos Legales</h4>
-                  <ul className="space-y-2 text-sm text-slate-700">
-                    <li className="flex items-center gap-2">
-                      {viewingPatient.reglamentoFirmado ? <svg className="w-5 h-5 text-green-500" fill="currentColor" viewBox="0 0 24 24"><path d="M9 16.17L4.83 12l-1.42 1.41L9 19 21 7l-1.41-1.41z"/></svg> : <svg className="w-5 h-5 text-red-500" fill="currentColor" viewBox="0 0 24 24"><path d="M19 6.41L17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z"/></svg>}
-                      Reglamento Interno Firmado
-                    </li>
-                    <li className="flex items-center gap-2">
-                      {viewingPatient.consentimientoFirmado ? <svg className="w-5 h-5 text-green-500" fill="currentColor" viewBox="0 0 24 24"><path d="M9 16.17L4.83 12l-1.42 1.41L9 19 21 7l-1.41-1.41z"/></svg> : <svg className="w-5 h-5 text-red-500" fill="currentColor" viewBox="0 0 24 24"><path d="M19 6.41L17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z"/></svg>}
-                      Consentimiento Informado Firmado
-                    </li>
-                  </ul>
+                  <h3 className="text-lg font-bold text-slate-800">{viewingPatient.name}</h3>
+                  <p className="text-xs text-slate-500">Médico Tratante: {viewingPatient.medicoTratante || "Sin asignar"}</p>
                 </div>
-                
-                {viewingPatient.observacionesAdmin && (
-                  <div>
-                    <h4 className="text-sm font-bold text-slate-800 border-b border-slate-200 pb-2 mb-3">Observaciones Administrativas</h4>
-                    <div className="bg-amber-50 p-3 rounded-lg border border-amber-200 text-sm text-slate-800 whitespace-pre-wrap">
-                      {viewingPatient.observacionesAdmin}
-                    </div>
-                  </div>
-                )}
               </div>
-
+              <button onClick={() => setViewingPatient(null)} className="text-slate-400 hover:text-slate-600 font-bold text-lg">✕</button>
             </div>
+
+            <div className="grid grid-cols-2 gap-3 text-xs">
+              <div className="bg-slate-50 p-2.5 rounded border border-slate-200">
+                <span className="font-bold text-slate-500 block">Fecha Nacimiento:</span>
+                <span className="text-slate-800 font-semibold">{viewingPatient.fechaNacimiento || "—"}</span>
+              </div>
+              <div className="bg-slate-50 p-2.5 rounded border border-slate-200">
+                <span className="font-bold text-slate-500 block">Sexo:</span>
+                <span className="text-slate-800 font-semibold">{viewingPatient.sexo || "—"}</span>
+              </div>
+              <div className="bg-slate-50 p-2.5 rounded border border-slate-200">
+                <span className="font-bold text-slate-500 block">Asistencia Acumulada:</span>
+                <span className="text-emerald-700 font-extrabold">{viewingPatient.asistencias || 0}/{viewingPatient.sesiones || 10}</span>
+              </div>
+              <div className="bg-slate-50 p-2.5 rounded border border-slate-200">
+                <span className="font-bold text-slate-500 block">Precio por Terapia:</span>
+                <span className="text-blue-700 font-extrabold">${viewingPatient.precioTerapia || "500"}</span>
+              </div>
+              <div className="bg-slate-50 p-2.5 rounded border border-slate-200 col-span-2">
+                <span className="font-bold text-slate-500 block">Saldo Actual:</span>
+                <div>{renderSaldo(viewingPatient)}</div>
+              </div>
+            </div>
+
+            <button onClick={() => setViewingPatient(null)} className="w-full bg-[#1a5276] text-white font-bold py-2 rounded-lg text-xs">
+              Cerrar Expediente
+            </button>
           </div>
         </div>
       )}
 
-      {/* MODAL DE EDICIÓN */}
+      {/* MODAL EDITAR PACIENTE */}
       {editingPatient && (
-        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4 animate-in fade-in">
-          <div className="bg-white rounded-xl shadow-lg w-full max-w-md overflow-hidden animate-in slide-in-from-bottom-4">
-            <div className="flex justify-between items-center p-4 border-b border-slate-100">
-              <h3 className="font-bold text-[#1a5276] flex items-center gap-2">
-                <svg className="w-5 h-5 text-slate-600" fill="currentColor" viewBox="0 0 24 24"><path d="M12 12c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm0 2c-2.67 0-8 1.34-8 4v2h16v-2c0-2.66-5.33-4-8-4z"/></svg>
-                Editar Paciente
-              </h3>
-              <button onClick={() => setEditingPatient(null)} className="text-slate-400 hover:text-slate-600">
-                <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" /></svg>
-              </button>
-            </div>
-            <div className="p-5 space-y-4">
+        <div className="fixed inset-0 z-50 bg-black/50 flex items-center justify-center p-4">
+          <div className="bg-white rounded-xl max-w-md w-full p-6 space-y-4 shadow-2xl animate-in zoom-in-95 duration-200">
+            <h3 className="text-lg font-bold text-slate-800 border-b border-slate-200 pb-2">Editar Información de Paciente</h3>
+            
+            <div className="space-y-3">
               <div>
-                <label className="block text-xs font-bold text-slate-500 uppercase mb-1">Paciente</label>
-                <input type="text" name="nombre" value={editForm.nombre} onChange={handleEditChange} className="w-full text-sm p-2 border border-slate-300 rounded focus:border-[#2980b9] outline-none text-slate-900" />
+                <label className="block text-xs font-bold text-slate-700 mb-1">Nombre Completo</label>
+                <input
+                  type="text"
+                  name="nombre"
+                  value={editForm.nombre}
+                  onChange={handleEditChange}
+                  className="w-full p-2 border border-slate-300 rounded text-sm text-slate-900"
+                />
               </div>
-              <div>
-                <label className="block text-xs font-bold text-slate-500 uppercase mb-1">Sexo</label>
-                <select name="sexo" value={editForm.sexo} onChange={handleEditChange} className="w-full text-sm p-2 border border-slate-300 rounded focus:border-[#2980b9] outline-none text-slate-900">
-                  <option value="">Desconocido</option>
-                  <option value="M">Masculino</option>
-                  <option value="F">Femenino</option>
-                </select>
-              </div>
-              <div>
-                <label className="block text-xs font-bold text-slate-500 uppercase mb-1">Fecha de Nacimiento</label>
-                <DateInput name="fechaNacimiento" value={editForm.fechaNacimiento} onChange={handleEditChange} className="w-full text-sm p-2 border border-slate-300 rounded focus:border-[#2980b9] outline-none text-slate-900" />
-                <p className="text-[10px] text-slate-400 mt-1">La edad se calculará automáticamente</p>
-              </div>
-              <div>
-                <label className="block text-xs font-bold text-slate-500 uppercase mb-1">💰 Precio por Terapia</label>
-                <div className="relative">
-                  <span className="absolute left-3 top-2 text-slate-500 font-bold">$</span>
-                  <input type="number" name="precioTerapia" value={editForm.precioTerapia} onChange={handleEditChange} className="w-full text-sm p-2 pl-7 border border-slate-300 rounded focus:border-[#2980b9] outline-none text-slate-900" />
+
+              <div className="grid grid-cols-2 gap-2">
+                <div>
+                  <label className="block text-xs font-bold text-slate-700 mb-1">Precio Terapia (MXN)</label>
+                  <input
+                    type="number"
+                    name="precioTerapia"
+                    value={editForm.precioTerapia}
+                    onChange={handleEditChange}
+                    placeholder="500"
+                    className="w-full p-2 border border-slate-300 rounded text-sm text-slate-900 font-bold"
+                  />
                 </div>
-                <p className="text-[10px] text-slate-400 mt-1">Se actualizará en todos los registros del paciente</p>
-              </div>
-              <div>
-                <label className="block text-xs font-bold text-slate-500 uppercase mb-1">💳 Método de Pago Preferido</label>
-                <select name="metodoPago" value={editForm.metodoPago} onChange={handleEditChange} className="w-full text-sm p-2 border border-slate-300 rounded focus:border-[#2980b9] outline-none text-slate-900">
-                  <option value="">Seleccionar...</option>
-                  <option value="Efectivo">Efectivo</option>
-                  <option value="Tarjeta">Tarjeta</option>
-                  <option value="Transferencia">Transferencia</option>
-                </select>
-              </div>
-              <div>
-                <label className="block text-xs font-bold text-slate-500 uppercase mb-1">⚙️ Estado del Paciente</label>
-                <select name="estatus" value={editForm.estatus} onChange={handleEditChange} className="w-full text-sm p-2 border border-slate-300 rounded focus:border-[#2980b9] outline-none text-slate-900 font-semibold">
-                  <option value="Activo">Activo (Verde)</option>
-                  <option value="Desactivo">Desactivo (Negro)</option>
-                </select>
+                <div>
+                  <label className="block text-xs font-bold text-slate-700 mb-1">Estado</label>
+                  <select
+                    name="estatus"
+                    value={editForm.estatus}
+                    onChange={handleEditChange}
+                    className="w-full p-2 border border-slate-300 rounded text-sm text-slate-900 bg-white"
+                  >
+                    <option value="Activo">Activo</option>
+                    <option value="Inactivo">Inactivo</option>
+                  </select>
+                </div>
               </div>
             </div>
-            <div className="p-4 bg-slate-50 border-t border-slate-100">
-              <button onClick={saveEdit} disabled={isSaving} className="w-full bg-[#1a5276] hover:bg-[#0e2f44] disabled:opacity-50 text-white py-2 rounded font-semibold transition-colors">
+
+            <div className="flex gap-2 pt-2">
+              <button
+                disabled={isSaving}
+                onClick={saveEdit}
+                className="flex-1 bg-[#1a5276] hover:bg-[#0e2f44] text-white font-bold py-2 rounded text-xs transition disabled:opacity-50"
+              >
                 {isSaving ? "Guardando..." : "Guardar Cambios"}
+              </button>
+              <button
+                onClick={() => setEditingPatient(null)}
+                className="flex-1 bg-slate-100 text-slate-600 font-semibold py-2 rounded text-xs hover:bg-slate-200 transition"
+              >
+                Cancelar
               </button>
             </div>
           </div>
@@ -484,4 +432,3 @@ export default function PacientesPage() {
     </div>
   );
 }
-

@@ -90,6 +90,10 @@ export default function InformesPage() {
   };
   
   const handleDelete = (id: string) => {
+    if (userRole.toUpperCase() === "TERAPEUTA") {
+      alert("Las terapeutas no tienen permisos para eliminar informes.");
+      return;
+    }
     if (confirm("¿Estás seguro de eliminar este informe?")) {
       const updated = informes.filter(i => i.id !== id);
       setInformes(updated);
@@ -188,6 +192,11 @@ export default function InformesPage() {
   };
 
   const informesFiltrados = informes.filter(i => {
+    if (userRole.toUpperCase() === "TERAPEUTA") {
+      if (i.terapeuta !== userName) {
+        return false;
+      }
+    }
     const matchPaciente = filtroPaciente ? i.paciente === filtroPaciente : true;
     const matchTipo = filtroTipo !== "Todos" ? i.tipo === filtroTipo : true;
     return matchPaciente && matchTipo;
@@ -422,12 +431,14 @@ export default function InformesPage() {
                               <span>📁</span> Drive
                             </a>
                           )}
-                          <button onClick={() => handleDownload(inf)} className="text-slate-400 hover:text-[#1a5276] p-1" title="Descargar">
+                          <button onClick={() => handleDownload(inf)} className="text-slate-400 hover:text-[#1a5276] p-1 cursor-pointer" title="Descargar">
                             <svg className="w-5 h-5 mx-auto" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" /></svg>
                           </button>
-                          <button onClick={() => handleDelete(inf.id)} className="text-red-400 hover:text-red-600 p-1" title="Eliminar">
-                            <svg className="w-5 h-5 mx-auto" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" /></svg>
-                          </button>
+                          {userRole.toUpperCase() !== "TERAPEUTA" && (
+                            <button onClick={() => handleDelete(inf.id)} className="text-red-400 hover:text-red-600 p-1 cursor-pointer" title="Eliminar">
+                              <svg className="w-5 h-5 mx-auto" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" /></svg>
+                            </button>
+                          )}
                         </div>
                       </td>
                     </tr>

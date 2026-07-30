@@ -1,4 +1,4 @@
-// Generador de Documento PDF Legal de Consentimiento e Intake para México (Alta Legibilidad HD)
+// Generador de Documento PDF Legal de Consentimiento e Intake para CREN México
 
 export function generateConsentPdfBase64(data: {
   pacienteNombre: string;
@@ -34,7 +34,7 @@ export function generateConsentPdfBase64(data: {
     <html lang="es">
     <head>
       <meta charset="utf-8" />
-      <title>Consentimiento Informado - ${data.pacienteNombre}</title>
+      <title>Aviso de Privacidad y Consentimiento - ${data.pacienteNombre}</title>
       <style>
         @page {
           margin: 0.5in;
@@ -101,32 +101,32 @@ export function generateConsentPdfBase64(data: {
           color: #1e293b;
         }
         .notice-box {
-          background: #fef3c7;
-          border: 2px solid #f59e0b;
+          background: #ecfdf5;
+          border: 2px solid #059669;
           padding: 12px;
           font-size: 12px;
           font-weight: 700;
-          color: #78350f;
+          color: #064e3b;
           border-radius: 6px;
           margin-top: 16px;
           line-height: 1.45;
-          text-align: justify;
+          text-align: center;
         }
         .legal-terms {
           background: #f8fafc;
           border: 1px solid #cbd5e1;
           padding: 14px;
           border-radius: 6px;
-          font-size: 11.5px;
+          font-size: 12px;
           color: #334155;
           text-align: justify;
           margin-top: 14px;
           line-height: 1.5;
         }
         .legal-terms h4 {
-          margin: 8px 0 3px 0;
+          margin: 10px 0 4px 0;
           color: #0e2f44;
-          font-size: 12.5px;
+          font-size: 13px;
         }
         .signature-container {
           margin-top: 25px;
@@ -188,9 +188,9 @@ export function generateConsentPdfBase64(data: {
     </head>
     <body>
       <div class="header">
-        <div class="header-title">CENTRO DE REHABILITACIÓN NEUROLÓGICA (CREN)</div>
-        <div class="header-subtitle">DOCUMENTO OFICIAL DE INTAKE Y CONSENTIMIENTO INFORMADO DE DATOS PERSONALES SENSIBLES DE SALUD</div>
-        <div class="header-legal">Validez Jurídica Plena conforme al Código de Comercio (Art. 89-114) y LFPDPPP de los Estados Unidos Mexicanos</div>
+        <div class="header-title">CENTRO DE REHABILITACIÓN ESPECIALIZADA Y NEURODESARROLLO (CREN)</div>
+        <div class="header-subtitle">AVISO DE PRIVACIDAD DE DATOS PERSONALES SENSIBLES DE SALUD</div>
+        <div class="header-legal">Petén 284, PB, Col. Narvarte, C.P. 03023, Benito Juárez, CDMX | Tel.: 55 16 87 1232</div>
         <div style="font-size:11.5px; font-weight:bold; color:#0e2f44; margin-top:6px;">FECHA Y HORA DE EMISIÓN: ${fechaEmision}</div>
       </div>
 
@@ -219,30 +219,35 @@ export function generateConsentPdfBase64(data: {
       </table>
 
       <div class="notice-box">
-        AVISO IMPORTANTE DE ACEPTACIÓN EXPRESA: AL DESCARGAR, INSTALAR, ACCEDER, REGISTRARSE O UTILIZAR ESTA APLICACIÓN MÓVIL, USTED RECONOCE QUE HA LEÍDO, ENTENDIDO Y ACEPTADO EN SU TOTALIDAD LOS PRESENTES TÉRMINOS Y CONDICIONES, LOS CUALES CONSTITUYEN UN CONTRATO DE ADHESIÓN CON VALIDEZ JURÍDICA Y EFECTOS VINCULANTES CONFORME AL CÓDIGO DE COMERCIO Y LA LEY FEDERAL DE PROTECCIÓN AL CONSUMIDOR DE MÉXICO.
+        AVISO DE PRIVACIDAD INTEGRAL - CENTRO DE REHABILITACIÓN ESPECIALIZADA Y NEURODESARROLLO (CREN)<br/>
+        Contacto de Privacidad: centrocren@gmail.com | Tel.: 55 16 87 1232 / WhatsApp: 55 49 53 01 40
       </div>
 
       <div class="legal-terms">
-        <h4>1. Marco Legal y Conceptual</h4>
-        Regula el acceso y uso de la aplicación operada por CREN dentro de los Estados Unidos Mexicanos bajo la LFPC (Capítulo VIII BIS), Código de Comercio de México (Artículos 89 al 114), LFPDPPP y su Reglamento, y Código Civil Federal.<br/>
+        <h4>1. Datos personales que recabamos</h4>
+        • De identificación y contacto: Nombre completo, fecha de nacimiento, edad, teléfono y correo electrónico.<br/>
+        • De facturación (opcional): Registro Federal de Contribuyentes (RFC), domicilio fiscal y datos de pago.<br/>
+        • Clínicos (sensibles): Historial clínico, antecedentes médicos, diagnósticos, resultados de evaluaciones, planes de terapia y notas de evolución (NOM-004-SSA3-2012).<br/>
+        • De menores de edad: Datos del padre, madre o tutor.<br/>
 
-        <h4>2. Elegibilidad y Capacidad Jurídica</h4>
-        El Usuario declara bajo protesta de decir verdad contar con plena capacidad legal para contratar o ser padre/tutor legítimo del paciente atendido en CREN.<br/>
+        <h4>2. Finalidades del tratamiento de sus datos</h4>
+        • Primarias: Crear y conservar expediente clínico (NOM-004-SSA3-2012), valoraciones, diagnósticos, atención terapéutica (física, psicológica, lenguaje), programación de citas y facturación.<br/>
+        • Secundarias: Información sobre talleres, conferencias, promociones y encuestas de satisfacción.<br/>
 
-        <h4>3. Registro de Cuenta, Seguridad y Firma Electrónica</h4>
-        Conforme al artículo 89 del Código de Comercio mexicano, el trazado de firma digital dentro de la Aplicación constituye una Firma Electrónica Simplificada o Expresa que produce los mismos efectos jurídicos que la firma autógrafa.<br/>
+        <h4>3. Consentimiento expreso para datos sensibles</h4>
+        Requerimos su consentimiento expreso y por escrito para el tratamiento de sus datos personales de salud en su expediente clínico al momento de su primera consulta.<br/>
 
-        <h4>4. Licencia de Uso y Propiedad Intelectual</h4>
-        Licencia limitada, no exclusiva e intransferible. Reservados todos los derechos de propiedad intelectual conforme a la Ley Federal del Derecho de Autor y Ley Federal de Protección a la Propiedad Industrial.<br/>
+        <h4>4. Transferencia de datos</h4>
+        Únicamente con profesionales de la salud (interconsultas), aseguradoras (reembolsos) o autoridades competentes por mandato de ley.<br/>
 
-        <h4>5. Condiciones Económicas, Pagos y Facturación CFDI (SAT)</h4>
-        Precios expresados en Pesos Mexicanos (MXN) con IVA aplicable y disponibilidad de facturación electrónica conforme al SAT.<br/>
+        <h4>5. Conservación y seguridad de los datos</h4>
+        Conservación durante 5 años a partir de la última fecha de atención conforme a la NOM-004-SSA3-2012.<br/>
 
-        <h4>6. Usos Prohibidos y 7. Protección de Datos Personales (LFPDPPP)</h4>
-        Tratamiento confidencial de datos personales sensibles de salud conforme al Aviso de Privacidad Integral de CREN.<br/>
+        <h4>6. Derechos ARCO y revocación del consentimiento</h4>
+        Solicitudes a centrocren@gmail.com. Plazo de respuesta: 20 días hábiles.<br/>
 
-        <h4>8. Limitación de Responsabilidad, 9. Cancelación y 10. Jurisdicción</h4>
-        Sometimiento en primera instancia al procedimiento conciliatorio ante la Procuraduría Federal del Consumidor (PROFECO) y competencia expresa de los Tribunales con sede en la Ciudad de México.
+        <h4>7. Cambios a este aviso de privacidad</h4>
+        Versión vigente disponible en recepción y en www.crentrocren.com (Última actualización: 2 de septiembre de 2025).
       </div>
 
       <div class="signature-container">

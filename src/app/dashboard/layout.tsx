@@ -26,7 +26,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
     { name: "Agenda", path: "/dashboard/agenda", adminOnly: false },
     { name: "Asistencia", path: "/dashboard/asistencia", adminOnly: false },
     { name: "Ficha ID", path: "/dashboard/preregistros", adminOnly: false },
-    { name: "Pacientes", path: "/dashboard/pacientes", adminOnly: true },
+    { name: "Pacientes", path: "/dashboard/pacientes", adminOnly: false },
     { name: "Estado de Cuenta", path: "/dashboard/finanzas", adminOnly: true },
     { name: "Informes", path: "/dashboard/informes", adminOnly: false },
     { name: "Horarios", path: "/dashboard/horarios", adminOnly: false },
@@ -40,18 +40,27 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
     { name: "Configuración", path: "/dashboard/configuracion", adminOnly: true },
   ];
 
-  // Filter tabs based on role
+  // Filter tabs based on role permissions
   const tabs = allTabs.filter(tab => {
     const roleUpper = userRole.toUpperCase();
-    if (roleUpper === "ADMIN" || roleUpper === "ADMINISTRADOR") {
-      return tab.path !== "/dashboard/contrasena";
+
+    // Todos los roles (ADMIN, TERAPEUTA, CONTADOR, INVITADO) pueden cambiar su contraseña
+    if (tab.path === "/dashboard/contrasena") return true;
+
+    // El usuario INVITADO NO tiene acceso a Configuración
+    if (roleUpper === "INVITADO" && tab.path === "/dashboard/configuracion") {
+      return false;
     }
+
+    if (roleUpper === "ADMIN" || roleUpper === "ADMINISTRADOR") {
+      return true;
+    }
+
     if (roleUpper === "TERAPEUTA") {
-      if (tab.path === "/dashboard/pacientes") {
-        return allowTherapistEdit;
-      }
+      if (tab.path === "/dashboard/pacientes") return true;
       if (tab.adminOnly) return false;
     }
+
     if (roleUpper === "CONTADOR") {
       const allowedPaths = [
         "/dashboard/finanzas",
@@ -65,9 +74,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
       ];
       return allowedPaths.includes(tab.path);
     }
-    if (roleUpper === "INVITADO") {
-      return true;
-    }
+
     return true;
   });
 
@@ -96,7 +103,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
             </div>
             <button
               onClick={() => signOut({ callbackUrl: "/login" })}
-              className="px-4 py-1.5 bg-slate-800/80 hover:bg-slate-900 text-white rounded-full text-xs font-semibold transition-colors"
+              className="px-4 py-1.5 bg-slate-800/80 hover:bg-slate-900 text-white rounded-full text-xs font-semibold transition-colors cursor-pointer"
             >
               Cerrar Sesión
             </button>
@@ -104,28 +111,28 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
         </div>
 
         {/* Navigation Tabs */}
-        <nav className="flex gap-1 px-6 bg-black/10 overflow-x-auto scrollbar-hide">
+        <nav className="flex px-6 overflow-x-auto scrollbar-none bg-[#0a2333]">
           {tabs.map((tab) => {
             const isActive = pathname === tab.path;
             return (
-              <a
-                key={tab.name}
-                href={`${tab.path}?t=${Date.now()}`}
-                className={`px-4 py-2.5 text-sm font-medium border-b-2 whitespace-nowrap transition-colors ${
+              <Link
+                key={tab.path}
+                href={tab.path}
+                className={`px-4 py-2.5 text-xs font-semibold whitespace-nowrap border-b-2 transition-all flex items-center gap-1.5 ${
                   isActive
-                    ? "border-green-400 text-white bg-white/10"
-                    : "border-transparent text-white/70 hover:text-white hover:bg-white/5"
+                    ? "border-emerald-400 text-white bg-white/10 font-bold"
+                    : "border-transparent text-slate-300 hover:text-white hover:bg-white/5"
                 }`}
               >
                 {tab.name}
-              </a>
+              </Link>
             );
           })}
         </nav>
       </header>
 
-      {/* Main Content Area */}
-      <main className="flex-1 max-w-7xl w-full mx-auto p-6">
+      {/* Main Content */}
+      <main className="flex-1 p-6 max-w-[1400px] w-full mx-auto">
         {children}
       </main>
     </div>

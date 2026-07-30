@@ -3,6 +3,8 @@
 import { useState, useRef, useEffect, Suspense } from "react";
 import { useSearchParams } from "next/navigation";
 import { submitPreRegistration } from "@/app/actions/preregistro";
+import { CountrySelector } from "@/components/CountrySelector";
+import { COUNTRY_CODES } from "@/lib/countryCodes";
 
 function RegistroConsentimientoContent() {
   const searchParams = useSearchParams();
@@ -17,6 +19,32 @@ function RegistroConsentimientoContent() {
   const [origen, setOrigen] = useState("Google");
   const [medicoTratante, setMedicoTratante] = useState(terapeutaParam);
   const [escuela, setEscuela] = useState("");
+
+  // Detección de País por IP para Selector Telefónico
+  const [madreCountryCode, setMadreCountryCode] = useState("+52");
+  const [padreCountryCode, setPadreCountryCode] = useState("+52");
+  const [otrosCountryCode, setOtrosCountryCode] = useState("+52");
+
+  useEffect(() => {
+    async function detectUserCountry() {
+      try {
+        const res = await fetch("https://ipapi.co/json/", { cache: "no-store" });
+        if (res.ok) {
+          const data = await res.json();
+          const countryIso = data.country_code || data.country;
+          const match = COUNTRY_CODES.find((c) => c.iso === countryIso);
+          if (match) {
+            setMadreCountryCode(match.code);
+            setPadreCountryCode(match.code);
+            setOtrosCountryCode(match.code);
+          }
+        }
+      } catch (e) {
+        console.log("Fallback IP detection to +52 Mexico");
+      }
+    }
+    detectUserCountry();
+  }, []);
 
   // Contactos
   const [madreNombre, setMadreNombre] = useState("");
@@ -42,7 +70,7 @@ function RegistroConsentimientoContent() {
   const [noSepara, setNoSepara] = useState(false);
   const [otrasAlertas, setOtrasAlertas] = useState(false);
 
-  // Consentimiento legal México
+  // Consentimiento legal México CREN
   const [aceptoTerminos, setAceptoTerminos] = useState(false);
   const [showLegalDoc, setShowLegalDoc] = useState(true);
 
@@ -68,7 +96,6 @@ function RegistroConsentimientoContent() {
     ctx.lineJoin = "round";
   }, []);
 
-  // Cálculo exacto de coordenadas relativas con escala para eliminar desfases
   const getCanvasPos = (canvasDom: HTMLCanvasElement, clientX: number, clientY: number) => {
     const rect = canvasDom.getBoundingClientRect();
     const scaleX = canvasDom.width / rect.width;
@@ -127,6 +154,7 @@ function RegistroConsentimientoContent() {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    if (submitting) return; // Bloqueo de múltiples clics simultáneos
     setErrorMsg("");
 
     if (!nombre.trim()) {
@@ -135,7 +163,7 @@ function RegistroConsentimientoContent() {
     }
 
     if (!aceptoTerminos) {
-      setErrorMsg("Debes aceptar el Consentimiento Informado de Datos Sensibles de Salud.");
+      setErrorMsg("Debes aceptar el Aviso de Privacidad de Datos Sensibles de Salud CREN.");
       return;
     }
 
@@ -150,6 +178,10 @@ function RegistroConsentimientoContent() {
     setSubmitting(true);
 
     try {
+      const fullMadreContacto = madreContacto ? (madreContacto.startsWith("+") ? madreContacto : `${madreCountryCode} ${madreContacto}`) : "";
+      const fullPadreContacto = padreContacto ? (padreContacto.startsWith("+") ? padreContacto : `${padreCountryCode} ${padreContacto}`) : "";
+      const fullOtrosContacto = otrosContacto ? (otrosContacto.startsWith("+") ? otrosContacto : `${otrosCountryCode} ${otrosContacto}`) : "";
+
       const payload = {
         token: tokenParam,
         nombre,
@@ -160,13 +192,13 @@ function RegistroConsentimientoContent() {
         medicoTratante,
         escuela,
         madreNombre,
-        madreContacto,
+        madreContacto: fullMadreContacto,
         principalMadre,
         padreNombre,
-        padreContacto,
+        padreContacto: fullPadreContacto,
         principalPadre,
         otrosNombre,
-        otrosContacto,
+        otrosContacto: fullOtrosContacto,
         principalOtros,
         correoPrincipal,
         alergias,
@@ -259,7 +291,7 @@ function RegistroConsentimientoContent() {
       <div className="max-w-xl w-full mb-4 text-center">
         <div className="inline-flex items-center gap-2 bg-white border border-slate-300 px-4 py-2 rounded-full text-emerald-700 font-bold text-sm mb-2 shadow-xs">
           <span className="w-2.5 h-2.5 rounded-full bg-emerald-500 animate-pulse"></span>
-          CENTRO DE REHABILITACIÓN NEUROLÓGICA (CREN)
+          CENTRO DE REHABILITACIÓN ESPECIALIZADA Y NEURODESARROLLO (CREN)
         </div>
         <h1 className="text-xl font-extrabold text-slate-900">Ficha de Registro y Consentimiento Digital</h1>
         <p className="text-xs font-medium text-slate-600">Atención: {medicoTratante}</p>
@@ -361,7 +393,7 @@ function RegistroConsentimientoContent() {
               className="w-full bg-white border border-slate-300 rounded-lg p-2.5 text-xs text-slate-900 font-medium placeholder:text-slate-400 outline-none"
             />
             <div className="flex gap-2">
-              <span className="bg-slate-200 border border-slate-300 text-xs px-2.5 py-2 rounded-lg text-slate-800 font-bold flex items-center">🇵🇦 +507</span>
+              <CountrySelector value={madreCountryCode} onChange={setMadreCountryCode} />
               <input
                 type="tel"
                 value={madreContacto}
@@ -390,7 +422,7 @@ function RegistroConsentimientoContent() {
               className="w-full bg-white border border-slate-300 rounded-lg p-2.5 text-xs text-slate-900 font-medium placeholder:text-slate-400 outline-none"
             />
             <div className="flex gap-2">
-              <span className="bg-slate-200 border border-slate-300 text-xs px-2.5 py-2 rounded-lg text-slate-800 font-bold flex items-center">🇵🇦 +507</span>
+              <CountrySelector value={padreCountryCode} onChange={setPadreCountryCode} />
               <input
                 type="tel"
                 value={padreContacto}
@@ -453,83 +485,85 @@ function RegistroConsentimientoContent() {
           </div>
         </div>
 
-        {/* Sección 4: Consentimiento Legal México & Firma */}
+        {/* Sección 4: Aviso de Privacidad Oficial CREN */}
         <div className="space-y-3 pt-2">
           <div className="border-b border-slate-200 pb-1 flex items-center justify-between">
-            <h3 className="text-xs font-extrabold uppercase tracking-wider text-[#1a5276]">4. Términos y Condiciones de Uso de la Aplicación Móvil</h3>
+            <h3 className="text-xs font-extrabold uppercase tracking-wider text-[#1a5276]">4. Aviso de Privacidad CREN (CDMX)</h3>
             <button
               type="button"
               onClick={() => setShowLegalDoc(!showLegalDoc)}
               className="text-[11px] text-[#1a5276] underline font-bold hover:text-blue-800"
             >
-              {showLegalDoc ? "Ocultar Contrato" : "Ver Contrato Completo"}
+              {showLegalDoc ? "Ocultar Aviso" : "Ver Aviso Completo"}
             </button>
           </div>
 
-          {/* Visor de Términos Legales Completos de México */}
+          {/* Visor del Aviso de Privacidad Oficial CREN */}
           {showLegalDoc && (
             <div className="bg-slate-50 p-4 rounded-xl border border-slate-300 max-h-64 overflow-y-auto text-[11px] text-slate-700 space-y-3 leading-relaxed font-normal shadow-inner">
-              <div className="bg-amber-100/70 border border-amber-300 p-2.5 rounded text-slate-900 font-bold text-[11px]">
-                AVISO IMPORTANTE DE ACEPTACIÓN EXPRESA: AL DESCARGAR, INSTALAR, ACCEDER, REGISTRARSE O UTILIZAR ESTA APLICACIÓN MÓVIL, USTED RECONOCE QUE HA LEÍDO, ENTENDIDO Y ACEPTADO EN SU TOTALIDAD LOS PRESENTES TÉRMINOS Y CONDICIONES, LOS CUALES CONSTITUYEN UN CONTRATO DE ADHESIÓN CON VALIDEZ JURÍDICA Y EFECTOS VINCULANTES CONFORME AL CÓDIGO DE COMERCIO Y LA LEY FEDERAL DE PROTECCIÓN AL CONSUMIDOR DE MÉXICO.
+              <div className="bg-emerald-100/70 border border-emerald-300 p-2.5 rounded text-emerald-900 font-bold text-[11px] text-center">
+                CENTRO DE REHABILITACIÓN ESPECIALIZADA Y NEURODESARROLLO (CREN)<br/>
+                Calle Petén #284, PB, Col. Narvarte, C.P. 03023, Benito Juárez, Ciudad de México<br/>
+                Contacto: centrocren@gmail.com | Tel.: 55 16 87 1232
               </div>
 
               <div>
-                <strong className="text-slate-900">1. Marco Legal y Conceptual</strong>
-                <p>El presente contrato de adhesión regula el acceso y uso de la aplicación móvil (en adelante, la "Aplicación"), operada por Centro de Rehabilitación Neurológica CREN (en adelante, el "Prestador" o la "Empresa"), dentro del territorio de los Estados Unidos Mexicanos. Este documento se formula en riguroso cumplimiento de la legislación mexicana aplicable, incluyendo de manera enunciativa más no limitativa:</p>
+                <strong className="text-slate-900">1. Datos personales que recabamos</strong>
+                <p>Para las finalidades que se mencionan más adelante, recabamos las siguientes categorías de datos personales:</p>
                 <ul className="list-disc pl-4 space-y-0.5">
-                  <li>Ley Federal de Protección al Consumidor (LFPC) y sus disposiciones relativas a las transacciones efectuadas a través del uso de medios electrónicos, ópticos o de cualquier otra tecnología (Capítulo VIII BIS).</li>
-                  <li>Código de Comercio de México, en lo conducente a la contratación electrónica, mensajes de datos y firma digital o electrónica (Artículos 89 al 114).</li>
-                  <li>Ley Federal de Protección de Datos Personales en Posesión de los Particulares (LFPDPPP) y su Reglamento.</li>
-                  <li>Código Civil Federal respecto a la validez de las obligaciones contractuales y el consentimiento prestado por medios electrónicos.</li>
+                  <li><strong>De identificación y contacto:</strong> Nombre completo, fecha de nacimiento, edad, teléfono y correo electrónico.</li>
+                  <li><strong>De facturación (opcional):</strong> Registro Federal de Contribuyentes (RFC), domicilio fiscal y datos de pago.</li>
+                  <li><strong>Clínicos (sensibles):</strong> Historial clínico, antecedentes médicos, diagnósticos, resultados de evaluaciones, planes de terapia y notas de evolución. Por la naturaleza sensible de estos datos, requerimos su consentimiento expreso y por escrito para su tratamiento.</li>
+                  <li><strong>De menores de edad:</strong> En caso de que el paciente sea menor de edad, recabamos los datos personales del padre, madre o tutor.</li>
                 </ul>
               </div>
 
               <div>
-                <strong className="text-slate-900">2. Elegibilidad y Capacidad Jurídica</strong>
-                <p>Para crear una cuenta y hacer uso de los servicios de la Aplicación, el Usuario debe contar con plena capacidad legal para contratar conforme a las leyes de los Estados Unidos Mexicanos (ser mayor de 18 años). Al aceptar estos Términos, el Usuario declara bajo protesta de decir verdad que cumple con dicho requisito de edad e idoneidad jurídica. En caso de ser menor de edad o incapaz, la Aplicación solo podrá ser utilizada bajo la directa supervisión, autorización y responsabilidad de sus padres o tutores legales.</p>
+                <strong className="text-slate-900">2. Finalidades del tratamiento de sus datos</strong>
+                <p><strong>A. Finalidades primarias (necesarias):</strong> Son las que dan origen a la relación jurídica entre usted y CREN.</p>
+                <ul className="list-disc pl-4 space-y-0.5">
+                  <li>Crear y conservar su expediente clínico de acuerdo con la NOM-004-SSA3-2012.</li>
+                  <li>Realizar valoraciones, diagnósticos y proporcionar la atención terapéutica (terapia física, psicológica y de lenguaje).</li>
+                  <li>Comunicarnos con usted para la programación de citas y asuntos relacionados con su tratamiento.</li>
+                  <li>Procesar facturas y cumplir con obligaciones legales.</li>
+                </ul>
+                <p className="mt-1"><strong>B. Finalidades secundarias (no necesarias):</strong></p>
+                <ul className="list-disc pl-4 space-y-0.5">
+                  <li>Enviar información sobre talleres, conferencias, promociones o materiales educativos.</li>
+                  <li>Realizar encuestas de satisfacción y análisis estadísticos internos para mejorar nuestros servicios.</li>
+                </ul>
+                <p className="mt-1">Usted tiene el derecho de oponerse al tratamiento de sus datos para las finalidades secundarias enviando un correo a <strong>centrocren@gmail.com</strong>.</p>
               </div>
 
               <div>
-                <strong className="text-slate-900">3. Registro de Cuenta, Seguridad y Firma Electrónica</strong>
-                <p><strong>3.1. Creación de Cuenta y Veracidad de la Información:</strong> El Usuario se obliga a proporcionar información veraz, exacta, completa y actualizada durante el registro. El uso de identidades falsas o la suplantación de terceros constituye una violación grave de este instrumento.</p>
-                <p><strong>3.2. Custodia de Credenciales:</strong> El Usuario es el único responsable de mantener la confidencialidad de su clave de acceso. Todas las actividades realizadas desde su cuenta se presumirán legalmente efectuadas por el Usuario titular.</p>
-                <p><strong>3.3. Equiparación de Firma Electrónica conforme al Código de Comercio:</strong> En términos del artículo 89 y demás relativos del Código de Comercio mexicano, la aceptación de los presentes Términos y Condiciones mediante la pulsación del botón de registro/aceptación o trazado de firma digital dentro de la Aplicación, constituye una Firma Electrónica Simplificada o Expresa que produce los mismos efectos jurídicos que la firma autógrafa, garantizando la autenticidad e integridad del consentimiento prestado.</p>
+                <strong className="text-slate-900">3. Consentimiento expreso para datos sensibles</strong>
+                <p>Debido a que tratamos datos personales sensibles, como su información de salud, requerimos su consentimiento expreso para las finalidades primarias. Este consentimiento se solicita por escrito en su expediente clínico al momento de su primera consulta.</p>
               </div>
 
               <div>
-                <strong className="text-slate-900">4. Licencia de Uso de la Aplicación y Propiedad Intelectual</strong>
-                <p>La Empresa otorga al Usuario una licencia limitada, no exclusiva, intransferible y revocable para uso personal y no comercial. Todos los derechos de propiedad industrial e intelectual sobre la Aplicación son propiedad exclusiva de la Empresa, protegidos por la Ley Federal del Derecho de Autor y la Ley Federal de Protección a la Propiedad Industrial de México.</p>
+                <strong className="text-slate-900">4. Transferencia de datos</strong>
+                <p>Sus datos personales podrán ser transferidos a terceros únicamente en los siguientes casos:</p>
+                <ul className="list-disc pl-4 space-y-0.5">
+                  <li><strong>Con profesionales de la salud:</strong> Con su consentimiento, podemos compartir su información con otros especialistas para realizar interconsultas o estudios.</li>
+                  <li><strong>Con aseguradoras:</strong> Con su consentimiento, podemos compartir su información cuando sea necesario para obtener resultados o gestionar un reembolso.</li>
+                  <li><strong>Con autoridades competentes:</strong> Si la ley lo exige, sus datos podrán ser transferidos a autoridades sin su consentimiento.</li>
+                </ul>
+                <p>Fuera de los casos mencionados, CREN no comparte sus datos con terceros.</p>
               </div>
 
               <div>
-                <strong className="text-slate-900">5. Condiciones Económicas, Pagos y Facturación (SAT)</strong>
-                <p>Precios exhibidos en Pesos Mexicanos (MXN) e incluirán el IVA correspondiente. Facturación fiscal disponible conforme a las normativas del Servicio de Administración Tributaria (SAT).</p>
+                <strong className="text-slate-900">5. Conservación y seguridad de los datos</strong>
+                <p>Sus datos se conservarán durante 5 años a partir de la última fecha de atención, según lo establece la NOM-004-SSA3-2012. Después de este periodo, la información será eliminada de forma segura.</p>
               </div>
 
               <div>
-                <strong className="text-slate-900">6. Reglas de Conducta y Usos Prohibidos</strong>
-                <p>Queda prohibido utilizar la Aplicación para fines ilícitos, introducir virus o malware, acosar o realizar transacciones contrarias a la LFPIORPI.</p>
+                <strong className="text-slate-900">6. Derechos ARCO y revocación del consentimiento</strong>
+                <p>Usted puede ejercer sus derechos de Acceso, Rectificación, Cancelación y Oposición (ARCO), o revocar su consentimiento enviando una solicitud a <strong>centrocren@gmail.com</strong> o contactando a nuestro responsable de privacidad. Plazo de respuesta: 20 días hábiles.</p>
               </div>
 
               <div>
-                <strong className="text-slate-900">7. Protección de Datos Personales y Privacidad</strong>
-                <p>El tratamiento de los datos personales proporcionados por el Usuario se regirá estrictamente por lo dispuesto en nuestro Aviso de Privacidad Integral, redactado con apego a la LFPDPPP.</p>
-              </div>
-
-              <div>
-                <strong className="text-slate-900">8. Limitación de Responsabilidad y Garantías</strong>
-                <p>La responsabilidad total de la Empresa frente al Usuario por cualquier reclamación estará limitada conforme a los montos y alcances de la LFPC.</p>
-              </div>
-
-              <div>
-                <strong className="text-slate-900">9. Cancelación, Modificaciones y Suspensión de Servicio</strong>
-                <p>La Empresa se reserva el derecho de modificar o actualizar los presentes Términos y Condiciones en cualquier momento.</p>
-              </div>
-
-              <div>
-                <strong className="text-slate-900">10. Jurisdicción, Competencia y Legislación Aplicable</strong>
-                <p><strong>10.1. Conciliación ante PROFECO:</strong> En caso de cualquier controversia, las partes acuerdan someterse en primera instancia ante la Procuraduría Federal del Consumidor (PROFECO) de los Estados Unidos Mexicanos.</p>
-                <p><strong>10.2. Tribunales Competentes:</strong> Las partes se someten expresamente a la jurisdicción y competencia de las leyes federales y de los Tribunales Competentes con sede en la Ciudad de México.</p>
+                <strong className="text-slate-900">7. Cambios a este aviso de privacidad</strong>
+                <p>Este Aviso de Privacidad puede ser modificado por cambios en la ley o en nuestras políticas internas. La versión vigente estará disponible en la recepción de CREN y en nuestro sitio web: www.crentrocren.com (Fecha de última actualización: 2 de septiembre de 2025).</p>
               </div>
             </div>
           )}
@@ -543,7 +577,7 @@ function RegistroConsentimientoContent() {
               className="mt-0.5 rounded accent-[#1a5276]"
             />
             <span className="text-xs text-slate-800 font-semibold leading-snug">
-              <strong>Aceptación Expresa:</strong> Confirmo que he leído, entiendo y acepto en su totalidad los Términos y Condiciones de Uso de la Aplicación Móvil y el Tratamiento de Datos Personales Sensibles de Salud conforme a la legislación mexicana.
+              <strong>Aceptación Expresa:</strong> Confirmo que he leído, entiendo y acepto en su totalidad el Aviso de Privacidad de Datos Personales Sensibles de Salud del Centro de Rehabilitación Especializada y de Neurodesarrollo (CREN).
             </span>
           </label>
 
@@ -588,7 +622,7 @@ function RegistroConsentimientoContent() {
         <button
           type="submit"
           disabled={submitting}
-          className="w-full bg-[#1a5276] hover:bg-[#0e2f44] text-white font-bold py-3.5 px-4 rounded-xl text-sm shadow-xl flex items-center justify-center gap-2 transition disabled:opacity-50"
+          className="w-full bg-[#1a5276] hover:bg-[#0e2f44] text-white font-bold py-3.5 px-4 rounded-xl text-sm shadow-xl flex items-center justify-center gap-2 transition disabled:opacity-50 cursor-pointer"
         >
           {submitting ? (
             <>
