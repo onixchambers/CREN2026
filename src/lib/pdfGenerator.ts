@@ -280,5 +280,8 @@ export function generateConsentPdfBase64(data: {
     </html>
   `;
 
-  return Buffer.from(htmlDoc).toString("base64");
+  if (typeof Buffer !== "undefined") {
+    return Buffer.from(htmlDoc).toString("base64");
+  }
+  return btoa(unescape(encodeURIComponent(htmlDoc)));
 }
