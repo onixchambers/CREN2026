@@ -4,7 +4,8 @@ import { useSession } from "next-auth/react";
 import { getSettings, saveSettings } from "@/app/actions/configuracion";
 import { MultiSelect } from "@/components/MultiSelect";
 import { TimezoneSelector } from "@/components/TimezoneSelector";
-import { getPhonePlaceholder } from "@/lib/phonePlaceholder";
+import { CountrySelector } from "@/components/CountrySelector";
+import { getPhonePlaceholder, parsePhone } from "@/lib/phonePlaceholder";
 
 export default function ConfiguracionPage() {
   const formatDateStr = (dateStr: string) => {
@@ -335,21 +336,35 @@ export default function ConfiguracionPage() {
                     />
                   </div>
 
-                  {/* Contacto / Teléfono */}
-                  <div className="flex flex-col gap-1 w-[125px] shrink-0">
+                  {/* Contacto / Teléfono con Banderita */}
+                  <div className="flex flex-col gap-1 w-[220px] shrink-0">
                     <label className="text-[11px] font-bold text-slate-600">Contacto</label>
-                    <input
-                      type="tel"
-                      placeholder={getPhonePlaceholder(timezone)}
-                      value={u.phone || ""}
-                      className="w-full p-2 border border-slate-300 rounded text-xs text-slate-900 focus:border-blue-500 outline-none bg-white font-medium"
-                      onChange={(e) => {
-                        const newU = [...usuarios];
-                        const idx = newU.findIndex(x => x.id === u.id);
-                        newU[idx].phone = e.target.value;
-                        setUsuarios(newU);
-                      }}
-                    />
+                    <div className="flex gap-1.5 items-center">
+                      <CountrySelector
+                        value={parsePhone(u.phone, timezone).code}
+                        onChange={(newCode) => {
+                          const parsed = parsePhone(u.phone, timezone);
+                          const newU = [...usuarios];
+                          const idx = newU.findIndex(x => x.id === u.id);
+                          newU[idx].phone = `${newCode} ${parsed.number}`.trim();
+                          setUsuarios(newU);
+                        }}
+                      />
+                      <input
+                        type="tel"
+                        placeholder={getPhonePlaceholder(timezone).replace(/^Ej\.\s*/, "")}
+                        value={parsePhone(u.phone, timezone).number}
+                        className="w-full p-2 border border-slate-300 rounded text-xs text-slate-900 focus:border-blue-500 outline-none bg-white font-medium min-w-0"
+                        onChange={(e) => {
+                          const parsed = parsePhone(u.phone, timezone);
+                          const newNumber = e.target.value;
+                          const newU = [...usuarios];
+                          const idx = newU.findIndex(x => x.id === u.id);
+                          newU[idx].phone = newNumber ? `${parsed.code} ${newNumber}` : "";
+                          setUsuarios(newU);
+                        }}
+                      />
+                    </div>
                   </div>
 
                   {/* Rol */}
@@ -911,22 +926,40 @@ export default function ConfiguracionPage() {
 
               <div className="flex flex-col gap-1">
                 <label className="text-xs font-bold text-slate-600">Contacto / Teléfono</label>
-                <input
-                  type="tel"
-                  placeholder={getPhonePlaceholder(timezone)}
-                  value={viewingUserModal.phone || ""}
-                  onChange={(e) => {
-                    const val = e.target.value;
-                    setViewingUserModal((prev: any) => ({ ...prev, phone: val }));
-                    const newU = [...usuarios];
-                    const idx = newU.findIndex(x => x.id === viewingUserModal.id);
-                    if (idx !== -1) {
-                      newU[idx].phone = val;
-                      setUsuarios(newU);
-                    }
-                  }}
-                  className="w-full p-2.5 border border-slate-300 rounded-lg text-sm text-slate-900 focus:border-blue-500 outline-none bg-slate-50 focus:bg-white font-medium"
-                />
+                <div className="flex gap-2 items-center">
+                  <CountrySelector
+                    value={parsePhone(viewingUserModal.phone, timezone).code}
+                    onChange={(newCode) => {
+                      const parsed = parsePhone(viewingUserModal.phone, timezone);
+                      const fullPhone = `${newCode} ${parsed.number}`.trim();
+                      setViewingUserModal((prev: any) => ({ ...prev, phone: fullPhone }));
+                      const newU = [...usuarios];
+                      const idx = newU.findIndex(x => x.id === viewingUserModal.id);
+                      if (idx !== -1) {
+                        newU[idx].phone = fullPhone;
+                        setUsuarios(newU);
+                      }
+                    }}
+                  />
+                  <input
+                    type="tel"
+                    placeholder={getPhonePlaceholder(timezone).replace(/^Ej\.\s*/, "")}
+                    value={parsePhone(viewingUserModal.phone, timezone).number}
+                    onChange={(e) => {
+                      const parsed = parsePhone(viewingUserModal.phone, timezone);
+                      const newNumber = e.target.value;
+                      const fullPhone = newNumber ? `${parsed.code} ${newNumber}` : "";
+                      setViewingUserModal((prev: any) => ({ ...prev, phone: fullPhone }));
+                      const newU = [...usuarios];
+                      const idx = newU.findIndex(x => x.id === viewingUserModal.id);
+                      if (idx !== -1) {
+                        newU[idx].phone = fullPhone;
+                        setUsuarios(newU);
+                      }
+                    }}
+                    className="w-full p-2.5 border border-slate-300 rounded-lg text-sm text-slate-900 focus:border-blue-500 outline-none bg-slate-50 focus:bg-white font-medium"
+                  />
+                </div>
               </div>
             </div>
 

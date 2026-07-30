@@ -4,7 +4,8 @@ import { signOut, useSession } from "next-auth/react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { getAllowTherapistEdit } from "@/app/actions/configuracion";
-import { getPhonePlaceholder } from "@/lib/phonePlaceholder";
+import { CountrySelector } from "@/components/CountrySelector";
+import { getPhonePlaceholder, parsePhone } from "@/lib/phonePlaceholder";
 
 export default function DashboardLayout({ children }: { children: React.ReactNode }) {
   const pathname = usePathname();
@@ -274,13 +275,26 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
                 <label className="text-xs font-bold text-slate-600 flex items-center gap-1.5">
                   <span>📞</span> Número de Contacto
                 </label>
-                <input
-                  type="tel"
-                  placeholder={getPhonePlaceholder(systemTimezone)}
-                  value={profileData.phone || ""}
-                  onChange={(e) => setProfileData((prev) => ({ ...prev, phone: e.target.value }))}
-                  className="w-full p-2.5 border border-slate-300 rounded-lg text-sm text-slate-900 focus:border-blue-500 outline-none bg-slate-50 focus:bg-white transition-colors"
-                />
+                <div className="flex gap-2 items-center">
+                  <CountrySelector
+                    value={parsePhone(profileData.phone, systemTimezone).code}
+                    onChange={(newCode) => {
+                      const parsed = parsePhone(profileData.phone, systemTimezone);
+                      setProfileData((prev) => ({ ...prev, phone: `${newCode} ${parsed.number}`.trim() }));
+                    }}
+                  />
+                  <input
+                    type="tel"
+                    placeholder={getPhonePlaceholder(systemTimezone).replace(/^Ej\.\s*/, "")}
+                    value={parsePhone(profileData.phone, systemTimezone).number}
+                    onChange={(e) => {
+                      const parsed = parsePhone(profileData.phone, systemTimezone);
+                      const newNum = e.target.value;
+                      setProfileData((prev) => ({ ...prev, phone: newNum ? `${parsed.code} ${newNum}` : "" }));
+                    }}
+                    className="w-full p-2.5 border border-slate-300 rounded-lg text-sm text-slate-900 focus:border-blue-500 outline-none bg-slate-50 focus:bg-white transition-colors"
+                  />
+                </div>
               </div>
             </div>
 
