@@ -285,30 +285,37 @@ export default function PacientesPage() {
                       {p.ultima || "$0.00"}
                     </td>
                     <td className="px-4 py-4" onClick={(e) => e.stopPropagation()}>
-                      <select
-                        value={p.estatus || 'Activo'}
-                        onChange={async (e) => {
-                          const newStatus = e.target.value;
-                          setPacientes(prev => prev.map(item => item.id === p.id ? { ...item, estatus: newStatus } : item));
-                          const { updatePatientStatus } = await import('@/app/actions/pacientes');
-                          const res = await updatePatientStatus(p.id, newStatus);
-                          if (!res.success) {
-                            alert("Error al actualizar el estado: " + res.error);
-                            const { getPatients } = await import('@/app/actions/pacientes');
-                            const ref = await getPatients();
-                            if (ref.success && ref.data) setPacientes(ref.data);
-                          }
-                        }}
-                        style={{ color: (p.estatus || 'Activo').toLowerCase() === 'activo' ? '#065f46' : '#ffffff' }}
-                        className={`text-[10px] font-extrabold px-2.5 py-1 rounded-md uppercase tracking-wider outline-none cursor-pointer transition-colors border ${
-                          (p.estatus || 'Activo').toLowerCase() === 'activo'
-                            ? 'bg-emerald-100 text-emerald-800 border-emerald-300 hover:bg-emerald-200'
-                            : 'bg-slate-800 text-white border-slate-900 hover:bg-slate-700'
-                        }`}
-                      >
-                        <option value="Activo" className="bg-white text-slate-800 font-medium">Activo</option>
-                        <option value="Inactivo" className="bg-white text-slate-800 font-medium">Inactivo</option>
-                      </select>
+                      {(() => {
+                        const isActivo = (p.estatus || 'Activo').toLowerCase() === 'activo';
+                        return (
+                          <select
+                            value={p.estatus || 'Activo'}
+                            onChange={async (e) => {
+                              const newStatus = e.target.value;
+                              setPacientes(prev => prev.map(item => item.id === p.id ? { ...item, estatus: newStatus } : item));
+                              const { updatePatientStatus } = await import('@/app/actions/pacientes');
+                              const res = await updatePatientStatus(p.id, newStatus);
+                              if (!res.success) {
+                                alert("Error al actualizar el estado: " + res.error);
+                                const { getPatients } = await import('@/app/actions/pacientes');
+                                const ref = await getPatients();
+                                if (ref.success && ref.data) setPacientes(ref.data);
+                              }
+                            }}
+                            style={{
+                              backgroundColor: isActivo ? '#d1fae5' : '#1e293b',
+                              color: isActivo ? '#065f46' : '#ffffff',
+                              borderColor: isActivo ? '#6ee7b7' : '#0f172a'
+                            }}
+                            className={`text-[10px] font-extrabold px-2.5 py-1 rounded-md uppercase tracking-wider outline-none cursor-pointer transition-colors border ${
+                              isActivo ? 'text-emerald-800' : '!text-white text-white'
+                            }`}
+                          >
+                            <option value="Activo" style={{ backgroundColor: '#ffffff', color: '#1e293b' }} className="bg-white text-slate-800 font-medium">Activo</option>
+                            <option value="Inactivo" style={{ backgroundColor: '#ffffff', color: '#1e293b' }} className="bg-white text-slate-800 font-medium">Inactivo</option>
+                          </select>
+                        );
+                      })()}
                     </td>
                     <td className="px-4 py-4" onClick={(e) => e.stopPropagation()}>
                       <div className="flex gap-1.5 justify-center">
