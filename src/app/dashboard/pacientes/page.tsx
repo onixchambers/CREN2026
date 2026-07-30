@@ -24,6 +24,7 @@ export default function PacientesPage() {
   const userName = session?.user?.name || "";
   const userRole = (session?.user as any)?.role || "ADMIN";
   const [allowTherapistEdit, setAllowTherapistEdit] = useState(true);
+  const [therapyPrices, setTherapyPrices] = useState<number[]>([400, 450, 500, 550, 600, 650, 700, 750, 800, 850, 900, 950]);
 
   const [pacientes, setPacientes] = useState<any[]>([]);
   const [searchTerm, setSearchTerm] = useState("");
@@ -31,15 +32,19 @@ export default function PacientesPage() {
   useEffect(() => {
     async function loadData() {
       const { getPatients } = await import('@/app/actions/pacientes');
-      const { getAllowTherapistEdit } = await import('@/app/actions/configuracion');
-      const [result, allowed] = await Promise.all([
+      const { getAllowTherapistEdit, getTherapyPrices } = await import('@/app/actions/configuracion');
+      const [result, allowed, pricesRes] = await Promise.all([
         getPatients(),
-        getAllowTherapistEdit()
+        getAllowTherapistEdit(),
+        getTherapyPrices()
       ]);
       if (result.success && result.data) {
         setPacientes(result.data);
       }
       setAllowTherapistEdit(allowed);
+      if (pricesRes.success && pricesRes.prices) {
+        setTherapyPrices(pricesRes.prices);
+      }
     }
     loadData();
   }, []);
@@ -474,14 +479,25 @@ export default function PacientesPage() {
               <div className="grid grid-cols-2 gap-2">
                 <div>
                   <label className="block text-xs font-bold text-slate-700 mb-1">Precio Terapia (MXN)</label>
-                  <input
-                    type="number"
+                  <select
                     name="precioTerapia"
                     value={editForm.precioTerapia}
                     onChange={handleEditChange}
-                    placeholder="500"
-                    className="w-full p-2 border border-slate-300 rounded text-sm text-slate-900 font-bold"
-                  />
+                    className="w-full p-2 border border-slate-300 rounded text-sm text-slate-900 font-bold bg-white"
+                  >
+                    <option value="">Seleccionar precio...</option>
+                    {(() => {
+                      const numVal = parseFloat((editForm.precioTerapia || "0").toString().replace(/[^0-9.]/g, ""));
+                      const list = [...therapyPrices];
+                      if (!isNaN(numVal) && numVal > 0 && !list.includes(numVal)) {
+                        list.push(numVal);
+                        list.sort((a, b) => a - b);
+                      }
+                      return list.map(p => (
+                        <option key={p} value={p.toString()}>${p.toFixed(2)}</option>
+                      ));
+                    })()}
+                  </select>
                 </div>
                 <div>
                   <label className="block text-xs font-bold text-slate-700 mb-1">Estado</label>

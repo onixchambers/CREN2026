@@ -420,3 +420,84 @@ export async function updateOwnUserProfile(data: { email?: string; phone?: strin
     return { success: false, error: error?.message || "Error al actualizar perfil" };
   }
 }
+
+export async function getTherapyPrices() {
+  try {
+    const s = await prisma.systemSettings.findUnique({ where: { id: 1 } });
+    const raw = (s as any)?.therapyPrices;
+    if (raw && typeof raw === "string" && raw.trim()) {
+      const parsed = raw.split(",").map(p => parseFloat(p.trim())).filter(p => !isNaN(p) && p > 0);
+      if (parsed.length > 0) {
+        return { success: true, prices: Array.from(new Set(parsed)).sort((a, b) => a - b) };
+      }
+    }
+    const defaultPrices = [400, 450, 500, 550, 600, 650, 700, 750, 800, 850, 900, 950];
+    return { success: true, prices: defaultPrices };
+  } catch (e) {
+    return { success: true, prices: [400, 450, 500, 550, 600, 650, 700, 750, 800, 850, 900, 950] };
+  }
+}
+
+export async function addTherapyPrice(price: number) {
+  try {
+    const session = await getServerSession(authOptions);
+    const userRole = ((session?.user as any)?.role || "").toUpperCase();
+    if (userRole !== "ADMIN" && userRole !== "ADMINISTRADOR") {
+      return { success: false, error: "Únicamente el usuario con rol Administrador puede agregar o modificar precios de terapia." };
+    }
+
+    if (!price || isNaN(price) || price <= 0) {
+      return { success: false, error: "El precio debe ser un número mayor a 0." };
+    }
+
+    const currentRes = await getTherapyPrices();
+    let currentPrices = currentRes.prices || [400, 450, 500, 550, 600, 650, 700, 750, 800, 850, 900, 950];
+    if (!currentPrices.includes(price)) {
+      currentPrices.push(price);
+      currentPrices.sort((a, b) => a - b);
+    }
+
+    const joinedStr = currentPrices.join(",");
+    await prisma.systemSettings.upsert({
+      where: { id: 1 },
+      update: { therapyPrices: joinedStr } as any,
+      create: { id: 1, therapyPrices: joinedStr } as any,
+    });
+
+    revalidatePath("/dashboard", "layout");
+    return { success: true, prices: currentPrices };
+  } catch (error: any) {
+    console.error("Error adding therapy price:", error);
+    return { success: false, error: error?.message || "Error al agregar precio de terapia." };
+  }
+}
+
+export async function removeTherapyPrice(price: number) {
+  try {
+    const session = await getServerSession(authOptions);
+    const userRole = ((session?.user as any)?.role || "").toUpperCase();
+    if (userRole !== "ADMIN" && userRole !== "ADMINISTRADOR") {
+      return { success: false, error: "Únicamente el usuario con rol Administrador puede eliminar precios de terapia." };
+    }
+
+    const currentRes = await getTherapyPrices();
+    let currentPrices = (currentRes.prices || []).filter(p => p !== price);
+    if (currentPrices.length === 0) {
+      currentPrices = [500];
+    }
+    currentPrices.sort((a, b) => a - b);
+
+    const joinedStr = currentPrices.join(",");
+    await prisma.systemSettings.upsert({
+      where: { id: 1 },
+      update: { therapyPrices: joinedStr } as any,
+      create: { id: 1, therapyPrices: joinedStr } as any,
+    });
+
+    revalidatePath("/dashboard", "layout");
+    return { success: true, prices: currentPrices };
+  } catch (error: any) {
+    console.error("Error removing therapy price:", error);
+    return { success: false, error: error?.message || "Error al eliminar precio de terapia." };
+  }
+}

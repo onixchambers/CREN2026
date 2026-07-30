@@ -7,7 +7,7 @@ import { getAsistenciasDB } from "@/app/actions/asistencia";
 import { getAgenda } from "@/app/actions/agenda";
 import { saveAsistenciaDB } from "@/app/actions/asistencia";
 import { deleteCita } from "@/app/actions/agenda";
-import { getTerapeutasFull, getSystemIvaRate } from "@/app/actions/configuracion";
+import { getTerapeutasFull, getSystemIvaRate, getTherapyPrices, addTherapyPrice, removeTherapyPrice } from "@/app/actions/configuracion";
 import { DateInput } from "@/components/DateInput";
 
 type Paciente = {
@@ -48,15 +48,44 @@ export default function AsistenciaPage() {
   const userName = session?.user?.name || "Administrador";
   const userRole = (session?.user as any)?.role || "ADMIN";
   const [allowTherapistEdit, setAllowTherapistEdit] = useState(true);
+  const [therapyPrices, setTherapyPrices] = useState<number[]>([400, 450, 500, 550, 600, 650, 700, 750, 800, 850, 900, 950]);
+  const [showAddPriceModal, setShowAddPriceModal] = useState(false);
+  const [newPriceInput, setNewPriceInput] = useState("");
+  const [isAddingPrice, setIsAddingPrice] = useState(false);
 
   useEffect(() => {
-    async function loadPermission() {
-      const { getAllowTherapistEdit } = await import('@/app/actions/configuracion');
-      const allowed = await getAllowTherapistEdit();
+    async function loadInitialData() {
+      const { getAllowTherapistEdit, getTherapyPrices } = await import('@/app/actions/configuracion');
+      const [allowed, pricesRes] = await Promise.all([
+        getAllowTherapistEdit(),
+        getTherapyPrices()
+      ]);
       setAllowTherapistEdit(allowed);
+      if (pricesRes.success && pricesRes.prices) {
+        setTherapyPrices(pricesRes.prices);
+      }
     }
-    loadPermission();
+    loadInitialData();
   }, []);
+
+  const handleAddPrice = async () => {
+    const val = parseFloat(newPriceInput);
+    if (isNaN(val) || val <= 0) {
+      alert("Por favor ingresa un precio válido mayor a 0.");
+      return;
+    }
+    setIsAddingPrice(true);
+    const res = await addTherapyPrice(val);
+    if (res.success && res.prices) {
+      setTherapyPrices(res.prices);
+      setFormData(prev => ({ ...prev, precioTerapia: val.toString() }));
+      setNewPriceInput("");
+      setShowAddPriceModal(false);
+    } else {
+      alert(res.error || "Error al agregar el precio.");
+    }
+    setIsAddingPrice(false);
+  };
 
   const formatDateStr = (dateStr: string) => {
     if (!dateStr) return "-";
@@ -620,22 +649,27 @@ export default function AsistenciaPage() {
                 </select>
               </div>
               <div>
-                <label className="block text-[10px] font-bold text-slate-400 uppercase mb-1">PRECIO DE TERAPIA</label>
-                <select name="precioTerapia" value={formData.precioTerapia} onChange={handleChange} className="w-full text-sm p-2 border border-slate-300 rounded focus:border-[#2980b9] outline-none text-slate-900">
-                  <option value="">Seleccionar precio...</option>
-                  <option value="400">$400.00</option>
-                  <option value="450">$450.00</option>
-                  <option value="500">$500.00</option>
-                  <option value="550">$550.00</option>
-                  <option value="600">$600.00</option>
-                  <option value="650">$650.00</option>
-                  <option value="700">$700.00</option>
-                  <option value="750">$750.00</option>
-                  <option value="800">$800.00</option>
-                  <option value="850">$850.00</option>
-                  <option value="900">$900.00</option>
-                  <option value="950">$950.00</option>
-                </select>
+                <div className="flex items-center justify-between mb-1">
+                  <label className="block text-[10px] font-bold text-slate-400 uppercase">PRECIO DE TERAPIA</label>
+                  {(userRole.toUpperCase() === "ADMIN" || userRole.toUpperCase() === "ADMINISTRADOR") && (
+                    <button
+                      type="button"
+                      onClick={() => setShowAddPriceModal(true)}
+                      className="text-[10px] font-bold text-[#27ae60] hover:text-[#219653] hover:underline flex items-center gap-0.5 cursor-pointer"
+                      title="Agregar nuevo precio de terapia"
+                    >
+                      <span>+ Agregar precio</span>
+                    </button>
+                  )}
+                </div>
+                <div className="flex items-center gap-1.5">
+                  <select name="precioTerapia" value={formData.precioTerapia} onChange={handleChange} className="w-full text-sm p-2 border border-slate-300 rounded focus:border-[#2980b9] outline-none text-slate-900 font-semibold bg-white">
+                    <option value="">Seleccionar precio...</option>
+                    {therapyPrices.map(p => (
+                      <option key={p} value={p.toString()}>${p.toFixed(2)}</option>
+                    ))}
+                  </select>
+                </div>
               </div>
             </div>
 
@@ -1006,7 +1040,28 @@ export default function AsistenciaPage() {
                 </div>
                 <div>
                   <label className="block text-[10px] font-bold text-slate-500 uppercase mb-1">Subtotal (Monto)</label>
-                  <input type="number" name="subtotal" value={editForm.subtotal} onChange={handleEditChange} className="w-full text-sm p-2 border border-slate-300 rounded focus:border-[#2980b9] outline-none text-slate-900" />
+                  <select
+                    name="subtotal"
+                    value={(() => {
+                      const numStr = (editForm.subtotal || "").toString().replace(/[^0-9.]/g, "");
+                      return numStr;
+                    })()}
+                    onChange={handleEditChange}
+                    className="w-full text-sm p-2 border border-slate-300 rounded focus:border-[#2980b9] outline-none text-slate-900 font-bold bg-white"
+                  >
+                    <option value="">Seleccionar precio...</option>
+                    {(() => {
+                      const numVal = parseFloat((editForm.subtotal || "0").toString().replace(/[^0-9.]/g, ""));
+                      const list = [...therapyPrices];
+                      if (!isNaN(numVal) && numVal > 0 && !list.includes(numVal)) {
+                        list.push(numVal);
+                        list.sort((a, b) => a - b);
+                      }
+                      return list.map(p => (
+                        <option key={p} value={p.toString()}>${p.toFixed(2)}</option>
+                      ));
+                    })()}
+                  </select>
                 </div>
                 <div>
                   <label className="block text-[10px] font-bold text-slate-500 uppercase mb-1">Método de Pago</label>
@@ -1033,6 +1088,51 @@ export default function AsistenciaPage() {
             <div className="p-4 bg-slate-50 border-t border-slate-100">
               <button onClick={saveEdit} className="w-full bg-[#1a5276] hover:bg-[#0e2f44] text-white py-2 rounded font-semibold transition-colors">
                 Guardar Cambios
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+      {/* MODAL AGREGAR PRECIO DE TERAPIA (SOLO ADMIN) */}
+      {showAddPriceModal && (
+        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4 animate-in fade-in">
+          <div className="bg-white rounded-xl shadow-xl w-full max-w-sm overflow-hidden p-6 space-y-4 animate-in zoom-in-95 duration-200">
+            <div className="flex justify-between items-center border-b border-slate-100 pb-2">
+              <h3 className="font-bold text-[#1a5276] text-sm flex items-center gap-1.5">
+                <span>🏷️</span> Agregar Precio de Terapia
+              </h3>
+              <button onClick={() => setShowAddPriceModal(false)} className="text-slate-400 hover:text-slate-600 font-bold">✕</button>
+            </div>
+
+            <div>
+              <label className="block text-xs font-bold text-slate-700 mb-1">Monto del Precio ($ MXN)</label>
+              <input
+                type="number"
+                step="50"
+                min="1"
+                placeholder="Ej. 1200"
+                value={newPriceInput}
+                onChange={(e) => setNewPriceInput(e.target.value)}
+                className="w-full text-sm p-2.5 border border-slate-300 rounded-lg focus:border-[#27ae60] outline-none text-slate-900 font-black text-center"
+              />
+              <p className="text-[11px] text-slate-500 mt-1.5">Este precio quedará guardado para todos los usuarios en Asistencia, Pacientes y Reportes.</p>
+            </div>
+
+            <div className="flex gap-2 pt-2 border-t border-slate-100">
+              <button
+                type="button"
+                disabled={isAddingPrice || !newPriceInput}
+                onClick={handleAddPrice}
+                className="flex-1 bg-[#27ae60] hover:bg-[#219653] disabled:opacity-50 text-white font-bold py-2 rounded-lg text-xs transition"
+              >
+                {isAddingPrice ? "Guardando..." : "Guardar Precio"}
+              </button>
+              <button
+                type="button"
+                onClick={() => setShowAddPriceModal(false)}
+                className="flex-1 bg-slate-100 text-slate-600 font-semibold py-2 rounded-lg text-xs hover:bg-slate-200 transition"
+              >
+                Cancelar
               </button>
             </div>
           </div>

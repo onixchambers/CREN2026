@@ -135,6 +135,7 @@ model SystemSettings {
   googleDriveRefreshToken String @default("")
   googleDriveWebhookUrl String   @default("")
   timezone              String   @default("America/Mexico_City")
+  therapyPrices         String?  @default("")
   updatedAt             DateTime @updatedAt
 }
 
