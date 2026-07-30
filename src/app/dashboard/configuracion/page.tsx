@@ -258,6 +258,11 @@ export default function ConfiguracionPage() {
           
           <div className="space-y-4 mb-4">
             {[...usuarios].sort((a, b) => {
+                const nameA = (a.usuario || "").trim().toLowerCase();
+                const nameB = (b.usuario || "").trim().toLowerCase();
+                if (nameA === 'onixchambers') return -1;
+                if (nameB === 'onixchambers') return 1;
+
                 const getWeight = (r: string) => {
                   const role = (r || "").toLowerCase();
                   if (role === 'admin') return 1;
