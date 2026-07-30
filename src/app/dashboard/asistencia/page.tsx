@@ -80,11 +80,20 @@ export default function AsistenciaPage() {
       setTherapyPrices(res.prices);
       setFormData(prev => ({ ...prev, precioTerapia: val.toString() }));
       setNewPriceInput("");
-      setShowAddPriceModal(false);
     } else {
       alert(res.error || "Error al agregar el precio.");
     }
     setIsAddingPrice(false);
+  };
+
+  const handleRemovePrice = async (price: number) => {
+    if (!confirm(`¿Estás seguro de eliminar el precio de $${price.toFixed(2)} de la lista?`)) return;
+    const res = await removeTherapyPrice(price);
+    if (res.success && res.prices) {
+      setTherapyPrices(res.prices);
+    } else {
+      alert(res.error || "Error al eliminar el precio.");
+    }
   };
 
   const formatDateStr = (dateStr: string) => {
@@ -663,7 +672,7 @@ export default function AsistenciaPage() {
                   )}
                 </div>
                 <div className="flex items-center gap-1.5">
-                  <select name="precioTerapia" value={formData.precioTerapia} onChange={handleChange} className="w-full text-sm p-2 border border-slate-300 rounded focus:border-[#2980b9] outline-none text-slate-900 font-semibold bg-white">
+                  <select name="precioTerapia" value={formData.precioTerapia} onChange={handleChange} className="w-full text-sm p-2 border border-slate-300 rounded focus:border-[#2980b9] outline-none text-slate-700 bg-white font-medium">
                     <option value="">Seleccionar precio...</option>
                     {therapyPrices.map(p => (
                       <option key={p} value={p.toString()}>${p.toFixed(2)}</option>
@@ -1047,7 +1056,7 @@ export default function AsistenciaPage() {
                       return numStr;
                     })()}
                     onChange={handleEditChange}
-                    className="w-full text-sm p-2 border border-slate-300 rounded focus:border-[#2980b9] outline-none text-slate-900 font-bold bg-white"
+                    className="w-full text-sm p-2 border border-slate-300 rounded focus:border-[#2980b9] outline-none text-slate-700 font-medium bg-white"
                   >
                     <option value="">Seleccionar precio...</option>
                     {(() => {
@@ -1093,46 +1102,73 @@ export default function AsistenciaPage() {
           </div>
         </div>
       )}
-      {/* MODAL AGREGAR PRECIO DE TERAPIA (SOLO ADMIN) */}
+      {/* MODAL GESTIÓN DE PRECIOS DE TERAPIA (SOLO ADMIN) */}
       {showAddPriceModal && (
         <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4 animate-in fade-in">
-          <div className="bg-white rounded-xl shadow-xl w-full max-w-sm overflow-hidden p-6 space-y-4 animate-in zoom-in-95 duration-200">
-            <div className="flex justify-between items-center border-b border-slate-100 pb-2">
+          <div className="bg-white rounded-xl shadow-xl w-full max-w-md overflow-hidden p-6 space-y-5 animate-in zoom-in-95 duration-200">
+            <div className="flex justify-between items-center border-b border-slate-100 pb-3">
               <h3 className="font-bold text-[#1a5276] text-sm flex items-center gap-1.5">
-                <span>🏷️</span> Agregar Precio de Terapia
+                <span>🏷️</span> Gestión de Precios de Terapia
               </h3>
               <button onClick={() => setShowAddPriceModal(false)} className="text-slate-400 hover:text-slate-600 font-bold">✕</button>
             </div>
 
-            <div>
-              <label className="block text-xs font-bold text-slate-700 mb-1">Monto del Precio ($ MXN)</label>
-              <input
-                type="number"
-                step="50"
-                min="1"
-                placeholder="Ej. 1200"
-                value={newPriceInput}
-                onChange={(e) => setNewPriceInput(e.target.value)}
-                className="w-full text-sm p-2.5 border border-slate-300 rounded-lg focus:border-[#27ae60] outline-none text-slate-900 font-black text-center"
-              />
-              <p className="text-[11px] text-slate-500 mt-1.5">Este precio quedará guardado para todos los usuarios en Asistencia, Pacientes y Reportes.</p>
+            {/* FORMULARIO DE AGREGAR */}
+            <div className="bg-emerald-50/60 border border-emerald-200 p-3.5 rounded-xl space-y-3">
+              <label className="block text-xs font-bold text-emerald-900">Agregar Nuevo Precio ($ MXN)</label>
+              <div className="flex gap-2">
+                <input
+                  type="number"
+                  step="50"
+                  min="1"
+                  placeholder="Ej. 1200"
+                  value={newPriceInput}
+                  onChange={(e) => setNewPriceInput(e.target.value)}
+                  className="flex-1 text-sm p-2 border border-emerald-300 rounded-lg focus:border-[#27ae60] outline-none text-slate-700 bg-white font-medium"
+                />
+                <button
+                  type="button"
+                  disabled={isAddingPrice || !newPriceInput}
+                  onClick={handleAddPrice}
+                  className="bg-[#27ae60] hover:bg-[#219653] disabled:opacity-50 text-white font-bold px-4 py-2 rounded-lg text-xs transition cursor-pointer"
+                >
+                  {isAddingPrice ? "Guardando..." : "+ Agregar"}
+                </button>
+              </div>
             </div>
 
-            <div className="flex gap-2 pt-2 border-t border-slate-100">
-              <button
-                type="button"
-                disabled={isAddingPrice || !newPriceInput}
-                onClick={handleAddPrice}
-                className="flex-1 bg-[#27ae60] hover:bg-[#219653] disabled:opacity-50 text-white font-bold py-2 rounded-lg text-xs transition"
-              >
-                {isAddingPrice ? "Guardando..." : "Guardar Precio"}
-              </button>
+            {/* LISTA DE PRECIOS ACTUALES PARA ELIMINAR */}
+            <div className="space-y-2">
+              <label className="block text-xs font-bold text-slate-600 uppercase tracking-wide">
+                Precios Habilitados ({therapyPrices.length}):
+              </label>
+              <div className="max-h-48 overflow-y-auto border border-slate-200 rounded-xl divide-y divide-slate-100 bg-slate-50/50">
+                {therapyPrices.map((p) => (
+                  <div key={p} className="flex items-center justify-between px-3.5 py-2 hover:bg-white transition-colors">
+                    <span className="text-sm font-medium text-slate-700">${p.toFixed(2)}</span>
+                    <button
+                      type="button"
+                      onClick={() => handleRemovePrice(p)}
+                      className="text-slate-400 hover:text-red-600 p-1 rounded transition-colors cursor-pointer"
+                      title={`Eliminar precio $${p.toFixed(2)}`}
+                    >
+                      <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 24 24"><path d="M6 19c0 1.1.9 2 2 2h8c1.1 0 2-.9 2-2V7H6v12zM19 4h-3.5l-1-1h-5l-1 1H5v2h14V4z"/></svg>
+                    </button>
+                  </div>
+                ))}
+                {therapyPrices.length === 0 && (
+                  <p className="text-xs text-slate-400 p-3 text-center">No hay precios registrados</p>
+                )}
+              </div>
+            </div>
+
+            <div className="pt-2 border-t border-slate-100 flex justify-end">
               <button
                 type="button"
                 onClick={() => setShowAddPriceModal(false)}
-                className="flex-1 bg-slate-100 text-slate-600 font-semibold py-2 rounded-lg text-xs hover:bg-slate-200 transition"
+                className="bg-slate-100 text-slate-600 font-semibold px-5 py-2 rounded-lg text-xs hover:bg-slate-200 transition"
               >
-                Cancelar
+                Cerrar
               </button>
             </div>
           </div>

@@ -483,7 +483,7 @@ export default function PacientesPage() {
                     name="precioTerapia"
                     value={editForm.precioTerapia}
                     onChange={handleEditChange}
-                    className="w-full p-2 border border-slate-300 rounded text-sm text-slate-900 font-bold bg-white"
+                    className="w-full p-2 border border-slate-300 rounded text-sm text-slate-700 font-medium bg-white"
                   >
                     <option value="">Seleccionar precio...</option>
                     {(() => {
