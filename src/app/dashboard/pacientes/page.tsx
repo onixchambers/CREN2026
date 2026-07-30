@@ -299,6 +299,7 @@ export default function PacientesPage() {
                             if (ref.success && ref.data) setPacientes(ref.data);
                           }
                         }}
+                        style={{ color: (p.estatus || 'Activo').toLowerCase() === 'activo' ? '#065f46' : '#ffffff' }}
                         className={`text-[10px] font-extrabold px-2.5 py-1 rounded-md uppercase tracking-wider outline-none cursor-pointer transition-colors border ${
                           (p.estatus || 'Activo').toLowerCase() === 'activo'
                             ? 'bg-emerald-100 text-emerald-800 border-emerald-300 hover:bg-emerald-200'
@@ -521,10 +522,15 @@ export default function PacientesPage() {
                     name="estatus"
                     value={editForm.estatus}
                     onChange={handleEditChange}
-                    className="w-full p-2 border border-slate-300 rounded text-sm text-slate-900 bg-white"
+                    style={{ color: (editForm.estatus || 'Activo').toLowerCase() === 'activo' ? '#065f46' : '#ffffff' }}
+                    className={`w-full p-2 border rounded text-sm font-semibold outline-none transition-colors ${
+                      (editForm.estatus || 'Activo').toLowerCase() === 'activo'
+                        ? 'bg-emerald-100 border-emerald-300'
+                        : 'bg-slate-800 border-slate-900'
+                    }`}
                   >
-                    <option value="Activo">Activo</option>
-                    <option value="Inactivo">Inactivo</option>
+                    <option value="Activo" className="bg-white text-slate-800 font-medium">Activo</option>
+                    <option value="Inactivo" className="bg-white text-slate-800 font-medium">Inactivo</option>
                   </select>
                 </div>
               </div>
