@@ -170,11 +170,11 @@ export async function getPatients() {
         }
       }
 
-      // Formatear precioTerapia: si hay varios montos (ej. 500 y 900) -> "500 / 900"
+      // Formatear precioTerapia: si hay varios montos (ej. 500 y 900) -> "500 / 900", de lo contrario "—"
       const sortedPrices = Array.from(pricesSet).sort((a, b) => a - b);
       const precioTerapiaDisplay = sortedPrices.length > 0 
         ? sortedPrices.map(pr => `${pr}`).join(" / ")
-        : (p.precioTerapia || "500");
+        : (p.precioTerapia && p.precioTerapia !== "500" ? p.precioTerapia : "—");
 
       const saldoCalculado = totalPagadoSum - totalCostoSum;
 

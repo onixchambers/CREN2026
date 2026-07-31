@@ -229,7 +229,7 @@ export default function PacientesPage() {
               {paginatedPacientes.length > 0 ? paginatedPacientes.map((p) => {
                 const asistencias = p.asistencias || 0;
                 const totalSesiones = parseInt(p.sesiones || p.totalSesiones || "10", 10) || 10;
-                const precio = p.precioTerapia || "500";
+                const precio = p.precioTerapia || "—";
 
                 return (
                   <tr key={p.id} className="hover:bg-slate-50 transition-colors cursor-pointer" onClick={() => setViewingPatient(p)}>
@@ -272,9 +272,11 @@ export default function PacientesPage() {
                       {renderSaldo(p)}
                     </td>
                     <td className="px-4 py-4 font-bold text-[#1a5276]">
-                      {precio.includes("/")
-                        ? precio.split(" / ").map((val: string) => `$${val.replace("$", "")}`).join(" / ")
-                        : (precio.startsWith("$") ? precio : `$${precio}`)}
+                      {precio === "—" || !precio
+                        ? "—"
+                        : (precio.includes("/")
+                            ? precio.split(" / ").map((val: string) => `$${val.replace("$", "")}`).join(" / ")
+                            : (precio.startsWith("$") ? precio : `$${precio}`))}
                     </td>
                     <td className="px-4 py-4">
                       <span className="bg-blue-50 text-blue-700 border border-blue-200 px-2.5 py-1 rounded-full text-[11px] font-semibold whitespace-nowrap">
