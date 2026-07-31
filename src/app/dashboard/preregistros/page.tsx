@@ -306,7 +306,7 @@ export default function PreregistrosPage() {
         return phoneStr.replace(matched.code, "").trim();
       }
       return phoneStr;
-    };    const pacContact = parsePhone(ficha.pacienteContacto, setPacienteCountryCode);
+    const pacContact = parsePhone(ficha.pacienteContacto || ficha.phone, setPacienteCountryCode);
     const mContact = parsePhone(ficha.madreContacto, setMadreCountryCode);
     const pContact = parsePhone(ficha.padreContacto, setPadreCountryCode);
     const oContact = parsePhone(ficha.otrosContacto, setOtrosCountryCode);
