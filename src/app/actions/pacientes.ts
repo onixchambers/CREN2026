@@ -197,14 +197,22 @@ export async function getPatients() {
         }
       }
 
-      const totalSesionesStr = latestTotalSesiones > 0 ? latestTotalSesiones.toString() : (p.totalSesiones || p.sesiones || "5");
+      // Si tiene sesiones/asistencias pero valoracionesCount es 0, asegurar al menos 1 valoración (la sesión inicial)
+      const finalValoracionesCount = (valoracionesCount === 0 && (asistenciasCount > 0 || p.sessions.length > 0))
+        ? 1
+        : valoracionesCount;
+
+      // Calcular denominador total de sesiones: máximo entre asistencias, paquete guardado y fallback (mínimo igual a asistenciasCount)
+      const dbSavedSesiones = parseInt(p.totalSesiones || p.sesiones || "0") || 0;
+      const calcTotalSesiones = Math.max(asistenciasCount, latestTotalSesiones, dbSavedSesiones, 5);
+      const totalSesionesStr = calcTotalSesiones.toString();
 
       return {
         ...p,
         medicoTratante: effectiveMedicoTratante || p.medicoTratante || "General",
         sessionTherapists: uniqueTherapists,
         asistencias: asistenciasCount,
-        valoraciones: valoracionesCount,
+        valoraciones: finalValoracionesCount,
         sesiones: totalSesionesStr,
         totalSesiones: totalSesionesStr,
         totalPagado: totalPagadoSum.toFixed(2),
