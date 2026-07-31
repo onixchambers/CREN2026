@@ -12,6 +12,7 @@ import {
 } from "@/app/actions/preregistro";
 import { uploadInformePDFToDrive, uploadConsentPDFAction } from "@/app/actions/informes";
 import { getPhonePlaceholder } from "@/lib/phonePlaceholder";
+import { generateConsentPdfBase64 } from "@/lib/pdfGenerator";
 import { getSystemTimezone } from "@/app/actions/configuracion";
 
 export default function PreregistrosPage() {
