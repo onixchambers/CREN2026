@@ -195,6 +195,8 @@ export async function getAsistenciasDB(_ts?: string) {
     Object.values(patientAttendanceMap).forEach(records => {
       records.sort((a, b) => new Date(a.s.date).getTime() - new Date(b.s.date).getTime());
       
+      let runningBalance = 0;
+
       records.forEach((rec, index) => {
         const { s, extra } = rec;
         const sessionNum = index + 1;
@@ -202,6 +204,12 @@ export async function getAsistenciasDB(_ts?: string) {
         const totalFromNotes = parseInt(extra.sesiones || extra.numeroSesiones || "1");
         const totalCount = Math.max(totalFromNotes, patientSessions.length);
         const displaySesiones = totalCount > 1 ? `${sessionNum}/${totalCount}` : `${sessionNum}`;
+
+        const montoP = parseFloat(extra.montoPago || "0");
+        const costoS = parseFloat(extra.costoSesion || extra.precioTerapia || "0");
+        
+        // Sumar pago y restar costo de la sesión al saldo acumulado progresivo
+        runningBalance = runningBalance + montoP - costoS;
 
         let metodoPagoStr = (extra.metodoPago && extra.metodoPago !== "SÍ" && extra.metodoPago !== "No") ? extra.metodoPago : (extra.metodoPago2 ? `Mixto (${extra.metodoPago || 'P1'}: $${extra.montoPago || 0}, ${extra.metodoPago2}: $${extra.montoPago2 || 0})` : (extra.metodoPago1 || "Efectivo"));
 
@@ -221,7 +229,7 @@ export async function getAsistenciasDB(_ts?: string) {
           fact: extra.solicitaFactura ? "Sí" : "No",
           subtotal: extra.subtotal != null ? "$" + Number(extra.subtotal).toFixed(2) : "$0.00",
           total: extra.total != null ? "$" + Number(extra.total).toFixed(2) : "$0.00",
-          saldo: extra.saldo != null ? Number(extra.saldo) : 0,
+          saldo: runningBalance,
           obs: extra.obs || "-",
           creadoPor: extra.creadoPor || "-",
           terapeuta: s.therapist?.name || "-"
