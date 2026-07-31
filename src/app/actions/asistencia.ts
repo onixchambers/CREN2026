@@ -69,13 +69,38 @@ export async function saveAsistenciaDB(data: any) {
       }
     }
 
-    // Calcular saldo
-    let saldo = 0;
+    // Calcular saldo acumulado previo del paciente (créditos a favor o adeudos anteriores)
+    let saldoPrevio = 0;
+    if (patient.id) {
+      const pObj = await prisma.patient.findUnique({
+        where: { id: patient.id },
+        include: { sessions: true }
+      });
+      if (pObj) {
+        let totalPag = 0;
+        let totalCos = 0;
+        for (const s of pObj.sessions) {
+          if (targetSession && s.id === targetSession.id) continue;
+          if (s.notes) {
+            try {
+              const n = JSON.parse(s.notes);
+              const m = parseFloat(n.montoPago || "0");
+              const c = parseFloat(n.costoSesion || n.precioTerapia || "0");
+              const est = (n.estadoAsistencia || "").toLowerCase();
+              const isAttended = est === "asistio" || est === "cancelo sin anticipacion" || s.status === "COMPLETED";
+              if (!isNaN(m) && m > 0) totalPag += m;
+              if (!isNaN(c) && c > 0 && isAttended) totalCos += c;
+            } catch(e) {}
+          }
+        }
+        saldoPrevio = totalPag - totalCos;
+      }
+    }
+
+    // Calcular saldo final incluyendo crédito previo (ej: +100 previo + 400 pago - 500 costo = 0.00)
     const montoP = parseFloat(data.montoPago || "0");
     const costoS = parseFloat(data.costoSesion || data.precioTerapia || "0");
-    if (costoS > 0 || montoP > 0) {
-      saldo = montoP - costoS;
-    }
+    const saldo = saldoPrevio + montoP - costoS;
 
     // Datos financieros a guardar
     const estadoVal = data.estado || data.estadoAsistencia || "";

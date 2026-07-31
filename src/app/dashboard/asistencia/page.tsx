@@ -212,7 +212,8 @@ export default function AsistenciaPage() {
           sexo: p.sexo || "—",
           nac: p.fechaNacimiento || "—",
           edad: p.age ? p.age.toString() : "—",
-          medicoTratante: p.medicoTratante
+          medicoTratante: p.medicoTratante,
+          saldoCalculado: p.saldoCalculado || "0.00"
         }));
         setPacientes(mapped);
       }
@@ -270,7 +271,8 @@ export default function AsistenciaPage() {
         pacienteNombre: p.paciente,
         pacienteNac: p.nac !== "—" ? p.nac : "",
         pacienteSexo: normalizeSexo(p.sexo),
-        pacienteEdad: p.edad
+        pacienteEdad: p.edad,
+        saldoDisponible: p.saldoCalculado || "0.00"
       });
     } else {
       setFormData({
@@ -279,7 +281,8 @@ export default function AsistenciaPage() {
         pacienteNombre: val,
         pacienteNac: "",
         pacienteSexo: "",
-        pacienteEdad: ""
+        pacienteEdad: "",
+        saldoDisponible: "0.00"
       });
     }
   };
@@ -689,7 +692,8 @@ export default function AsistenciaPage() {
                               pacienteNombre: p.paciente,
                               pacienteNac: p.nac !== "—" ? p.nac : "",
                               pacienteSexo: normalizeSexo(p.sexo),
-                              pacienteEdad: p.edad
+                              pacienteEdad: p.edad,
+                              saldoDisponible: p.saldoCalculado || "0.00"
                             });
                             setShowDropdown(false);
                           }}
@@ -762,12 +766,12 @@ export default function AsistenciaPage() {
               <div>
                 <label className="block text-[10px] font-bold text-slate-400 uppercase mb-1">SALDO DISPONIBLE</label>
                 {(() => {
+                  const saldoPrevioF = parseFloat(formData.saldoDisponible || "0");
                   const p1 = parseFloat(formData.montoPago || "0");
                   const p2 = showSegundoPago ? parseFloat(formData.montoPago2 || "0") : 0;
                   const montoF = p1 + p2;
                   const costoSesionF = parseFloat(formData.precioTerapia || "0");
-                  let saldoF = 0;
-                  if (montoF > 0 || costoSesionF > 0) saldoF = montoF - costoSesionF;
+                  const saldoF = saldoPrevioF + montoF - costoSesionF;
                   const isNeg = saldoF < 0;
                   return (
                     <div className="relative">
