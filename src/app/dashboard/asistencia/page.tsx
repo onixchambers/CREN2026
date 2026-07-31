@@ -117,8 +117,8 @@ export default function AsistenciaPage() {
     return d.toISOString().split("T")[0];
   };
   
-  const [filtroDesde, setFiltroDesde] = useState(getFirstDayOfMonth());
-  const [filtroHasta, setFiltroHasta] = useState(hoy);
+  const [filtroDesde, setFiltroDesde] = useState("");
+  const [filtroHasta, setFiltroHasta] = useState("");
   const [filtroEstado, setFiltroEstado] = useState("Todos");
   const [availableAreas, setAvailableAreas] = useState<string[]>(["Psicología", "Lenguaje", "Fisioterapia"]);
   const [terapeutas, setTerapeutas] = useState<string[]>([]);
@@ -854,33 +854,41 @@ export default function AsistenciaPage() {
           </button>
         </div>
 
-        <div className="bg-slate-50 border-b border-slate-200 p-3 flex flex-wrap items-center gap-4">
-          <div className="flex items-center gap-2">
-            <label className="text-[11px] font-semibold text-slate-500">Desde:</label>
-            <DateInput value={filtroDesde} onChange={e => setFiltroDesde(e.target.value)} className="text-xs p-1.5 border border-slate-300 rounded outline-none text-slate-700 bg-white" />
+        <div className="bg-slate-50 border-b border-slate-200 p-3 flex flex-wrap items-center justify-between gap-3">
+          <div className="flex flex-wrap items-center gap-3">
+            <div className="flex items-center gap-2">
+              <label className="text-[11px] font-semibold text-slate-500">Desde:</label>
+              <DateInput value={filtroDesde} onChange={e => setFiltroDesde(typeof e === "string" ? e : e.target.value)} className="text-xs p-1.5 border border-slate-300 rounded outline-none text-slate-700 bg-white" />
+            </div>
+            <div className="flex items-center gap-2">
+              <label className="text-[11px] font-semibold text-slate-500">Hasta:</label>
+              <DateInput value={filtroHasta} onChange={e => setFiltroHasta(typeof e === "string" ? e : e.target.value)} className="text-xs p-1.5 border border-slate-300 rounded outline-none text-slate-700 bg-white" />
+            </div>
+            <div className="flex items-center gap-2">
+              <label className="text-[11px] font-semibold text-slate-500">Estado:</label>
+              <select value={filtroEstado} onChange={e => setFiltroEstado(e.target.value)} className="w-32 text-xs p-1.5 border border-slate-300 rounded outline-none text-slate-700 bg-white font-medium">
+                <option value="Todos">Todos</option>
+                <option value="Asistio">Asistió</option>
+                <option value="Cancelo anticipadamente">Canceló anticipadamente</option>
+                <option value="Cancelo sin anticipacion">Canceló sin anticipación</option>
+                <option value="Cancelo el centro">Canceló el centro</option>
+                <option value="Alta">Alta</option>
+                <option value="Baja">Baja</option>
+              </select>
+            </div>
           </div>
-          <div className="flex items-center gap-2">
-            <label className="text-[11px] font-semibold text-slate-500">Hasta:</label>
-            <DateInput value={filtroHasta} onChange={e => setFiltroHasta(e.target.value)} className="text-xs p-1.5 border border-slate-300 rounded outline-none text-slate-700 bg-white" />
-          </div>
-          <div className="flex items-center gap-2">
-            <label className="text-[11px] font-semibold text-slate-500">Estado:</label>
-            <select value={filtroEstado} onChange={e => setFiltroEstado(e.target.value)} className="w-32 text-xs p-1.5 border border-slate-300 rounded outline-none text-slate-700 bg-white">
-              <option value="Todos">Todos</option>
-              <option value="Asistio">Asistió</option>
-              <option value="Cancelo anticipadamente">Canceló anticipadamente</option>
-              <option value="Cancelo sin anticipacion">Canceló sin anticipación</option>
-              <option value="Cancelo el centro">Canceló el centro</option>
-              <option value="Alta">Alta</option>
-              <option value="Baja">Baja</option>
-            </select>
-          </div>
-          <div className="flex items-center gap-2 ml-2">
-            <button className="bg-[#0e2f44] hover:bg-[#1a5276] text-white px-4 py-1.5 rounded text-xs font-semibold flex items-center gap-2 transition-colors">
-              <svg className="w-3 h-3" fill="currentColor" viewBox="0 0 24 24"><path d="M10 18h4v-2h-4v2zM3 6v2h18V6H3zm3 7h12v-2H6v2z"/></svg>
-              Filtrar
+
+          <div className="flex flex-wrap items-center gap-2">
+            <button type="button" onClick={() => { setFiltroDesde(""); setFiltroHasta(""); setFiltroEstado("Todos"); }} className="bg-[#1a5276] text-white hover:bg-[#0e2f44] px-3 py-1 rounded text-xs font-semibold transition-colors cursor-pointer" title="Ver registros pasados, presentes y futuros">
+              Ver Todos (Permanente)
             </button>
-            <button type="button" onClick={() => {setFiltroDesde(getFirstDayOfMonth()); setFiltroHasta(hoy); setFiltroEstado("Todos");}} className="bg-white border border-slate-300 text-slate-600 hover:bg-slate-50 px-4 py-1.5 rounded text-xs font-semibold flex items-center gap-2 transition-colors">
+            <button type="button" onClick={() => { setFiltroDesde(hoy); setFiltroHasta(hoy); }} className="bg-white border border-slate-300 text-slate-700 hover:bg-slate-100 px-3 py-1 rounded text-xs font-semibold transition-colors cursor-pointer">
+              Hoy
+            </button>
+            <button type="button" onClick={() => { setFiltroDesde(getFirstDayOfMonth()); setFiltroHasta(hoy); }} className="bg-white border border-slate-300 text-slate-700 hover:bg-slate-100 px-3 py-1 rounded text-xs font-semibold transition-colors cursor-pointer">
+              Este Mes
+            </button>
+            <button type="button" onClick={() => { setFiltroDesde(""); setFiltroHasta(""); setFiltroEstado("Todos"); }} className="bg-white border border-slate-300 text-slate-600 hover:bg-slate-50 px-3 py-1 rounded text-xs font-semibold flex items-center gap-1 transition-colors cursor-pointer">
               <svg className="w-3 h-3" fill="currentColor" viewBox="0 0 24 24"><path d="M19 6.41L17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z"/></svg>
               Limpiar
             </button>
