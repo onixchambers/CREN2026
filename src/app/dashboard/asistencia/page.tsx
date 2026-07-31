@@ -1294,8 +1294,8 @@ export default function AsistenciaPage() {
 
       {/* MODAL PREFACTURA PDF EN FORMATO CREN */}
       {prefacturaModalData && (
-        <div className="fixed inset-0 z-50 bg-black/60 flex items-center justify-center p-4 overflow-y-auto print:p-0 print:static print:bg-white">
-          <div className="bg-white rounded-2xl max-w-2xl w-full p-6 space-y-4 shadow-2xl animate-in zoom-in-95 duration-200 print:shadow-none print:p-0 print:w-full">
+        <div className="fixed inset-0 z-50 bg-black/60 flex items-center justify-center p-4 overflow-y-auto print:p-0 print:m-0 print:static print:bg-white print:block">
+          <div className="bg-white rounded-2xl max-w-2xl w-full p-6 space-y-4 shadow-2xl animate-in zoom-in-95 duration-200 print:shadow-none print:p-0 print:m-0 print:w-[8.5in] print:max-w-none print:rounded-none">
             {/* BOTONES SUPERIORES */}
             <div className="flex items-center justify-between border-b border-slate-200 pb-3 print:hidden">
               <div className="flex items-center gap-2">
@@ -1320,8 +1320,8 @@ export default function AsistenciaPage() {
               </div>
             </div>
 
-            {/* HOJA DE PREFACTURA IDÉNTICA A LA HOJA CREN */}
-            <div className="border border-slate-300 rounded-xl overflow-hidden bg-white text-slate-900 font-sans print:border-none">
+            {/* HOJA DE PREFACTURA IDÉNTICA A LA HOJA CREN (FORMATO 8.5" x 8") */}
+            <div className="border border-slate-300 rounded-xl overflow-hidden bg-white text-slate-900 font-sans print:border-none print:rounded-none print:w-[8.5in] print:min-h-[8in]">
               {/* BANNER VERDE AZULADO TRASLÚCIDO IDÉNTICO A LA BARRA CREN */}
               <div className="bg-[#1a5276]/90 backdrop-blur-md text-white p-4 flex items-center justify-between border-b-4 border-[#0e2f44]">
                 <div className="flex items-center gap-3">
