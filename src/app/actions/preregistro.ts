@@ -88,7 +88,6 @@ export async function submitPreRegistration(formData: any, clientMetadata: { ip?
       origen: origen || "Google",
       medicoTratante: medicoTratante || "Administrador",
       escuela: escuela || null,
-      pacienteContacto: pacienteContacto || null,
       madreNombre: madreNombre || null,
       madreContacto: madreContacto || null,
       principalMadre: !!principalMadre,
@@ -106,7 +105,9 @@ export async function submitPreRegistration(formData: any, clientMetadata: { ip?
       riesgoFuga: !!riesgoFuga,
       noSepara: !!noSepara,
       otrasAlertas: !!otrasAlertas,
-      observacionesAdmin: observacionesAdmin || null,
+      observacionesAdmin: pacienteContacto 
+        ? (observacionesAdmin ? `[Teléfono Paciente: ${pacienteContacto}]\n${observacionesAdmin}` : `[Teléfono Paciente: ${pacienteContacto}]`)
+        : (observacionesAdmin || null),
       signatureDataUrl: signatureDataUrl,
       ipAddress: clientMetadata.ip || "127.0.0.1",
       userAgent: clientMetadata.userAgent || "Mobile Device",

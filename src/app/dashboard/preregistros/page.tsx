@@ -230,7 +230,12 @@ export default function PreregistrosPage() {
       return cleaned;
     };
 
-    const pacContact = parsePhone(preReg.pacienteContacto, setPacienteCountryCode);
+    let rawPacContact = preReg.pacienteContacto || "";
+    if (!rawPacContact && preReg.observacionesAdmin && preReg.observacionesAdmin.includes("[Teléfono Paciente:")) {
+      const match = preReg.observacionesAdmin.match(/\[Teléfono Paciente:\s*([^\]]+)\]/);
+      if (match) rawPacContact = match[1].trim();
+    }
+    const pacContact = parsePhone(rawPacContact, setPacienteCountryCode);
     const mContact = parsePhone(preReg.madreContacto, setMadreCountryCode);
     const pContact = parsePhone(preReg.padreContacto, setPadreCountryCode);
     const oContact = parsePhone(preReg.otrosContacto, setOtrosCountryCode);
