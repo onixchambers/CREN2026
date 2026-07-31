@@ -922,8 +922,7 @@ export default function AsistenciaPage() {
                 <option value="Cancelo anticipadamente">Canceló anticipadamente</option>
                 <option value="Cancelo sin anticipacion">Canceló sin anticipación</option>
                 <option value="Cancelo el centro">Canceló el centro</option>
-                <option value="Alta">Alta</option>
-                <option value="Baja">Baja</option>
+                <option value="Agendado">Agendado</option>
               </select>
             </div>
           </div>

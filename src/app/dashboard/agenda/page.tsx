@@ -622,7 +622,6 @@ export default function AgendaPage() {
                     <option value="Cancelo con anticipacion">Canceló con anticipación (Naranja traslúcido)</option>
                     <option value="Cancelo sin anticipacion">Canceló sin anticipación (Rojo traslúcido)</option>
                     <option value="Cancelo el centro">Canceló el centro (Amarillo traslúcido)</option>
-                    <option value="Baja">Baja (Negro con letras blancas)</option>
                     <option value="Ocupado">Ocupado (Terapeuta No Disponible)</option>
                   </select>
                   {formData.estado === "Ocupado" && (
@@ -669,7 +668,6 @@ export default function AgendaPage() {
                   <option value="Cancelo con anticipacion">Canceló con anticipación (Naranja traslúcido)</option>
                   <option value="Cancelo sin anticipacion">Canceló sin anticipación (Rojo traslúcido)</option>
                   <option value="Cancelo el centro">Canceló el centro (Amarillo traslúcido)</option>
-                  <option value="Baja">Baja (Negro con letras blancas)</option>
                   <option value="Ocupado">Ocupado / No Disponible (Rojo)</option>
                 </select>
               </div>
