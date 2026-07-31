@@ -31,44 +31,44 @@ body {
 
 @media print {
   @page {
-    size: 8.5in 11in;
+    size: letter;
     margin: 0;
   }
-  html, body {
-    height: 100% !important;
+  html {
+    height: 11in !important;
     max-height: 11in !important;
     overflow: hidden !important;
-    background: #ffffff !important;
+  }
+  body {
+    height: 11in !important;
+    max-height: 11in !important;
+    overflow: hidden !important;
     margin: 0 !important;
     padding: 0 !important;
+    background: #ffffff !important;
     -webkit-print-color-adjust: exact !important;
     print-color-adjust: exact !important;
   }
-  /* Ocultar todo lo que no sea el pliego de la prefactura */
-  body > * {
-    display: none !important;
+  body * {
+    visibility: hidden !important;
   }
-  body > div:has(#prefactura-sheet),
-  body > div:has(#prefactura-sheet) * {
-    display: block !important;
-  }
-  .print\:hidden {
-    display: none !important;
+  #prefactura-sheet,
+  #prefactura-sheet * {
+    visibility: visible !important;
   }
   #prefactura-sheet {
     position: fixed !important;
     top: 0 !important;
     left: 0 !important;
     width: 8.5in !important;
-    max-width: 100% !important;
     margin: 0 !important;
     padding: 0 !important;
     border: none !important;
     box-shadow: none !important;
     border-radius: 0 !important;
-    page-break-after: avoid !important;
-    page-break-inside: avoid !important;
-    break-after: avoid !important;
-    break-inside: avoid !important;
+  }
+  .print\:hidden {
+    display: none !important;
+    visibility: hidden !important;
   }
 }
