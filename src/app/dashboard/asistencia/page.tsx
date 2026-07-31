@@ -950,26 +950,26 @@ export default function AsistenciaPage() {
 
         <div className="overflow-x-auto">
           <table className="w-full text-xs text-center border-collapse">
-            <thead className="bg-[#0e2f44] text-white font-semibold">
+            <thead className="bg-[#0e2f44] text-white text-[9px] font-extrabold uppercase leading-tight tracking-wider">
               <tr>
-                <th className="px-2 py-3 border-b border-[#0e2f44]">FECHA</th>
-                <th className="px-2 py-3 border-b border-[#0e2f44]">TERAPEUTA</th>
-                <th className="px-2 py-3 border-b border-[#0e2f44]">ÁREA</th>
-                <th className="px-4 py-3 text-left border-b border-[#0e2f44]">PACIENTE</th>
-                <th className="px-2 py-3 border-b border-[#0e2f44]">SEXO</th>
-                <th className="px-2 py-3 border-b border-[#0e2f44]">EDAD</th>
-                <th className="px-2 py-3 border-b border-[#0e2f44]">TIPO DE SESIÓN</th>
-                <th className="px-2 py-3 border-b border-[#0e2f44]">ESTADO</th>
-                <th className="px-2 py-3 border-b border-[#0e2f44]">SESIONES</th>
-                <th className="px-2 py-3 border-b border-[#0e2f44]">MÉTODO DE PAGO</th>
-                <th className="px-2 py-3 border-b border-[#0e2f44]">PAGO</th>
-                <th className="px-2 py-3 border-b border-[#0e2f44]">FACT.</th>
-                <th className="px-2 py-3 border-b border-[#0e2f44]">SALDO</th>
-                <th className="px-2 py-3 border-b border-[#0e2f44]">SUBTOTAL</th>
-                <th className="px-2 py-3 border-b border-[#0e2f44]">IVA</th>
-                <th className="px-2 py-3 border-b border-[#0e2f44]">TOTAL</th>
-                <th className="px-2 py-3 border-b border-[#0e2f44]">OBS</th>
-                <th className="px-2 py-3 border-b border-[#0e2f44]">ACCIONES</th>
+                <th className="px-2 py-2.5 border-b border-[#0e2f44]">FECHA</th>
+                <th className="px-2 py-2.5 border-b border-[#0e2f44]">TERAPEUTA</th>
+                <th className="px-2 py-2.5 border-b border-[#0e2f44]">ÁREA</th>
+                <th className="px-3 py-2.5 text-left border-b border-[#0e2f44]">PACIENTE</th>
+                <th className="px-2 py-2.5 border-b border-[#0e2f44]">SEXO</th>
+                <th className="px-2 py-2.5 border-b border-[#0e2f44]">EDAD</th>
+                <th className="px-2 py-2.5 border-b border-[#0e2f44]">TIPO DE<br/>SESIÓN</th>
+                <th className="px-2 py-2.5 border-b border-[#0e2f44]">ESTADO</th>
+                <th className="px-2 py-2.5 border-b border-[#0e2f44]">SESIONES</th>
+                <th className="px-2 py-2.5 border-b border-[#0e2f44]">MÉTODO DE<br/>PAGO</th>
+                <th className="px-2 py-2.5 border-b border-[#0e2f44]">PAGO</th>
+                <th className="px-2 py-2.5 border-b border-[#0e2f44]">FACT.</th>
+                <th className="px-2 py-2.5 border-b border-[#0e2f44]">SALDO</th>
+                <th className="px-2 py-2.5 border-b border-[#0e2f44]">SUBTOTAL</th>
+                <th className="px-2 py-2.5 border-b border-[#0e2f44]">IVA</th>
+                <th className="px-2 py-2.5 border-b border-[#0e2f44]">TOTAL</th>
+                <th className="px-2 py-2.5 border-b border-[#0e2f44]">OBS</th>
+                <th className="px-2 py-2.5 border-b border-[#0e2f44]">ACCIONES</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-slate-100">
