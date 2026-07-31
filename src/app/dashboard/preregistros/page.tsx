@@ -367,8 +367,7 @@ export default function PreregistrosPage() {
       medicoTratante: userRole.toUpperCase() === "TERAPEUTA" ? userName : "",
       escuela: "",
       pacienteContacto: "",
-
-      madreNombre: "",: "",
+      madreNombre: "",
       padreNombre: "",
       otrosNombre: "",
       madreContacto: "",
