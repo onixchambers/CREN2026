@@ -312,7 +312,7 @@ export default function PacientesPage() {
                     <td className="px-2 py-4 text-slate-600 font-bold">
                       {p.sexo === 'M' || p.sexo === 'Masculino' ? '♂ M' : '♀ F'}
                     </td>
-                    <td className="px-2 py-4 text-slate-500">{p.fechaNacimiento || "—"}</td>
+                    <td className="px-2 py-4 text-slate-500 text-[10px] whitespace-nowrap">{p.fechaNacimiento || "—"}</td>
                     <td className="px-2 py-4 text-slate-500">{p.age || "—"}</td>
                     <td className="px-2 py-4">
                       <span className="bg-[#e6f4ea] text-[#1e8e3e] px-2.5 py-1 rounded text-xs font-extrabold shadow-xs">
@@ -364,7 +364,7 @@ export default function PacientesPage() {
                         );
                       })()}
                     </td>
-                    <td className="px-4 py-4 text-slate-700 font-bold">
+                    <td className="px-4 py-4 text-slate-700 font-bold text-[9.5px]">
                       {p.ultima || "$0.00"}
                     </td>
                     <td className="px-4 py-4" onClick={(e) => e.stopPropagation()}>
