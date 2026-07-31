@@ -1298,30 +1298,29 @@ export default function AsistenciaPage() {
 
       {/* MODAL PREFACTURA PDF EN FORMATO CREN */}
       {prefacturaModalData && (
-        <div className="fixed inset-0 z-50 bg-black/60 flex items-center justify-center p-2 sm:p-4 overflow-y-auto print:p-0 print:m-0 print:static print:bg-white print:block">
-          <div className="bg-white rounded-2xl max-w-2xl w-full p-4 sm:p-6 space-y-4 shadow-2xl animate-in zoom-in-95 duration-200 print:shadow-none print:p-0 print:m-0 print:w-[8.5in] print:max-w-none print:rounded-none">
-            {/* BOTONES SUPERIORES */}
-            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b border-slate-200 pb-3 print:hidden">
-              <div className="flex items-center gap-2">
-                <span className="text-xl">📄</span>
-                <h4 className="font-extrabold text-slate-800 text-sm sm:text-base">Prefactura CREN</h4>
+        <div className="fixed inset-0 z-50 bg-black/60 flex flex-col items-center print:p-0 print:m-0 print:static print:bg-white print:block">
+          {/* BARRA DE BOTONES FIJA EN PARTE SUPERIOR - siempre visible en móvil */}
+          <div className="w-full max-w-2xl flex items-center justify-between gap-2 bg-white/95 backdrop-blur-sm px-4 py-3 rounded-b-2xl shadow-lg z-10 print:hidden">
+              <div className="flex items-center gap-2 min-w-0">
+                <span className="text-lg">📄</span>
+                <h4 className="font-extrabold text-slate-800 text-sm truncate">Prefactura CREN</h4>
               </div>
-              <div className="flex flex-wrap items-center gap-2 w-full sm:w-auto justify-end">
+              <div className="flex items-center gap-2 shrink-0">
                 <button
                   type="button"
                   onClick={handleDownloadPDF}
-                  className="flex-1 sm:flex-initial bg-[#27ae60] hover:bg-[#219653] text-white font-extrabold px-3 py-2 rounded-xl text-xs flex items-center justify-center gap-1.5 shadow-xs transition-all active:scale-95 cursor-pointer"
-                  title="Descargar archivo PDF directamente a tu equipo"
+                  className="bg-[#27ae60] hover:bg-[#219653] text-white font-extrabold px-3 py-2 rounded-xl text-xs flex items-center gap-1.5 shadow-xs transition-all active:scale-95 cursor-pointer"
+                  title="Descargar PDF"
                 >
-                  <span>⬇️ Descargar PDF</span>
+                  <span>⬇️ PDF</span>
                 </button>
                 <button
                   type="button"
                   onClick={() => window.print()}
-                  className="flex-1 sm:flex-initial bg-[#1c4d6f] hover:bg-[#153a54] text-white font-extrabold px-3 py-2 rounded-xl text-xs flex items-center justify-center gap-1.5 shadow-xs transition-all active:scale-95 cursor-pointer"
-                  title="Imprimir documento"
+                  className="bg-[#1c4d6f] hover:bg-[#153a54] text-white font-extrabold px-3 py-2 rounded-xl text-xs flex items-center gap-1.5 shadow-xs transition-all active:scale-95 cursor-pointer"
+                  title="Imprimir"
                 >
-                  <span>🖨️ Imprimir</span>
+                  <span>🖨️</span>
                 </button>
                 <button
                   type="button"
@@ -1331,8 +1330,11 @@ export default function AsistenciaPage() {
                   ✕
                 </button>
               </div>
-            </div>
+          </div>
 
+          {/* CONTENIDO SCROLLABLE DE LA PREFACTURA */}
+          <div className="flex-1 w-full overflow-y-auto flex justify-center p-2 sm:p-4 print:p-0 print:m-0 print:overflow-visible">
+           <div className="max-w-2xl w-full print:max-w-none print:w-[8.5in]">
             {/* HOJA DE PREFACTURA IDÉNTICA A LA HOJA CREN (FORMATO CARTA 8.5" x 11") */}
             <div id="prefactura-sheet" className="border border-slate-300 rounded-xl overflow-hidden bg-white text-slate-900 font-sans print:border-none print:rounded-none print:shadow-none print:w-full print:max-w-none print:m-0 print:p-0">
               {/* BANNER VERDE-AZUL DEGRADADO CREN */}
@@ -1436,6 +1438,7 @@ export default function AsistenciaPage() {
                 <p className="text-slate-200 text-[10px]">Petén 284, PB, Col. Narvarte, Benito Juárez, CDMX | centrocren@gmail.com | Tel.: 55 16 87 1232</p>
               </div>
             </div>
+           </div>
           </div>
         </div>
       )}
