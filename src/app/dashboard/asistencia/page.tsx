@@ -71,36 +71,8 @@ export default function AsistenciaPage() {
     loadInitialData();
   }, []);
 
-  const handleDownloadPDF = async () => {
-    if (!prefacturaModalData) return;
-    const element = document.getElementById("prefactura-sheet");
-    if (!element) {
-      window.print();
-      return;
-    }
-
-    try {
-      if (!(window as any).html2pdf) {
-        const script = document.createElement("script");
-        script.src = "https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js";
-        document.body.appendChild(script);
-        await new Promise((resolve) => (script.onload = resolve));
-      }
-
-      const safeName = (prefacturaModalData.paciente || "Paciente").replace(/[^a-zA-Z0-9áéíóúÁÉÍÓÚñÑ_]/g, "_");
-      const opt = {
-        margin: [0.15, 0.15, 0.15, 0.15],
-        filename: `Prefactura_${safeName}_${prefacturaModalData.fecha}.pdf`,
-        image: { type: "jpeg", quality: 0.98 },
-        html2canvas: { scale: 2, useCORS: true, logging: false },
-        jsPDF: { unit: "in", format: "letter", orientation: "portrait" }
-      };
-
-      await (window as any).html2pdf().set(opt).from(element).save();
-    } catch (e) {
-      console.error("Error downloading PDF:", e);
-      window.print();
-    }
+  const handleDownloadPDF = () => {
+    window.print();
   };
 
   const handleAddPrice = async () => {
