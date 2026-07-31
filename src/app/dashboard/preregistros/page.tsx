@@ -340,6 +340,11 @@ export default function PreregistrosPage() {
   };
 
   const handleLimpiar = () => {
+    if (selectedPreReg && selectedPreReg.id) {
+      markPreRegistrationAsLoaded(selectedPreReg.id).then(() => {
+        refreshPendingPreRegs();
+      }).catch(err => console.error(err));
+    }
     setEditingId(null);
     setSelectedPreReg(null);
     setSearchQuery("");
