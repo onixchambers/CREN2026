@@ -47,7 +47,7 @@ export default function PacientesPage() {
   const [modalTab, setModalTab] = useState<"expediente" | "documentos" | "nuevo_documento" | "ver_documento">("expediente");
   const [patientDocs, setPatientDocs] = useState<any[]>([]);
   const [isLoadingDocs, setIsLoadingDocs] = useState(false);
-  const [selectedNoteType, setSelectedNoteType] = useState("Registro de Evolución");
+  const [selectedNoteType, setSelectedNoteType] = useState("Historia Clínica de Fisioterapia");
   const [docFormData, setDocFormData] = useState<any>({});
   const [activeDocToView, setActiveDocToView] = useState<any | null>(null);
   const [docSearchQuery, setDocSearchQuery] = useState("");

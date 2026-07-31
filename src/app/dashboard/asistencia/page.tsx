@@ -1322,20 +1322,20 @@ export default function AsistenciaPage() {
 
             {/* HOJA DE PREFACTURA IDÉNTICA A LA HOJA CREN */}
             <div className="border border-slate-300 rounded-xl overflow-hidden bg-white text-slate-900 font-sans print:border-none">
-              {/* BANNER VERDE CREN */}
-              <div className="bg-[#4c772d] text-white p-4 flex items-center justify-between border-b-4 border-[#3a5d22]">
+              {/* BANNER VERDE AZULADO TRASLÚCIDO IDÉNTICO A LA BARRA CREN */}
+              <div className="bg-[#1a5276]/90 backdrop-blur-md text-white p-4 flex items-center justify-between border-b-4 border-[#0e2f44]">
                 <div className="flex items-center gap-3">
-                  <div className="w-12 h-12 bg-white rounded-full p-1 flex items-center justify-center shadow-md overflow-hidden shrink-0 border-2 border-white">
+                  <div className="w-12 h-12 bg-white/95 rounded-full p-1 flex items-center justify-center shadow-md overflow-hidden shrink-0 border-2 border-white">
                     <img src="/logo.png" alt="CREN Logo" className="w-full h-full object-contain rounded-full" onError={(e) => {(e.target as any).style.display = 'none';}} />
-                    <span className="font-black text-[#4c772d] text-xs leading-none text-center uppercase">CREN</span>
+                    <span className="font-black text-[#1a5276] text-xs leading-none text-center uppercase">CREN</span>
                   </div>
                   <div>
-                    <h1 className="text-sm font-bold tracking-wide uppercase leading-tight">Centro de Rehabilitación Especializada y Neurodesarrollo (CREN)</h1>
-                    <p className="text-[10px] text-slate-200 uppercase tracking-wider">Prefactura de Honorarios / Comprobante Oficial</p>
+                    <h1 className="text-sm font-bold tracking-wide uppercase leading-tight">Centro de Rehabilitación Especializada y de Neurodesarrollo (CREN)</h1>
+                    <p className="text-[10px] text-slate-200 uppercase tracking-wider">Prefactura de Honorarios</p>
                   </div>
                 </div>
                 <div className="text-right text-xs">
-                  <p className="font-black text-amber-300 text-sm">PREFACTURA</p>
+                  <p className="font-black text-amber-300 text-sm tracking-wide">PREFACTURA</p>
                   <p className="text-[10px]">Folio: <span className="font-bold">{`PRE-${prefacturaModalData.id.slice(-6).toUpperCase()}`}</span></p>
                   <p className="text-[10px]">Fecha Emisión: {new Date().toLocaleDateString("es-MX")}</p>
                 </div>
@@ -1344,15 +1344,15 @@ export default function AsistenciaPage() {
               {/* CUERPO DE LA PREFACTURA */}
               <div className="p-6 space-y-5 text-xs">
                 {/* DATOS DE LA CLÍNICA & PACIENTE */}
-                <div className="grid grid-cols-2 gap-4 bg-slate-50 p-4 rounded-xl border border-slate-200">
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4 bg-slate-50/80 p-4 rounded-xl border border-slate-200">
                   <div className="space-y-1">
-                    <h5 className="font-extrabold text-[#1a5276] uppercase text-[10px] tracking-wider">DATOS DE LA CLÍNICA</h5>
-                    <p className="font-bold text-slate-800">Centro de Rehabilitación Especializada y Neurodesarrollo (CREN)</p>
-                    <p className="text-slate-600">Dirección: Domicilio de la Clínica</p>
-                    <p className="text-slate-600">Teléfono / Celular: Contacto CREN</p>
-                    <p className="text-slate-600">Correo: contacto@cren.mx</p>
+                    <h5 className="font-extrabold text-[#1a5276] uppercase text-[10px] tracking-wider">DATOS DE LA CLÍNICA Y PRIVACIDAD</h5>
+                    <p className="font-bold text-slate-900 text-sm">Centro de Rehabilitación Especializada y de Neurodesarrollo (CREN)</p>
+                    <p className="text-slate-700 font-medium">Petén 284, PB, Colonia Narvarte, C.P. 03023, Benito Juárez, Ciudad de México</p>
+                    <p className="text-slate-500 text-[9.5px] italic">Responsable del tratamiento de sus datos personales.</p>
+                    <p className="text-slate-800 font-semibold pt-0.5">Contacto de privacidad: <span className="text-[#1a5276]">centrocren@gmail.com</span> | <span className="text-slate-900">Tel.: 55 16 87 1232</span></p>
                   </div>
-                  <div className="space-y-1 border-l border-slate-200 pl-4">
+                  <div className="space-y-1 border-t md:border-t-0 md:border-l border-slate-200 pt-3 md:pt-0 md:pl-4">
                     <h5 className="font-extrabold text-[#1a5276] uppercase text-[10px] tracking-wider">DATOS DEL PACIENTE</h5>
                     <p className="font-extrabold text-slate-900 text-sm">{prefacturaModalData.paciente}</p>
                     <p className="text-slate-700"><span className="font-semibold text-slate-500">Sexo:</span> {prefacturaModalData.sexo || "—"} | <span className="font-semibold text-slate-500">Edad:</span> {prefacturaModalData.edad || "—"}</p>
@@ -1425,10 +1425,10 @@ export default function AsistenciaPage() {
                 )}
               </div>
 
-              {/* PIE DE PÁGINA VERDE OLIVA CREN */}
-              <div className="bg-[#4c772d] text-white p-3 text-center text-xs space-y-0.5 font-sans border-t-2 border-[#3a5d22]">
-                <p className="font-bold text-xs">Centro de Rehabilitación Especializada y Neurodesarrollo (CREN)</p>
-                <p className="text-slate-200 text-[10px]">Domicilio - Teléfono - Correo</p>
+              {/* PIE DE PÁGINA VERDE AZULADO TRASLÚCIDO CREN */}
+              <div className="bg-[#1a5276]/90 backdrop-blur-md text-white p-3 text-center text-xs space-y-0.5 font-sans border-t-2 border-[#0e2f44]">
+                <p className="font-bold text-xs">Centro de Rehabilitación Especializada y de Neurodesarrollo (CREN)</p>
+                <p className="text-slate-200 text-[10px]">Petén 284, PB, Col. Narvarte, Benito Juárez, CDMX | centrocren@gmail.com | Tel.: 55 16 87 1232</p>
               </div>
             </div>
           </div>
