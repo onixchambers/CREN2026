@@ -1320,14 +1320,13 @@ export default function AsistenciaPage() {
               </div>
             </div>
 
-            {/* HOJA DE PREFACTURA IDÉNTICA A LA HOJA CREN (FORMATO 8.5" x 8") */}
-            <div className="border border-slate-300 rounded-xl overflow-hidden bg-white text-slate-900 font-sans print:border-none print:rounded-none print:w-[8.5in] print:min-h-[8in]">
+            {/* HOJA DE PREFACTURA IDÉNTICA A LA HOJA CREN (FORMATO CARTA 8.5" x 11") */}
+            <div className="border border-slate-300 rounded-xl overflow-hidden bg-white text-slate-900 font-sans print:border-none print:rounded-none print:shadow-none print:w-full print:max-w-none print:m-0 print:p-0">
               {/* BANNER VERDE-AZUL DEGRADADO CREN */}
               <div className="bg-gradient-to-r from-[#1c4d6f] via-[#2c6185] to-[#1c4d6f] text-white p-4 flex items-center justify-between border-b-4 border-[#0e2f44]">
                 <div className="flex items-center gap-3">
-                  <div className="w-13 h-13 bg-white rounded-full p-1 flex items-center justify-center shadow-md overflow-hidden shrink-0 border-2 border-white">
-                    <img src="/logo.png" alt="CREN Logo" className="w-full h-full object-contain rounded-full" onError={(e) => {(e.target as any).style.display = 'none';}} />
-                    <span className="font-black text-[#1c4d6f] text-xs leading-none text-center uppercase">CREN</span>
+                  <div className="bg-white rounded-xl p-1 shadow-sm border border-white/80 shrink-0 flex items-center justify-center max-w-[140px] h-12">
+                    <img src="/logo.png" alt="CREN Logo" className="h-full w-auto object-contain" onError={(e) => {(e.target as any).style.display = 'none';}} />
                   </div>
                   <div>
                     <h1 className="text-sm md:text-base font-bold tracking-wide uppercase leading-tight">Centro de Rehabilitación Especializada y de Neurodesarrollo (CREN)</h1>

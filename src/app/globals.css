@@ -31,10 +31,12 @@ body {
 
 @media print {
   @page {
-    size: 8.5in 8in;
-    margin: 0;
+    size: 8.5in 11in;
+    margin: 0.25in;
   }
-  body {
+  html, body {
+    width: 100% !important;
+    height: 100% !important;
     margin: 0 !important;
     padding: 0 !important;
     background: #ffffff !important;

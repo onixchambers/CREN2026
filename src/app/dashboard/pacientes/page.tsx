@@ -1077,15 +1077,14 @@ export default function PacientesPage() {
 
                   {/* PLANTILLA DE HOJA CLÍNICA IDÉNTICA A LAS 3 PÁGINAS DEL PDF DEL CLIENTE */}
                   <div className="bg-white border border-slate-300 rounded-xl shadow-sm overflow-hidden text-slate-900 font-serif print:border-none print:shadow-none print:p-0 max-w-3xl mx-auto">
-                    {/* BANNER VERDE SUPERIOR IDÉNTICO AL PDF DE CAPTURA */}
-                    <div className="bg-[#4c772d] text-white p-4 flex items-center justify-between border-b-4 border-[#3a5d22]">
+                    {/* BANNER DEGRADADO CREN IDÉNTICO AL DOCUMENTO CREN */}
+                    <div className="bg-gradient-to-r from-[#1c4d6f] via-[#2c6185] to-[#1c4d6f] text-white p-4 flex items-center justify-between border-b-4 border-[#0e2f44]">
                       <div className="flex items-center gap-3">
-                        <div className="w-14 h-14 bg-white rounded-full p-1 flex items-center justify-center shadow-md overflow-hidden shrink-0 border-2 border-white">
-                          <img src="/logo.png" alt="CREN Logo" className="w-full h-full object-contain rounded-full" onError={(e) => {(e.target as any).style.display = 'none';}} />
-                          <span className="font-black text-[#4c772d] text-xs leading-none text-center uppercase">CREN</span>
+                        <div className="bg-white rounded-xl p-1 shadow-sm border border-white/80 shrink-0 flex items-center justify-center max-w-[140px] h-12">
+                          <img src="/logo.png" alt="CREN Logo" className="h-full w-auto object-contain" onError={(e) => {(e.target as any).style.display = 'none';}} />
                         </div>
                         <div>
-                          <h1 className="text-sm md:text-base font-bold tracking-wide uppercase leading-tight">Centro de Rehabilitación Especializada y Neurodesarrollo (CREN)</h1>
+                          <h1 className="text-sm md:text-base font-bold tracking-wide uppercase leading-tight">Centro de Rehabilitación Especializada y de Neurodesarrollo (CREN)</h1>
                         </div>
                       </div>
                     </div>
