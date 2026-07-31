@@ -1322,20 +1322,20 @@ export default function AsistenciaPage() {
 
             {/* HOJA DE PREFACTURA IDÉNTICA A LA HOJA CREN (FORMATO 8.5" x 8") */}
             <div className="border border-slate-300 rounded-xl overflow-hidden bg-white text-slate-900 font-sans print:border-none print:rounded-none print:w-[8.5in] print:min-h-[8in]">
-              {/* BANNER VERDE AZULADO TRASLÚCIDO IDÉNTICO A LA BARRA CREN */}
-              <div className="bg-[#1a5276]/90 backdrop-blur-md text-white p-4 flex items-center justify-between border-b-4 border-[#0e2f44]">
+              {/* BANNER VERDE-AZUL DEGRADADO CREN */}
+              <div className="bg-gradient-to-r from-[#1c4d6f] via-[#2c6185] to-[#1c4d6f] text-white p-4 flex items-center justify-between border-b-4 border-[#0e2f44]">
                 <div className="flex items-center gap-3">
-                  <div className="w-12 h-12 bg-white/95 rounded-full p-1 flex items-center justify-center shadow-md overflow-hidden shrink-0 border-2 border-white">
+                  <div className="w-13 h-13 bg-white rounded-full p-1 flex items-center justify-center shadow-md overflow-hidden shrink-0 border-2 border-white">
                     <img src="/logo.png" alt="CREN Logo" className="w-full h-full object-contain rounded-full" onError={(e) => {(e.target as any).style.display = 'none';}} />
-                    <span className="font-black text-[#1a5276] text-xs leading-none text-center uppercase">CREN</span>
+                    <span className="font-black text-[#1c4d6f] text-xs leading-none text-center uppercase">CREN</span>
                   </div>
                   <div>
-                    <h1 className="text-sm font-bold tracking-wide uppercase leading-tight">Centro de Rehabilitación Especializada y de Neurodesarrollo (CREN)</h1>
-                    <p className="text-[10px] text-slate-200 uppercase tracking-wider">Prefactura de Honorarios</p>
+                    <h1 className="text-sm md:text-base font-bold tracking-wide uppercase leading-tight">Centro de Rehabilitación Especializada y de Neurodesarrollo (CREN)</h1>
+                    <p className="text-[10px] text-slate-200 uppercase tracking-wider font-semibold">Prefactura de Honorarios</p>
                   </div>
                 </div>
                 <div className="text-right text-xs">
-                  <p className="font-black text-amber-300 text-sm tracking-wide">PREFACTURA</p>
+                  <p className="font-black text-amber-300 text-sm tracking-wider uppercase">PREFACTURA</p>
                   <p className="text-[10px]">Folio: <span className="font-bold">{`PRE-${prefacturaModalData.id.slice(-6).toUpperCase()}`}</span></p>
                   <p className="text-[10px]">Fecha Emisión: {new Date().toLocaleDateString("es-MX")}</p>
                 </div>
@@ -1344,16 +1344,16 @@ export default function AsistenciaPage() {
               {/* CUERPO DE LA PREFACTURA */}
               <div className="p-6 space-y-5 text-xs">
                 {/* DATOS DE LA CLÍNICA & PACIENTE */}
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4 bg-slate-50/80 p-4 rounded-xl border border-slate-200">
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4 bg-slate-50/80 p-4 rounded-2xl border border-slate-200">
                   <div className="space-y-1">
-                    <h5 className="font-extrabold text-[#1a5276] uppercase text-[10px] tracking-wider">DATOS DE LA CLÍNICA Y PRIVACIDAD</h5>
+                    <h5 className="font-extrabold text-[#1c4d6f] uppercase text-[10px] tracking-wider">DATOS DE LA CLÍNICA Y PRIVACIDAD</h5>
                     <p className="font-bold text-slate-900 text-sm">Centro de Rehabilitación Especializada y de Neurodesarrollo (CREN)</p>
-                    <p className="text-slate-700 font-medium">Petén 284, PB, Colonia Narvarte, C.P. 03023, Benito Juárez, Ciudad de México</p>
+                    <p className="text-slate-700 font-medium leading-snug">Petén 284, PB, Colonia Narvarte, C.P. 03023, Benito Juárez, Ciudad de México</p>
                     <p className="text-slate-500 text-[9.5px] italic">Responsable del tratamiento de sus datos personales.</p>
-                    <p className="text-slate-800 font-semibold pt-0.5">Contacto de privacidad: <span className="text-[#1a5276]">centrocren@gmail.com</span> | <span className="text-slate-900">Tel.: 55 16 87 1232</span></p>
+                    <p className="text-slate-800 font-semibold pt-0.5">Contacto de privacidad: <span className="text-[#1c4d6f]">centrocren@gmail.com</span> | <span className="text-slate-900">Tel.: 55 16 87 1232</span></p>
                   </div>
                   <div className="space-y-1 border-t md:border-t-0 md:border-l border-slate-200 pt-3 md:pt-0 md:pl-4">
-                    <h5 className="font-extrabold text-[#1a5276] uppercase text-[10px] tracking-wider">DATOS DEL PACIENTE</h5>
+                    <h5 className="font-extrabold text-[#1c4d6f] uppercase text-[10px] tracking-wider">DATOS DEL PACIENTE</h5>
                     <p className="font-extrabold text-slate-900 text-sm">{prefacturaModalData.paciente}</p>
                     <p className="text-slate-700"><span className="font-semibold text-slate-500">Sexo:</span> {prefacturaModalData.sexo || "—"} | <span className="font-semibold text-slate-500">Edad:</span> {prefacturaModalData.edad || "—"}</p>
                     <p className="text-slate-700"><span className="font-semibold text-slate-500">Terapeuta Responsable:</span> <span className="font-bold text-slate-800">{prefacturaModalData.terapeuta || "LOURDES RINCÓN"}</span></p>
@@ -1361,43 +1361,37 @@ export default function AsistenciaPage() {
                   </div>
                 </div>
 
-                {/* DETALLE DE LA SESIÓN / PREFACTURA */}
+                {/* DETALLE DE LA SESIÓN / PREFACTURA (SIN ESTADO) */}
                 <div>
-                  <h5 className="font-extrabold text-slate-700 uppercase text-[10px] tracking-wider mb-2 border-b border-slate-200 pb-1">
+                  <h5 className="font-extrabold text-[#1c4d6f] uppercase text-[10px] tracking-wider mb-2 border-b border-slate-200 pb-1">
                     DESGLOSE DE SERVICIO Y CONCEPTOS DE PREFACTURA
                   </h5>
-                  <table className="w-full text-xs text-left border border-slate-200 rounded-lg overflow-hidden">
-                    <thead className="bg-slate-100 font-extrabold text-slate-600 uppercase text-[10px]">
+                  <table className="w-full text-xs text-left border border-slate-200 rounded-xl overflow-hidden">
+                    <thead className="bg-slate-100/80 font-extrabold text-slate-600 uppercase text-[10px]">
                       <tr>
-                        <th className="p-2">FECHA Y HORA</th>
-                        <th className="p-2">CONCEPTO / SESIÓN</th>
-                        <th className="p-2">ESTADO</th>
-                        <th className="p-2 text-right">MÉTODO PAGO</th>
-                        <th className="p-2 text-right">MONTO</th>
+                        <th className="p-2.5">FECHA Y HORA</th>
+                        <th className="p-2.5">CONCEPTO / SESIÓN</th>
+                        <th className="p-2.5 text-right">MÉTODO PAGO</th>
+                        <th className="p-2.5 text-right">MONTO</th>
                       </tr>
                     </thead>
                     <tbody className="divide-y divide-slate-100 font-medium">
                       <tr>
-                        <td className="p-2 font-semibold text-slate-800">{prefacturaModalData.fecha}</td>
-                        <td className="p-2">
-                          <span className="font-bold text-[#1a5276]">{prefacturaModalData.tipoSesion}</span>
-                          <span className="block text-[10px] text-slate-500">Número de Sesión: {prefacturaModalData.sesiones}</span>
+                        <td className="p-2.5 font-semibold text-slate-800">{prefacturaModalData.fecha}</td>
+                        <td className="p-2.5">
+                          <span className="font-bold text-[#1c4d6f] text-xs">{prefacturaModalData.tipoSesion}</span>
+                          <span className="block text-[10px] text-slate-500 font-medium">Número de Sesión: {prefacturaModalData.sesiones}</span>
                         </td>
-                        <td className="p-2">
-                          <span className="bg-green-50 text-green-700 font-bold px-1.5 py-0.5 rounded text-[10px]">
-                            {prefacturaModalData.estado}
-                          </span>
-                        </td>
-                        <td className="p-2 text-right font-bold text-slate-700">{prefacturaModalData.metodoPago || "Efectivo"}</td>
-                        <td className="p-2 text-right font-bold text-slate-900">{prefacturaModalData.subtotal}</td>
+                        <td className="p-2.5 text-right font-bold text-slate-700">{prefacturaModalData.metodoPago || "Efectivo"}</td>
+                        <td className="p-2.5 text-right font-bold text-slate-900 text-sm">{prefacturaModalData.subtotal}</td>
                       </tr>
                     </tbody>
                   </table>
                 </div>
 
                 {/* CUADRO DE RESUMEN DE PAGOS Y IVA */}
-                <div className="flex justify-end pt-2">
-                  <div className="w-64 bg-slate-50 p-3 rounded-xl border border-slate-200 space-y-1.5 text-right text-xs">
+                <div className="flex justify-end pt-1">
+                  <div className="w-64 bg-slate-50/90 p-3.5 rounded-2xl border border-slate-200 space-y-1.5 text-right text-xs">
                     <div className="flex justify-between text-slate-600">
                       <span>Subtotal (sin IVA):</span>
                       <span className="font-bold text-slate-800">{prefacturaModalData.subtotal}</span>
@@ -1410,7 +1404,7 @@ export default function AsistenciaPage() {
                       <span>Monto Abonado:</span>
                       <span className="font-bold text-green-700">{prefacturaModalData.pago || prefacturaModalData.montoPago || prefacturaModalData.subtotal}</span>
                     </div>
-                    <div className="flex justify-between border-t border-slate-300 pt-1 text-sm font-black text-[#1a5276]">
+                    <div className="flex justify-between border-t border-slate-300 pt-1.5 text-sm font-black text-[#1c4d6f]">
                       <span>Total Prefactura:</span>
                       <span>{prefacturaModalData.total}</span>
                     </div>
@@ -1418,16 +1412,16 @@ export default function AsistenciaPage() {
                 </div>
 
                 {prefacturaModalData.obs && (
-                  <div className="bg-amber-50/60 p-2.5 rounded-lg border border-amber-200/60 text-slate-700">
+                  <div className="bg-amber-50/60 p-3 rounded-xl border border-amber-200/80 text-slate-700">
                     <span className="font-bold text-amber-800 block text-[10px] uppercase">Observaciones:</span>
                     <p className="font-medium text-[11px]">{prefacturaModalData.obs}</p>
                   </div>
                 )}
               </div>
 
-              {/* PIE DE PÁGINA VERDE AZULADO TRASLÚCIDO CREN */}
-              <div className="bg-[#1a5276]/90 backdrop-blur-md text-white p-3 text-center text-xs space-y-0.5 font-sans border-t-2 border-[#0e2f44]">
-                <p className="font-bold text-xs">Centro de Rehabilitación Especializada y de Neurodesarrollo (CREN)</p>
+              {/* PIE DE PÁGINA VERDE-AZUL DEGRADADO CREN */}
+              <div className="bg-gradient-to-r from-[#1c4d6f] via-[#2c6185] to-[#1c4d6f] text-white p-3.5 text-center text-xs space-y-0.5 font-sans border-t-2 border-[#0e2f44]">
+                <p className="font-bold text-xs tracking-wide">Centro de Rehabilitación Especializada y de Neurodesarrollo (CREN)</p>
                 <p className="text-slate-200 text-[10px]">Petén 284, PB, Col. Narvarte, Benito Juárez, CDMX | centrocren@gmail.com | Tel.: 55 16 87 1232</p>
               </div>
             </div>
