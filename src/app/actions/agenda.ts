@@ -95,6 +95,17 @@ export async function addCita(data: any) {
     const match = allUsers.find(u => (u.name || "").trim().toLowerCase() === (data.terapeuta || "").trim().toLowerCase());
     if (match) {
       therapistId = match.id;
+      // Si la cita fue asignada a una terapeuta (ej. Karla), actualizar el medicoTratante del paciente en DB
+      if (patientId) {
+        try {
+          await prisma.patient.update({
+            where: { id: patientId },
+            data: { medicoTratante: match.name }
+          });
+        } catch (e) {
+          console.error("Error actualizando medicoTratante:", e);
+        }
+      }
     } else {
       const admin = allUsers.find(u => (u.role || "").toUpperCase() === "ADMIN");
       if (admin) {

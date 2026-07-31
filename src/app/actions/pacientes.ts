@@ -178,9 +178,20 @@ export async function getPatients() {
 
       const saldoCalculado = totalPagadoSum - totalCostoSum;
 
+      // Si medicoTratante es vacio o un admin (ej. onixchambers), pero hay un terapeuta asignado en las sesiones (ej. Karla), asignar a ese terapeuta
+      const uniqueTherapists = Array.from(new Set(sessionTherapists));
+      let effectiveMedicoTratante = p.medicoTratante || "";
+      if (uniqueTherapists.length > 0) {
+        const primaryTherapist = uniqueTherapists[0];
+        if (!effectiveMedicoTratante || effectiveMedicoTratante.toLowerCase().includes("admin") || effectiveMedicoTratante.toLowerCase().includes("onix")) {
+          effectiveMedicoTratante = primaryTherapist;
+        }
+      }
+
       return {
         ...p,
-        sessionTherapists: Array.from(new Set(sessionTherapists)),
+        medicoTratante: effectiveMedicoTratante || p.medicoTratante || "General",
+        sessionTherapists: uniqueTherapists,
         asistencias: asistenciasCount,
         valoraciones: valoracionesCount,
         totalPagado: totalPagadoSum.toFixed(2),
