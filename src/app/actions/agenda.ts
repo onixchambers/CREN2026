@@ -28,7 +28,7 @@ export async function getAgenda() {
         hora: (extra as any).hora || "09:00",
         tipoServicio: (extra as any).tipoServicio || "individual",
         frecuencia: (extra as any).frecuencia || "semanal",
-        estado: (extra as any).estado || s.status,
+        estado: (extra as any).estadoAsistencia || (extra as any).estado || (s.status === "COMPLETED" ? "Asistio" : (s.status === "CANCELLED" ? "Cancelo sin anticipacion" : "Agendado")),
         pagado: (extra as any).pagado || false,
         metodoPago: (extra as any).metodoPago || ""
       };

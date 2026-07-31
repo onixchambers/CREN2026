@@ -89,6 +89,7 @@ export async function saveAsistenciaDB(data: any) {
       area: data.area,
       tipoSesion: data.tipoSesion,
       estadoAsistencia: estadoVal,
+      estado: estadoVal,
       sesiones: data.sesiones || data.numeroSesiones,
       metodoPago: (data.metodoPago && data.metodoPago !== "SÍ" && data.metodoPago !== "No") ? data.metodoPago : (data.metodoPagoFinal || data.metodoPago1 || "Efectivo"),
       solicitaFactura: data.fact === "Sí" || data.solicitaFactura === "Sí",
@@ -128,6 +129,8 @@ export async function saveAsistenciaDB(data: any) {
     }
 
     revalidatePath("/dashboard/asistencia");
+    revalidatePath("/dashboard/agenda");
+    revalidatePath("/dashboard/pacientes");
     revalidatePath("/dashboard/finanzas");
     revalidatePath("/dashboard/honorarios");
     revalidatePath("/dashboard/estado-resultados");
