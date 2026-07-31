@@ -345,24 +345,29 @@ export default function PreregistrosPage() {
     setSearchQuery("");
     setPhotoPreview(null);
     setFormData({
+      nombres: "",
+      apellidos: "",
       nombre: "",
       fechaNacimiento: "",
       sexo: "Masculino",
       fechaIngreso: new Date().toISOString().split("T")[0],
       estatus: "Activo",
-      origen: "Google",
-      medicoTratante: userName,
+      origen: "",
+      medicoTratante: userRole.toUpperCase() === "TERAPEUTA" ? userName : "",
       escuela: "",
+
       madreNombre: "",
       padreNombre: "",
       otrosNombre: "",
       madreContacto: "",
       padreContacto: "",
       otrosContacto: "",
+
       principalMadre: false,
       principalPadre: false,
       principalOtros: false,
       correoPrincipal: "",
+
       alergias: false,
       crisis: false,
       convulsiones: false,
@@ -370,6 +375,7 @@ export default function PreregistrosPage() {
       riesgoFuga: false,
       noSepara: false,
       otrasAlertas: false,
+
       reglamentoFirmado: false,
       consentimientoFirmado: false,
       observacionesAdmin: "",
