@@ -644,8 +644,9 @@ export default function AsistenciaPage() {
               </div>
               <div>
                 <label className="block text-[10px] font-bold text-slate-400 uppercase mb-1">TIPO DE SESIÓN</label>
-                <select name="tipoSesion" value={formData.tipoSesion} onChange={handleChange} className="w-full text-sm p-2 border border-slate-300 rounded focus:border-[#2980b9] outline-none text-slate-900">
+                <select name="tipoSesion" value={formData.tipoSesion} onChange={handleChange} className="w-full text-sm p-2 border border-slate-300 rounded focus:border-[#2980b9] outline-none text-slate-900 font-medium">
                   <option value="">Seleccionar...</option>
+                  <option value="Valoracion">Valoración</option>
                   <option value="Individual">Individual</option>
                   <option value="Escuela">Escuela</option>
                   <option value="Reposicion">Reposición</option>
