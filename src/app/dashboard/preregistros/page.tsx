@@ -183,12 +183,16 @@ export default function PreregistrosPage() {
 
   const getFilteredPatients = () => {
     let filtered = fichas;
-    if (userRole.toUpperCase() === "TERAPEUTA") {
-      filtered = filtered.filter((f) => f.medicoTratante === userName);
-    }
+
     if (searchQuery.trim() !== "") {
-      filtered = filtered.filter((f) => f.name.toLowerCase().includes(searchQuery.toLowerCase()));
+      const qNorm = searchQuery.trim().toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "");
+      filtered = filtered.filter((f) => {
+        const nameNorm = (f.name || "").toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "");
+        const medicoNorm = (f.medicoTratante || "").toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "");
+        return nameNorm.includes(qNorm) || medicoNorm.includes(qNorm);
+      });
     }
+
     return filtered;
   };
 
@@ -592,21 +596,22 @@ export default function PreregistrosPage() {
             <div className="relative">
               <input
                 type="text"
-                placeholder={userRole.toUpperCase() === "TERAPEUTA" ? "Buscar entre mis pacientes..." : "Buscar cualquier paciente registrado..."}
+                placeholder="Escribir nombre del paciente registrado para cargar su información..."
                 value={searchQuery}
                 onFocus={() => setShowDropdown(true)}
-                onBlur={() => setTimeout(() => setShowDropdown(false), 200)}
+                onBlur={() => setTimeout(() => setShowDropdown(false), 250)}
                 onChange={(e) => {
                   setSearchQuery(e.target.value);
                   setShowDropdown(true);
                 }}
-                className="w-full pl-10 pr-3 py-2 border border-slate-300 rounded-lg text-sm focus:outline-none focus:border-[#2980b9] text-slate-900"
+                className="w-full pl-10 pr-3 py-2 border border-slate-300 rounded-lg text-sm focus:outline-none focus:border-[#2980b9] text-slate-900 bg-white font-medium"
               />
               {showDropdown && searchResults.length > 0 && (
                 <div className="absolute z-10 w-full mt-1 bg-white border border-slate-200 rounded-md shadow-lg max-h-60 overflow-y-auto">
                   {searchResults.map((paciente) => (
                     <div
                       key={paciente.id}
+                      onMouseDown={(e) => e.preventDefault()}
                       className="px-4 py-2 hover:bg-indigo-50 cursor-pointer border-b border-slate-50 last:border-0"
                       onClick={() => {
                         handleEdit(paciente);
@@ -615,7 +620,7 @@ export default function PreregistrosPage() {
                     >
                       <div className="font-bold text-slate-800 text-sm">{paciente.name}</div>
                       <div className="text-xs text-slate-500">
-                        {paciente.sexo || "No especificado"} • Nac: {paciente.fechaNacimiento || "—"}
+                        {paciente.sexo || "No especificado"} • Nac: {paciente.fechaNacimiento || "—"} • Tratante: <strong>{paciente.medicoTratante || "General"}</strong>
                       </div>
                     </div>
                   ))}
