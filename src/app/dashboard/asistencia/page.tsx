@@ -1298,19 +1298,19 @@ export default function AsistenciaPage() {
 
       {/* MODAL PREFACTURA PDF EN FORMATO CREN */}
       {prefacturaModalData && (
-        <div className="fixed inset-0 z-50 bg-black/60 flex items-center justify-center p-4 overflow-y-auto print:p-0 print:m-0 print:static print:bg-white print:block">
-          <div className="bg-white rounded-2xl max-w-2xl w-full p-6 space-y-4 shadow-2xl animate-in zoom-in-95 duration-200 print:shadow-none print:p-0 print:m-0 print:w-[8.5in] print:max-w-none print:rounded-none">
+        <div className="fixed inset-0 z-50 bg-black/60 flex items-center justify-center p-2 sm:p-4 overflow-y-auto print:p-0 print:m-0 print:static print:bg-white print:block">
+          <div className="bg-white rounded-2xl max-w-2xl w-full p-4 sm:p-6 space-y-4 shadow-2xl animate-in zoom-in-95 duration-200 print:shadow-none print:p-0 print:m-0 print:w-[8.5in] print:max-w-none print:rounded-none">
             {/* BOTONES SUPERIORES */}
-            <div className="flex items-center justify-between border-b border-slate-200 pb-3 print:hidden">
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b border-slate-200 pb-3 print:hidden">
               <div className="flex items-center gap-2">
                 <span className="text-xl">📄</span>
-                <h4 className="font-extrabold text-slate-800 text-base">Prefactura / Comprobante de Asistencia</h4>
+                <h4 className="font-extrabold text-slate-800 text-sm sm:text-base">Prefactura CREN</h4>
               </div>
-              <div className="flex items-center gap-2">
+              <div className="flex flex-wrap items-center gap-2 w-full sm:w-auto justify-end">
                 <button
                   type="button"
                   onClick={handleDownloadPDF}
-                  className="bg-[#27ae60] hover:bg-[#219653] text-white font-extrabold px-3.5 py-1.5 rounded-lg text-xs flex items-center gap-1.5 shadow-xs transition-colors cursor-pointer"
+                  className="flex-1 sm:flex-initial bg-[#27ae60] hover:bg-[#219653] text-white font-extrabold px-3 py-2 rounded-xl text-xs flex items-center justify-center gap-1.5 shadow-xs transition-all active:scale-95 cursor-pointer"
                   title="Descargar archivo PDF directamente a tu equipo"
                 >
                   <span>⬇️ Descargar PDF</span>
@@ -1318,7 +1318,7 @@ export default function AsistenciaPage() {
                 <button
                   type="button"
                   onClick={() => window.print()}
-                  className="bg-[#1c4d6f] hover:bg-[#153a54] text-white font-extrabold px-3.5 py-1.5 rounded-lg text-xs flex items-center gap-1.5 shadow-xs transition-colors cursor-pointer"
+                  className="flex-1 sm:flex-initial bg-[#1c4d6f] hover:bg-[#153a54] text-white font-extrabold px-3 py-2 rounded-xl text-xs flex items-center justify-center gap-1.5 shadow-xs transition-all active:scale-95 cursor-pointer"
                   title="Imprimir documento"
                 >
                   <span>🖨️ Imprimir</span>
@@ -1326,9 +1326,9 @@ export default function AsistenciaPage() {
                 <button
                   type="button"
                   onClick={() => setPrefacturaModalData(null)}
-                  className="bg-slate-200 hover:bg-slate-300 text-slate-700 font-bold px-3 py-1.5 rounded-lg text-xs transition-colors cursor-pointer"
+                  className="bg-slate-200 hover:bg-slate-300 text-slate-700 font-bold px-3 py-2 rounded-xl text-xs transition-all active:scale-95 cursor-pointer"
                 >
-                  Cerrar
+                  ✕
                 </button>
               </div>
             </div>
