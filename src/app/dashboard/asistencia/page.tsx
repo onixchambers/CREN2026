@@ -1353,7 +1353,7 @@ export default function AsistenciaPage() {
               </div>
 
               {/* CUERPO DE LA PREFACTURA */}
-              <div className="p-6 space-y-5 text-xs">
+              <div className="p-6 print:p-4 space-y-5 print:space-y-3 text-xs">
                 {/* DATOS DE LA CLÍNICA & PACIENTE */}
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4 bg-slate-50/80 p-4 rounded-2xl border border-slate-200">
                   <div className="space-y-1">
