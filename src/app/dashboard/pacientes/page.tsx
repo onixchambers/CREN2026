@@ -41,6 +41,7 @@ export default function PacientesPage() {
   const [bajaModalPatient, setBajaModalPatient] = useState<any | null>(null);
   const [bajaReason, setBajaReason] = useState("");
   const [isSubmittingBaja, setIsSubmittingBaja] = useState(false);
+  const [viewingPatient, setViewingPatient] = useState<any>(null);
 
   // Estados para Documentos y Notas Clínicas (PDF Structure)
   const [modalTab, setModalTab] = useState<"expediente" | "documentos" | "nuevo_documento" | "ver_documento">("expediente");
@@ -111,8 +112,6 @@ export default function PacientesPage() {
 
   const [currentPage, setCurrentPage] = useState(1);
   const ITEMS_PER_PAGE = 25;
-
-  const [viewingPatient, setViewingPatient] = useState<any>(null);
 
   // Filtro de Privacidad: Terapeutas ven pacientes asignados o con sesiones registradas
   const pacientesFiltrados = pacientes.filter(p => {
