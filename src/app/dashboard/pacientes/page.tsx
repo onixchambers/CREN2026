@@ -528,7 +528,18 @@ export default function PacientesPage() {
               </div>
             </div>
 
-            <button onClick={() => setViewingPatient(null)} className="w-full bg-[#1a5276] text-white font-bold py-2 rounded-lg text-xs">
+            {viewingPatient.observacionesAdmin && (
+              <div className="bg-red-50/90 p-3 rounded-lg border border-red-200 space-y-1 my-2">
+                <span className="font-extrabold text-red-900 text-xs flex items-center gap-1.5 uppercase tracking-wider">
+                  ⚠️ Motivo / Comentarios de la Baja
+                </span>
+                <p className="text-slate-800 text-xs font-medium whitespace-pre-wrap leading-relaxed">
+                  {viewingPatient.observacionesAdmin}
+                </p>
+              </div>
+            )}
+
+            <button onClick={() => setViewingPatient(null)} className="w-full bg-[#1a5276] hover:bg-[#0e2f44] text-white font-bold py-2.5 rounded-lg text-xs transition-colors shadow-sm cursor-pointer">
               Cerrar Expediente
             </button>
           </div>
