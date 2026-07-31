@@ -295,7 +295,7 @@ export default function PacientesPage() {
                     <td className="px-4 py-4">
                       {renderSaldo(p)}
                     </td>
-                    <td className="px-4 py-4 font-bold text-[#1a5276]">
+                    <td className="px-2 py-4 font-bold text-[#1a5276] text-[10px] whitespace-nowrap">
                       {precio === "—" || !precio
                         ? "—"
                         : (precio.includes("/")
