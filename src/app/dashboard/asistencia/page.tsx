@@ -329,7 +329,7 @@ export default function AsistenciaPage() {
       tipoPaquete: "Básico",
       numeroSesiones: "",
       costoTotal: "",
-      costoSesion: "Automático",
+      costoSesion: "",
       saldoDisponible: "",
       estadoAsistencia: "",
       metodoPago: "",
@@ -340,6 +340,7 @@ export default function AsistenciaPage() {
       observaciones: ""
     });
     setShowSegundoPago(false);
+    setShowDropdown(false);
   };
 
   const handleGuardar = async () => {
