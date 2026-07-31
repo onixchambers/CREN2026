@@ -34,12 +34,30 @@ body {
     size: 8.5in 11in;
     margin: 0.25in;
   }
-  html, body {
+  body * {
+    visibility: hidden !important;
+  }
+  #prefactura-sheet, #prefactura-sheet * {
+    visibility: visible !important;
+  }
+  #prefactura-sheet {
+    position: absolute !important;
+    left: 0 !important;
+    top: 0 !important;
     width: 100% !important;
-    height: 100% !important;
+    max-width: 100% !important;
     margin: 0 !important;
     padding: 0 !important;
+    border: none !important;
+    box-shadow: none !important;
+    border-radius: 0 !important;
+    page-break-inside: avoid !important;
+    break-inside: avoid !important;
+  }
+  html, body {
     background: #ffffff !important;
+    height: auto !important;
+    overflow: visible !important;
     -webkit-print-color-adjust: exact !important;
     print-color-adjust: exact !important;
   }
