@@ -49,7 +49,7 @@ export default function AgendaPage() {
   const [isEditModalOpen, setIsEditModalOpen] = useState(false);
   const [selectedCita, setSelectedCita] = useState<Cita | null>(null);
   const [formData, setFormData] = useState({
-    paciente: "", fecha: hoy, hora: "09:00", terapeuta: "", tipoServicio: "individual", frecuencia: "semanal", numeroSesiones: 1, estado: "Alta" as Cita["estado"], pagado: false, metodoPago: ""
+    paciente: "", fecha: hoy, hora: "09:00", terapeuta: "", tipoServicio: "individual", frecuencia: "semanal", numeroSesiones: 1, estado: "Agendado" as Cita["estado"], pagado: false, metodoPago: ""
   });
 
   useEffect(() => {
@@ -143,7 +143,7 @@ export default function AgendaPage() {
           setCitas([...citas, { id: res.id, ...nuevaCitaObj } as Cita]); 
         }
         setIsModalOpen(false);
-        setFormData({ paciente: "", fecha: fechaSeleccionada, hora: "09:00", terapeuta: terapeutas[0] || "", tipoServicio: "individual", frecuencia: "semanal", numeroSesiones: 1, estado: "Alta", pagado: false, metodoPago: "" });
+        setFormData({ paciente: "", fecha: fechaSeleccionada, hora: "09:00", terapeuta: terapeutas[0] || "", tipoServicio: "individual", frecuencia: "semanal", numeroSesiones: 1, estado: "Agendado", pagado: false, metodoPago: "" });
       } else {
         alert("Error: " + res.error);
       }
@@ -266,8 +266,8 @@ export default function AgendaPage() {
         style: { color: "#7c2d12", backgroundColor: "rgba(254, 215, 170, 0.85)" }
       };
     }
-    if (est === "alta") {
-      // Alta -> Verde por defecto
+    if (est === "agendado" || est === "alta") {
+      // Agendado / Alta -> Verde por defecto
       return {
         className: "bg-emerald-100 text-emerald-900 border-emerald-400 font-bold shadow-sm",
         style: { color: "#065f46", backgroundColor: "#d1fae5" }
@@ -294,7 +294,7 @@ export default function AgendaPage() {
       };
     }
     
-    // Default fallback -> Alta (Verde por defecto)
+    // Default fallback -> Agendado (Verde por defecto)
     return {
       className: "bg-emerald-100 text-emerald-900 border-emerald-400 font-bold shadow-sm",
       style: { color: "#065f46", backgroundColor: "#d1fae5" }
@@ -318,7 +318,7 @@ export default function AgendaPage() {
       tipoServicio: "individual",
       frecuencia: "semanal",
       numeroSesiones: 1,
-      estado: "Alta",
+      estado: "Agendado",
       pagado: false,
       metodoPago: ""
     });
@@ -424,7 +424,7 @@ export default function AgendaPage() {
                                     {(cita.estado === "Ocupado" || cita.estado === "No Disponible" || cita.paciente === "No Disponible") ? "No Disponible" : cita.paciente}
                                   </span>
                                   <span className="text-[10px] opacity-90 uppercase mt-0.5 truncate w-full text-center">
-                                    {(cita.estado === "Ocupado" || cita.estado === "No Disponible" || cita.paciente === "No Disponible") ? "Bloqueado" : (cita.estado || "Alta")}
+                                    {(cita.estado === "Ocupado" || cita.estado === "No Disponible" || cita.paciente === "No Disponible") ? "Bloqueado" : (cita.estado || "Agendado")}
                                   </span>
                                 </div>
                               );
@@ -617,7 +617,7 @@ export default function AgendaPage() {
                 <div className="md:col-span-2">
                   <label className="block text-xs font-semibold text-slate-600 uppercase mb-1">Estado de la Cita</label>
                   <select name="estado" value={formData.estado} onChange={handleInputChange} className="w-full text-slate-900 font-bold border border-slate-300 rounded-lg px-3 py-2 outline-none focus:border-[#2980b9] bg-white">
-                    <option value="Alta">Alta (Default - Verde)</option>
+                    <option value="Agendado">Agendado (Default - Verde)</option>
                     <option value="Asistio">Asistió (Gris)</option>
                     <option value="Cancelo con anticipacion">Canceló con anticipación (Naranja traslúcido)</option>
                     <option value="Cancelo sin anticipacion">Canceló sin anticipación (Rojo traslúcido)</option>
@@ -664,7 +664,7 @@ export default function AgendaPage() {
                   onChange={e => setSelectedCita({...selectedCita, estado: e.target.value})} 
                   className="w-full text-slate-900 font-medium border border-slate-300 rounded-lg px-3 py-2 outline-none focus:border-[#2980b9] bg-white"
                 >
-                  <option value="Alta">Alta (Verde)</option>
+                  <option value="Agendado">Agendado (Verde)</option>
                   <option value="Asistio">Asistió (Gris)</option>
                   <option value="Cancelo con anticipacion">Canceló con anticipación (Naranja traslúcido)</option>
                   <option value="Cancelo sin anticipacion">Canceló sin anticipación (Rojo traslúcido)</option>
