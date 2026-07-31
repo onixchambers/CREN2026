@@ -367,9 +367,11 @@ export default function AsistenciaPage() {
 
     let metodoPagoFinal = formData.metodoPago;
     if (showSegundoPago && formData.metodoPago2) {
-      metodoPagoFinal = `Mixto (${formData.metodoPago || 'P1'}: $${p1}, ${formData.metodoPago2}: $${p2})`;
+      metodoPagoFinal = `${formData.metodoPago || 'P1'} $${p1}\n${formData.metodoPago2} $${p2}`;
     } else if (showSegundoPago) {
-      metodoPagoFinal = "Mixto";
+      metodoPagoFinal = `${formData.metodoPago || 'Efectivo'} $${p1}`;
+    } else if (p1 > 0 && formData.metodoPago) {
+      metodoPagoFinal = `${formData.metodoPago} $${p1}`;
     }
 
     const nuevaAsistencia: Asistencia = {
@@ -988,9 +990,31 @@ export default function AsistenciaPage() {
                   </td>
                   <td className="px-2 py-3 text-slate-500 font-bold">{a.sesiones}</td>
                   <td className="px-2 py-3">
-                    <span className="bg-blue-50 text-blue-700 border border-blue-200 px-2 py-0.5 rounded font-semibold text-[11px] whitespace-nowrap">
-                      {a.metodoPago || "Efectivo"}
-                    </span>
+                    {(() => {
+                      const val = a.metodoPago || "Efectivo";
+                      let lines: string[] = [];
+                      if (val.includes("Mixto (")) {
+                        const content = val.replace(/^Mixto\s*\(/i, "").replace(/\)$/, "");
+                        lines = content.split(",").map(p => p.trim().replace(":", ""));
+                      } else if (val.includes("\n")) {
+                        lines = val.split("\n").map(p => p.trim());
+                      } else if (val.includes(" / ")) {
+                        lines = val.split(" / ").map(p => p.trim());
+                      } else if (val.includes(" + ")) {
+                        lines = val.split(" + ").map(p => p.trim());
+                      } else {
+                        lines = [val];
+                      }
+                      return (
+                        <div className="flex flex-col items-center justify-center gap-1 my-0.5">
+                          {lines.map((line, idx) => (
+                            <span key={idx} className="bg-blue-50 text-blue-800 border border-blue-200 px-2 py-0.5 rounded text-[11px] font-bold block text-center whitespace-nowrap shadow-xs">
+                              {line}
+                            </span>
+                          ))}
+                        </div>
+                      );
+                    })()}
                   </td>
                   <td className="px-2 py-3 text-slate-500">{a.pago || "SÍ"}</td>
                   <td className="px-2 py-3 text-slate-500">{a.fact}</td>

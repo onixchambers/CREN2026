@@ -278,10 +278,32 @@ export default function PacientesPage() {
                             ? precio.split(" / ").map((val: string) => `$${val.replace("$", "")}`).join(" / ")
                             : (precio.startsWith("$") ? precio : `$${precio}`))}
                     </td>
-                    <td className="px-4 py-4 max-w-[200px]">
-                      <span className="bg-blue-50 text-blue-700 border border-blue-200 px-2.5 py-1 rounded-lg text-[11px] font-semibold inline-block text-center leading-snug">
-                        {p.metodoPago || "Efectivo"}
-                      </span>
+                    <td className="px-4 py-4 max-w-[220px]">
+                      {(() => {
+                        const val = p.metodoPago || "Efectivo";
+                        let lines: string[] = [];
+                        if (val.includes("Mixto (")) {
+                          const content = val.replace(/^Mixto\s*\(/i, "").replace(/\)$/, "");
+                          lines = content.split(",").map(item => item.trim().replace(":", ""));
+                        } else if (val.includes("\n")) {
+                          lines = val.split("\n").map(item => item.trim());
+                        } else if (val.includes(" / ")) {
+                          lines = val.split(" / ").map(item => item.trim());
+                        } else if (val.includes(" + ")) {
+                          lines = val.split(" + ").map(item => item.trim());
+                        } else {
+                          lines = [val];
+                        }
+                        return (
+                          <div className="flex flex-col items-center justify-center gap-1 my-0.5">
+                            {lines.map((line, idx) => (
+                              <span key={idx} className="bg-blue-50 text-blue-800 border border-blue-200 px-2 py-0.5 rounded text-[11px] font-bold block text-center whitespace-nowrap shadow-xs">
+                                {line}
+                              </span>
+                            ))}
+                          </div>
+                        );
+                      })()}
                     </td>
                     <td className="px-4 py-4 text-slate-700 font-bold">
                       {p.ultima || "$0.00"}
