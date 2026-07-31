@@ -464,15 +464,14 @@ export default function PreregistrosPage() {
         result = await createPatient(finalFormData);
       }
 
-      if (result.success) {
-        // Subir a Google Drive cuando el paciente cuenta con firma digital registrada
-        if (selectedPreReg?.signatureDataUrl || formData.consentimientoFirmado) {
+        // Subir a Google Drive cuando el paciente llenó el formulario con firma digital y la terapeuta guarda el registro
+        if (selectedPreReg && selectedPreReg.signatureDataUrl) {
           try {
-            const signatureUrl = selectedPreReg?.signatureDataUrl || "";
-            const cryptoHash = selectedPreReg?.cryptoHash || "";
-            const signedTimestamp = selectedPreReg?.updatedAt || selectedPreReg?.createdAt || new Date().toISOString();
-            const ip = selectedPreReg?.ipAddress || "Ficha ID CREN";
-            const ua = selectedPreReg?.userAgent || "Navegador CREN";
+            const signatureUrl = selectedPreReg.signatureDataUrl || "";
+            const cryptoHash = selectedPreReg.cryptoHash || "";
+            const signedTimestamp = selectedPreReg.updatedAt || selectedPreReg.createdAt || new Date().toISOString();
+            const ip = selectedPreReg.ipAddress || "Ficha ID CREN";
+            const ua = selectedPreReg.userAgent || "Navegador CREN";
 
             const rawDocName = formData.medicoTratante || userName;
             const isDocNonTherapist = ["administrador", "admin", "contador", "invitado", "general"].some(kw => rawDocName.toLowerCase().includes(kw));
