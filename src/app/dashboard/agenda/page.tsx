@@ -400,7 +400,7 @@ export default function AgendaPage() {
                     Nombre del Paciente {formData.estado === "Ocupado" && <span className="text-red-500 font-bold">(Bloqueado - No Disponible)</span>}
                   </label>
                   <input 
-                    required={formData.estado === "Disponible"}
+                    required={formData.estado !== "Ocupado"}
                     disabled={formData.estado === "Ocupado"}
                     type="text" 
                     name="paciente" 
@@ -411,32 +411,42 @@ export default function AgendaPage() {
                       setShowDropdown(true);
                     }}
                     onFocus={() => setShowDropdown(true)}
-                    onBlur={() => setTimeout(() => setShowDropdown(false), 200)}
+                    onBlur={() => setTimeout(() => setShowDropdown(false), 250)}
                     className={`w-full text-slate-900 font-medium border border-slate-300 rounded-lg px-3 py-2 outline-none focus:border-[#2980b9] ${formData.estado === "Ocupado" ? "bg-slate-100 text-slate-400 cursor-not-allowed" : ""}`} 
                     placeholder={formData.estado === "Ocupado" ? "No Disponible" : "Escribir para buscar paciente..."} 
                   />
-                  {showDropdown && formData.estado === "Disponible" && (
+                  {showDropdown && formData.estado !== "Ocupado" && (
                     <ul className="absolute z-10 w-full bg-white border border-slate-300 rounded-md mt-1 max-h-48 overflow-y-auto shadow-lg">
-                      {pacientes
-                        .filter(p => p.name.toLowerCase().includes(formData.paciente.toLowerCase()))
-                        .map(p => (
+                      {(() => {
+                        const searchNorm = (formData.paciente || "").trim().toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "");
+                        const filtered = pacientes.filter(p => {
+                          const pNorm = (p.name || "").toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "");
+                          return pNorm.includes(searchNorm);
+                        });
+                        return filtered.map(p => (
                           <li 
                             key={p.id} 
+                            onMouseDown={(e) => e.preventDefault()}
                             className="px-3 py-2 text-sm text-slate-700 hover:bg-[#2980b9] hover:text-white cursor-pointer"
                             onClick={() => {
-                              setFormData({
-                                ...formData,
+                              setFormData(prev => ({
+                                ...prev,
                                 paciente: p.name,
-                              });
+                              }));
                               setShowDropdown(false);
                             }}
                           >
                             {p.name}
                           </li>
-                        ))}
-                      {pacientes.filter(p => p.name.toLowerCase().includes(formData.paciente.toLowerCase())).length === 0 && (
-                        <li className="px-3 py-2 text-sm text-slate-400">No se encontraron pacientes</li>
-                      )}
+                        ));
+                      })()}
+                      {(() => {
+                        const searchNorm = (formData.paciente || "").trim().toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "");
+                        const filtered = pacientes.filter(p => (p.name || "").toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "").includes(searchNorm));
+                        return filtered.length === 0 ? (
+                          <li className="px-3 py-2 text-sm text-slate-400">No se encontraron pacientes</li>
+                        ) : null;
+                      })()}
                     </ul>
                   )}
                 </div>

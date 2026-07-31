@@ -69,13 +69,24 @@ export async function addCita(data: any) {
       }
       patientId = patient.id;
     } else {
-      const patient = await prisma.patient.findFirst({ where: { name: data.paciente } });
-      if (!patient) return { success: false, error: "Paciente no encontrado en DB." };
+      const pNameTrim = (data.paciente || "").trim();
+      let patient = await prisma.patient.findFirst({
+        where: {
+          name: { equals: pNameTrim, mode: "insensitive" }
+        }
+      });
+      if (!patient) {
+        const allP = await prisma.patient.findMany();
+        patient = allP.find(p => p.name.trim().toLowerCase() === pNameTrim.toLowerCase()) || null;
+      }
 
-      if (patient.estatus && patient.estatus.toLowerCase() === "desactivo") {
-        return { success: false, error: "El paciente está Desactivo. Para agendarle citas, primero debes cambiar su estado a Activo en el Directorio de Pacientes." };
+      if (!patient) return { success: false, error: `El paciente "${data.paciente}" no fue encontrado en el Registro de Pacientes.` };
+
+      if (patient.estatus && patient.estatus.toLowerCase() === "inactivo") {
+        return { success: false, error: `El paciente "${patient.name}" se encuentra en estado INACTIVO. Para agendarle citas, primero cámbialo a ACTIVO en la pestaña de Pacientes.` };
       }
       patientId = patient.id;
+      data.paciente = patient.name;
     }
 
     const allUsers = await prisma.user.findMany();
