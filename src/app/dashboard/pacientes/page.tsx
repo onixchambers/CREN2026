@@ -88,10 +88,6 @@ export default function PacientesPage() {
       setIsSubmittingBaja(false);
     }
   };
-    } finally {
-      setIsSubmittingBaja(false);
-    }
-  };
 
   useEffect(() => {
     async function loadData() {
