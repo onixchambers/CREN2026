@@ -43,8 +43,9 @@ export async function getAgenda() {
 
 export async function addCita(data: any) {
   try {
-    const hourNum = parseInt((data.hora || "09:00").split(":")[0]);
-    if (isNaN(hourNum) || hourNum < 7 || hourNum > 22) {
+    const [h, m] = (data.hora || "09:00").split(":").map(Number);
+    const totalMins = h * 60 + (m || 0);
+    if (isNaN(totalMins) || totalMins < 420 || totalMins > 1320) {
       return { success: false, error: "Las citas solo pueden agendarse entre las 07:00 AM y las 10:00 PM." };
     }
 

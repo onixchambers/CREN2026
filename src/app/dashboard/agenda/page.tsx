@@ -113,9 +113,10 @@ export default function AgendaPage() {
     e.preventDefault();
     if (isSubmittingCita) return;
     
-    const hourNum = parseInt((formData.hora || "09:00").split(":")[0]);
-    if (isNaN(hourNum) || hourNum < 7 || hourNum > 22) {
-      alert("Las citas solo pueden agendarse en el horario de 7:00 AM a 10:00 PM.");
+    const [h, m] = (formData.hora || "09:00").split(":").map(Number);
+    const totalMins = h * 60 + (m || 0);
+    if (isNaN(totalMins) || totalMins < 420 || totalMins > 1320) {
+      alert("Las citas solo pueden agendarse en el horario de 7:00 AM a 10:00 PM (07:00 a 22:00).");
       return;
     }
 
@@ -582,7 +583,7 @@ export default function AgendaPage() {
                 </div>
                 <div>
                   <label className="block text-xs font-semibold text-slate-600 uppercase mb-1">Hora</label>
-                  <input required type="time" name="hora" value={formData.hora} onChange={handleInputChange} className="w-full text-slate-900 font-medium border border-slate-300 rounded-lg px-3 py-2 outline-none focus:border-[#2980b9]" />
+                  <input required type="time" min="07:00" max="22:00" name="hora" value={formData.hora} onChange={handleInputChange} className="w-full text-slate-900 font-medium border border-slate-300 rounded-lg px-3 py-2 outline-none focus:border-[#2980b9]" />
                 </div>
 
                 {/* Servicio y Frecuencia */}
