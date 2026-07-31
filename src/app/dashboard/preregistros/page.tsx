@@ -464,6 +464,7 @@ export default function PreregistrosPage() {
         result = await createPatient(finalFormData);
       }
 
+      if (result.success) {
         // Subir a Google Drive cuando el paciente llenó el formulario con firma digital y la terapeuta guarda el registro
         if (selectedPreReg && selectedPreReg.signatureDataUrl) {
           try {
