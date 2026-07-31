@@ -421,7 +421,7 @@ export default function InformesPage() {
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-slate-100">
-                  {informesFiltrados.map(inf => (
+                  {paginatedInformes.map(inf => (
                     <tr key={inf.id} className="hover:bg-slate-50">
                       <td className="px-4 py-3 text-slate-600">{formatDateStr(inf.fecha)}</td>
                       <td className="px-4 py-3 font-bold text-[#1a5276]">{inf.paciente}</td>
@@ -464,6 +464,34 @@ export default function InformesPage() {
           )}
         </div>
       </div>
+
+      {/* PAGINACIÓN DE INFORMES */}
+      {totalPages > 1 && (
+        <div className="flex justify-between items-center bg-white p-4 rounded-xl shadow-sm border border-slate-200 mt-4">
+          <div className="text-sm text-slate-500">
+            Mostrando {((currentPage - 1) * ITEMS_PER_PAGE) + 1} a {Math.min(currentPage * ITEMS_PER_PAGE, informesFiltrados.length)} de {informesFiltrados.length}
+          </div>
+          <div className="flex gap-2">
+            <button 
+              disabled={currentPage === 1}
+              onClick={() => setCurrentPage(prev => prev - 1)}
+              className="px-3 py-1 border border-slate-300 rounded text-sm disabled:opacity-50 hover:bg-slate-50 cursor-pointer"
+            >
+              Anterior
+            </button>
+            <span className="px-3 py-1 text-sm font-semibold text-slate-700">
+              Página {currentPage} de {totalPages}
+            </span>
+            <button 
+              disabled={currentPage === totalPages}
+              onClick={() => setCurrentPage(prev => prev + 1)}
+              className="px-3 py-1 border border-slate-300 rounded text-sm disabled:opacity-50 hover:bg-slate-50 cursor-pointer"
+            >
+              Siguiente
+            </button>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

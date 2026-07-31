@@ -52,6 +52,7 @@ export default function PacientesPage() {
   const [activeDocToView, setActiveDocToView] = useState<any | null>(null);
   const [docSearchQuery, setDocSearchQuery] = useState("");
   const [isSavingDoc, setIsSavingDoc] = useState(false);
+  const [docsCurrentPage, setDocsCurrentPage] = useState(1);
 
   useEffect(() => {
     if (viewingPatient?.id) {
@@ -737,56 +738,106 @@ export default function PacientesPage() {
                               </td>
                             </tr>
                           ) : patientDocs.length > 0 ? (
-                            patientDocs
-                              .filter(d => 
+                            (() => {
+                              const docsItemsPerPage = 25;
+                              const filteredDocs = patientDocs.filter(d => 
                                 !docSearchQuery || 
                                 (d.tipo || "").toLowerCase().includes(docSearchQuery.toLowerCase()) || 
                                 (d.terapeuta || "").toLowerCase().includes(docSearchQuery.toLowerCase())
-                              )
-                              .map((doc, idx) => (
-                                <tr key={doc.id || idx} className="hover:bg-slate-50 transition-colors">
-                                  <td className="px-3 py-2.5 font-semibold text-slate-800">{doc.fecha}</td>
-                                  <td className="px-3 py-2.5 text-slate-600">{doc.hora || "19:30:00"}</td>
-                                  <td className="px-3 py-2.5 font-bold text-[#1a5276] uppercase">
-                                    {doc.tipo}
-                                  </td>
-                                  <td className="px-3 py-2.5 font-semibold text-slate-700 uppercase">
-                                    {doc.terapeuta || "LOURDES RINCÓN"}
-                                  </td>
-                                  <td className="px-3 py-2.5">
-                                    <span className="bg-blue-50 text-blue-700 border border-blue-200 px-2 py-0.5 rounded text-[10px] font-semibold flex items-center gap-1 w-fit">
-                                      <span>📁</span> {doc.driveFolder || `Google Drive / ${doc.terapeuta || 'Terapeuta'} / Notas Clínicas`}
-                                    </span>
-                                  </td>
-                                  <td className="px-3 py-2.5 text-center">
-                                    <div className="flex items-center justify-center gap-1.5">
-                                      <button
-                                        type="button"
-                                        onClick={() => {
-                                          setActiveDocToView(doc);
-                                          setModalTab("ver_documento");
-                                        }}
-                                        className="bg-[#27ae60] hover:bg-[#219653] text-white font-black px-3 py-1 rounded text-[10px] uppercase shadow-2xs transition-colors cursor-pointer flex items-center gap-1"
-                                      >
-                                        <span>👁️ VER / PDF</span>
-                                      </button>
-                                      <button
-                                        type="button"
-                                        onClick={async () => {
-                                          if (window.confirm("¿Deseas borrar este documento clínico?")) {
-                                            const res = await deletePatientDocument(viewingPatient.id, doc.id);
-                                            if (res.success && res.data) setPatientDocs(res.data);
-                                          }
-                                        }}
-                                        className="text-red-500 hover:text-red-700 text-xs p-1"
-                                        title="Eliminar registro"
-                                      >
-                                        🗑️
-                                      </button>
-                                    </div>
-                                  </td>
-                                </tr>
-                              ))
+                              );
+                              const totalDocsPages = Math.ceil(filteredDocs.length / docsItemsPerPage);
+                              
+                              // Ajustar docsCurrentPage si es mayor al total de páginas
+                              const activePage = Math.min(docsCurrentPage, Math.max(totalDocsPages, 1));
+                              
+                              const paginatedDocs = filteredDocs.slice(
+                                (activePage - 1) * docsItemsPerPage,
+                                activePage * docsItemsPerPage
+                              );
+
+                              return (
+                                <>
+                                  {paginatedDocs.map((doc, idx) => (
+                                    <tr key={doc.id || idx} className="hover:bg-slate-50 transition-colors">
+                                      <td className="px-3 py-2.5 font-semibold text-slate-800">{doc.fecha}</td>
+                                      <td className="px-3 py-2.5 text-slate-600">{doc.hora || "19:30:00"}</td>
+                                      <td className="px-3 py-2.5 font-bold text-[#1a5276] uppercase">
+                                        {doc.tipo}
+                                      </td>
+                                      <td className="px-3 py-2.5 font-semibold text-slate-700 uppercase">
+                                        {doc.terapeuta || "LOURDES RINCÓN"}
+                                      </td>
+                                      <td className="px-3 py-2.5">
+                                        <span className="bg-blue-50 text-blue-700 border border-blue-200 px-2 py-0.5 rounded text-[10px] font-semibold flex items-center gap-1 w-fit">
+                                          <span>📁</span> {doc.driveFolder || `Google Drive / ${doc.terapeuta || 'Terapeuta'} / Notas Clínicas`}
+                                        </span>
+                                      </td>
+                                      <td className="px-3 py-2.5 text-center">
+                                        <div className="flex items-center justify-center gap-1.5">
+                                          <button
+                                            type="button"
+                                            onClick={() => {
+                                              setActiveDocToView(doc);
+                                              setModalTab("ver_documento");
+                                            }}
+                                            className="bg-[#27ae60] hover:bg-[#219653] text-white font-black px-3 py-1 rounded text-[10px] uppercase shadow-2xs transition-colors cursor-pointer flex items-center gap-1"
+                                          >
+                                            <span>👁️ VER / PDF</span>
+                                          </button>
+                                          <button
+                                            type="button"
+                                            onClick={async () => {
+                                              if (window.confirm("¿Deseas borrar este documento clínico?")) {
+                                                const res = await deletePatientDocument(viewingPatient.id, doc.id);
+                                                if (res.success && res.data) setPatientDocs(res.data);
+                                              }
+                                            }}
+                                            className="text-red-500 hover:text-red-700 text-xs p-1"
+                                            title="Eliminar registro"
+                                          >
+                                            🗑️
+                                          </button>
+                                        </div>
+                                      </td>
+                                    </tr>
+                                  ))}
+
+                                  {/* CONTROLES DE PAGINACIÓN DE DOCUMENTOS */}
+                                  {totalDocsPages > 1 && (
+                                    <tr>
+                                      <td colSpan={6} className="px-4 py-3 bg-slate-50 border-t border-slate-200">
+                                        <div className="flex justify-between items-center text-xs">
+                                          <div className="text-slate-500">
+                                            Mostrando {((activePage - 1) * docsItemsPerPage) + 1} a {Math.min(activePage * docsItemsPerPage, filteredDocs.length)} de {filteredDocs.length}
+                                          </div>
+                                          <div className="flex gap-2">
+                                            <button 
+                                              type="button"
+                                              disabled={activePage === 1}
+                                              onClick={() => setDocsCurrentPage(prev => prev - 1)}
+                                              className="px-2.5 py-1 border border-slate-300 rounded bg-white text-slate-700 disabled:opacity-50 hover:bg-slate-50 cursor-pointer font-bold"
+                                            >
+                                              Anterior
+                                            </button>
+                                            <span className="px-2.5 py-1 text-slate-700 font-bold">
+                                              Página {activePage} de {totalDocsPages}
+                                            </span>
+                                            <button 
+                                              type="button"
+                                              disabled={activePage === totalDocsPages}
+                                              onClick={() => setDocsCurrentPage(prev => prev + 1)}
+                                              className="px-2.5 py-1 border border-slate-300 rounded bg-white text-slate-700 disabled:opacity-50 hover:bg-slate-50 cursor-pointer font-bold"
+                                            >
+                                              Siguiente
+                                            </button>
+                                          </div>
+                                        </div>
+                                      </td>
+                                    </tr>
+                                  )}
+                                </>
+                              );
+                            })()
                           ) : (
                             <tr>
                               <td colSpan={6} className="px-4 py-8 text-center text-slate-400 font-medium">
