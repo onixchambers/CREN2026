@@ -404,3 +404,94 @@ export async function updatePatientStatus(id: string, estatus: string, motivo?: 
     return { success: false, error: error?.message || "Error al actualizar estado del paciente." };
   }
 }
+
+export async function getPatientDocuments(patientId: string) {
+  try {
+    const patient = await prisma.patient.findUnique({ where: { id: patientId } });
+    if (!patient) return { success: false, error: "Paciente no encontrado." };
+    let docs: any[] = [];
+    if (patient.notes) {
+      try {
+        const parsed = JSON.parse(patient.notes);
+        if (Array.isArray(parsed.documents)) docs = parsed.documents;
+      } catch(e) {}
+    }
+    return { success: true, data: docs };
+  } catch (error: any) {
+    return { success: false, error: error.message };
+  }
+}
+
+export async function savePatientDocument(patientId: string, docData: any) {
+  try {
+    const patient = await prisma.patient.findUnique({ where: { id: patientId } });
+    if (!patient) return { success: false, error: "Paciente no encontrado." };
+
+    let existingNotes: any = {};
+    let docs: any[] = [];
+    if (patient.notes) {
+      try {
+        existingNotes = JSON.parse(patient.notes);
+        if (Array.isArray(existingNotes.documents)) docs = existingNotes.documents;
+      } catch(e) {
+        existingNotes = { raw: patient.notes };
+      }
+    }
+
+    if (docData.id) {
+      docs = docs.map(d => d.id === docData.id ? { ...d, ...docData, updatedAt: new Date().toISOString() } : d);
+    } else {
+      const now = new Date();
+      const newDoc = {
+        id: "DOC-" + Math.floor(1000 + Math.random() * 9000),
+        fecha: docData.fecha || now.toISOString().split("T")[0],
+        hora: now.toLocaleTimeString("es-MX", { hour: "2-digit", minute: "2-digit", second: "2-digit" }),
+        tipo: docData.tipo || "Registro de Evolución",
+        terapeuta: docData.terapeuta || "LOURDES RINCÓN",
+        contenido: docData.contenido || {},
+        createdAt: now.toISOString()
+      };
+      docs.unshift(newDoc);
+    }
+
+    existingNotes.documents = docs;
+    await prisma.patient.update({
+      where: { id: patientId },
+      data: { notes: JSON.stringify(existingNotes) }
+    });
+
+    revalidatePath("/dashboard/pacientes");
+    return { success: true, data: docs };
+  } catch (error: any) {
+    return { success: false, error: error.message };
+  }
+}
+
+export async function deletePatientDocument(patientId: string, docId: string) {
+  try {
+    const patient = await prisma.patient.findUnique({ where: { id: patientId } });
+    if (!patient) return { success: false, error: "Paciente no encontrado." };
+
+    let existingNotes: any = {};
+    let docs: any[] = [];
+    if (patient.notes) {
+      try {
+        existingNotes = JSON.parse(patient.notes);
+        if (Array.isArray(existingNotes.documents)) docs = existingNotes.documents;
+      } catch(e) {}
+    }
+
+    docs = docs.filter(d => d.id !== docId);
+    existingNotes.documents = docs;
+
+    await prisma.patient.update({
+      where: { id: patientId },
+      data: { notes: JSON.stringify(existingNotes) }
+    });
+
+    revalidatePath("/dashboard/pacientes");
+    return { success: true, data: docs };
+  } catch (error: any) {
+    return { success: false, error: error.message };
+  }
+}

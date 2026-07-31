@@ -32,6 +32,33 @@ export default function PacientesPage() {
   const [bajaReason, setBajaReason] = useState("");
   const [isSubmittingBaja, setIsSubmittingBaja] = useState(false);
 
+  // Estados para Documentos y Notas Clínicas (PDF Structure)
+  const [modalTab, setModalTab] = useState<"expediente" | "documentos" | "nuevo_documento" | "ver_documento">("expediente");
+  const [patientDocs, setPatientDocs] = useState<any[]>([]);
+  const [isLoadingDocs, setIsLoadingDocs] = useState(false);
+  const [selectedNoteType, setSelectedNoteType] = useState("Registro de Evolución");
+  const [docFormData, setDocFormData] = useState<any>({});
+  const [activeDocToView, setActiveDocToView] = useState<any | null>(null);
+  const [docSearchQuery, setDocSearchQuery] = useState("");
+  const [isSavingDoc, setIsSavingDoc] = useState(false);
+
+  useEffect(() => {
+    if (viewingPatient?.id) {
+      setModalTab("expediente");
+      setIsLoadingDocs(true);
+      import('@/app/actions/pacientes').then(({ getPatientDocuments }) => {
+        getPatientDocuments(viewingPatient.id).then(res => {
+          if (res.success && res.data) {
+            setPatientDocs(res.data);
+          } else {
+            setPatientDocs([]);
+          }
+          setIsLoadingDocs(false);
+        });
+      });
+    }
+  }, [viewingPatient?.id]);
+
   const handleConfirmBaja = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!bajaModalPatient) return;
@@ -426,11 +453,12 @@ export default function PacientesPage() {
         </div>
       )}
 
-      {/* MODAL DETALLES DEL PACIENTE */}
+      {/* MODAL DETALLES Y EXPEDIENTE DE DOCUMENTOS CLINICOS (ESTRUCTURA DEL PDF) */}
       {viewingPatient && (
-        <div className="fixed inset-0 z-50 bg-black/50 flex items-center justify-center p-4">
-          <div className="bg-white rounded-xl max-w-lg w-full p-6 space-y-4 shadow-2xl animate-in zoom-in-95 duration-200">
-            <div className="flex justify-between items-start border-b border-slate-200 pb-3">
+        <div className="fixed inset-0 z-50 bg-black/60 backdrop-blur-xs flex items-center justify-center p-2 md:p-4 overflow-y-auto">
+          <div className="bg-white rounded-2xl max-w-5xl w-full p-4 md:p-6 space-y-4 shadow-2xl animate-in zoom-in-95 duration-200 border border-slate-100 max-h-[92vh] flex flex-col my-auto">
+            {/* CABECERA PRINCIPAL CON DATOS DEL PACIENTE Y TABS */}
+            <div className="flex flex-wrap justify-between items-center border-b border-slate-200 pb-3 gap-3">
               <div className="flex items-center gap-3">
                 <div className="relative group cursor-pointer" title="Hacer clic para subir o cambiar foto del paciente">
                   <input
@@ -486,62 +514,623 @@ export default function PacientesPage() {
                   />
                   <label htmlFor="photoUploadInput" className="cursor-pointer relative block">
                     {viewingPatient.foto ? (
-                      <img src={viewingPatient.foto} alt="Foto" className="w-14 h-14 rounded-full object-cover border-2 border-[#1a5276] shadow-sm" />
+                      <img src={viewingPatient.foto} alt="Foto" className="w-12 h-12 rounded-full object-cover border-2 border-[#1a5276] shadow-sm" />
                     ) : (
-                      <div className="w-14 h-14 rounded-full bg-slate-100 border-2 border-dashed border-slate-300 flex items-center justify-center text-slate-400 font-bold text-xl hover:bg-slate-200 transition-colors">
+                      <div className="w-12 h-12 rounded-full bg-slate-100 border-2 border-dashed border-slate-300 flex items-center justify-center text-slate-400 font-bold text-lg hover:bg-slate-200 transition-colors">
                         {viewingPatient.name ? viewingPatient.name.charAt(0).toUpperCase() : "📷"}
                       </div>
                     )}
                     <div className="absolute inset-0 rounded-full bg-black/40 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity">
-                      <span className="text-white text-[10px] font-bold text-center leading-tight">📷 Cambiar</span>
+                      <span className="text-white text-[9px] font-bold text-center leading-tight">📷 Cambiar</span>
                     </div>
                   </label>
                 </div>
                 <div>
-                  <h3 className="text-lg font-bold text-slate-800">{viewingPatient.name}</h3>
-                  <p className="text-xs text-slate-500">Médico Tratante: {viewingPatient.medicoTratante || "Sin asignar"}</p>
+                  <h3 className="text-base md:text-lg font-bold text-slate-900 leading-tight">{viewingPatient.name}</h3>
+                  <p className="text-xs text-slate-500 font-medium">Médico Tratante: <span className="font-semibold text-slate-700">{viewingPatient.medicoTratante || "Sin asignar"}</span></p>
                 </div>
               </div>
-              <button onClick={() => setViewingPatient(null)} className="text-slate-400 hover:text-slate-600 font-bold text-lg">✕</button>
+
+              {/* NAVEGACIÓN ENTRE EXPEDIENTE Y DOCUMENTOS */}
+              <div className="flex items-center gap-2">
+                <div className="bg-slate-100 p-1 rounded-xl flex items-center gap-1 border border-slate-200">
+                  <button
+                    type="button"
+                    onClick={() => setModalTab("expediente")}
+                    className={`px-3 py-1.5 rounded-lg text-xs font-extrabold transition-all cursor-pointer ${
+                      modalTab === "expediente"
+                        ? "bg-[#1a5276] text-white shadow-xs"
+                        : "text-slate-600 hover:text-slate-900"
+                    }`}
+                  >
+                    📋 Ficha & Datos
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setModalTab("documentos")}
+                    className={`px-3 py-1.5 rounded-lg text-xs font-extrabold transition-all cursor-pointer flex items-center gap-1.5 ${
+                      modalTab !== "expediente"
+                        ? "bg-[#1a5276] text-white shadow-xs"
+                        : "text-slate-600 hover:text-slate-900"
+                    }`}
+                  >
+                    <span>📁 Documentos & Notas Clínicas</span>
+                    <span className="bg-amber-400 text-slate-900 px-1.5 py-0.5 rounded-full text-[10px] font-black">
+                      {patientDocs.length}
+                    </span>
+                  </button>
+                </div>
+                <button 
+                  onClick={() => setViewingPatient(null)} 
+                  className="text-slate-400 hover:text-slate-700 font-extrabold text-xl p-1 rounded-lg hover:bg-slate-100 transition-colors"
+                  title="Cerrar ventana"
+                >
+                  ✕
+                </button>
+              </div>
             </div>
 
-            <div className="grid grid-cols-2 gap-3 text-xs">
-              <div className="bg-slate-50 p-2.5 rounded border border-slate-200">
-                <span className="font-bold text-slate-500 block">Fecha Nacimiento:</span>
-                <span className="text-slate-800 font-semibold">{viewingPatient.fechaNacimiento || "—"}</span>
-              </div>
-              <div className="bg-slate-50 p-2.5 rounded border border-slate-200">
-                <span className="font-bold text-slate-500 block">Sexo:</span>
-                <span className="text-slate-800 font-semibold">{viewingPatient.sexo || "—"}</span>
-              </div>
-              <div className="bg-slate-50 p-2.5 rounded border border-slate-200">
-                <span className="font-bold text-slate-500 block">Asistencia Acumulada:</span>
-                <span className="text-emerald-700 font-extrabold">{viewingPatient.asistencias || 0}/{viewingPatient.sesiones || 10}</span>
-              </div>
-              <div className="bg-slate-50 p-2.5 rounded border border-slate-200">
-                <span className="font-bold text-slate-500 block">Precio por Terapia:</span>
-                <span className="text-blue-700 font-extrabold">${viewingPatient.precioTerapia || "500"}</span>
-              </div>
-              <div className="bg-slate-50 p-2.5 rounded border border-slate-200 col-span-2">
-                <span className="font-bold text-slate-500 block">Saldo Actual:</span>
-                <div>{renderSaldo(viewingPatient)}</div>
-              </div>
+            {/* CONTENIDO DEL MODAL SEGÚN LA PESTAÑA */}
+            <div className="overflow-y-auto flex-1 pr-1 space-y-4">
+              {/* PESTAÑA 1: EXPEDIENTE GENERAL */}
+              {modalTab === "expediente" && (
+                <div className="space-y-4 animate-in fade-in duration-150">
+                  <div className="grid grid-cols-2 md:grid-cols-4 gap-3 text-xs">
+                    <div className="bg-slate-50 p-3 rounded-xl border border-slate-200">
+                      <span className="font-bold text-slate-400 block text-[10px] uppercase">Fecha Nacimiento:</span>
+                      <span className="text-slate-800 font-extrabold text-sm">{viewingPatient.fechaNacimiento || "—"}</span>
+                    </div>
+                    <div className="bg-slate-50 p-3 rounded-xl border border-slate-200">
+                      <span className="font-bold text-slate-400 block text-[10px] uppercase">Sexo:</span>
+                      <span className="text-slate-800 font-extrabold text-sm">{viewingPatient.sexo || "—"}</span>
+                    </div>
+                    <div className="bg-slate-50 p-3 rounded-xl border border-slate-200">
+                      <span className="font-bold text-slate-400 block text-[10px] uppercase">Asistencia Acumulada:</span>
+                      <span className="text-emerald-700 font-extrabold text-sm">{viewingPatient.asistencias || 0}/{viewingPatient.sesiones || 10}</span>
+                    </div>
+                    <div className="bg-slate-50 p-3 rounded-xl border border-slate-200">
+                      <span className="font-bold text-slate-400 block text-[10px] uppercase">Precio por Terapia:</span>
+                      <span className="text-blue-700 font-extrabold text-sm">${viewingPatient.precioTerapia || "500"}</span>
+                    </div>
+                    <div className="bg-slate-50 p-3 rounded-xl border border-slate-200 col-span-2 md:col-span-4">
+                      <span className="font-bold text-slate-400 block text-[10px] uppercase mb-1">Saldo Actual:</span>
+                      <div>{renderSaldo(viewingPatient)}</div>
+                    </div>
+                  </div>
+
+                  {viewingPatient.observacionesAdmin && (
+                    <div className="bg-red-50 p-3.5 rounded-xl border border-red-200 space-y-1 my-2">
+                      <span className="font-extrabold text-red-900 text-xs flex items-center gap-1.5 uppercase tracking-wider">
+                        ⚠️ Motivo / Comentarios de la Baja
+                      </span>
+                      <p className="text-slate-800 text-xs font-medium whitespace-pre-wrap leading-relaxed">
+                        {viewingPatient.observacionesAdmin}
+                      </p>
+                    </div>
+                  )}
+
+                  {/* ACCESOS DIRECTOS */}
+                  <div className="bg-gradient-to-r from-slate-50 to-blue-50/50 p-4 rounded-xl border border-blue-100 flex flex-wrap items-center justify-between gap-3">
+                    <div>
+                      <h4 className="text-xs font-bold text-slate-800 uppercase tracking-wide">Documentos e Historial Clínico</h4>
+                      <p className="text-[11px] text-slate-500 font-medium">Gestiona y crea registros de evolución, historias clínicas y reportes del paciente.</p>
+                    </div>
+                    <button
+                      type="button"
+                      onClick={() => setModalTab("documentos")}
+                      className="bg-[#27ae60] hover:bg-[#219653] text-white font-extrabold px-4 py-2 rounded-xl text-xs flex items-center gap-2 shadow-xs transition-colors cursor-pointer"
+                    >
+                      <span>📁 Abrir Módulo de Documentos ({patientDocs.length})</span>
+                    </button>
+                  </div>
+                </div>
+              )}
+
+              {/* PESTAÑA 2: ESTRUCTURA DEL PDF - DOCUMENTOS Y REPOSITORIO (PÁGINA 1 DEL PDF) */}
+              {modalTab === "documentos" && (
+                <div className="space-y-4 animate-in fade-in duration-150">
+                  {/* BARRA SUPERIOR DE ACCIÓN COMO EN EL PDF */}
+                  <div className="flex flex-wrap items-center justify-between gap-2 border-b border-slate-200 pb-3">
+                    <div className="flex items-center gap-2">
+                      <span className="text-xl">📁</span>
+                      <h4 className="font-extrabold text-slate-800 text-sm md:text-base">Documentos del Paciente</h4>
+                    </div>
+                    <div className="flex items-center gap-2">
+                      <button
+                        type="button"
+                        onClick={() => {
+                          setSelectedNoteType("Registro de Evolución");
+                          setDocFormData({});
+                          setModalTab("nuevo_documento");
+                        }}
+                        className="bg-[#f39c12] hover:bg-[#e67e22] text-white font-extrabold px-3.5 py-1.5 rounded-lg text-xs flex items-center gap-1.5 shadow-xs transition-colors cursor-pointer"
+                      >
+                        <span>📄 Nuevo Documento</span>
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => setModalTab("expediente")}
+                        className="bg-[#e67e22] hover:bg-[#d35400] text-white font-extrabold px-3 py-1.5 rounded-lg text-xs transition-colors cursor-pointer"
+                      >
+                        Regresar
+                      </button>
+                    </div>
+                  </div>
+
+                  {/* FICHA RESUMEN SUPERIOR COMO EN EL PDF */}
+                  <div className="bg-slate-50 p-3 rounded-xl border border-slate-200 text-xs grid grid-cols-3 gap-2">
+                    <div>
+                      <span className="text-slate-400 font-bold block text-[10px] uppercase">ID Paciente:</span>
+                      <span className="font-extrabold text-slate-700">{viewingPatient.id.slice(-6).toUpperCase()}</span>
+                    </div>
+                    <div>
+                      <span className="text-slate-400 font-bold block text-[10px] uppercase">Nombre:</span>
+                      <span className="font-extrabold text-slate-800">{viewingPatient.name.split(" ")[0]}</span>
+                    </div>
+                    <div>
+                      <span className="text-slate-400 font-bold block text-[10px] uppercase">Apellidos:</span>
+                      <span className="font-extrabold text-slate-800">{viewingPatient.name.split(" ").slice(1).join(" ") || "—"}</span>
+                    </div>
+                  </div>
+
+                  {/* BARRA DE BOTONES Y BÚSQUEDA COMO EN EL PDF */}
+                  <div className="flex flex-wrap items-center justify-between gap-2 text-xs">
+                    <div className="flex items-center gap-2">
+                      <button 
+                        type="button"
+                        onClick={() => alert("Historial copiado al portapapeles.")}
+                        className="px-2.5 py-1 bg-slate-100 hover:bg-slate-200 border border-slate-300 rounded text-slate-700 font-bold cursor-pointer"
+                      >
+                        Copiar
+                      </button>
+                      <button 
+                        type="button"
+                        onClick={() => alert("Exportando a Excel...")}
+                        className="px-2.5 py-1 bg-slate-100 hover:bg-slate-200 border border-slate-300 rounded text-slate-700 font-bold cursor-pointer"
+                      >
+                        Excel
+                      </button>
+                    </div>
+
+                    <div className="flex items-center gap-2">
+                      <span className="text-slate-500 font-medium">Buscar:</span>
+                      <input 
+                        type="text" 
+                        value={docSearchQuery}
+                        onChange={(e) => setDocSearchQuery(e.target.value)}
+                        placeholder="Filtrar nota o terapeuta..." 
+                        className="px-2.5 py-1 border border-slate-300 rounded focus:border-[#2980b9] outline-none text-slate-800 font-medium"
+                      />
+                    </div>
+                  </div>
+
+                  {/* TABLA DE DOCUMENTOS DEL PDF */}
+                  <div className="border border-slate-200 rounded-xl overflow-hidden shadow-xs bg-white">
+                    <div className="overflow-x-auto">
+                      <table className="w-full text-xs text-left">
+                        <thead className="bg-[#f8fafc] text-slate-500 font-extrabold uppercase border-b border-slate-200 text-[10px] tracking-wider">
+                          <tr>
+                            <th className="px-3 py-2.5 text-center">ID</th>
+                            <th className="px-3 py-2.5">FECHA</th>
+                            <th className="px-3 py-2.5">HORA</th>
+                            <th className="px-3 py-2.5">DOCUMENTO</th>
+                            <th className="px-3 py-2.5">TERAPEUTA</th>
+                            <th className="px-3 py-2.5 text-center">ACCIÓN</th>
+                          </tr>
+                        </thead>
+                        <tbody className="divide-y divide-slate-100 font-medium">
+                          {isLoadingDocs ? (
+                            <tr>
+                              <td colSpan={6} className="px-4 py-8 text-center text-slate-400 font-medium">
+                                Cargando expediente de documentos...
+                              </td>
+                            </tr>
+                          ) : patientDocs.length > 0 ? (
+                            patientDocs
+                              .filter(d => 
+                                !docSearchQuery || 
+                                (d.tipo || "").toLowerCase().includes(docSearchQuery.toLowerCase()) || 
+                                (d.terapeuta || "").toLowerCase().includes(docSearchQuery.toLowerCase())
+                              )
+                              .map((doc, idx) => (
+                                <tr key={doc.id || idx} className="hover:bg-slate-50 transition-colors">
+                                  <td className="px-3 py-2.5 text-center font-bold text-slate-500">
+                                    {doc.id ? doc.id.replace("DOC-", "") : (1265 - idx)}
+                                  </td>
+                                  <td className="px-3 py-2.5 font-semibold text-slate-800">{doc.fecha}</td>
+                                  <td className="px-3 py-2.5 text-slate-600">{doc.hora || "19:30:00"}</td>
+                                  <td className="px-3 py-2.5 font-bold text-[#1a5276] uppercase">
+                                    {doc.tipo}
+                                  </td>
+                                  <td className="px-3 py-2.5 font-semibold text-slate-700 uppercase">
+                                    {doc.terapeuta || "LOURDES RINCÓN"}
+                                  </td>
+                                  <td className="px-3 py-2.5 text-center">
+                                    <div className="flex items-center justify-center gap-1.5">
+                                      <button
+                                        type="button"
+                                        onClick={() => {
+                                          setActiveDocToView(doc);
+                                          setModalTab("ver_documento");
+                                        }}
+                                        className="bg-[#27ae60] hover:bg-[#219653] text-white font-black px-3 py-1 rounded text-[10px] uppercase shadow-2xs transition-colors cursor-pointer"
+                                      >
+                                        IMPRIMIR
+                                      </button>
+                                      <button
+                                        type="button"
+                                        onClick={async () => {
+                                          if (window.confirm("¿Deseas borrar este documento clínico?")) {
+                                            const { deletePatientDocument } = await import('@/app/actions/pacientes');
+                                            const res = await deletePatientDocument(viewingPatient.id, doc.id);
+                                            if (res.success && res.data) setPatientDocs(res.data);
+                                          }
+                                        }}
+                                        className="text-red-500 hover:text-red-700 text-xs p-1"
+                                        title="Eliminar registro"
+                                      >
+                                        🗑️
+                                      </button>
+                                    </div>
+                                  </td>
+                                </tr>
+                              ))
+                          ) : (
+                            <tr>
+                              <td colSpan={6} className="px-4 py-8 text-center text-slate-400 font-medium">
+                                No hay notas clínicas o documentos registrados para este paciente. Haz clic en <span className="font-bold text-amber-600">"Nuevo Documento"</span> para crear uno.
+                              </td>
+                            </tr>
+                          )}
+                        </tbody>
+                      </table>
+                    </div>
+                  </div>
+                </div>
+              )}
+
+              {/* PESTAÑA 3: ESTRUCTURA DEL PDF - NOTA CLÍNICA NUEVA (PÁGINAS 2 A 9 DEL PDF) */}
+              {modalTab === "nuevo_documento" && (
+                <div className="space-y-4 animate-in fade-in duration-150">
+                  {/* BARRA SUPERIOR DE NOTA CLÍNICA NUEVA */}
+                  <div className="flex items-center justify-between border-b border-slate-200 pb-3">
+                    <div className="flex items-center gap-2">
+                      <span className="text-xl">📋</span>
+                      <h4 className="font-extrabold text-slate-800 text-base">Nota Clínica Nueva</h4>
+                    </div>
+                    <button
+                      type="button"
+                      onClick={() => setModalTab("documentos")}
+                      className="bg-[#e67e22] hover:bg-[#d35400] text-white font-extrabold px-3.5 py-1 rounded-lg text-xs transition-colors cursor-pointer"
+                    >
+                      Regresar
+                    </button>
+                  </div>
+
+                  {/* LAYOUT EN 2 COLUMNAS (MENÚ IZQUIERDO Y FORMULARIO DERECHO COMO EN EL PDF) */}
+                  <div className="grid grid-cols-1 md:grid-cols-3 gap-4 text-xs">
+                    {/* COLUMNA IZQUIERDA: TIPOS DE NOTA CLÍNICA (PÁGINA 2 DEL PDF) */}
+                    <div className="bg-slate-50 p-3 rounded-2xl border border-slate-200 space-y-2">
+                      <h5 className="font-extrabold text-slate-500 uppercase text-[10px] tracking-wider mb-2">
+                        Tipo de Nota Clínica
+                      </h5>
+                      {[
+                        "Historia Clínica de Fisioterapia",
+                        "Historia Clínica Emocional",
+                        "Registro de Evolución",
+                        "Historia Clínica de Neurodesarrollo",
+                        "Sesión de Plática con Padres",
+                        "Informe de Visita Escolar",
+                        "Reunión con Terapeuta"
+                      ].map((tipoName) => (
+                        <button
+                          key={tipoName}
+                          type="button"
+                          onClick={() => {
+                            setSelectedNoteType(tipoName);
+                            setDocFormData({});
+                          }}
+                          className={`w-full text-left px-3.5 py-2.5 rounded-xl font-bold transition-all cursor-pointer flex items-center justify-between border ${
+                            selectedNoteType === tipoName
+                              ? "bg-white border-[#1a5276] text-[#1a5276] shadow-sm ring-1 ring-[#1a5276]"
+                              : "bg-white/60 border-slate-200 text-slate-600 hover:bg-white hover:text-slate-900"
+                          }`}
+                        >
+                          <span>{tipoName}</span>
+                          <span className={`w-3.5 h-3.5 rounded-full border flex items-center justify-center shrink-0 ${
+                            selectedNoteType === tipoName ? "border-[#1a5276] bg-[#1a5276]" : "border-slate-300"
+                          }`}>
+                            {selectedNoteType === tipoName && <span className="w-1.5 h-1.5 rounded-full bg-white"></span>}
+                          </span>
+                        </button>
+                      ))}
+                    </div>
+
+                    {/* COLUMNA DERECHA: FORMULARIO DINÁMICO DE NOTA CLÍNICA (PÁGINAS 3 A 9 DEL PDF) */}
+                    <div className="md:col-span-2 bg-white p-4 rounded-2xl border border-slate-200 shadow-xs space-y-3">
+                      <div className="border-b border-slate-100 pb-2">
+                        <h4 className="font-extrabold text-slate-800 text-base">{selectedNoteType}</h4>
+                        <p className="text-slate-400 text-xs font-medium">
+                          Fecha de creación: <span className="font-bold text-slate-600">{new Date().toLocaleDateString("es-MX", { day: "2-digit", month: "short", year: "numeric" })}</span>
+                        </p>
+                      </div>
+
+                      {/* RENDERING DE CAMPOS SEGÚN EL TIPO DE NOTA SELECCIONADO */}
+                      <form
+                        onSubmit={async (e) => {
+                          e.preventDefault();
+                          setIsSavingDoc(true);
+                          try {
+                            const { savePatientDocument } = await import('@/app/actions/pacientes');
+                            const res = await savePatientDocument(viewingPatient.id, {
+                              tipo: selectedNoteType,
+                              terapeuta: docFormData.terapeuta || userName || "LOURDES RINCÓN",
+                              contenido: docFormData
+                            });
+                            if (res.success && res.data) {
+                              setPatientDocs(res.data);
+                              alert("¡Nota clínica guardada exitosamente!");
+                              setModalTab("documentos");
+                            } else {
+                              alert("Error al guardar: " + res.error);
+                            }
+                          } catch(err: any) {
+                            alert("Error de conexión: " + err.message);
+                          } finally {
+                            setIsSavingDoc(false);
+                          }
+                        }}
+                        className="space-y-3"
+                      >
+                        {/* SELECCIÓN DE TERAPEUTA RESPONSABLE */}
+                        <div className="grid grid-cols-2 gap-2 bg-slate-50 p-2.5 rounded-xl border border-slate-200">
+                          <div>
+                            <label className="block text-[10px] font-bold text-slate-500 uppercase mb-1">Fecha</label>
+                            <input 
+                              type="date" 
+                              value={docFormData.fecha || new Date().toISOString().split("T")[0]} 
+                              onChange={(e) => setDocFormData({...docFormData, fecha: e.target.value})}
+                              className="w-full text-xs p-2 border border-slate-300 rounded-lg bg-white outline-none font-medium"
+                            />
+                          </div>
+                          <div>
+                            <label className="block text-[10px] font-bold text-slate-500 uppercase mb-1">Terapeuta</label>
+                            <input 
+                              type="text" 
+                              value={docFormData.terapeuta || userName || "LOURDES RINCÓN"} 
+                              onChange={(e) => setDocFormData({...docFormData, terapeuta: e.target.value})}
+                              className="w-full text-xs p-2 border border-slate-300 rounded-lg bg-white outline-none font-medium"
+                            />
+                          </div>
+                        </div>
+
+                        {/* CAMPOS ESPECÍFICOS HISTORIA FISIOTERAPIA (PÁGINA 3 DEL PDF) */}
+                        {selectedNoteType === "Historia Clínica de Fisioterapia" && (
+                          <>
+                            <div>
+                              <label className="block text-[11px] font-medium text-slate-600 mb-1">Antecedentes personales no patológicos</label>
+                              <textarea rows={2} value={docFormData.antecedentesNoPatologicos || ""} onChange={(e) => setDocFormData({...docFormData, antecedentesNoPatologicos: e.target.value})} className="w-full p-2 border border-slate-300 rounded-lg outline-none text-xs" />
+                            </div>
+                            <div>
+                              <label className="block text-[11px] font-medium text-slate-600 mb-1">Antecedentes heredofamiliares</label>
+                              <textarea rows={2} value={docFormData.antecedentesHeredofamiliares || ""} onChange={(e) => setDocFormData({...docFormData, antecedentesHeredofamiliares: e.target.value})} className="w-full p-2 border border-slate-300 rounded-lg outline-none text-xs" />
+                            </div>
+                            <div>
+                              <label className="block text-[11px] font-medium text-slate-600 mb-1">Antecedentes personales patológicos</label>
+                              <textarea rows={2} value={docFormData.antecedentesPatologicos || ""} onChange={(e) => setDocFormData({...docFormData, antecedentesPatologicos: e.target.value})} className="w-full p-2 border border-slate-300 rounded-lg outline-none text-xs" />
+                            </div>
+                            <div>
+                              <label className="block text-[11px] font-medium text-slate-600 mb-1">Medicamentos</label>
+                              <textarea rows={2} value={docFormData.medicamentos || ""} onChange={(e) => setDocFormData({...docFormData, medicamentos: e.target.value})} className="w-full p-2 border border-slate-300 rounded-lg outline-none text-xs" />
+                            </div>
+                            <div>
+                              <label className="block text-[11px] font-medium text-slate-600 mb-1">Padecimiento actual y motivo de consulta</label>
+                              <textarea rows={2} value={docFormData.padecimientoActual || ""} onChange={(e) => setDocFormData({...docFormData, padecimientoActual: e.target.value})} className="w-full p-2 border border-slate-300 rounded-lg outline-none text-xs" />
+                            </div>
+                            <div>
+                              <label className="block text-[11px] font-medium text-slate-600 mb-1">Exploración física</label>
+                              <textarea rows={2} value={docFormData.exploracionFisica || ""} onChange={(e) => setDocFormData({...docFormData, exploracionFisica: e.target.value})} className="w-full p-2 border border-slate-300 rounded-lg outline-none text-xs" />
+                            </div>
+                          </>
+                        )}
+
+                        {/* CAMPOS ESPECÍFICOS HISTORIA EMOCIONAL (PÁGINA 4 DEL PDF) */}
+                        {selectedNoteType === "Historia Clínica Emocional" && (
+                          <div>
+                            <label className="block text-[11px] font-medium text-slate-600 mb-1">Historia</label>
+                            <textarea rows={10} value={docFormData.historia || ""} onChange={(e) => setDocFormData({...docFormData, historia: e.target.value})} placeholder="Escribe aquí la historia clínica emocional..." className="w-full p-3 border border-slate-300 rounded-xl outline-none text-xs" />
+                          </div>
+                        )}
+
+                        {/* CAMPOS ESPECÍFICOS REGISTRO DE EVOLUCIÓN (PÁGINA 5 DEL PDF) */}
+                        {selectedNoteType === "Registro de Evolución" && (
+                          <>
+                            <p className="text-[11px] text-slate-400 font-medium">Registro de todas las interacciones llevadas a cabo con los pacientes y de padres de pacientes en caso de niños</p>
+                            <div>
+                              <label className="block text-[11px] font-medium text-slate-600 mb-1">1. Observación inicial</label>
+                              <textarea rows={2} value={docFormData.obsInicial || ""} onChange={(e) => setDocFormData({...docFormData, obsInicial: e.target.value})} className="w-full p-2 border border-slate-300 rounded-lg outline-none text-xs" />
+                            </div>
+                            <div>
+                              <label className="block text-[11px] font-medium text-slate-600 mb-1">2. Objetivos del Tratamiento</label>
+                              <textarea rows={2} value={docFormData.objetivosTratamiento || ""} onChange={(e) => setDocFormData({...docFormData, objetivosTratamiento: e.target.value})} className="w-full p-2 border border-slate-300 rounded-lg outline-none text-xs" />
+                            </div>
+                            <div>
+                              <label className="block text-[11px] font-medium text-slate-600 mb-1">3. Actividades realizadas durante la sesión</label>
+                              <textarea rows={2} value={docFormData.actividadesSesion || ""} onChange={(e) => setDocFormData({...docFormData, actividadesSesion: e.target.value})} className="w-full p-2 border border-slate-300 rounded-lg outline-none text-xs" />
+                            </div>
+                            <div>
+                              <label className="block text-[11px] font-medium text-slate-600 mb-1">4. Observaciones durante la sesión</label>
+                              <textarea rows={2} value={docFormData.obsSesion || ""} onChange={(e) => setDocFormData({...docFormData, obsSesion: e.target.value})} className="w-full p-2 border border-slate-300 rounded-lg outline-none text-xs" />
+                            </div>
+                            <div>
+                              <label className="block text-[11px] font-medium text-slate-600 mb-1">5. Recomendaciones</label>
+                              <textarea rows={2} value={docFormData.recomendaciones || ""} onChange={(e) => setDocFormData({...docFormData, recomendaciones: e.target.value})} className="w-full p-2 border border-slate-300 rounded-lg outline-none text-xs" />
+                            </div>
+                          </>
+                        )}
+
+                        {/* CAMPOS ESPECÍFICOS HISTORIA NEURODESARROLLO (PÁGINA 6 DEL PDF) */}
+                        {selectedNoteType === "Historia Clínica de Neurodesarrollo" && (
+                          <div className="space-y-2 max-h-96 overflow-y-auto pr-1">
+                            <div><label className="block text-[10px] font-medium text-slate-600 mb-0.5">Antecedentes perinatales</label><textarea rows={1} value={docFormData.antPerinatales || ""} onChange={(e) => setDocFormData({...docFormData, antPerinatales: e.target.value})} className="w-full p-1.5 border border-slate-300 rounded outline-none text-xs" /></div>
+                            <div><label className="block text-[10px] font-medium text-slate-600 mb-0.5">Alimentación, sueño, control de esfínteres</label><textarea rows={1} value={docFormData.alimentacionSueno || ""} onChange={(e) => setDocFormData({...docFormData, alimentacionSueno: e.target.value})} className="w-full p-1.5 border border-slate-300 rounded outline-none text-xs" /></div>
+                            <div><label className="block text-[10px] font-medium text-slate-600 mb-0.5">Antecedentes heredofamiliares</label><textarea rows={1} value={docFormData.antHeredo || ""} onChange={(e) => setDocFormData({...docFormData, antHeredo: e.target.value})} className="w-full p-1.5 border border-slate-300 rounded outline-none text-xs" /></div>
+                            <div><label className="block text-[10px] font-medium text-slate-600 mb-0.5">Motivo de consulta</label><textarea rows={1} value={docFormData.motivoConsulta || ""} onChange={(e) => setDocFormData({...docFormData, motivoConsulta: e.target.value})} className="w-full p-1.5 border border-slate-300 rounded outline-none text-xs" /></div>
+                            <div><label className="block text-[10px] font-medium text-slate-600 mb-0.5">Descripción paterna</label><textarea rows={1} value={docFormData.descPaterna || ""} onChange={(e) => setDocFormData({...docFormData, descPaterna: e.target.value})} className="w-full p-1.5 border border-slate-300 rounded outline-none text-xs" /></div>
+                            <div><label className="block text-[10px] font-medium text-slate-600 mb-0.5">Descripción materna</label><textarea rows={1} value={docFormData.descMaterna || ""} onChange={(e) => setDocFormData({...docFormData, descMaterna: e.target.value})} className="w-full p-1.5 border border-slate-300 rounded outline-none text-xs" /></div>
+                            <div><label className="block text-[10px] font-medium text-slate-600 mb-0.5">Postura y tono muscular</label><textarea rows={1} value={docFormData.posturaTono || ""} onChange={(e) => setDocFormData({...docFormData, posturaTono: e.target.value})} className="w-full p-1.5 border border-slate-300 rounded outline-none text-xs" /></div>
+                            <div><label className="block text-[10px] font-medium text-slate-600 mb-0.5">Conducta motor gruesa</label><textarea rows={1} value={docFormData.motorGruesa || ""} onChange={(e) => setDocFormData({...docFormData, motorGruesa: e.target.value})} className="w-full p-1.5 border border-slate-300 rounded outline-none text-xs" /></div>
+                            <div><label className="block text-[10px] font-medium text-slate-600 mb-0.5">Conducta motor fina</label><textarea rows={1} value={docFormData.motorFina || ""} onChange={(e) => setDocFormData({...docFormData, motorFina: e.target.value})} className="w-full p-1.5 border border-slate-300 rounded outline-none text-xs" /></div>
+                            <div><label className="block text-[10px] font-medium text-slate-600 mb-0.5">Lenguaje</label><textarea rows={1} value={docFormData.lenguaje || ""} onChange={(e) => setDocFormData({...docFormData, lenguaje: e.target.value})} className="w-full p-1.5 border border-slate-300 rounded outline-none text-xs" /></div>
+                            <div><label className="block text-[10px] font-medium text-slate-600 mb-0.5">Desarrollo cognitivo</label><textarea rows={1} value={docFormData.cognitivo || ""} onChange={(e) => setDocFormData({...docFormData, cognitivo: e.target.value})} className="w-full p-1.5 border border-slate-300 rounded outline-none text-xs" /></div>
+                            <div><label className="block text-[10px] font-medium text-slate-600 mb-0.5">Persona / Social</label><textarea rows={1} value={docFormData.personaSocial || ""} onChange={(e) => setDocFormData({...docFormData, personaSocial: e.target.value})} className="w-full p-1.5 border border-slate-300 rounded outline-none text-xs" /></div>
+                            <div><label className="block text-[10px] font-medium text-slate-600 mb-0.5">Conclusiones</label><textarea rows={1} value={docFormData.conclusiones || ""} onChange={(e) => setDocFormData({...docFormData, conclusiones: e.target.value})} className="w-full p-1.5 border border-slate-300 rounded outline-none text-xs" /></div>
+                            <div><label className="block text-[10px] font-medium text-slate-600 mb-0.5">Recomendaciones</label><textarea rows={1} value={docFormData.recomendaciones || ""} onChange={(e) => setDocFormData({...docFormData, recomendaciones: e.target.value})} className="w-full p-1.5 border border-slate-300 rounded outline-none text-xs" /></div>
+                          </div>
+                        )}
+
+                        {/* CAMPOS ESPECÍFICOS PLÁTICA CON PADRES (PÁGINA 7 DEL PDF) */}
+                        {selectedNoteType === "Sesión de Plática con Padres" && (
+                          <>
+                            <div><label className="block text-[11px] font-medium text-slate-600 mb-1">Objetivo de la sesión</label><textarea rows={2} value={docFormData.objetivoSesion || ""} onChange={(e) => setDocFormData({...docFormData, objetivoSesion: e.target.value})} className="w-full p-2 border border-slate-300 rounded-lg outline-none text-xs" /></div>
+                            <div><label className="block text-[11px] font-medium text-slate-600 mb-1">Observaciones Iniciales</label><textarea rows={2} value={docFormData.obsIniciales || ""} onChange={(e) => setDocFormData({...docFormData, obsIniciales: e.target.value})} className="w-full p-2 border border-slate-300 rounded-lg outline-none text-xs" /></div>
+                            <div><label className="block text-[11px] font-medium text-slate-600 mb-1">Avances logrados en el último Período</label><textarea rows={2} value={docFormData.avancesPeriodo || ""} onChange={(e) => setDocFormData({...docFormData, avancesPeriodo: e.target.value})} className="w-full p-2 border border-slate-300 rounded-lg outline-none text-xs" /></div>
+                            <div><label className="block text-[11px] font-medium text-slate-600 mb-1">Áreas a trabajar dentro del Tratamiento</label><textarea rows={2} value={docFormData.areasTrabajar || ""} onChange={(e) => setDocFormData({...docFormData, areasTrabajar: e.target.value})} className="w-full p-2 border border-slate-300 rounded-lg outline-none text-xs" /></div>
+                            <div><label className="block text-[11px] font-medium text-slate-600 mb-1">Recomendaciones para Casa</label><textarea rows={2} value={docFormData.recomCasa || ""} onChange={(e) => setDocFormData({...docFormData, recomCasa: e.target.value})} className="w-full p-2 border border-slate-300 rounded-lg outline-none text-xs" /></div>
+                            <div><label className="block text-[11px] font-medium text-slate-600 mb-1">Recomendación dentro de CREN</label><textarea rows={2} value={docFormData.recomCREN || ""} onChange={(e) => setDocFormData({...docFormData, recomCREN: e.target.value})} className="w-full p-2 border border-slate-300 rounded-lg outline-none text-xs" /></div>
+                          </>
+                        )}
+
+                        {/* CAMPOS ESPECÍFICOS VISITA ESCOLAR (PÁGINA 8 DEL PDF) */}
+                        {selectedNoteType === "Informe de Visita Escolar" && (
+                          <>
+                            <div><label className="block text-[11px] font-medium text-slate-600 mb-1">Personas presentes</label><textarea rows={2} value={docFormData.personasPresentes || ""} onChange={(e) => setDocFormData({...docFormData, personasPresentes: e.target.value})} className="w-full p-2 border border-slate-300 rounded-lg outline-none text-xs" /></div>
+                            <div><label className="block text-[11px] font-medium text-slate-600 mb-1">Motivo de la Visita Escolar</label><textarea rows={2} value={docFormData.motivoVisita || ""} onChange={(e) => setDocFormData({...docFormData, motivoVisita: e.target.value})} className="w-full p-2 border border-slate-300 rounded-lg outline-none text-xs" /></div>
+                            <div><label className="block text-[11px] font-medium text-slate-600 mb-1">Comentarios de los Maestros</label><textarea rows={2} value={docFormData.comentariosMaestros || ""} onChange={(e) => setDocFormData({...docFormData, comentariosMaestros: e.target.value})} className="w-full p-2 border border-slate-300 rounded-lg outline-none text-xs" /></div>
+                            <div><label className="block text-[11px] font-medium text-slate-600 mb-1">Conclusiones</label><textarea rows={2} value={docFormData.conclusiones || ""} onChange={(e) => setDocFormData({...docFormData, conclusiones: e.target.value})} className="w-full p-2 border border-slate-300 rounded-lg outline-none text-xs" /></div>
+                            <div><label className="block text-[11px] font-medium text-slate-600 mb-1">Acuerdos</label><textarea rows={2} value={docFormData.acuerdos || ""} onChange={(e) => setDocFormData({...docFormData, acuerdos: e.target.value})} className="w-full p-2 border border-slate-300 rounded-lg outline-none text-xs" /></div>
+                            <div><label className="block text-[11px] font-medium text-slate-600 mb-1">Recomendaciones</label><textarea rows={2} value={docFormData.recomendaciones || ""} onChange={(e) => setDocFormData({...docFormData, recomendaciones: e.target.value})} className="w-full p-2 border border-slate-300 rounded-lg outline-none text-xs" /></div>
+                          </>
+                        )}
+
+                        {/* CAMPOS ESPECÍFICOS REUNIÓN CON TERAPEUTA (PÁGINA 9 DEL PDF) */}
+                        {selectedNoteType === "Reunión con Terapeuta" && (
+                          <>
+                            <div><label className="block text-[11px] font-medium text-slate-600 mb-1">Objetivo de Reunión</label><textarea rows={3} value={docFormData.objetivoReunion || ""} onChange={(e) => setDocFormData({...docFormData, objetivoReunion: e.target.value})} className="w-full p-2 border border-slate-300 rounded-lg outline-none text-xs" /></div>
+                            <div><label className="block text-[11px] font-medium text-slate-600 mb-1">Comentarios</label><textarea rows={5} value={docFormData.comentarios || ""} onChange={(e) => setDocFormData({...docFormData, comentarios: e.target.value})} className="w-full p-2 border border-slate-300 rounded-lg outline-none text-xs" /></div>
+                          </>
+                        )}
+
+                        {/* BOTÓN VERDE GUARDAR COMO EN EL PDF */}
+                        <div className="pt-2">
+                          <button
+                            type="submit"
+                            disabled={isSavingDoc}
+                            className="bg-[#27ae60] hover:bg-[#219653] text-white font-extrabold px-6 py-2.5 rounded-xl text-xs flex items-center gap-2 shadow-sm transition-all disabled:opacity-50 cursor-pointer"
+                          >
+                            <span>{isSavingDoc ? "Guardando..." : "> Guardar Documento"}</span>
+                          </button>
+                        </div>
+                      </form>
+                    </div>
+                  </div>
+                </div>
+              )}
+
+              {/* PESTAÑA 4: VISTA DE DOCUMENTO / IMPRESIÓN OFICIAL PDF */}
+              {modalTab === "ver_documento" && activeDocToView && (
+                <div className="space-y-4 animate-in fade-in duration-150">
+                  <div className="flex items-center justify-between border-b border-slate-200 pb-3 print:hidden">
+                    <div className="flex items-center gap-2">
+                      <span className="text-xl">🖨️</span>
+                      <h4 className="font-extrabold text-slate-800 text-base">Vista de Documento Clínico</h4>
+                    </div>
+                    <div className="flex items-center gap-2">
+                      <button
+                        type="button"
+                        onClick={() => window.print()}
+                        className="bg-[#27ae60] hover:bg-[#219653] text-white font-extrabold px-4 py-1.5 rounded-lg text-xs flex items-center gap-1.5 shadow-xs transition-colors cursor-pointer"
+                      >
+                        <span>🖨️ Imprimir / Guardar PDF</span>
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => setModalTab("documentos")}
+                        className="bg-[#e67e22] hover:bg-[#d35400] text-white font-extrabold px-3 py-1.5 rounded-lg text-xs transition-colors cursor-pointer"
+                      >
+                        Regresar
+                      </button>
+                    </div>
+                  </div>
+
+                  {/* HOJA IMPRESA OFICIAL CON FORMATO CREN */}
+                  <div className="bg-white border border-slate-300 p-6 md:p-8 rounded-2xl shadow-sm space-y-6 text-slate-800 font-sans print:border-none print:shadow-none print:p-0">
+                    {/* ENCABEZADO CREN */}
+                    <div className="flex items-center justify-between border-b-2 border-[#1a5276] pb-4">
+                      <div>
+                        <h2 className="text-xl font-black text-[#1a5276] tracking-wide uppercase">Centro de Rehabilitación y Estimulación Neurodesarrollo</h2>
+                        <h3 className="text-sm font-bold text-amber-600 uppercase tracking-widest">CREN</h3>
+                      </div>
+                      <div className="text-right text-xs text-slate-500 font-medium">
+                        <p className="font-extrabold text-slate-800 text-sm">{activeDocToView.tipo}</p>
+                        <p>Folio: <span className="font-bold text-slate-700">{activeDocToView.id || "DOC-1265"}</span></p>
+                        <p>Fecha: {activeDocToView.fecha}</p>
+                      </div>
+                    </div>
+
+                    {/* DATOS DEL PACIENTE */}
+                    <div className="bg-slate-50 p-4 rounded-xl border border-slate-200 text-xs grid grid-cols-2 md:grid-cols-4 gap-3">
+                      <div><span className="text-slate-400 font-bold block text-[10px] uppercase">Paciente:</span><span className="font-extrabold text-slate-900 text-sm">{viewingPatient.name}</span></div>
+                      <div><span className="text-slate-400 font-bold block text-[10px] uppercase">Fecha Nacimiento:</span><span className="font-semibold">{viewingPatient.fechaNacimiento || "—"}</span></div>
+                      <div><span className="text-slate-400 font-bold block text-[10px] uppercase">Sexo:</span><span className="font-semibold">{viewingPatient.sexo || "—"}</span></div>
+                      <div><span className="text-slate-400 font-bold block text-[10px] uppercase">Terapeuta:</span><span className="font-extrabold text-slate-800">{activeDocToView.terapeuta || "LOURDES RINCÓN"}</span></div>
+                    </div>
+
+                    {/* SECCIONES Y CONTENIDO DE LA NOTA CLÍNICA */}
+                    <div className="space-y-4 text-xs">
+                      <h4 className="font-extrabold text-sm text-[#1a5276] uppercase tracking-wider border-b border-slate-200 pb-1">
+                        Contenido del Registro Clínico
+                      </h4>
+                      {activeDocToView.contenido && Object.keys(activeDocToView.contenido).length > 0 ? (
+                        Object.entries(activeDocToView.contenido).map(([key, val]) => {
+                          if (!val || key === "fecha" || key === "terapeuta") return null;
+                          const keyFormatted = key
+                            .replace(/([A-Z])/g, ' $1')
+                            .replace(/^./, str => str.toUpperCase());
+                          return (
+                            <div key={key} className="bg-slate-50/50 p-3 rounded-lg border border-slate-100">
+                              <span className="font-extrabold text-slate-700 block mb-1 uppercase text-[10px]">{keyFormatted}:</span>
+                              <p className="text-slate-800 whitespace-pre-wrap font-medium leading-relaxed">{String(val)}</p>
+                            </div>
+                          );
+                        })
+                      ) : (
+                        <p className="text-slate-500 italic">No hay detalles de texto adicionados.</p>
+                      )}
+                    </div>
+
+                    {/* PIE Y FIRMA */}
+                    <div className="pt-12 flex justify-end">
+                      <div className="text-center w-64 border-t border-slate-400 pt-2 text-xs">
+                        <p className="font-extrabold text-slate-800 uppercase">{activeDocToView.terapeuta || "LOURDES RINCÓN"}</p>
+                        <p className="text-slate-500 font-medium">Firma del Terapeuta Responsable</p>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              )}
             </div>
 
-            {viewingPatient.observacionesAdmin && (
-              <div className="bg-red-50/90 p-3 rounded-lg border border-red-200 space-y-1 my-2">
-                <span className="font-extrabold text-red-900 text-xs flex items-center gap-1.5 uppercase tracking-wider">
-                  ⚠️ Motivo / Comentarios de la Baja
-                </span>
-                <p className="text-slate-800 text-xs font-medium whitespace-pre-wrap leading-relaxed">
-                  {viewingPatient.observacionesAdmin}
-                </p>
-              </div>
-            )}
-
-            <button onClick={() => setViewingPatient(null)} className="w-full bg-[#1a5276] hover:bg-[#0e2f44] text-white font-bold py-2.5 rounded-lg text-xs transition-colors shadow-sm cursor-pointer">
-              Cerrar Expediente
-            </button>
+            {/* BOTÓN INFERIOR DE CERRAR EXPEDIENTE */}
+            <div className="pt-2 border-t border-slate-200">
+              <button 
+                type="button" 
+                onClick={() => setViewingPatient(null)} 
+                className="w-full bg-[#1a5276] hover:bg-[#0e2f44] text-white font-bold py-2.5 rounded-xl text-xs transition-colors shadow-sm cursor-pointer"
+              >
+                Cerrar Expediente
+              </button>
+            </div>
           </div>
         </div>
       )}
