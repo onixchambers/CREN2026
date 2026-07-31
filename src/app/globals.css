@@ -58,10 +58,10 @@ body {
   }
   #prefactura-sheet {
     position: fixed !important;
-    top: 0 !important;
-    left: 0 !important;
-    width: 8.5in !important;
-    height: 11in !important;
+    top: 1cm !important;
+    left: 1cm !important;
+    width: calc(8.5in - 2cm) !important;
+    height: calc(11in - 2cm) !important;
     margin: 0 !important;
     padding: 0 !important;
     border: none !important;
@@ -69,6 +69,10 @@ body {
     border-radius: 0 !important;
     display: flex !important;
     flex-direction: column !important;
+  }
+  /* Forzar 2 columnas en la sección de datos clínica/paciente */
+  #prefactura-sheet .grid {
+    grid-template-columns: 1fr 1fr !important;
   }
   .print\:hidden {
     display: none !important;
