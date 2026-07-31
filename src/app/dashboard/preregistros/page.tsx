@@ -481,7 +481,7 @@ export default function PreregistrosPage() {
             pdfUrl: "Informes PDF CREN / " + displayDocName + " Protección de Datos",
           });
 
-          const subfolderName = `${formData.medicoTratante || userName} Protección de Datos`;
+          const subfolderName = `${displayDocName}/Registros de Consentimiento Firmado`;
           const fileName = `Consentimiento_Firmado_${(formData.nombre || "Paciente").replace(/\s+/g, "_")}.pdf`;
 
           const driveRes = await uploadConsentPDFAction({

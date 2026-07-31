@@ -5,6 +5,8 @@ import { unstable_noStore as noStore } from "next/cache";
 import { revalidatePath } from "next/cache";
 import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth";
+import { uploadFileToGoogleDrive } from "@/lib/googleDrive";
+import { generateClinicalNotePdfBase64 } from "@/lib/pdfGenerator";
 
 async function verifyTherapistPatientPermission() {
   const session = await getServerSession(authOptions);
@@ -438,28 +440,61 @@ export async function savePatientDocument(patientId: string, docData: any) {
       }
     }
 
-    const terapeutaName = (docData.terapeuta || "LOURDES RINCÓN").trim();
-    let subfolder = "Notas Clínicas";
+    const rawDocName = (docData.terapeuta || "LOURDES RINCÓN").trim();
+    const isDocNonTherapist = ["administrador", "admin", "contador", "invitado", "general"].some(kw => rawDocName.toLowerCase().includes(kw));
+    const displayDocName = isDocNonTherapist ? rawDocName.replace(/^lic\.\s*/i, "") : (rawDocName.toLowerCase().startsWith("lic.") ? rawDocName : `Lic. ${rawDocName}`);
+
+    let subfolder = "Nota Clínica";
     const tipoLower = (docData.tipo || "").toLowerCase();
     if (tipoLower.includes("consentimiento")) {
-      subfolder = "Consentimientos Firmados";
+      subfolder = "Registros de Consentimiento Firmado";
     } else if (tipoLower.includes("informe") || tipoLower.includes("visita escolar")) {
-      subfolder = "Informes de Pacientes";
+      subfolder = "Informes";
     }
 
-    const driveFolder = `Google Drive / ${terapeutaName} / ${subfolder}`;
+    // Ruta en formato Webhook para crear las subcarpetas correctas en Google Drive
+    const subfolderPath = `${displayDocName}/${subfolder}`;
+    const driveFolder = `Google Drive / ${displayDocName} / ${subfolder}`;
+
+    const now = new Date();
+    const docId = docData.id || "DOC-" + Math.floor(1000 + Math.random() * 9000);
+    const docDate = docData.fecha || now.toISOString().split("T")[0];
+    const docTime = now.toLocaleTimeString("es-MX", { hour: "2-digit", minute: "2-digit", second: "2-digit" });
+    const docType = docData.tipo || "Registro de Evolución";
+
+    // Generar el PDF oficial en base64 para subirlo a Google Drive
+    let driveLink = docData.driveLink || "";
+    try {
+      const htmlBase64 = generateClinicalNotePdfBase64(patient.name, {
+        fecha: docDate,
+        tipo: docType,
+        terapeuta: displayDocName,
+        contenido: docData.contenido || {}
+      });
+      const fileBuffer = Buffer.from(htmlBase64, "base64");
+      const cleanPatientName = (patient.name || "Paciente").replace(/\s+/g, "_");
+      const cleanDocType = docType.replace(/\s+/g, "_");
+      const fileName = `${cleanDocType}_${cleanPatientName}_${docDate.replace(/-/g, "")}.pdf`;
+
+      const driveRes = await uploadFileToGoogleDrive(fileBuffer, fileName, "application/pdf", subfolderPath);
+      if (driveRes.success && driveRes.webViewLink) {
+        driveLink = driveRes.webViewLink;
+      }
+    } catch (driveErr) {
+      console.warn("Subida a Google Drive de nota clínica falló:", driveErr);
+    }
 
     if (docData.id) {
-      docs = docs.map(d => d.id === docData.id ? { ...d, ...docData, driveFolder, updatedAt: new Date().toISOString() } : d);
+      docs = docs.map(d => d.id === docData.id ? { ...d, ...docData, driveFolder, driveLink, updatedAt: new Date().toISOString() } : d);
     } else {
-      const now = new Date();
       const newDoc = {
-        id: "DOC-" + Math.floor(1000 + Math.random() * 9000),
-        fecha: docData.fecha || now.toISOString().split("T")[0],
-        hora: now.toLocaleTimeString("es-MX", { hour: "2-digit", minute: "2-digit", second: "2-digit" }),
-        tipo: docData.tipo || "Registro de Evolución",
-        terapeuta: terapeutaName,
+        id: docId,
+        fecha: docDate,
+        hora: docTime,
+        tipo: docType,
+        terapeuta: displayDocName,
         driveFolder: driveFolder,
+        driveLink: driveLink,
         contenido: docData.contenido || {},
         createdAt: now.toISOString()
       };

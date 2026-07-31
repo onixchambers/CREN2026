@@ -18,18 +18,24 @@ export async function uploadInformePDFToDrive(formData: FormData) {
     const nonTherapistKeywords = ["administrador", "admin", "contador", "invitado", "general", "sistema"];
     const isNonTherapist = nonTherapistKeywords.some(kw => lowerName.includes(kw));
 
+    let finalPath = "";
     if (cleanName && !isNonTherapist && !lowerName.startsWith("lic.")) {
       // Solo agregar 'Lic.' cuando corresponda a usuarios registrados como Terapeuta
-      terapeutaName = `Lic. ${cleanName}`;
+      finalPath = `Lic. ${cleanName}`;
     } else if (isNonTherapist) {
       // Mantener nombre limpio sin 'Lic.' para Administrador, Contador e Invitado
-      terapeutaName = cleanName.replace(/^lic\.\s*/i, "");
+      finalPath = cleanName.replace(/^lic\.\s*/i, "");
+    } else {
+      finalPath = cleanName;
     }
+
+    // Guardar en la subcarpeta "Informes"
+    const subfolderPath = `${finalPath}/Informes`;
 
     const arrayBuffer = await file.arrayBuffer();
     const buffer = Buffer.from(arrayBuffer);
 
-    const res = await uploadFileToGoogleDrive(buffer, file.name, file.type || "application/pdf", terapeutaName);
+    const res = await uploadFileToGoogleDrive(buffer, file.name, file.type || "application/pdf", subfolderPath);
     return res;
   } catch (error: any) {
     console.error("Error in uploadInformePDFToDrive action:", error);
