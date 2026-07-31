@@ -122,6 +122,7 @@ export async function getPatients() {
       }
 
       // Procesar todas las sesiones registradas en Asistencia
+      let latestTotalSesiones = 0;
       for (const s of p.sessions) {
         let extraName = "";
         let parsedNotes: any = null;
@@ -136,15 +137,21 @@ export async function getPatients() {
         if (extraName) sessionTherapists.push(extraName);
 
         if (parsedNotes) {
+          const sesNum = parseInt(parsedNotes.sesiones || parsedNotes.numeroSesiones || "0");
+          if (sesNum > 0) {
+            latestTotalSesiones = sesNum;
+          }
+
           const est = (parsedNotes.estadoAsistencia || "").toLowerCase();
           const isAttended = est === "asistio" || est === "cancelo sin anticipacion" || s.status === "COMPLETED";
           if (isAttended) {
             asistenciasCount++;
           }
 
-          const tipo = (parsedNotes.tipoSesion || "").toLowerCase();
-          const area = (parsedNotes.area || "").toLowerCase();
-          if (tipo.includes("valoraci") || area.includes("valoraci")) {
+          const tipo = (parsedNotes.tipoSesion || parsedNotes.tipoServicio || parsedNotes.serviceType || "").toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "");
+          const area = (parsedNotes.area || "").toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "");
+          const obs = (parsedNotes.obs || parsedNotes.observaciones || "").toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "");
+          if (tipo.includes("valorac") || area.includes("valorac") || obs.includes("valorac") || tipo.includes("evaluac")) {
             valoracionesCount++;
           }
 
@@ -190,12 +197,16 @@ export async function getPatients() {
         }
       }
 
+      const totalSesionesStr = latestTotalSesiones > 0 ? latestTotalSesiones.toString() : (p.totalSesiones || p.sesiones || "5");
+
       return {
         ...p,
         medicoTratante: effectiveMedicoTratante || p.medicoTratante || "General",
         sessionTherapists: uniqueTherapists,
         asistencias: asistenciasCount,
         valoraciones: valoracionesCount,
+        sesiones: totalSesionesStr,
+        totalSesiones: totalSesionesStr,
         totalPagado: totalPagadoSum.toFixed(2),
         totalCosto: totalCostoSum.toFixed(2),
         saldoCalculado: saldoCalculado.toFixed(2),

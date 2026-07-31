@@ -228,7 +228,7 @@ export default function PacientesPage() {
             <tbody className="divide-y divide-slate-100">
               {paginatedPacientes.length > 0 ? paginatedPacientes.map((p) => {
                 const asistencias = p.asistencias || 0;
-                const totalSesiones = parseInt(p.sesiones || p.totalSesiones || "10", 10) || 10;
+                const totalSesiones = parseInt(p.sesiones || p.totalSesiones || "5", 10) || 5;
                 const precio = p.precioTerapia || "—";
 
                 return (
