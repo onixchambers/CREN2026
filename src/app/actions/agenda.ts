@@ -219,16 +219,12 @@ export async function updateCita(id: string, data: any) {
 export async function deleteCita(id: string) {
   try {
     const session = await getServerSession(authOptions);
-    const userRole = ((session?.user as any)?.role || "").toUpperCase();
-    if (userRole === "TERAPEUTA") {
-      const s = await prisma.systemSettings.findUnique({ where: { id: 1 } });
-      const allow = s?.allowTherapistEdit ?? true;
-      if (!allow) {
-        return { success: false, error: "La administración no tiene habilitado el permiso para eliminar registros." };
-      }
+    if (!session?.user) {
+      return { success: false, error: "No autenticado." };
     }
 
     await prisma.session.delete({ where: { id } });
+    revalidatePath("/dashboard/agenda");
     return { success: true };
   } catch (error) {
     console.error("Error eliminando cita:", error);

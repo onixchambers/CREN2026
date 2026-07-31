@@ -49,7 +49,7 @@ export default function AgendaPage() {
   const [isEditModalOpen, setIsEditModalOpen] = useState(false);
   const [selectedCita, setSelectedCita] = useState<Cita | null>(null);
   const [formData, setFormData] = useState({
-    paciente: "", fecha: hoy, hora: "09:00", terapeuta: "", tipoServicio: "individual", frecuencia: "semanal", numeroSesiones: 1, estado: "Disponible" as Cita["estado"], pagado: false, metodoPago: ""
+    paciente: "", fecha: hoy, hora: "09:00", terapeuta: "", tipoServicio: "individual", frecuencia: "semanal", numeroSesiones: 1, estado: "Alta" as Cita["estado"], pagado: false, metodoPago: ""
   });
 
   useEffect(() => {
@@ -143,7 +143,7 @@ export default function AgendaPage() {
           setCitas([...citas, { id: res.id, ...nuevaCitaObj } as Cita]); 
         }
         setIsModalOpen(false);
-        setFormData({ paciente: "", fecha: fechaSeleccionada, hora: "09:00", terapeuta: terapeutas[0] || "", tipoServicio: "individual", frecuencia: "semanal", numeroSesiones: 1, estado: "Ocupado", pagado: false, metodoPago: "" });
+        setFormData({ paciente: "", fecha: fechaSeleccionada, hora: "09:00", terapeuta: terapeutas[0] || "", tipoServicio: "individual", frecuencia: "semanal", numeroSesiones: 1, estado: "Alta", pagado: false, metodoPago: "" });
       } else {
         alert("Error: " + res.error);
       }
@@ -210,20 +210,63 @@ export default function AgendaPage() {
     return citasFiltradas.find(c => c.terapeuta === terapeuta && c.hora.startsWith(horaPrefix));
   };
 
-  const getEstadoColor = (estado: string) => {
-    switch (estado) {
-      case 'Ocupado':
-      case 'No Disponible': return 'bg-red-600 text-white border-red-700 font-bold shadow-md';
-      case 'Reagendado': return 'bg-orange-100 text-orange-800 border-orange-300';
-      case 'Disponible': return 'bg-green-100 text-green-800 border-green-300';
-      case 'Asistió': return 'bg-emerald-100 text-emerald-800 border-emerald-300';
-      case 'Canceló': return 'bg-red-100 text-red-800 border-red-300';
-      case 'Faltó': return 'bg-rose-100 text-rose-800 border-rose-300';
-      case 'Baja': return 'bg-stone-100 text-stone-800 border-stone-300';
-      case 'Alta': return 'bg-teal-100 text-teal-800 border-teal-300';
-      case 'Cancelado': return 'bg-red-100 text-red-800 border-red-300';
-      default: return 'bg-slate-100 text-slate-800 border-slate-300';
+  const getEstadoStyle = (estado: string) => {
+    const est = (estado || "").trim().toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "");
+    
+    if (est.includes("centro")) {
+      // Cancelo el centro -> Amarillo traslucido
+      return {
+        className: "bg-amber-100/90 text-amber-900 border-amber-300 font-bold shadow-sm",
+        style: { color: "#78350f", backgroundColor: "rgba(254, 240, 138, 0.85)" }
+      };
     }
+    if (est.includes("sin anticipacion") || est.includes("sin anticipa")) {
+      // Cancelo sin anticipacion -> Rojo traslucido
+      return {
+        className: "bg-red-100/90 text-red-900 border-red-300 font-bold shadow-sm",
+        style: { color: "#7f1d1d", backgroundColor: "rgba(254, 226, 226, 0.85)" }
+      };
+    }
+    if (est.includes("anticipad") || est.includes("con anticipacion")) {
+      // Cancelo con anticipacion -> Naranja traslucido
+      return {
+        className: "bg-orange-100/90 text-orange-900 border-orange-300 font-bold shadow-sm",
+        style: { color: "#7c2d12", backgroundColor: "rgba(254, 215, 170, 0.85)" }
+      };
+    }
+    if (est === "alta") {
+      // Alta -> Verde por defecto
+      return {
+        className: "bg-emerald-100 text-emerald-900 border-emerald-400 font-bold shadow-sm",
+        style: { color: "#065f46", backgroundColor: "#d1fae5" }
+      };
+    }
+    if (est.includes("asisti") || est === "asistio") {
+      // Asistio -> Gris
+      return {
+        className: "bg-slate-200 text-slate-800 border-slate-300 font-bold shadow-sm",
+        style: { color: "#1e293b", backgroundColor: "#e2e8f0" }
+      };
+    }
+    if (est === "baja") {
+      // Baja -> Negro con letras blancas
+      return {
+        className: "bg-slate-900 text-white border-slate-950 font-bold shadow-sm",
+        style: { color: "#ffffff", backgroundColor: "#0f172a" }
+      };
+    }
+    if (est.includes("ocupado") || est.includes("no disponible")) {
+      return {
+        className: "bg-red-600 text-white border-red-700 font-bold shadow-md",
+        style: { color: "#ffffff", backgroundColor: "#dc2626" }
+      };
+    }
+    
+    // Default fallback -> Alta (Verde por defecto)
+    return {
+      className: "bg-emerald-100 text-emerald-900 border-emerald-400 font-bold shadow-sm",
+      style: { color: "#065f46", backgroundColor: "#d1fae5" }
+    };
   };
 
   if (isLoadingTerapeutas) {
@@ -243,7 +286,7 @@ export default function AgendaPage() {
       tipoServicio: "individual",
       frecuencia: "semanal",
       numeroSesiones: 1,
-      estado: "Disponible",
+      estado: "Alta",
       pagado: false,
       metodoPago: ""
     });
@@ -298,23 +341,29 @@ export default function AgendaPage() {
                     return (
                       <td key={`${hora}-${t}`} className="border border-slate-200 p-0 h-16 w-40 relative align-top group">
                         {cita ? (
-                            <div 
-                              onClick={() => { setSelectedCita(cita); setIsEditModalOpen(true); }}
-                              className={`absolute left-0 w-full h-full p-2 rounded border text-xs font-semibold flex flex-col items-center justify-center cursor-pointer shadow-sm hover:brightness-95 transition-all ${cita.hora.includes(":30") ? "top-[50%] z-10" : "top-0"} ${getEstadoColor(cita.estado)}`}>
-                              
-                              <button 
-                                onClick={(e) => { e.stopPropagation(); handleDeleteCita(cita.id); }} 
-                                className="absolute top-1 right-1 text-red-500 hover:text-red-700 font-bold bg-white/50 rounded-full w-4 h-4 flex items-center justify-center leading-none" 
-                                title="Eliminar Cita"
-                              >&times;</button>
+                            (() => {
+                              const st = getEstadoStyle(cita.estado);
+                              return (
+                                <div 
+                                  onClick={() => { setSelectedCita(cita); setIsEditModalOpen(true); }}
+                                  style={st.style}
+                                  className={`absolute left-0 w-full h-full p-2 rounded border text-xs font-semibold flex flex-col items-center justify-center cursor-pointer shadow-sm hover:brightness-95 transition-all ${cita.hora.includes(":30") ? "top-[50%] z-10" : "top-0"} ${st.className}`}>
+                                  
+                                  <button 
+                                    onClick={(e) => { e.stopPropagation(); handleDeleteCita(cita.id); }} 
+                                    className="absolute top-1 right-1 text-red-500 hover:text-red-700 font-bold bg-white/70 hover:bg-white rounded-full w-4 h-4 flex items-center justify-center leading-none shadow-sm cursor-pointer" 
+                                    title="Eliminar Cita"
+                                  >&times;</button>
 
-                              <span className="truncate w-full text-center mt-1 font-bold">
-                                {(cita.estado === "Ocupado" || cita.estado === "No Disponible" || cita.paciente === "No Disponible") ? "No Disponible" : cita.paciente}
-                              </span>
-                              <span className="text-[10px] opacity-80 uppercase mt-0.5 truncate w-full text-center">
-                                {(cita.estado === "Ocupado" || cita.estado === "No Disponible" || cita.paciente === "No Disponible") ? "Bloqueado" : cita.tipoServicio}
-                              </span>
-                            </div>
+                                  <span className="truncate w-full text-center mt-1 font-bold">
+                                    {(cita.estado === "Ocupado" || cita.estado === "No Disponible" || cita.paciente === "No Disponible") ? "No Disponible" : cita.paciente}
+                                  </span>
+                                  <span className="text-[10px] opacity-90 uppercase mt-0.5 truncate w-full text-center">
+                                    {(cita.estado === "Ocupado" || cita.estado === "No Disponible" || cita.paciente === "No Disponible") ? "Bloqueado" : (cita.estado || "Alta")}
+                                  </span>
+                                </div>
+                              );
+                            })()
                         ) : (
                           <div 
                             onClick={() => handleOpenModal(t, hora)}
@@ -441,8 +490,13 @@ export default function AgendaPage() {
                 {/* Estado */}
                 <div className="md:col-span-2">
                   <label className="block text-xs font-semibold text-slate-600 uppercase mb-1">Estado de la Cita</label>
-                  <select name="estado" value={formData.estado} onChange={handleInputChange} className="w-full text-slate-900 font-bold border border-slate-300 rounded-lg px-3 py-2 outline-none focus:border-[#2980b9]">
-                    <option value="Disponible">Disponible (Permite agendar paciente)</option>
+                  <select name="estado" value={formData.estado} onChange={handleInputChange} className="w-full text-slate-900 font-bold border border-slate-300 rounded-lg px-3 py-2 outline-none focus:border-[#2980b9] bg-white">
+                    <option value="Alta">Alta (Default - Verde)</option>
+                    <option value="Asistio">Asistió (Gris)</option>
+                    <option value="Cancelo con anticipacion">Canceló con anticipación (Naranja traslúcido)</option>
+                    <option value="Cancelo sin anticipacion">Canceló sin anticipación (Rojo traslúcido)</option>
+                    <option value="Cancelo el centro">Canceló el centro (Amarillo traslúcido)</option>
+                    <option value="Baja">Baja (Negro con letras blancas)</option>
                     <option value="Ocupado">Ocupado (Terapeuta No Disponible)</option>
                   </select>
                   {formData.estado === "Ocupado" && (
@@ -482,14 +536,15 @@ export default function AgendaPage() {
                 <select 
                   value={selectedCita.estado} 
                   onChange={e => setSelectedCita({...selectedCita, estado: e.target.value})} 
-                  className="w-full text-slate-900 font-medium border border-slate-300 rounded-lg px-3 py-2 outline-none focus:border-[#2980b9]"
+                  className="w-full text-slate-900 font-medium border border-slate-300 rounded-lg px-3 py-2 outline-none focus:border-[#2980b9] bg-white"
                 >
-                  <option value="Asistio">Asistio</option>
-                  <option value="Cancelo anticipado">Cancelo anticipado</option>
-                  <option value="Cancelo sin anticipacion">Cancelo sin anticipacion</option>
-                  <option value="Cancelo el centro">Cancelo el centro</option>
-                  <option value="Alta">Alta</option>
-                  <option value="Baja">Baja</option>
+                  <option value="Alta">Alta (Verde)</option>
+                  <option value="Asistio">Asistió (Gris)</option>
+                  <option value="Cancelo con anticipacion">Canceló con anticipación (Naranja traslúcido)</option>
+                  <option value="Cancelo sin anticipacion">Canceló sin anticipación (Rojo traslúcido)</option>
+                  <option value="Cancelo el centro">Canceló el centro (Amarillo traslúcido)</option>
+                  <option value="Baja">Baja (Negro con letras blancas)</option>
+                  <option value="Ocupado">Ocupado / No Disponible (Rojo)</option>
                 </select>
               </div>
 
