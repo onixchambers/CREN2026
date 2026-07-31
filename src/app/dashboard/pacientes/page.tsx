@@ -278,8 +278,8 @@ export default function PacientesPage() {
                             ? precio.split(" / ").map((val: string) => `$${val.replace("$", "")}`).join(" / ")
                             : (precio.startsWith("$") ? precio : `$${precio}`))}
                     </td>
-                    <td className="px-4 py-4">
-                      <span className="bg-blue-50 text-blue-700 border border-blue-200 px-2.5 py-1 rounded-full text-[11px] font-semibold whitespace-nowrap">
+                    <td className="px-4 py-4 max-w-[200px]">
+                      <span className="bg-blue-50 text-blue-700 border border-blue-200 px-2.5 py-1 rounded-lg text-[11px] font-semibold inline-block text-center leading-snug">
                         {p.metodoPago || "Efectivo"}
                       </span>
                     </td>

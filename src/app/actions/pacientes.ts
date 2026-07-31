@@ -164,8 +164,10 @@ export async function getPatients() {
             }
           }
 
-          if (parsedNotes.metodoPago) {
+          if (parsedNotes.metodoPago && parsedNotes.metodoPago !== "SÍ" && parsedNotes.metodoPago !== "No") {
             lastMetodoPago = parsedNotes.metodoPago;
+          } else if (parsedNotes.metodoPago2) {
+            lastMetodoPago = `Mixto (${parsedNotes.metodoPago || 'P1'}: $${parsedNotes.montoPago || 0}, ${parsedNotes.metodoPago2}: $${parsedNotes.montoPago2 || 0})`;
           }
         }
       }

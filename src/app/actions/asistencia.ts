@@ -90,7 +90,7 @@ export async function saveAsistenciaDB(data: any) {
       tipoSesion: data.tipoSesion,
       estadoAsistencia: estadoVal,
       sesiones: data.sesiones || data.numeroSesiones,
-      metodoPago: data.pago || data.metodoPago,
+      metodoPago: (data.metodoPago && data.metodoPago !== "SÍ" && data.metodoPago !== "No") ? data.metodoPago : (data.metodoPagoFinal || data.metodoPago1 || "Efectivo"),
       solicitaFactura: data.fact === "Sí" || data.solicitaFactura === "Sí",
       subtotal: data.subtotal ? (typeof data.subtotal === 'string' ? parseFloat(data.subtotal.replace("$", "")) : data.subtotal) : 0,
       total: data.total ? (typeof data.total === 'string' ? parseFloat(data.total.replace("$", "")) : data.total) : 0,
@@ -175,7 +175,7 @@ export async function getAsistenciasDB(_ts?: string) {
         const totalCount = Math.max(totalFromNotes, patientSessions.length);
         const displaySesiones = totalCount > 1 ? `${sessionNum}/${totalCount}` : `${sessionNum}`;
 
-        const metodoPagoStr = extra.metodoPago2 ? `${extra.metodoPago} + ${extra.metodoPago2}` : (extra.metodoPago || extra.pago || "Efectivo");
+        let metodoPagoStr = (extra.metodoPago && extra.metodoPago !== "SÍ" && extra.metodoPago !== "No") ? extra.metodoPago : (extra.metodoPago2 ? `Mixto (${extra.metodoPago || 'P1'}: $${extra.montoPago || 0}, ${extra.metodoPago2}: $${extra.montoPago2 || 0})` : (extra.metodoPago1 || "Efectivo"));
 
         asistencias.push({
           id: s.id,
