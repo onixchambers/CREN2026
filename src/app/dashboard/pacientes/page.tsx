@@ -2,6 +2,16 @@
 import { useState, useEffect } from "react";
 import { useSession } from "next-auth/react";
 import { DateInput } from "@/components/DateInput";
+import { 
+  getPatients, 
+  updatePatientPhoto, 
+  updatePatientStatus, 
+  getPatientDocuments, 
+  savePatientDocument, 
+  deletePatientDocument,
+  updatePatient,
+  deletePatient
+} from "@/app/actions/pacientes";
 
 type Paciente = {
   id: string;
@@ -46,15 +56,13 @@ export default function PacientesPage() {
     if (viewingPatient?.id) {
       setModalTab("expediente");
       setIsLoadingDocs(true);
-      import('@/app/actions/pacientes').then(({ getPatientDocuments }) => {
-        getPatientDocuments(viewingPatient.id).then(res => {
-          if (res.success && res.data) {
-            setPatientDocs(res.data);
-          } else {
-            setPatientDocs([]);
-          }
-          setIsLoadingDocs(false);
-        });
+      getPatientDocuments(viewingPatient.id).then(res => {
+        if (res.success && res.data) {
+          setPatientDocs(res.data);
+        } else {
+          setPatientDocs([]);
+        }
+        setIsLoadingDocs(false);
       });
     }
   }, [viewingPatient?.id]);
@@ -64,7 +72,6 @@ export default function PacientesPage() {
     if (!bajaModalPatient) return;
     setIsSubmittingBaja(true);
     try {
-      const { updatePatientStatus, getPatients } = await import('@/app/actions/pacientes');
       const res = await updatePatientStatus(bajaModalPatient.id, "Inactivo", bajaReason);
       if (res.success) {
         setPacientes(prev => prev.map(item => item.id === bajaModalPatient.id ? { ...item, estatus: "Inactivo" } : item));
@@ -75,6 +82,12 @@ export default function PacientesPage() {
       } else {
         alert("Error al dar de baja: " + res.error);
       }
+    } catch (err: any) {
+      alert("Error inesperado: " + err.message);
+    } finally {
+      setIsSubmittingBaja(false);
+    }
+  };
     } finally {
       setIsSubmittingBaja(false);
     }
@@ -500,7 +513,6 @@ export default function PacientesPage() {
                             setPacientes((prev) =>
                               prev.map((p) => (p.id === viewingPatient.id ? { ...p, foto: base64 } : p))
                             );
-                            const { updatePatientPhoto } = await import("@/app/actions/pacientes");
                             const res = await updatePatientPhoto(viewingPatient.id, base64);
                             if (!res.success) {
                               alert(res.error || "Error al actualizar la foto.");
@@ -761,7 +773,6 @@ export default function PacientesPage() {
                                         type="button"
                                         onClick={async () => {
                                           if (window.confirm("¿Deseas borrar este documento clínico?")) {
-                                            const { deletePatientDocument } = await import('@/app/actions/pacientes');
                                             const res = await deletePatientDocument(viewingPatient.id, doc.id);
                                             if (res.success && res.data) setPatientDocs(res.data);
                                           }
@@ -861,7 +872,6 @@ export default function PacientesPage() {
                           e.preventDefault();
                           setIsSavingDoc(true);
                           try {
-                            const { savePatientDocument } = await import('@/app/actions/pacientes');
                             const res = await savePatientDocument(viewingPatient.id, {
                               tipo: selectedNoteType,
                               terapeuta: docFormData.terapeuta || userName || "LOURDES RINCÓN",
