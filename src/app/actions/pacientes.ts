@@ -52,6 +52,7 @@ export async function createPatient(data: any) {
         origen: data.origen || "Google",
         medicoTratante: data.medicoTratante || null,
         escuela: data.escuela || null,
+        pacienteContacto: data.pacienteContacto || null,
         
         madreNombre: data.madreNombre || null,
         padreNombre: data.padreNombre || null,
@@ -289,6 +290,7 @@ export async function updatePatient(id: string, data: any) {
         origen: data.origen || "Google",
         medicoTratante: data.medicoTratante || null,
         escuela: data.escuela || null,
+        pacienteContacto: data.pacienteContacto || null,
         
         madreNombre: data.madreNombre || null,
         padreNombre: data.padreNombre || null,

@@ -24,6 +24,7 @@ function RegistroConsentimientoContent() {
   const [escuela, setEscuela] = useState("");
 
   // Detección de País por IP para Selector Telefónico
+  const [pacienteCountryCode, setPacienteCountryCode] = useState("+52");
   const [madreCountryCode, setMadreCountryCode] = useState("+52");
   const [padreCountryCode, setPadreCountryCode] = useState("+52");
   const [otrosCountryCode, setOtrosCountryCode] = useState("+52");
@@ -42,6 +43,7 @@ function RegistroConsentimientoContent() {
           const countryIso = data.country_code || data.country;
           const match = COUNTRY_CODES.find((c) => c.iso === countryIso);
           if (match) {
+            setPacienteCountryCode(match.code);
             setMadreCountryCode(match.code);
             setPadreCountryCode(match.code);
             setOtrosCountryCode(match.code);
@@ -64,6 +66,9 @@ function RegistroConsentimientoContent() {
       setPhone(val);
     }
   };
+
+  // Contacto Paciente
+  const [pacienteContacto, setPacienteContacto] = useState("");
 
   // Contactos
   const [madreNombre, setMadreNombre] = useState("");
@@ -200,6 +205,7 @@ function RegistroConsentimientoContent() {
     setSubmitting(true);
 
     try {
+      const fullPacienteContacto = pacienteContacto ? (pacienteContacto.startsWith("+") ? pacienteContacto : `${pacienteCountryCode} ${pacienteContacto}`) : "";
       const fullMadreContacto = madreContacto ? (madreContacto.startsWith("+") ? madreContacto : `${madreCountryCode} ${madreContacto}`) : "";
       const fullPadreContacto = padreContacto ? (padreContacto.startsWith("+") ? padreContacto : `${padreCountryCode} ${padreContacto}`) : "";
       const fullOtrosContacto = otrosContacto ? (otrosContacto.startsWith("+") ? otrosContacto : `${otrosCountryCode} ${otrosContacto}`) : "";
@@ -213,6 +219,7 @@ function RegistroConsentimientoContent() {
         origen,
         medicoTratante,
         escuela,
+        pacienteContacto: fullPacienteContacto,
         madreNombre,
         madreContacto: fullMadreContacto,
         principalMadre,
@@ -384,7 +391,7 @@ function RegistroConsentimientoContent() {
             </div>
           </div>
 
-          <div className="grid grid-cols-2 gap-3">
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
             <div>
               <label className="block text-xs font-bold text-slate-800 mb-1">Origen / Referencia</label>
               <select
@@ -407,6 +414,23 @@ function RegistroConsentimientoContent() {
                 onChange={(e) => setEscuela(e.target.value)}
                 placeholder="Nombre de escuela"
                 className="w-full bg-white border border-slate-300 rounded-xl p-3 text-xs text-slate-900 font-medium placeholder:text-slate-400 focus:border-[#1a5276] outline-none shadow-xs"
+              />
+            </div>
+          </div>
+
+          <div>
+            <label className="block text-xs font-bold text-slate-800 mb-1">Teléfono / Contacto Directo del Paciente</label>
+            <div className="flex gap-2">
+              <CountrySelector
+                value={pacienteCountryCode}
+                onChange={(code) => setPacienteCountryCode(code)}
+              />
+              <input
+                type="tel"
+                value={pacienteContacto}
+                onChange={(e) => handlePhoneInput(e.target.value, setPacienteCountryCode, setPacienteContacto)}
+                placeholder={getPhonePlaceholder(systemTimezone)}
+                className="flex-1 bg-white border border-slate-300 rounded-xl p-3 text-xs text-slate-900 font-medium placeholder:text-slate-400 focus:border-[#1a5276] outline-none shadow-xs"
               />
             </div>
           </div>

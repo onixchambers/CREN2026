@@ -71,6 +71,7 @@ export default function PreregistrosPage() {
     setLoadingQr(false);
   };
 
+  const [pacienteCountryCode, setPacienteCountryCode] = useState("+52");
   const [madreCountryCode, setMadreCountryCode] = useState("+52");
   const [padreCountryCode, setPadreCountryCode] = useState("+52");
   const [otrosCountryCode, setOtrosCountryCode] = useState("+52");
@@ -84,6 +85,7 @@ export default function PreregistrosPage() {
           const countryIso = data.country_code || data.country;
           const match = COUNTRY_CODES.find((c) => c.iso === countryIso);
           if (match) {
+            setPacienteCountryCode(match.code);
             setMadreCountryCode(match.code);
             setPadreCountryCode(match.code);
             setOtrosCountryCode(match.code);
@@ -114,6 +116,7 @@ export default function PreregistrosPage() {
     origen: "Google",
     medicoTratante: userName,
     escuela: "",
+    pacienteContacto: "",
 
     madreNombre: "",
     padreNombre: "",
@@ -227,6 +230,7 @@ export default function PreregistrosPage() {
       return cleaned;
     };
 
+    const pacContact = parsePhone(preReg.pacienteContacto, setPacienteCountryCode);
     const mContact = parsePhone(preReg.madreContacto, setMadreCountryCode);
     const pContact = parsePhone(preReg.padreContacto, setPadreCountryCode);
     const oContact = parsePhone(preReg.otrosContacto, setOtrosCountryCode);
@@ -242,6 +246,7 @@ export default function PreregistrosPage() {
       origen: preReg.origen || "Google",
       medicoTratante: preReg.medicoTratante || userName,
       escuela: preReg.escuela || "",
+      pacienteContacto: pacContact,
 
       madreNombre: preReg.madreNombre || "",
       padreNombre: preReg.padreNombre || "",
@@ -296,8 +301,7 @@ export default function PreregistrosPage() {
         return phoneStr.replace(matched.code, "").trim();
       }
       return phoneStr;
-    };
-
+    };    const pacContact = parsePhone(ficha.pacienteContacto, setPacienteCountryCode);
     const mContact = parsePhone(ficha.madreContacto, setMadreCountryCode);
     const pContact = parsePhone(ficha.padreContacto, setPadreCountryCode);
     const oContact = parsePhone(ficha.otrosContacto, setOtrosCountryCode);
@@ -311,12 +315,14 @@ export default function PreregistrosPage() {
       nombres,
       apellidos,
       nombre: fullName,
+      pacienteContacto: pacContact,
       madreContacto: mContact,
       padreContacto: pContact,
       otrosContacto: oContact,
       foto: ficha.foto || "",
     });
     setPhotoPreview(ficha.foto || null);
+
     window.scrollTo({ top: 0, behavior: "smooth" });
   };
 
@@ -360,8 +366,9 @@ export default function PreregistrosPage() {
       origen: "",
       medicoTratante: userRole.toUpperCase() === "TERAPEUTA" ? userName : "",
       escuela: "",
+      pacienteContacto: "",
 
-      madreNombre: "",
+      madreNombre: "",: "",
       padreNombre: "",
       otrosNombre: "",
       madreContacto: "",
@@ -395,10 +402,11 @@ export default function PreregistrosPage() {
     } else {
       setFormData(prev => {
         let newValue = value;
-        if (name === "madreContacto" || name === "padreContacto" || name === "otrosContacto") {
+        if (name === "pacienteContacto" || name === "madreContacto" || name === "padreContacto" || name === "otrosContacto") {
           const cleaned = value.trim();
           const matched = COUNTRY_CODES.find((c) => cleaned.startsWith(c.code));
           if (matched) {
+            if (name === "pacienteContacto") setPacienteCountryCode(matched.code);
             if (name === "madreContacto") setMadreCountryCode(matched.code);
             if (name === "padreContacto") setPadreCountryCode(matched.code);
             if (name === "otrosContacto") setOtrosCountryCode(matched.code);
@@ -437,6 +445,7 @@ export default function PreregistrosPage() {
 
       const finalFormData = {
         ...formData,
+        pacienteContacto: formData.pacienteContacto ? (formData.pacienteContacto.startsWith("+") ? formData.pacienteContacto : `${pacienteCountryCode} ${formData.pacienteContacto}`) : "",
         madreContacto: formData.madreContacto ? (formData.madreContacto.startsWith("+") ? formData.madreContacto : `${madreCountryCode} ${formData.madreContacto}`) : "",
         padreContacto: formData.padreContacto ? (formData.padreContacto.startsWith("+") ? formData.padreContacto : `${padreCountryCode} ${formData.padreContacto}`) : "",
         otrosContacto: formData.otrosContacto ? (formData.otrosContacto.startsWith("+") ? formData.otrosContacto : `${otrosCountryCode} ${formData.otrosContacto}`) : "",
@@ -450,55 +459,57 @@ export default function PreregistrosPage() {
       }
 
       if (result.success) {
-        // SIEMPRE subir el PDF oficial de Protección de Datos a Google Drive al presionar Guardar Paciente
-        try {
-          const signatureUrl = selectedPreReg?.signatureDataUrl || "";
-          const cryptoHash = selectedPreReg?.cryptoHash || "";
-          const signedTimestamp = selectedPreReg?.updatedAt || selectedPreReg?.createdAt || new Date().toISOString();
-          const ip = selectedPreReg?.ipAddress || "Ficha ID CREN";
-          const ua = selectedPreReg?.userAgent || "Navegador CREN";
+        // Subir a Google Drive cuando el paciente cuenta con firma digital registrada
+        if (selectedPreReg?.signatureDataUrl || formData.consentimientoFirmado) {
+          try {
+            const signatureUrl = selectedPreReg?.signatureDataUrl || "";
+            const cryptoHash = selectedPreReg?.cryptoHash || "";
+            const signedTimestamp = selectedPreReg?.updatedAt || selectedPreReg?.createdAt || new Date().toISOString();
+            const ip = selectedPreReg?.ipAddress || "Ficha ID CREN";
+            const ua = selectedPreReg?.userAgent || "Navegador CREN";
 
-          const rawDocName = formData.medicoTratante || userName;
-          const isDocNonTherapist = ["administrador", "admin", "contador", "invitado", "general"].some(kw => rawDocName.toLowerCase().includes(kw));
-          const displayDocName = isDocNonTherapist ? rawDocName.replace(/^lic\.\s*/i, "") : (rawDocName.toLowerCase().startsWith("lic.") ? rawDocName : `Lic. ${rawDocName}`);
+            const rawDocName = formData.medicoTratante || userName;
+            const isDocNonTherapist = ["administrador", "admin", "contador", "invitado", "general"].some(kw => rawDocName.toLowerCase().includes(kw));
+            const displayDocName = isDocNonTherapist ? rawDocName.replace(/^lic\.\s*/i, "") : (rawDocName.toLowerCase().startsWith("lic.") ? rawDocName : `Lic. ${rawDocName}`);
 
-          const htmlBase64 = generateConsentPdfBase64({
-            pacienteNombre: formData.nombre,
-            fechaNacimiento: formData.fechaNacimiento,
-            sexo: formData.sexo,
-            medicoTratante: formData.medicoTratante || userName,
-            escuela: formData.escuela,
-            madreNombre: formData.madreNombre,
-            madreContacto: formData.madreContacto,
-            padreNombre: formData.padreNombre,
-            padreContacto: formData.padreContacto,
-            correoPrincipal: formData.correoPrincipal,
-            signatureDataUrl: signatureUrl,
-            cryptoHash: cryptoHash,
-            signedAt: signedTimestamp,
-            ipAddress: ip,
-            userAgent: ua,
-            pdfUrl: "Informes PDF CREN / " + displayDocName + " Protección de Datos",
-          });
+            const htmlBase64 = generateConsentPdfBase64({
+              pacienteNombre: formData.nombre,
+              fechaNacimiento: formData.fechaNacimiento,
+              sexo: formData.sexo,
+              medicoTratante: formData.medicoTratante || userName,
+              escuela: formData.escuela,
+              madreNombre: formData.madreNombre,
+              madreContacto: formData.madreContacto,
+              padreNombre: formData.padreNombre,
+              padreContacto: formData.padreContacto,
+              correoPrincipal: formData.correoPrincipal,
+              signatureDataUrl: signatureUrl,
+              cryptoHash: cryptoHash,
+              signedAt: signedTimestamp,
+              ipAddress: ip,
+              userAgent: ua,
+              pdfUrl: "Informes PDF CREN / " + displayDocName + " Protección de Datos",
+            });
 
-          const subfolderName = `${displayDocName}/Registros de Consentimiento Firmado`;
-          const fileName = `Consentimiento_Firmado_${(formData.nombre || "Paciente").replace(/\s+/g, "_")}.pdf`;
+            const subfolderName = `${displayDocName}/Registros de Consentimiento Firmado`;
+            const fileName = `Firma_Digital_${(formData.nombre || "Paciente").replace(/\s+/g, "_")}.pdf`;
 
-          const driveRes = await uploadConsentPDFAction({
-            htmlBase64,
-            fileName,
-            terapeutaName: subfolderName
-          });
-          if (driveRes.success) {
-            console.log("PDF de Protección de Datos guardado exitosamente en Google Drive:", driveRes.webViewLink);
+            const driveRes = await uploadConsentPDFAction({
+              htmlBase64,
+              fileName,
+              terapeutaName: subfolderName
+            });
+            if (driveRes.success) {
+              console.log("PDF de Firma Digital guardado exitosamente en Google Drive:", driveRes.webViewLink);
+            }
+          } catch (driveErr) {
+            console.warn("Error al subir PDF de Firma Digital a Google Drive:", driveErr);
           }
+        }
 
-          if (selectedPreReg?.id) {
-            await markPreRegistrationAsLoaded(selectedPreReg.id);
-            await refreshPendingPreRegs();
-          }
-        } catch (driveErr) {
-          console.warn("Error al subir PDF de protección de datos a Google Drive:", driveErr);
+        if (selectedPreReg?.id) {
+          await markPreRegistrationAsLoaded(selectedPreReg.id);
+          await refreshPendingPreRegs();
         }
 
         alert(editingId ? "¡Ficha actualizada exitosamente!" : "¡Paciente registrado exitosamente en la base de datos!");
@@ -770,6 +781,26 @@ export default function PreregistrosPage() {
                     placeholder="Nombre de la escuela"
                     className="w-full p-2 border border-slate-300 rounded text-sm text-slate-900 focus:border-blue-500 outline-none"
                   />
+                </div>
+              </div>
+
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mt-4">
+                <div>
+                  <label className="block text-xs font-bold text-slate-700 mb-1 uppercase">Teléfono / Contacto Directo del Paciente</label>
+                  <div className="flex gap-2">
+                    <CountrySelector
+                      value={pacienteCountryCode}
+                      onChange={(code) => setPacienteCountryCode(code)}
+                    />
+                    <input
+                      type="tel"
+                      name="pacienteContacto"
+                      value={formData.pacienteContacto}
+                      onChange={handleInputChange}
+                      placeholder={getPhonePlaceholder(systemTimezone)}
+                      className="flex-1 p-2 border border-slate-300 rounded text-sm text-slate-900 bg-white focus:border-blue-500 outline-none"
+                    />
+                  </div>
                 </div>
               </div>
             </div>
