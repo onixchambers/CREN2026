@@ -571,8 +571,58 @@ export default function AsistenciaPage() {
             {/* ROW 1 */}
             <div className="grid grid-cols-1 md:grid-cols-6 gap-4">
               <div>
-                <label className="block text-[10px] font-bold text-slate-400 uppercase mb-1">FECHA</label>
-                <DateInput name="fecha" value={formData.fecha} onChange={handleChange} className="w-full text-sm p-2 border border-slate-300 rounded focus:border-[#2980b9] outline-none text-slate-900" />
+                <div className="flex items-center justify-between mb-1">
+                  <label className="block text-[10px] font-bold text-slate-400 uppercase">FECHA</label>
+                  <div className="flex items-center gap-1">
+                    <button
+                      type="button"
+                      onClick={() => {
+                        const d = new Date((formData.fecha || hoy) + "T00:00:00");
+                        d.setDate(d.getDate() - 1);
+                        const year = d.getFullYear();
+                        const month = String(d.getMonth() + 1).padStart(2, '0');
+                        const day = String(d.getDate()).padStart(2, '0');
+                        setFormData(prev => ({ ...prev, fecha: `${year}-${month}-${day}` }));
+                      }}
+                      className="px-1.5 py-0.5 bg-slate-100 hover:bg-slate-200 text-slate-700 text-[10px] font-bold rounded cursor-pointer transition"
+                      title="Día anterior"
+                    >
+                      ◀
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => setFormData(prev => ({ ...prev, fecha: hoy }))}
+                      className="px-1.5 py-0.5 bg-[#1a5276] hover:bg-[#0e2f44] text-white text-[10px] font-bold rounded cursor-pointer transition"
+                      title="Hoy"
+                    >
+                      Hoy
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => {
+                        const d = new Date((formData.fecha || hoy) + "T00:00:00");
+                        d.setDate(d.getDate() + 1);
+                        const year = d.getFullYear();
+                        const month = String(d.getMonth() + 1).padStart(2, '0');
+                        const day = String(d.getDate()).padStart(2, '0');
+                        setFormData(prev => ({ ...prev, fecha: `${year}-${month}-${day}` }));
+                      }}
+                      className="px-1.5 py-0.5 bg-slate-100 hover:bg-slate-200 text-slate-700 text-[10px] font-bold rounded cursor-pointer transition"
+                      title="Día siguiente"
+                    >
+                      ▶
+                    </button>
+                  </div>
+                </div>
+                <DateInput
+                  name="fecha"
+                  value={formData.fecha}
+                  onChange={(val) => {
+                    const nextDate = typeof val === "string" ? val : (val?.target?.value || val);
+                    setFormData(prev => ({ ...prev, fecha: nextDate }));
+                  }}
+                  className="w-full text-sm p-2 border border-slate-300 rounded focus:border-[#2980b9] outline-none text-slate-900 bg-white cursor-pointer font-medium"
+                />
               </div>
               <div>
                 <label className="block text-[10px] font-bold text-slate-400 uppercase mb-1">TERAPEUTA</label>
