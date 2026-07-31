@@ -202,10 +202,8 @@ export async function getPatients() {
         ? 1
         : valoracionesCount;
 
-      // Calcular denominador total de sesiones: máximo entre asistencias, paquete guardado y fallback (mínimo igual a asistenciasCount)
-      const dbSavedSesiones = parseInt(p.totalSesiones || p.sesiones || "0") || 0;
-      const calcTotalSesiones = Math.max(asistenciasCount, latestTotalSesiones, dbSavedSesiones, 5);
-      const totalSesionesStr = calcTotalSesiones.toString();
+      // Restaurar denominador registrado exacto (ej. 1 para 5/1)
+      const totalSesionesStr = latestTotalSesiones > 0 ? latestTotalSesiones.toString() : (p.totalSesiones || p.sesiones || "1");
 
       return {
         ...p,
