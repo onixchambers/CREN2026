@@ -71,6 +71,38 @@ export default function AsistenciaPage() {
     loadInitialData();
   }, []);
 
+  const handleDownloadPDF = async () => {
+    if (!prefacturaModalData) return;
+    const element = document.getElementById("prefactura-sheet");
+    if (!element) {
+      window.print();
+      return;
+    }
+
+    try {
+      if (!(window as any).html2pdf) {
+        const script = document.createElement("script");
+        script.src = "https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js";
+        document.body.appendChild(script);
+        await new Promise((resolve) => (script.onload = resolve));
+      }
+
+      const safeName = (prefacturaModalData.paciente || "Paciente").replace(/[^a-zA-Z0-9áéíóúÁÉÍÓÚñÑ_]/g, "_");
+      const opt = {
+        margin: [0.15, 0.15, 0.15, 0.15],
+        filename: `Prefactura_${safeName}_${prefacturaModalData.fecha}.pdf`,
+        image: { type: "jpeg", quality: 0.98 },
+        html2canvas: { scale: 2, useCORS: true, logging: false },
+        jsPDF: { unit: "in", format: "letter", orientation: "portrait" }
+      };
+
+      await (window as any).html2pdf().set(opt).from(element).save();
+    } catch (e) {
+      console.error("Error downloading PDF:", e);
+      window.print();
+    }
+  };
+
   const handleAddPrice = async () => {
     const val = parseFloat(newPriceInput);
     if (isNaN(val) || val <= 0) {
@@ -1305,10 +1337,19 @@ export default function AsistenciaPage() {
               <div className="flex items-center gap-2">
                 <button
                   type="button"
-                  onClick={() => window.print()}
-                  className="bg-[#27ae60] hover:bg-[#219653] text-white font-extrabold px-4 py-1.5 rounded-lg text-xs flex items-center gap-1.5 shadow-xs transition-colors cursor-pointer"
+                  onClick={handleDownloadPDF}
+                  className="bg-[#27ae60] hover:bg-[#219653] text-white font-extrabold px-3.5 py-1.5 rounded-lg text-xs flex items-center gap-1.5 shadow-xs transition-colors cursor-pointer"
+                  title="Descargar archivo PDF directamente a tu equipo"
                 >
-                  <span>🖨️ Imprimir / Descargar PDF</span>
+                  <span>⬇️ Descargar PDF</span>
+                </button>
+                <button
+                  type="button"
+                  onClick={() => window.print()}
+                  className="bg-[#1c4d6f] hover:bg-[#153a54] text-white font-extrabold px-3.5 py-1.5 rounded-lg text-xs flex items-center gap-1.5 shadow-xs transition-colors cursor-pointer"
+                  title="Imprimir documento"
+                >
+                  <span>🖨️ Imprimir</span>
                 </button>
                 <button
                   type="button"
@@ -1321,7 +1362,7 @@ export default function AsistenciaPage() {
             </div>
 
             {/* HOJA DE PREFACTURA IDÉNTICA A LA HOJA CREN (FORMATO CARTA 8.5" x 11") */}
-            <div className="border border-slate-300 rounded-xl overflow-hidden bg-white text-slate-900 font-sans print:border-none print:rounded-none print:shadow-none print:w-full print:max-w-none print:m-0 print:p-0">
+            <div id="prefactura-sheet" className="border border-slate-300 rounded-xl overflow-hidden bg-white text-slate-900 font-sans print:border-none print:rounded-none print:shadow-none print:w-full print:max-w-none print:m-0 print:p-0">
               {/* BANNER VERDE-AZUL DEGRADADO CREN */}
               <div className="bg-gradient-to-r from-[#1c4d6f] via-[#2c6185] to-[#1c4d6f] text-white p-4 flex items-center justify-between border-b-4 border-[#0e2f44]">
                 <div className="flex items-center gap-3">
@@ -1335,7 +1376,6 @@ export default function AsistenciaPage() {
                 </div>
                 <div className="text-right text-xs">
                   <p className="font-black text-amber-300 text-sm tracking-wider uppercase">PREFACTURA</p>
-                  <p className="text-[10px]">Folio: <span className="font-bold">{`PRE-${prefacturaModalData.id.slice(-6).toUpperCase()}`}</span></p>
                   <p className="text-[10px]">Fecha Emisión: {new Date().toLocaleDateString("es-MX")}</p>
                 </div>
               </div>
