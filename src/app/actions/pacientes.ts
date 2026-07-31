@@ -354,16 +354,27 @@ export async function deletePatient(id: string) {
   }
 }
 
-export async function updatePatientStatus(id: string, estatus: string) {
+export async function updatePatientStatus(id: string, estatus: string, motivo?: string) {
   try {
     const session = await getServerSession(authOptions);
     if (!session?.user) {
       return { success: false, error: "No autenticado." };
     }
 
+    const patient = await prisma.patient.findUnique({ where: { id } });
+    let newObs = patient?.observacionesAdmin || "";
+    if (motivo && motivo.trim()) {
+      const fechaHoy = new Date().toISOString().split("T")[0];
+      const entry = `[MOTIVO DE BAJA - ${fechaHoy}]: ${motivo.trim()}`;
+      newObs = newObs ? `${newObs}\n${entry}` : entry;
+    }
+
     const updated = await prisma.patient.update({
       where: { id },
-      data: { estatus: estatus || "Activo" }
+      data: {
+        estatus: estatus || "Activo",
+        observacionesAdmin: newObs
+      }
     });
 
     revalidatePath("/dashboard/pacientes");
