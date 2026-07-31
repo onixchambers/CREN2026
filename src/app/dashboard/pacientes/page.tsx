@@ -295,9 +295,9 @@ export default function PacientesPage() {
                           lines = [val];
                         }
                         return (
-                          <div className="w-full max-w-[170px] mx-auto flex flex-col items-stretch justify-center gap-1 my-0.5">
+                          <div className="w-full max-w-[130px] mx-auto flex flex-col items-stretch justify-center gap-0.5 my-0.5">
                             {lines.map((line, idx) => (
-                              <span key={idx} className="w-full bg-blue-50 text-blue-800 border border-blue-200 px-2.5 py-1 rounded-md text-[11px] font-bold block text-center whitespace-nowrap shadow-xs">
+                              <span key={idx} className="w-full bg-blue-50 text-blue-800 border border-blue-200 px-1.5 py-0.5 rounded text-[9.5px] font-bold block text-center whitespace-nowrap leading-tight shadow-xs">
                                 {line}
                               </span>
                             ))}
