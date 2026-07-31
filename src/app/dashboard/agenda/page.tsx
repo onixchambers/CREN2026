@@ -202,6 +202,38 @@ export default function AgendaPage() {
     }
   };
 
+  const handlePrevDay = () => {
+    const d = new Date(fechaSeleccionada + "T00:00:00");
+    d.setDate(d.getDate() - 1);
+    const year = d.getFullYear();
+    const month = String(d.getMonth() + 1).padStart(2, '0');
+    const day = String(d.getDate()).padStart(2, '0');
+    setFechaSeleccionada(`${year}-${month}-${day}`);
+  };
+
+  const handleNextDay = () => {
+    const d = new Date(fechaSeleccionada + "T00:00:00");
+    d.setDate(d.getDate() + 1);
+    const year = d.getFullYear();
+    const month = String(d.getMonth() + 1).padStart(2, '0');
+    const day = String(d.getDate()).padStart(2, '0');
+    setFechaSeleccionada(`${year}-${month}-${day}`);
+  };
+
+  const handleToday = () => {
+    setFechaSeleccionada(hoy);
+  };
+
+  const formatFechaLarga = (dateStr: string) => {
+    if (!dateStr) return "";
+    const parts = dateStr.split("-");
+    if (parts.length !== 3) return dateStr;
+    const d = new Date(parseInt(parts[0]), parseInt(parts[1]) - 1, parseInt(parts[2]));
+    const opciones: Intl.DateTimeFormatOptions = { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' };
+    const str = d.toLocaleDateString('es-ES', opciones);
+    return str.charAt(0).toUpperCase() + str.slice(1);
+  };
+
   const citasFiltradas = citas.filter(c => c.fecha === fechaSeleccionada);
 
   const getCitaParaCelda = (hora: string, terapeuta: string) => {
@@ -306,13 +338,46 @@ export default function AgendaPage() {
       </div>
 
       <div className="bg-white rounded-xl shadow-sm border border-slate-200 overflow-hidden">
-        <div className="p-4 border-b border-slate-100 flex justify-end items-center bg-slate-50">
-          <div className="flex items-center gap-3">
-            <span className="text-sm font-semibold text-slate-500">Filtrar Fecha:</span>
-            <DateInput value={fechaSeleccionada} 
-              onChange={(e) => setFechaSeleccionada(e.target.value)}
-              className="border border-slate-300 rounded-lg px-3 py-1.5 text-sm outline-none focus:border-blue-500 font-medium text-slate-700" 
-            />
+        <div className="p-4 border-b border-slate-100 flex flex-wrap justify-between items-center gap-4 bg-slate-50">
+          <div className="flex items-center gap-2">
+            <button
+              type="button"
+              onClick={handlePrevDay}
+              className="px-3 py-1.5 bg-white border border-slate-300 hover:bg-slate-100 text-slate-700 font-bold rounded-lg text-xs flex items-center gap-1 shadow-sm transition cursor-pointer"
+              title="Ver día anterior"
+            >
+              ◀ Día Anterior
+            </button>
+            <button
+              type="button"
+              onClick={handleToday}
+              className="px-3.5 py-1.5 bg-[#1a5276] hover:bg-[#0e2f44] text-white font-bold rounded-lg text-xs shadow-sm transition cursor-pointer"
+              title="Ir al día de hoy"
+            >
+              Hoy
+            </button>
+            <button
+              type="button"
+              onClick={handleNextDay}
+              className="px-3 py-1.5 bg-white border border-slate-300 hover:bg-slate-100 text-slate-700 font-bold rounded-lg text-xs flex items-center gap-1 shadow-sm transition cursor-pointer"
+              title="Ver día siguiente"
+            >
+              Día Siguiente ▶
+            </button>
+          </div>
+
+          <div className="flex flex-wrap items-center gap-3">
+            <span className="text-xs font-extrabold text-[#1a5276]">
+              📅 {formatFechaLarga(fechaSeleccionada)}
+            </span>
+            <div className="flex items-center gap-2">
+              <span className="text-xs font-semibold text-slate-500">Seleccionar Fecha:</span>
+              <DateInput
+                value={fechaSeleccionada}
+                onChange={(val) => setFechaSeleccionada(typeof val === "string" ? val : val.target.value)}
+                className="border border-slate-300 rounded-lg px-3 py-1.5 text-xs outline-none focus:border-blue-500 font-bold text-slate-800 bg-white cursor-pointer"
+              />
+            </div>
           </div>
         </div>
         
