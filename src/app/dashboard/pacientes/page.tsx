@@ -1153,7 +1153,6 @@ export default function PacientesPage() {
                       <p className="text-slate-200 text-[11px]">Domicilio - Teléfono - Correo</p>
                     </div>
                   </div>
-                  </div>
                 </div>
               )}
             </div>
