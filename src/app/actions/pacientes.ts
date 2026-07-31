@@ -176,6 +176,11 @@ export async function getPatients() {
           } else if (parsedNotes.metodoPago2) {
             lastMetodoPago = `Mixto (${parsedNotes.metodoPago || 'P1'}: $${parsedNotes.montoPago || 0}, ${parsedNotes.metodoPago2}: $${parsedNotes.montoPago2 || 0})`;
           }
+        } else {
+          // Citas agendadas desde la Agenda sin notas avanzadas todavía
+          if (s.status === "COMPLETED" || s.status === "SCHEDULED") {
+            asistenciasCount++;
+          }
         }
       }
 
@@ -202,8 +207,16 @@ export async function getPatients() {
         ? 1
         : valoracionesCount;
 
-      // Restaurar denominador registrado exacto (ej. 1 para 5/1)
-      const totalSesionesStr = latestTotalSesiones > 0 ? latestTotalSesiones.toString() : (p.totalSesiones || p.sesiones || "1");
+      // Calcular denominador total de sesiones (ej. 3 para 1/3, 2/3, 3/3): máximo entre asistencias, total agendado y paquete guardado
+      const dbSavedSesiones = parseInt(p.totalSesiones || p.sesiones || "0") || 0;
+      const calcTotalSesiones = Math.max(
+        asistenciasCount,
+        p.sessions.length,
+        latestTotalSesiones,
+        dbSavedSesiones,
+        1
+      );
+      const totalSesionesStr = calcTotalSesiones.toString();
 
       return {
         ...p,
