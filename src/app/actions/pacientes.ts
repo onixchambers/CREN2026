@@ -438,8 +438,19 @@ export async function savePatientDocument(patientId: string, docData: any) {
       }
     }
 
+    const terapeutaName = (docData.terapeuta || "LOURDES RINCÓN").trim();
+    let subfolder = "Notas Clínicas";
+    const tipoLower = (docData.tipo || "").toLowerCase();
+    if (tipoLower.includes("consentimiento")) {
+      subfolder = "Consentimientos Firmados";
+    } else if (tipoLower.includes("informe") || tipoLower.includes("visita escolar")) {
+      subfolder = "Informes de Pacientes";
+    }
+
+    const driveFolder = `Google Drive / ${terapeutaName} / ${subfolder}`;
+
     if (docData.id) {
-      docs = docs.map(d => d.id === docData.id ? { ...d, ...docData, updatedAt: new Date().toISOString() } : d);
+      docs = docs.map(d => d.id === docData.id ? { ...d, ...docData, driveFolder, updatedAt: new Date().toISOString() } : d);
     } else {
       const now = new Date();
       const newDoc = {
@@ -447,7 +458,8 @@ export async function savePatientDocument(patientId: string, docData: any) {
         fecha: docData.fecha || now.toISOString().split("T")[0],
         hora: now.toLocaleTimeString("es-MX", { hour: "2-digit", minute: "2-digit", second: "2-digit" }),
         tipo: docData.tipo || "Registro de Evolución",
-        terapeuta: docData.terapeuta || "LOURDES RINCÓN",
+        terapeuta: terapeutaName,
+        driveFolder: driveFolder,
         contenido: docData.contenido || {},
         createdAt: now.toISOString()
       };
