@@ -44,10 +44,9 @@ export default function LoginPage() {
 
   return (
     <div className="min-h-screen bg-[#0e2f44] flex items-center justify-center p-4">
-      <div className="w-full max-w-md">
-        <div className="text-center mb-10 flex flex-col items-center">
-          <img src="/logo.png" alt="CREN Logo" className="w-64 h-auto mb-4 drop-shadow-lg" />
-          <p className="text-[#a5c2d4] mt-2 text-lg font-medium tracking-wide">Sistema Operativo-Financiero</p>
+      <div className="w-full max-w-md -mt-12">
+        <div className="text-center mb-8 flex flex-col items-center">
+          <img src="/logo.png" alt="CREN Logo" className="w-64 h-auto drop-shadow-lg" />
         </div>
 
         <div className="bg-white rounded-2xl p-8 shadow-2xl">
@@ -107,6 +106,10 @@ export default function LoginPage() {
               {loading ? "Entrando..." : "Entrar al Sistema"}
             </button>
           </form>
+        </div>
+
+        <div className="text-center mt-8">
+          <p className="text-[#a5c2d4] text-lg font-medium tracking-wide">Sistema Operativo-Financiero</p>
         </div>
       </div>
     </div>
