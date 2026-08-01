@@ -30,6 +30,8 @@ type Asistencia = {
   tipoSesion: string;
   estado: string;
   sesiones: string;
+  frecuencia?: string;
+  horaRegistro?: string;
   pago: string;
   metodoPago?: string;
   fact: string;
@@ -155,6 +157,7 @@ export default function AsistenciaPage() {
     montoPago: "",
     metodoPago2: "",
     montoPago2: "",
+    frecuencia: "Única",
     solicitaFactura: false,
     observaciones: ""
   });
@@ -190,6 +193,8 @@ export default function AsistenciaPage() {
           tipoSesion: c.tipoSesion || "-",
           estado: c.estado,
           sesiones: c.sesiones || "1",
+          frecuencia: c.frecuencia || "Única",
+          horaRegistro: c.horaRegistro || "-",
           paqueteActual: c.paqueteActual || 1,
           pago: c.pago || "-",
           fact: isFact ? "Sí" : "No",
@@ -344,6 +349,7 @@ export default function AsistenciaPage() {
       montoPago: "",
       metodoPago2: "",
       montoPago2: "",
+      frecuencia: "Única",
       solicitaFactura: false,
       observaciones: ""
     });
@@ -393,6 +399,7 @@ export default function AsistenciaPage() {
       tipoSesion: formData.tipoSesion,
       estado: formData.estadoAsistencia,
       sesiones: formData.numeroSesiones || "1",
+      frecuencia: formData.frecuencia || "Única",
       pago: totVal > 0 ? "SÍ" : (metodoPagoFinal || "No"),
       fact: formData.solicitaFactura ? "Sí" : "No",
       subtotal: `$${subVal.toFixed(2)}`,
@@ -667,7 +674,21 @@ export default function AsistenciaPage() {
                 </select>
               </div>
               <div className="relative">
-                <label className="block text-[10px] font-bold text-slate-400 uppercase mb-1">NOMBRE PACIENTE</label>
+                <div className="flex items-center justify-between mb-1">
+                  <label className="block text-[10px] font-bold text-slate-400 uppercase">NOMBRE PACIENTE</label>
+                  {formData.pacienteNombre && (
+                    (() => {
+                      const prevAsistencias = asistencias.filter(a => a.pacienteId === formData.pacienteId && a.estado === "Asistio").length;
+                      const current = prevAsistencias + 1;
+                      const total = formData.numeroSesiones || "1";
+                      return (
+                        <span className="text-[10px] font-bold bg-[#1a5276] text-white px-2 py-0.5 rounded shadow-sm">
+                          Sesión: {current}/{total}
+                        </span>
+                      );
+                    })()
+                  )}
+                </div>
                 <input 
                   type="text" 
                   name="pacienteNombre" 
@@ -719,7 +740,7 @@ export default function AsistenciaPage() {
             </div>
 
             {/* ROW 2 */}
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
               <div>
                 <label className="block text-[10px] font-bold text-slate-400 uppercase mb-1">SEXO DEL PACIENTE</label>
                 <select name="pacienteSexo" value={formData.pacienteSexo} onChange={handleChange} className="w-full text-sm p-2 border border-slate-300 rounded focus:border-[#2980b9] outline-none text-slate-900">
@@ -730,6 +751,20 @@ export default function AsistenciaPage() {
                   <option value="Femenino">Femenino</option>
                   <option value="—">—</option>
                 </select>
+              </div>
+              <div>
+                <label className="block text-[10px] font-bold text-slate-400 uppercase mb-1">FRECUENCIA</label>
+                <select name="frecuencia" value={formData.frecuencia} onChange={handleChange} className="w-full text-sm p-2 border border-slate-300 rounded focus:border-[#2980b9] outline-none text-slate-900">
+                  <option value="Única">Única</option>
+                  <option value="Diaria">Diaria</option>
+                  <option value="Semanal">Semanal</option>
+                  <option value="Quincenal">Quincenal</option>
+                  <option value="Mensual">Mensual</option>
+                </select>
+              </div>
+              <div>
+                <label className="block text-[10px] font-bold text-slate-400 uppercase mb-1">TOTAL SESIONES</label>
+                <input type="number" name="numeroSesiones" value={formData.numeroSesiones} onChange={handleChange} placeholder="Ej. 1" className="w-full text-sm p-2 border border-slate-300 rounded focus:border-[#2980b9] outline-none text-slate-900" />
               </div>
               <div>
                 <div className="flex items-center justify-between mb-1">
@@ -962,6 +997,7 @@ export default function AsistenciaPage() {
             <thead className="bg-[#0e2f44] text-white text-[9px] font-extrabold uppercase leading-tight tracking-wider">
               <tr>
                 <th className="px-2 py-2.5 border-b border-[#0e2f44]">FECHA</th>
+                <th className="px-2 py-2.5 border-b border-[#0e2f44]">HORA DE REG.</th>
                 <th className="px-2 py-2.5 border-b border-[#0e2f44]">TERAPEUTA</th>
                 <th className="px-2 py-2.5 border-b border-[#0e2f44]">ÁREA</th>
                 <th className="px-3 py-2.5 text-left border-b border-[#0e2f44]">PACIENTE</th>
@@ -970,6 +1006,7 @@ export default function AsistenciaPage() {
                 <th className="px-2 py-2.5 border-b border-[#0e2f44]">TIPO DE<br/>SESIÓN</th>
                 <th className="px-2 py-2.5 border-b border-[#0e2f44]">ESTADO</th>
                 <th className="px-2 py-2.5 border-b border-[#0e2f44]">SESIONES</th>
+                <th className="px-2 py-2.5 border-b border-[#0e2f44]">FRECUENCIA</th>
                 <th className="px-2 py-2.5 border-b border-[#0e2f44]">MÉTODO DE<br/>PAGO</th>
                 <th className="px-2 py-2.5 border-b border-[#0e2f44]">PAGO</th>
                 <th className="px-2 py-2.5 border-b border-[#0e2f44]">FACT.</th>
@@ -987,6 +1024,7 @@ export default function AsistenciaPage() {
                 return currentItems.length > 0 ? currentItems.map(a => (
                 <tr key={a.id} className="hover:bg-slate-50 transition-colors">
                   <td className="px-2 py-3 text-slate-500 font-medium">{formatDateStr(a.fecha)}</td>
+                  <td className="px-2 py-3 text-slate-500 font-medium">{a.horaRegistro || "-"}</td>
                   <td className="px-2 py-3 text-slate-500 max-w-[100px] truncate" title={a.terapeuta}>{a.terapeuta}</td>
                   <td className="px-2 py-3 text-slate-500">{a.area}</td>
                   <td className="px-4 py-3 text-left font-bold text-[#1a5276] max-w-[150px] truncate" title={a.paciente}>{a.paciente}</td>
@@ -999,6 +1037,7 @@ export default function AsistenciaPage() {
                     </span>
                   </td>
                   <td className="px-2 py-3 text-slate-500 font-bold">{a.sesiones}</td>
+                  <td className="px-2 py-3 text-slate-500">{a.frecuencia || "Única"}</td>
                   <td className="px-2 py-3">
                     {(() => {
                       const val = a.metodoPago || "Efectivo";

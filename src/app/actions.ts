@@ -2,6 +2,7 @@
 
 import { prisma } from "@/lib/prisma";
 import { revalidatePath } from "next/cache";
+import { generateUniqueDisplayId } from "@/lib/displayId";
 
 // --- PACIENTES ---
 export async function getPacientes() {
@@ -11,8 +12,9 @@ export async function getPacientes() {
 }
 
 export async function createPaciente(data: { name: string; email?: string; phone?: string; notes?: string; age?: number }) {
+  const displayId = await generateUniqueDisplayId(prisma);
   await prisma.patient.create({
-    data,
+    data: { ...data, displayId },
   });
   revalidatePath("/dashboard");
 }

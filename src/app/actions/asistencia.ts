@@ -122,7 +122,9 @@ export async function saveAsistenciaDB(data: any) {
       total: data.total ? (typeof data.total === 'string' ? parseFloat(data.total.replace("$", "")) : data.total) : 0,
       obs: data.obs,
       creadoPor: data.creadoPor,
-      pagado: estadoVal === "Asistio" || estadoVal === "Cancelo sin anticipacion"
+      pagado: estadoVal === "Asistio" || estadoVal === "Cancelo sin anticipacion",
+      frecuencia: data.frecuencia || "Única",
+      horaRegistro: data.horaRegistro || new Date().toLocaleTimeString('es-MX', { hour12: false })
     };
 
     let finalNotes = "";
@@ -216,6 +218,7 @@ export async function getAsistenciasDB(_ts?: string) {
         asistencias.push({
           id: s.id,
           fecha: extra.fecha || s.date.toISOString().split("T")[0],
+          horaRegistro: extra.horaRegistro || "-",
           area: extra.area || "-",
           paciente: s.patient?.name || "-",
           pacienteId: s.patient?.id || "",
@@ -224,6 +227,7 @@ export async function getAsistenciasDB(_ts?: string) {
           tipoSesion: extra.tipoSesion || "-",
           estado: extra.estadoAsistencia || s.status,
           sesiones: displaySesiones,
+          frecuencia: extra.frecuencia || "-",
           pago: extra.pago || "SÍ",
           metodoPago: metodoPagoStr,
           fact: extra.solicitaFactura ? "Sí" : "No",

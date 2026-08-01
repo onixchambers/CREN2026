@@ -4,6 +4,7 @@ import { prisma } from "@/lib/prisma";
 import { revalidatePath } from "next/cache";
 import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth";
+import { generateUniqueDisplayId } from "@/lib/displayId";
 
 export async function getAgenda() {
   try {
@@ -59,8 +60,10 @@ export async function addCita(data: any) {
         patient = await prisma.patient.findFirst();
       }
       if (!patient) {
+        const displayId = await generateUniqueDisplayId(prisma);
         patient = await prisma.patient.create({
           data: {
+            displayId,
             name: "No Disponible",
             codigoPaciente: `ND-${Date.now()}`,
             telefono: "0000000000",

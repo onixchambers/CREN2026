@@ -1,0 +1,2205 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Gestión de Pasajeros - Vuelo</title>
+<link rel="icon" type="image/png" href="AERO_BASS.png">
+<link rel="apple-touch-icon" href="AERO_BASS.png">
+<link rel="manifest" href="manifest.json">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/mammoth/1.6.0/mammoth.browser.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/tesseract.js@4/dist/tesseract.min.js"></script>
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background: linear-gradient(135deg, #061224 0%, #0c2340 50%, #030812 100%); color: #ffffff; min-height: 100vh; padding: 10px; }
+
+  .main-container { max-width: 1400px; margin: 0 auto; }
+  .header-title { text-align: center; padding: 15px; background: linear-gradient(90deg, #0c2340, #13345c, #0c2340); border-radius: 12px; margin-bottom: 15px; border: 2px solid #1c4575; }
+  .header-title h1 { font-size: 1.8em; color: #60c0ff; text-shadow: 0 0 10px rgba(122,181,232,0.3); }
+  .top-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 15px; margin-bottom: 15px; }
+  @media (max-width: 1000px) { .top-grid { grid-template-columns: 1fr; } }
+  .panel { background: rgba(12, 35, 64, 0.95); border-radius: 12px; padding: 15px; border: 1px solid #13345c; overflow: hidden; }
+  .panel h3 { color: #60c0ff; margin-bottom: 10px; font-size: 1em; border-bottom: 1px solid #13345c; padding-bottom: 5px; }
+  .time-log-grid { display: grid; gap: 6px; }
+  .time-row { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
+  .time-row label { font-size: 0.85em; color: #aebcd4; min-width: 160px; }
+  .time-btn { padding: 2px 6px; border: 1px solid #60c0ff; background: rgba(96, 192, 255, 0.2); color: #60c0ff; border-radius: 4px; cursor: pointer; font-size: 0.65em; transition: all 0.2s; }
+  .time-btn:hover { background: rgba(96, 192, 255, 0.4); color: #ffffff; }
+  .time-input { width: 85px; padding: 5px 6px; background: #091c33; border: 1px solid #13345c; color: #60c0ff; border-radius: 6px; font-family: monospace; font-size: 0.9em; text-align: center; cursor: text; transition: all 0.2s; }
+  .time-input:focus { border-color: #60c0ff; outline: none; box-shadow: 0 0 8px rgba(212,175,55,0.4); background: #122a50; }
+  .notes-area { width: 100%; height: 80px; background: #091c33; border: 1px solid #13345c; color: #ffffff; border-radius: 8px; padding: 8px; font-size: 0.9em; resize: vertical; }
+  .comments-area { width: 100%; height: 340px; background: #091c33; border: 1px solid #13345c; color: #ffffff; border-radius: 8px; padding: 10px; font-size: 0.95em; resize: vertical; line-height: 1.5; }
+  .panel.pax-panel { min-width: 0; }
+  .pax-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
+  .pax-row { display: flex; align-items: center; gap: 4px; background: rgba(19, 52, 92, 0.6); padding: 6px 8px; border-radius: 8px; border: 1px solid #13345c; width: 100%; overflow: hidden; }
+  .pax-label { font-size: 0.85em; font-weight: bold; min-width: 40px; text-align: center; }
+  .pax-label.pax { color: #60c0ff; } .pax-label.inf { color: #60c0ff; } .pax-label.inad { color: #60c0ff; } .pax-label.pris { color: #60c0ff; } .pax-label.wchr { color: #60c0ff; } .pax-label.pet { color: #60c0ff; } .pax-label.svan { color: #60c0ff; } .pax-label.esan { color: #60c0ff; } .pax-label.blind { color: #60c0ff; } .pax-label.deaf { color: #60c0ff; } .pax-label.depo { color: #60c0ff; } .pax-label.umnr { color: #60c0ff; }
+  .pax-input { width: 35px; padding: 2px; background: #091c33; border: 1px solid #13345c; color: #ffffff; border-radius: 4px; font-size: 0.7em; text-align: center; font-weight: bold; }
+  .pax-btn { padding: 4px 6px; border: 1px solid #1c4575; background: #d4af37; color: #ffffff; border-radius: 4px; cursor: pointer; font-size: 0.8em; font-weight: bold; transition: all 0.15s; line-height: 1; }
+  .pax-btn:hover { background: #b5952f; color: #fff; }
+  .pax-btn.minus { color: #aebcd4; border-color: #6a3a3a; background: #3a1a1a; }
+  .pax-btn.plus { color: #60c0ff; border-color: #3a6a3a; background: #1a3a1a; }
+  .flight-info-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin-top: 10px; }
+  .flight-info-grid label { font-size: 0.85em; color: #aebcd4; }
+  .flight-info-grid input { width: 100%; padding: 6px; background: #091c33; border: 1px solid #13345c; color: #ffffff; border-radius: 6px; font-size: 0.9em; }
+  .action-bar { display: flex; gap: 10px; flex-wrap: wrap; justify-content: center; margin-bottom: 15px; padding: 10px; background: rgba(12, 35, 64, 0.95); border-radius: 12px; border: 1px solid #13345c; }
+  .action-btn { padding: 10px 20px; border: none; border-radius: 8px; cursor: pointer; font-weight: bold; font-size: 0.9em; transition: all 0.2s; }
+  .btn-jpg { background: #0033cc; color: #ffffff; }
+  .btn-pdf { background: #004080; color: #ffffff; }
+  .btn-png { background: #0066cc; color: #ffffff; }
+  .btn-ocr { background: #00aadd; color: #ffffff; margin: 0; display: inline-flex; align-items: center; justify-content: center; }
+  .btn-new { background: #0088ff; color: #ffffff; }
+  .action-btn:hover { filter: brightness(1.2); transform: translateY(-1px); }
+  .counters-section { margin-bottom: 15px; }
+  .counters-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 15px; }
+  @media(max-width:900px) { .counters-grid { grid-template-columns: 1fr; } }
+  .meal-counter-box { background: rgba(12, 35, 64, 0.95); border-radius: 12px; padding: 15px; border: 1px solid #13345c; }
+  .meal-counter-box h3 { margin-bottom: 10px; font-size: 1em; }
+  .meal-limits { display: flex; gap: 10px; margin-bottom: 10px; flex-wrap: wrap; }
+  .meal-limit-input { display: flex; align-items: center; gap: 4px; }
+  .meal-limit-input label { font-size: 0.85em; color: #aebcd4; }
+  .meal-name-input { width: 110px; padding: 3px 6px; background: #091c33; border: 1px solid #13345c; color: #60c0ff; border-radius: 4px; font-size: 0.8em; font-weight: bold; transition: all 0.2s; }
+  .meal-name-input:focus { border-color: #60c0ff; outline: none; box-shadow: 0 0 8px rgba(212,175,55,0.4); background: #122a50; }
+  .meal-limit-input input[type="number"] { width: 40px; padding: 3px; background: #091c33; border: 1px solid #13345c; color: #ffffff; border-radius: 4px; text-align: center; font-size: 0.85em; }
+  .meal-status { display: flex; gap: 10px; flex-wrap: wrap; }
+  .meal-badge-wrap { text-align: center; flex: 1; }
+  .meal-badge { padding: 8px 14px; border-radius: 8px; font-size: 0.9em; font-weight: bold; transition: all 0.3s; }
+  .meal-1 { background: #091c33; color: #60c0ff; } 
+  .meal-2 { background: #082040; color: #70ccff; border: 1px solid #184470; } 
+  .meal-3 { background: #040d1a; color: #6a8db3; }
+  .meal-badge.blocked { background: #3a3a3a; color: #888; text-decoration: line-through; }
+  .meal-dots { margin-top: 8px; display: flex; justify-content: center; gap: 5px; flex-wrap: wrap; min-height: 20px; }
+  .meal-dot { width: 20px; height: 20px; border-radius: 50%; border: 2px solid rgba(255,255,255,0.2); transition: all 0.3s; display: flex; align-items: center; justify-content: center; font-size: 0.75em; font-weight: bold; color: #ffffff; }
+  .meal-dot.active-1 { background: #2a8a3a; border-color: transparent; box-shadow: 0 0 6px rgba(58,255,90,0.6); }
+  .meal-dot.active-2 { background: #8a2be2; border-color: transparent; box-shadow: 0 0 6px rgba(200,106,255,0.6); }
+  .meal-dot.active-3 { background: #606060; border-color: transparent; box-shadow: 0 0 6px rgba(176,176,192,0.6); }
+  .meal-dot.empty { background: rgba(40,40,60,0.8); border-color: transparent; }
+  .meal-zero-msg { font-size: 0.75em; color: #5a7a9a; text-align: center; margin-top: 4px; }
+  .drinks-counter-box { background: rgba(12, 35, 64, 0.95); border-radius: 12px; padding: 15px; border: 1px solid #13345c; }
+  .drinks-section { margin-bottom: 12px; }
+  .drinks-section h4 { color: #60c0ff; font-size: 0.95em; margin-bottom: 6px; }
+  .drink-count-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(180px, 1fr)); gap: 4px; max-height: 200px; overflow-y: auto; }
+  .drink-item { display: flex; align-items: center; padding: 3px 8px; background: rgba(19, 52, 92, 0.6); border-radius: 4px; font-size: 0.8em; }
+  .drink-item .drink-name { flex: 1; text-align: left; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .drink-item .ice-indicator { color: #60c0ff; font-size: 0.85em; letter-spacing: 1px; flex-shrink: 0; margin: 0 4px; }
+  .drink-item .count { color: #60c0ff; font-weight: bold; margin-left: 6px; flex-shrink: 0; }
+
+  .seats-section { margin-bottom: 15px; }
+  .seats-header { text-align: center; padding: 10px; background: linear-gradient(90deg, #0c2340, #13345c, #0c2340); border-radius: 10px 10px 0 0; border: 2px solid #1c4575; border-bottom: none; }
+  .seats-header h2 { color: #60c0ff; font-size: 1.3em; }
+  .seats-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 8px; padding: 15px; background: rgba(12, 35, 64, 0.9); border: 2px solid #13345c; border-radius: 0 0 10px 10px; }
+  @media(max-width:800px) { .seats-grid { grid-template-columns: repeat(2, 1fr); } }
+
+  .seat-card { background: linear-gradient(180deg, #0c2340, #061224); border-radius: 12px; padding: 10px; border: 2px solid #13345c; transition: all 0.3s; position: relative; min-height: 400px; display: flex; flex-direction: column; }
+  .seat-card.blocked { border-color: #13345c; background: rgba(0, 0, 0, 0.95); }
+  .seat-card.blocked > * { opacity: 0.35; }
+  .seat-card.active-p { border-color: #0077ff; box-shadow: 0 0 16px rgba(0, 119, 255, 0.75), 0 0 8px rgba(0, 119, 255, 0.4); }
+  .seat-card.active-p2 { border-color: #ffffff; box-shadow: none; }
+  .seat-card.active-g { border-color: #ddcc33; box-shadow: 0 0 10px rgba(221, 204, 51, 0.4); }
+  .seat-card.active-s { border-color: #909090; box-shadow: 0 0 10px rgba(144, 144, 144, 0.4); }
+  .seat-card.drag-over { border-color: #3aff5a; box-shadow: 0 0 15px rgba(58, 255, 90, 0.6); transform: scale(1.02); }
+  .seat-card.active-p .seat-label { color: #60c0ff; text-shadow: 0 0 8px rgba(90, 160, 255, 0.9), 0 0 4px rgba(90, 160, 255, 0.5); }
+  .seat-card.active-p2 .seat-label { color: #ffffff; text-shadow: none; }
+  .seat-card.active-g .seat-label { color: #ddcc33; }
+  .seat-card.active-s .seat-label { color: #a0a0a0; }
+  .seat-top { display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px; }
+  .seat-label { font-weight: bold; color: #60c0ff; font-size: 1em; transition: all 0.3s; }
+  .circle-group { display: flex; gap: 6px; align-items: center; }
+  .status-circle { width: 32px; height: 32px; border-radius: 50%; display: flex; align-items: center; justify-content: center; cursor: pointer; font-weight: bold; font-size: 0.9em; transition: all 0.2s; }
+  .status-circle.p-circle { background: #0c2340; border: 2px solid #0077ff; color: #aebcd4; }
+  .status-circle.p-circle.active { background: #0077ff; border-color: #0077ff; color: #ffffff; box-shadow: 0 0 16px rgba(0, 119, 255, 0.95), 0 0 8px rgba(0, 119, 255, 0.6); }
+  .status-circle.p2-circle { background: #0c2340; border: 2px solid #ffffff; color: #aebcd4; }
+  .status-circle.p2-circle.active { background: #ffffff; border-color: #ffffff; color: #061224; box-shadow: none; }
+  .status-circle.g-circle { background: #2a2a3a; border: 2px solid #ddcc33; color: #aaa; }
+  .status-circle.g-circle.active { background: #ddcc33; border-color: #ddcc33; color: #1a1a2a; }
+  .status-circle.s-circle { background: #2a2a3a; border: 2px solid #888888; color: #888; }
+  .status-circle.s-circle.active { background: #909090; border-color: #a0a0a0; color: #1a1a2a; }
+  .seat-name-input { width: 100%; padding: 5px; margin-bottom: 6px; background: #091c33; border: 1px solid #13345c; color: #ffffff; border-radius: 6px; font-size: 0.85em; }
+  .meal-options { display: flex; gap: 4px; margin-bottom: 6px; }
+  .meal-btn { flex: 1; padding: 6px 2px; border: 2px solid transparent; border-radius: 6px; cursor: pointer; font-size: 0.65em; font-weight: bold; text-align: center; transition: all 0.3s; line-height: 1.2; }
+  .meal-btn.c1 { background: #091c33; color: #60c0ff; }
+  .meal-btn.c1.selected { background: #2a8a3a; color: #ffffff; border-color: transparent; font-weight: 900; box-shadow: none; transform: scale(1.05); }
+  .meal-btn.c1.not-selected { opacity: 0.25; filter: grayscale(0.7); }
+  .meal-btn.c2 { background: #0c2340; color: #aebcd4; }
+  .meal-btn.c2.selected { background: #8a2be2; color: #ffffff; border-color: transparent; font-weight: 900; box-shadow: none; transform: scale(1.05); }
+  .meal-btn.c2.not-selected { opacity: 0.25; filter: grayscale(0.7); }
+  .meal-btn.c3 { background: #040d1a; color: #6a8db3; }
+  .meal-btn.c3.selected { background: #606060; color: #ffffff; border-color: transparent; font-weight: 900; box-shadow: none; transform: scale(1.05); }
+  .meal-btn.c3.not-selected { opacity: 0.25; filter: grayscale(0.7); }
+  .meal-btn.disabled { opacity: 0.3; cursor: not-allowed; }
+
+  .drink-rows-container { display: flex; flex-direction: column; gap: 6px; margin-bottom: 6px; }
+  .drink-group { background: rgba(19, 52, 92, 0.6); border-radius: 8px; padding: 6px; border: 1px solid #1a3a5a; }
+  .drink-multi-btn { width: 100%; padding: 6px; background: #1a3a5a; border: 1px solid #1c4575; color: #aebcd4; border-radius: 6px; cursor: pointer; font-size: 0.75em; text-align: center; transition: all 0.2s; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; font-weight: bold; }
+  .drink-multi-btn:hover { background: #2a5a8a; }
+  .drink-multi-btn.has-drink { background: #2a5a8a; color: #ffffff; border-color: #4a7aaa; }
+  .drink-tags { display: flex; flex-direction: column; gap: 3px; margin-top: 4px; }
+  .drink-tag { display: flex; align-items: center; justify-content: space-between; gap: 4px; background: rgba(26, 58, 90, 0.35); border: 1px solid rgba(42, 90, 138, 0.3); border-radius: 5px; padding: 3px 6px; font-size: 0.68em; }
+  .drink-tag-name { flex: 1; color: #cccccc; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .drink-tag-ice { width: 26px; height: 22px; padding: 0; background: transparent; border: 1px solid transparent; border-radius: 4px; cursor: pointer; text-align: center; font-size: 0.9em; display: flex; align-items: center; justify-content: center; flex-shrink: 0; opacity: 0.15; color: #2a2a3a; transition: all 0.2s; }
+  .drink-tag-ice:hover { background: #0c2340; opacity: 0.4; }
+  .drink-tag-ice.active { background: #0c3a60; border-color: #60c0ff; color: #b0e8ff; opacity: 1; box-shadow: 0 0 8px rgba(96,208,255,0.6); text-shadow: 0 0 8px rgba(176,232,255,0.7); }
+
+  .extras-row { display: flex; gap: 3px; margin-bottom: 6px; flex-wrap: nowrap; }
+  .extra-btn { flex: 1; padding: 4px 2px; background: #1a2a3a; border: 1px solid #3a4a5a; color: #7a9aba; border-radius: 4px; cursor: pointer; font-size: 0.6em; transition: all 0.2s; text-align: center; white-space: nowrap; }
+  .extra-btn.selected.choco { background: #D49A6A; border-color: #E0A97C; color: #3A1A0A; font-weight: bold; box-shadow: 0 0 10px rgba(212,154,106,0.6), 0 0 20px rgba(212,154,106,0.3); }
+  .extra-btn.selected.green { background: #81C784; border-color: #A5D6A7; color: #1A3A1A; font-weight: bold; box-shadow: 0 0 10px rgba(129,199,132,0.6), 0 0 20px rgba(129,199,132,0.3); }
+  .extra-circle-btn {
+    width: 24px;
+    height: 24px;
+    border-radius: 50%;
+    border: 1px solid #7a9aba;
+    background: #1a2a3a;
+    color: #7a9aba;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    font-size: 0.75em;
+    font-weight: bold;
+    transition: all 0.2s;
+    user-select: none;
+  }
+  .extra-circle-btn.selected {
+    background: #ffffff;
+    border-color: #ffffff;
+    color: #061224;
+  }
+  .seat-comments { width: 100%; min-height: 50px; max-height: 70px; padding: 6px; margin-bottom: 6px; background: #0a1525; border: 1px dashed #2a4a6a; color: #9ab0c8; border-radius: 6px; font-size: 0.75em; resize: vertical; line-height: 1.3; }
+  .seat-bottom-row { display: flex; align-items: center; gap: 6px; margin-top: auto; padding-bottom: 3px; }
+  .block-toggle { width: 26px; height: 26px; padding: 0; background: #2a1a1a; border: 1px solid #6a2a2a; color: #aebcd4; border-radius: 4px; cursor: pointer; font-size: 0.7em; display: flex; align-items: center; justify-content: center; flex-shrink: 0; }
+  .wakeup-btn { width: auto; flex: 1; padding: 4px 8px; background: #1a1a2a; border: 1px solid #3a3a4a; color: #555; border-radius: 4px; cursor: pointer; font-size: 0.75em; font-weight: bold; transition: all 0.2s; white-space: nowrap; text-align: center; }
+  .wakeup-btn.active { background: #ffcc00; border-color: #eebb00; color: #061224; box-shadow: 0 0 5px rgba(255,204,0,0.5); }
+
+  .modal-overlay { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.6); display: none; align-items: flex-end; justify-content: center; z-index: 1000; }
+  .modal-overlay.show { display: flex; }
+  .bottom-sheet { width: 100%; max-width: 500px; max-height: 80vh; background: linear-gradient(180deg, #0c2340, #061224); border-radius: 20px 20px 0 0; border: 1px solid #1c4575; border-bottom: none; display: flex; flex-direction: column; animation: slideUp 0.3s ease-out; }
+  @keyframes slideUp { from { transform: translateY(100%); } to { transform: translateY(0); } }
+  .sheet-handle-bar { width: 50px; height: 5px; background: #1c4575; border-radius: 3px; margin: 10px auto 5px; flex-shrink: 0; }
+  .sheet-header { padding: 10px 20px; border-bottom: 1px solid #13345c; display: flex; align-items: center; justify-content: space-between; flex-shrink: 0; }
+  .sheet-header h3 { color: #60c0ff; font-size: 1.1em; }
+  .sheet-close-btn { background: #2a3a5a; border: none; color: #aebcd4; width: 32px; height: 32px; border-radius: 50%; font-size: 1.2em; cursor: pointer; display: flex; align-items: center; justify-content: center; transition: all 0.2s; }
+  .sheet-close-btn:hover { background: #3a4a7a; color: #fff; }
+  .sheet-list { overflow-y: auto; flex: 1; padding: 8px 0; }
+  .sheet-list::-webkit-scrollbar { width: 6px; }
+  .sheet-list::-webkit-scrollbar-track { background: transparent; }
+  .sheet-list::-webkit-scrollbar-thumb { background: #13345c; border-radius: 3px; }
+  .sheet-item { padding: 14px 20px; font-size: 1em; color: #cccccc; cursor: pointer; transition: all 0.15s; border-bottom: 1px solid rgba(42,74,122,0.3); display: flex; align-items: center; justify-content: space-between; }
+  .sheet-item:hover { background: rgba(26,58,122,0.5); }
+  .sheet-item.selected { background: rgba(42,74,122,0.4); color: #60c0ff; font-weight: bold; }
+  .sheet-item.selected::after { content: '✅'; margin-left: 10px; }
+  .sheet-item .ice-toggle-btn { width: 32px; height: 28px; padding: 0; background: transparent; border: 1px solid transparent; border-radius: 5px; cursor: pointer; text-align: center; font-size: 1em; display: flex; align-items: center; justify-content: center; opacity: 0.15; color: #2a2a3a; transition: all 0.2s; margin-left: 8px; flex-shrink: 0; }
+  .sheet-item .ice-toggle-btn.active { background: #0c3a60; border-color: #60c0ff; color: #b0e8ff; opacity: 1; box-shadow: 0 0 8px rgba(96,208,255,0.6); }
+
+  .image-panel { margin-top: 15px; margin-bottom: 15px; padding: 15px; background: rgba(12, 35, 64, 0.95); border: 2px solid #13345c; border-radius: 12px; }
+  .image-panel h3 { color: #60c0ff; margin-bottom: 12px; text-align: center; font-size: 1em; border-bottom: 1px solid #13345c; padding-bottom: 8px; }
+  .image-slots { display: grid; grid-template-columns: repeat(3, 1fr); gap: 12px; }
+  @media(max-width:700px) { .image-slots { grid-template-columns: 1fr; } }
+  .image-slot { background: rgba(19, 52, 92, 0.6); border: 2px dashed #13345c; border-radius: 10px; min-height: 180px; display: flex; flex-direction: column; align-items: center; justify-content: center; position: relative; overflow: hidden; }
+  .image-slot.has-image { border-style: solid; border-color: #1c4575; }
+  .image-slot .upload-label { padding: 20px; text-align: center; color: #5a8aaa; font-size: 0.9em; width: 100%; height: 100%; display: flex; flex-direction: column; align-items: center; justify-content: center; cursor: pointer; }
+  .image-slot .upload-label .icon { font-size: 2.5em; margin-bottom: 8px; }
+  .image-slot .upload-input { display: none; }
+  .image-slot .slot-number { position: absolute; top: 6px; left: 8px; background: rgba(42,74,122,0.9); color: #ffffff; font-size: 0.75em; padding: 2px 8px; border-radius: 4px; font-weight: bold; z-index: 5; }
+  .image-slot .thumb-img { width: 100%; height: 100%; min-height: 180px; object-fit: contain; cursor: zoom-in; display: block; padding: 30px 10px 10px; }
+  .image-slot .remove-btn { position: absolute; top: 6px; right: 8px; background: #091c33; color: #aebcd4; border: none; border-radius: 4px; padding: 2px 8px; font-size: 0.75em; cursor: pointer; font-weight: bold; z-index: 5; }
+  .lightbox-overlay { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.92); display: none; align-items: center; justify-content: center; z-index: 9999; }
+  .lightbox-overlay.show { display: flex; }
+  .lightbox-overlay img { max-width: 95vw; max-height: 95vh; object-fit: contain; border-radius: 8px; box-shadow: 0 0 40px rgba(0,0,0,0.9); }
+  .lightbox-close { position: absolute; top: 15px; right: 20px; background: #091c33; color: #aebcd4; border: 2px solid #8a4a4a; border-radius: 8px; padding: 8px 16px; font-size: 1em; cursor: pointer; font-weight: bold; z-index: 10000; }
+  .footer-instructions { margin-top: 20px; padding: 20px; background: rgba(10,20,40,0.95); border: 2px solid #1c4575; border-radius: 12px; color: #cccccc; font-size: 0.9em; line-height: 1.6; user-select: text; }
+  .footer-instructions h3 { color: #60c0ff; text-align: center; margin-bottom: 15px; font-size: 1.1em; border-bottom: 1px solid #13345c; padding-bottom: 10px; }
+  .footer-columns { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; }
+  @media(max-width:700px) { .footer-columns { grid-template-columns: 1fr; } }
+  .footer-section h4 { color: #60c0ff; margin-bottom: 8px; font-size: 1em; }
+  .footer-section ol { padding-left: 20px; margin: 0; }
+  .footer-section li { margin-bottom: 5px; }
+  .footer-section li strong { color: #ffffff; }
+  .hidden-input { display: none; }
+
+  /* Estilos para el Inventario de Bebidas */
+  .inventory-panel {
+    background: rgba(12, 35, 64, 0.95);
+    border-radius: 12px;
+    padding: 15px;
+    border: 2px solid #1c4575;
+    margin-top: 15px;
+    margin-bottom: 15px;
+  }
+  .inventory-panel h3 {
+    color: #60c0ff;
+    margin-bottom: 15px;
+    font-size: 1.1em;
+    border-bottom: 1px solid #13345c;
+    padding-bottom: 8px;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+  .inventory-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+    gap: 15px;
+  }
+  .inventory-category-box {
+    background: rgba(6, 18, 36, 0.8);
+    border: 1px solid #13345c;
+    border-radius: 10px;
+    padding: 12px;
+  }
+  .inventory-category-title {
+    font-size: 0.9em;
+    font-weight: bold;
+    color: #60c0ff;
+    margin-bottom: 10px;
+    border-bottom: 1px dashed rgba(74, 138, 202, 0.3);
+    padding-bottom: 4px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+  }
+  .inventory-item-row {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+    padding: 8px 10px;
+    background: rgba(12, 35, 64, 0.9);
+    border: 1px solid #1a3a5a;
+    border-radius: 8px;
+    margin-bottom: 8px;
+    transition: all 0.2s ease;
+  }
+  .inventory-item-row:hover {
+    border-color: #1c4575;
+    background: rgba(20, 40, 75, 0.9);
+  }
+  .inventory-item-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+  }
+  .inventory-item-name {
+    font-size: 0.85em;
+    font-weight: 500;
+    color: #ffffff;
+  }
+  .inventory-item-yield {
+    font-size: 0.7em;
+    color: #aebcd4;
+    background: rgba(30, 60, 100, 0.5);
+    padding: 2px 6px;
+    border-radius: 4px;
+  }
+  .inventory-item-stats {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    font-size: 0.8em;
+  }
+  .inventory-glasses-count {
+    color: #60c0ff;
+    font-weight: bold;
+  }
+  .inventory-bottles-value {
+    color: #3aff5a;
+    font-weight: bold;
+    text-shadow: 0 0 8px rgba(58, 255, 90, 0.3);
+  }
+  .inventory-progress-bar-container {
+    width: 100%;
+    height: 6px;
+    background: rgba(6, 18, 36, 0.8);
+    border-radius: 3px;
+    overflow: hidden;
+  }
+  .inventory-progress-bar {
+    height: 100%;
+    background: linear-gradient(90deg, #2a7aff 0%, #3aff5a 100%);
+    width: 0%;
+    transition: width 0.4s ease;
+  }
+  .inventory-totals-box {
+    margin-top: 15px;
+    background: rgba(26, 58, 122, 0.2);
+    border: 2px solid #1c4575;
+    border-radius: 10px;
+    padding: 15px;
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+    gap: 15px;
+  }
+  .inventory-total-group {
+    background: rgba(19, 52, 92, 0.6);
+    border: 1px solid rgba(58, 106, 170, 0.3);
+    border-radius: 8px;
+    padding: 12px;
+  }
+  .inventory-total-group-title {
+    font-size: 0.9em;
+    font-weight: bold;
+    color: #60c0ff;
+    margin-bottom: 10px;
+    border-bottom: 1px dashed rgba(74, 138, 202, 0.3);
+    padding-bottom: 6px;
+    text-transform: uppercase;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+  }
+  .inventory-total-item-row {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    font-size: 0.8em;
+    padding: 6px 0;
+    border-bottom: 1px solid rgba(255,255,255,0.05);
+  }
+  .inventory-total-item-row:last-child {
+    border-bottom: none;
+  }
+  .inventory-total-item-name {
+    color: #ffffff;
+  }
+  .inventory-total-item-val {
+    color: #3aff5a;
+    font-weight: bold;
+    text-shadow: 0 0 6px rgba(58, 255, 90, 0.2);
+  }
+</style>
+</head>
+<body>
+<div class="main-container" id="app-content">
+  <div class="header-title" style="display: flex; align-items: center; justify-content: center; gap: 15px; flex-wrap: wrap;">
+    <img src="AERO_BASS.png" alt="AERO BASS Logo" style="height: 45px; filter: drop-shadow(0 0 8px rgba(122,181,232,0.5));">
+    <h1>GESTIÓN DE PASAJEROS</h1>
+  </div>
+  <div class="action-bar" id="actionBarTop">
+    <button class="action-btn btn-jpg" onclick="exportAs('jpg')">📷 Guardar JPG</button>
+    <button class="action-btn btn-pdf" onclick="exportAs('pdf')">📄 Guardar PDF</button>
+    <button class="action-btn btn-png" onclick="exportAs('png')">🖼️ Guardar PNG</button>
+    <label class="action-btn btn-ocr">📷 Cargar OCR <input type="file" accept="image/jpeg, image/png, image/jpg" class="hidden-input" id="jpg-ocr-input" onchange="handleOcrJpg(this)"></label>
+    <button class="action-btn btn-new" onclick="newFlight()">✈️ Nuevo Vuelo</button>
+  </div>
+  <div class="panel" style="margin-bottom: 15px; padding: 15px;">
+    <h3 style="display:flex; justify-content:space-between; align-items:center; margin-bottom: 0; border-bottom: none; color: #60c0ff; font-size: 1.1em; flex-wrap: wrap; gap: 10px;">
+      <span onclick="const c=document.getElementById('topGridContent'); c.style.display=c.style.display==='none'?'grid':'none';" style="cursor:pointer; flex: 1;">📋 Información General del Vuelo (Tiempos, Anuncios, Pasajeros)</span>
+      <div style="display:flex; flex-direction:column; align-items:center; justify-content:center; flex: 1; min-width: 300px; gap: 5px;">
+        <label style="font-size: 0.85em; color: #aebcd4; width: 100%; text-align: center; font-weight: bold;">Salida:</label>
+        <div style="display:flex; align-items:center; justify-content:center; gap: 15px; flex-wrap: wrap;">
+          <input type="time" id="flightDepartureTime" onchange="saveLocalData(); updateTimer();" style="font-size: 1.4em; font-weight: bold; color: #ffffff; background: rgba(19, 52, 92, 0.6); padding: 6px; border-radius: 8px; border: 1px solid #13345c; width: 185px; text-align: center; font-family: monospace; box-shadow: inset 0 0 10px rgba(0,0,0,0.5); box-sizing: border-box; height: 44px;">
+          <div id="countdownTimer" style="font-size: 1.4em; font-weight: bold; color: #aebcd4; background: rgba(19, 52, 92, 0.6); padding: 6px; border-radius: 8px; border: 1px solid #13345c; width: 185px; text-align: center; font-family: monospace; box-shadow: inset 0 0 10px rgba(0,0,0,0.5); display: flex; align-items: center; justify-content: center; box-sizing: border-box; height: 44px;">
+            --:--:--
+          </div>
+        </div>
+      </div>
+      <span onclick="const c=document.getElementById('topGridContent'); c.style.display=c.style.display==='none'?'grid':'none';" style="cursor:pointer; font-size:0.8em; opacity:0.8; color: #aebcd4; flex: 1; text-align: right;">👁️ Mostrar/Ocultar</span>
+    </h3>
+    <div class="top-grid" id="topGridContent" style="display:none; margin-top: 15px; border-top: 1px dashed #13345c; padding-top: 15px; margin-bottom: 0;">
+    <div class="panel">
+      <h3 style="display:flex; justify-content:space-between; align-items:center;">
+        <span>⏱️ Registro de Tiempos</span>
+        <button onclick="sendTimesToWhatsApp()" style="background:none; border:none; cursor:pointer;" title="Enviar por WhatsApp">
+          <svg style="width: 24px; height: 24px;" viewBox="0 0 24 24" fill="#25D366" xmlns="http://www.w3.org/2000/svg"><path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.095 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 01-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 01-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 012.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0012.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 005.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 00-3.48-8.413Z"/></svg>
+        </button>
+      </h3>
+      <div class="time-log-grid">
+        <div class="time-row"><label>Avión en Puerta:</label><button class="time-btn" onclick="logTime('planeAtGate')">Registrar</button><input type="time" class="time-input" id="planeAtGate" onchange="saveLocalData()"></div>
+        <div class="time-row"><label>Ingreso de Tripulación:</label><button class="time-btn" onclick="logTime('crewEntry')">Registrar</button><input type="time" class="time-input" id="crewEntry" onchange="saveLocalData()"></div>
+        <div class="time-row"><label>Aut. Embarque:</label><button class="time-btn" onclick="logTime('authBoarding')">Registrar</button><input type="time" class="time-input" id="authBoarding" onchange="saveLocalData()"></div>
+        <div class="time-row"><label>Limpieza Entrada:</label><button class="time-btn" onclick="logTime('cleanIn')">Registrar</button><input type="time" class="time-input" id="cleanIn" onchange="saveLocalData()"></div>
+        <div class="time-row"><label>Limpieza Salida:</label><button class="time-btn" onclick="logTime('cleanOut')">Registrar</button><input type="time" class="time-input" id="cleanOut" onchange="saveLocalData()"></div>
+        <div class="time-row"><label>Abastecimiento Entrada:</label><button class="time-btn" onclick="logTime('supplyIn')">Registrar</button><input type="time" class="time-input" id="supplyIn" onchange="saveLocalData()"></div>
+        <div class="time-row"><label>Abastecimiento Salida:</label><button class="time-btn" onclick="logTime('supplyOut')">Registrar</button><input type="time" class="time-input" id="supplyOut" onchange="saveLocalData()"></div>
+        <div class="time-row"><label>COPS Entrada:</label><button class="time-btn" onclick="logTime('copsIn')">Registrar</button><input type="time" class="time-input" id="copsIn" onchange="saveLocalData()"></div>
+        <div class="time-row"><label>COPS Salida:</label><button class="time-btn" onclick="logTime('copsOut')">Registrar</button><input type="time" class="time-input" id="copsOut" onchange="saveLocalData()"></div>
+        <div class="time-row"><label>1er Pasajero:</label><button class="time-btn" onclick="logTime('firstPax')">Registrar</button><input type="time" class="time-input" id="firstPax" onchange="saveLocalData()"></div>
+        <div class="time-row"><label>Último Pasajero:</label><button class="time-btn" onclick="logTime('lastPax')">Registrar</button><input type="time" class="time-input" id="lastPax" onchange="saveLocalData()"></div>
+        <div class="time-row"><label>Cierre de Puerta:</label><button class="time-btn" onclick="logTime('doorClose')">Registrar</button><input type="time" class="time-input" id="doorClose" onchange="saveLocalData()"></div>
+      </div>
+    </div>
+    <div class="panel">
+      <h3 style="display:flex; justify-content:space-between; align-items:center;">
+        <span>📝 Anuncios y Observaciones</span>
+        <div style="display:flex; gap:10px; align-items:center;">
+          <button id="voiceDictationBtn" onclick="toggleVoiceDictation()" style="background:none; border:none; cursor:pointer; display:flex; align-items:center; justify-content:center; color:#aebcd4; transition: color 0.3s;" title="Escritura por Voz">
+            <svg style="width: 24px; height: 24px; fill: none; stroke: currentColor; stroke-width: 2; stroke-linecap: round; stroke-linejoin: round;" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path d="M12 2a3 3 0 0 0-3 3v7a3 3 0 0 0 6 0V5a3 3 0 0 0-3-3Z"></path><path d="M19 10v2a7 7 0 0 1-14 0v-2"></path><line x1="12" y1="19" x2="12" y2="22"></line></svg>
+          </button>
+          <button onclick="sendAnnouncementsToWhatsApp()" style="background:none; border:none; cursor:pointer;" title="Enviar por WhatsApp">
+            <svg style="width: 24px; height: 24px;" viewBox="0 0 24 24" fill="#25D366" xmlns="http://www.w3.org/2000/svg"><path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.095 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 01-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 01-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 012.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0012.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 005.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 00-3.48-8.413Z"/></svg>
+          </button>
+          <button onclick="sendAnnouncementsToEmail()" style="background:none; border:none; cursor:pointer; font-size:1.5em; line-height:1;" title="Enviar por Correo">
+            📧
+          </button>
+        </div>
+      </h3>
+      <textarea class="comments-area" id="commentsArea" oninput="saveLocalData()" placeholder="Anuncios y observaciones generales del vuelo..."></textarea>
+      <script>
+        let recognition;
+        let isRecording = false;
+
+        function toggleVoiceDictation() {
+          const btn = document.getElementById('voiceDictationBtn');
+          const area = document.getElementById('commentsArea');
+          
+          if (!('webkitSpeechRecognition' in window) && !('SpeechRecognition' in window)) {
+            alert('El reconocimiento de voz no es compatible con este navegador. Por favor usa un navegador moderno como Google Chrome o Edge.');
+            return;
+          }
+
+          if (isRecording) {
+            recognition.stop();
+            return;
+          }
+
+          const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
+          recognition = new SpeechRecognition();
+          recognition.lang = 'es-ES'; // Configurado para español
+          recognition.interimResults = true;
+          recognition.continuous = true;
+
+          recognition.onstart = function() {
+            isRecording = true;
+            btn.style.color = '#ff4444'; // Cambia el color a rojo para indicar que está grabando
+            btn.style.animation = 'pulse 1s infinite alternate';
+          };
+
+          recognition.onresult = function(event) {
+            let finalTranscript = '';
+            for (let i = event.resultIndex; i < event.results.length; ++i) {
+              if (event.results[i].isFinal) {
+                finalTranscript += event.results[i][0].transcript + ' ';
+              }
+            }
+            if (finalTranscript) {
+              area.value += (area.value ? ' ' : '') + finalTranscript;
+              if (typeof saveLocalData === 'function') saveLocalData();
+            }
+          };
+
+          recognition.onerror = function(event) {
+            console.error('Error de reconocimiento de voz: ', event.error);
+            if (event.error === 'not-allowed') {
+              alert('Permiso de micrófono denegado. Por favor permítelo en tu navegador.');
+            }
+            stopDictationUI();
+          };
+
+          recognition.onend = function() {
+            stopDictationUI();
+          };
+
+          recognition.start();
+        }
+
+        function stopDictationUI() {
+          const btn = document.getElementById('voiceDictationBtn');
+          isRecording = false;
+          btn.style.color = '#aebcd4';
+          btn.style.animation = 'none';
+        }
+
+        // Add a simple pulse animation for the recording state
+        if (!document.getElementById('pulseAnimStyle')) {
+          const style = document.createElement('style');
+          style.id = 'pulseAnimStyle';
+          style.innerHTML = '@keyframes pulse { from { transform: scale(1); } to { transform: scale(1.2); } }';
+          document.head.appendChild(style);
+        }
+      </script>
+    </div>
+    <div class="panel pax-panel">
+      <h3>👥 Conteo de Pasajeros</h3>
+      <div class="pax-grid">
+        <div class="pax-row"><span class="pax-label pax">PAX</span><button class="pax-btn minus" onclick="changePax('pax',-1)">−</button><input type="number" class="pax-input" id="paxCount" value="0" min="0" max="999" oninput="saveLocalData()"><button class="pax-btn plus" onclick="changePax('pax',1)">+</button></div>
+        <div class="pax-row"><span class="pax-label inf">INF</span><button class="pax-btn minus" onclick="changePax('inf',-1)">−</button><input type="number" class="pax-input" id="infCount" value="0" min="0" max="999" oninput="saveLocalData()"><button class="pax-btn plus" onclick="changePax('inf',1)">+</button></div>
+        <div class="pax-row"><span class="pax-label inad">INAD</span><button class="pax-btn minus" onclick="changePax('inad',-1)">−</button><input type="number" class="pax-input" id="inadCount" value="0" min="0" max="999" oninput="saveLocalData()"><button class="pax-btn plus" onclick="changePax('inad',1)">+</button></div>
+        <div class="pax-row"><span class="pax-label pris">PRIS</span><button class="pax-btn minus" onclick="changePax('pris',-1)">−</button><input type="number" class="pax-input" id="prisCount" value="0" min="0" max="999" oninput="saveLocalData()"><button class="pax-btn plus" onclick="changePax('pris',1)">+</button></div>
+        <div class="pax-row"><span class="pax-label wchr">WCHR</span><button class="pax-btn minus" onclick="changePax('wchr',-1)">−</button><input type="number" class="pax-input" id="wchrCount" value="0" min="0" max="999" oninput="saveLocalData()"><button class="pax-btn plus" onclick="changePax('wchr',1)">+</button></div>
+        <div class="pax-row"><span class="pax-label pet">PET</span><button class="pax-btn minus" onclick="changePax('pet',-1)">−</button><input type="number" class="pax-input" id="petCount" value="0" min="0" max="999" oninput="saveLocalData()"><button class="pax-btn plus" onclick="changePax('pet',1)">+</button></div>
+        <div class="pax-row"><span class="pax-label svan">SVAN</span><button class="pax-btn minus" onclick="changePax('svan',-1)">−</button><input type="number" class="pax-input" id="svanCount" value="0" min="0" max="999" oninput="saveLocalData()"><button class="pax-btn plus" onclick="changePax('svan',1)">+</button></div>
+        <div class="pax-row"><span class="pax-label esan">ESAN</span><button class="pax-btn minus" onclick="changePax('esan',-1)">−</button><input type="number" class="pax-input" id="esanCount" value="0" min="0" max="999" oninput="saveLocalData()"><button class="pax-btn plus" onclick="changePax('esan',1)">+</button></div>
+        <div class="pax-row"><span class="pax-label blind">BLIND</span><button class="pax-btn minus" onclick="changePax('blind',-1)">−</button><input type="number" class="pax-input" id="blindCount" value="0" min="0" max="999" oninput="saveLocalData()"><button class="pax-btn plus" onclick="changePax('blind',1)">+</button></div>
+        <div class="pax-row"><span class="pax-label deaf">DEAF</span><button class="pax-btn minus" onclick="changePax('deaf',-1)">−</button><input type="number" class="pax-input" id="deafCount" value="0" min="0" max="999" oninput="saveLocalData()"><button class="pax-btn plus" onclick="changePax('deaf',1)">+</button></div>
+        <div class="pax-row"><span class="pax-label depo">DEPO</span><button class="pax-btn minus" onclick="changePax('depo',-1)">−</button><input type="number" class="pax-input" id="depoCount" value="0" min="0" max="999" oninput="saveLocalData()"><button class="pax-btn plus" onclick="changePax('depo',1)">+</button></div>
+        <div class="pax-row"><span class="pax-label umnr">UMNR</span><button class="pax-btn minus" onclick="changePax('umnr',-1)">−</button><input type="number" class="pax-input" id="umnrCount" value="0" min="0" max="999" oninput="saveLocalData()"><button class="pax-btn plus" onclick="changePax('umnr',1)">+</button></div>
+      </div>
+      <div class="flight-info-grid">
+        <label>Fecha:</label><input type="text" id="flightDate" placeholder="Presione para fecha actual" onclick="autoFillDate()" onchange="saveLocalData()" style="cursor:pointer;">
+        <label>Tiempo de Vuelo:</label>
+        <div style="display:flex; align-items:center; background:#091c33; border:1px solid #13345c; border-radius:6px; padding:2px 5px; max-width:110px;">
+          <input type="number" id="flightTimeH" min="0" max="23" placeholder="HH" onchange="mergeFlightTime()" oninput="mergeFlightTime()" style="width:35px; background:transparent; border:none; color:#ffffff; text-align:right; font-family:monospace; font-size:1.05em; padding:2px; outline:none;">
+          <span style="color:#ffffff; font-weight:bold; margin:0 2px;">:</span>
+          <input type="number" id="flightTimeM" min="0" max="59" placeholder="MM" onchange="mergeFlightTime()" oninput="mergeFlightTime()" style="width:35px; background:transparent; border:none; color:#ffffff; font-family:monospace; font-size:1.05em; padding:2px; outline:none;">
+          <span style="font-size:1.1em; margin-left:2px; cursor:pointer;" onclick="document.getElementById('flightTimeH').focus()">⏱️</span>
+          <input type="hidden" id="flightTime">
+        </div>
+        <label>Destino:</label><input type="text" id="flightDest" oninput="saveLocalData()" placeholder="Ciudad">
+        <label>Nº de Vuelo:</label><input type="text" id="flightNumber" oninput="saveLocalData()" placeholder="Ej: CM-123">
+        <label>Matrícula:</label><input type="text" id="flightHP" oninput="saveLocalData()" placeholder="Matrícula">
+      </div>
+    </div>
+    </div>
+  </div>
+
+  <div class="panel" style="margin-bottom: 15px; padding: 15px;" id="delayPanel">
+    <h3 style="color: #60c0ff; margin-bottom: 15px; font-size: 1.1em; border-bottom: 1px solid #13345c; padding-bottom: 8px;">📢 Operaciones Irregulares</h3>
+    <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(250px, 1fr)); gap: 15px;">
+      
+      <div style="background: rgba(19, 52, 92, 0.6); padding: 15px; border-radius: 10px; border: 1px solid #13345c; text-align: center;">
+        <h4 style="color: #aebcd4; margin-bottom: 10px;">Demora a la Salida</h4>
+        <div style="display: flex; gap: 10px; justify-content: center; margin-bottom: 10px;">
+          <button id="btnStartdepDelay" class="action-btn btn-jpg" onclick="toggleDelay('dep')" style="padding: 8px 15px;">Iniciar</button>
+          <button id="btnResetdepDelay" class="action-btn btn-pdf" onclick="resetDelay('dep')" style="padding: 8px 15px; display: none;">Reiniciar</button>
+        </div>
+        <div id="depDelayTimer" style="font-size: 1.8em; font-family: monospace; font-weight: bold; color: #ffffff; background: #061224; padding: 5px; border-radius: 6px; border: 1px solid #1c4575;">00:00</div>
+      </div>
+
+      <div style="background: rgba(19, 52, 92, 0.6); padding: 15px; border-radius: 10px; border: 1px solid #13345c; text-align: center;">
+        <h4 style="color: #aebcd4; margin-bottom: 10px;">Demora a la Llegada</h4>
+        <div style="display: flex; gap: 10px; justify-content: center; margin-bottom: 10px;">
+          <button id="btnStartarrDelay" class="action-btn btn-jpg" onclick="toggleDelay('arr')" style="padding: 8px 15px;">Iniciar</button>
+          <button id="btnResetarrDelay" class="action-btn btn-pdf" onclick="resetDelay('arr')" style="padding: 8px 15px; display: none;">Reiniciar</button>
+        </div>
+        <div id="arrDelayTimer" style="font-size: 1.8em; font-family: monospace; font-weight: bold; color: #ffffff; background: #061224; padding: 5px; border-radius: 6px; border: 1px solid #1c4575;">00:00</div>
+      </div>
+
+    </div>
+    
+
+  </div>
+
+  <div class="counters-section">
+    <div class="counters-grid">
+      <div class="meal-counter-box">
+        <h3>🍽️ Contador de Comidas</h3>
+        <div class="meal-limits">
+          <div class="meal-limit-input">
+            <input type="text" class="meal-name-input" id="mealName1" value="Comida 1" onchange="updateMealNames()">
+            <label>Límite:</label>
+            <input type="number" id="limit1" value="8" min="0" max="20" onchange="updateLimits()">
+          </div>
+          <div class="meal-limit-input">
+            <input type="text" class="meal-name-input" id="mealName2" value="Comida 2" onchange="updateMealNames()">
+            <label>Límite:</label>
+            <input type="number" id="limit2" value="8" min="0" max="20" onchange="updateLimits()">
+          </div>
+          <div class="meal-limit-input">
+            <input type="text" class="meal-name-input" id="mealName3" value="Comida 3" onchange="updateMealNames()">
+            <label>Límite:</label>
+            <input type="number" id="limit3" value="8" min="0" max="20" onchange="updateLimits()">
+          </div>
+        </div>
+        <div class="meal-status">
+          <div class="meal-badge-wrap"><div class="meal-badge meal-1" id="mealBadge1">Comida 1: 0/8</div><div class="meal-dots" id="mealDots1"></div></div>
+          <div class="meal-badge-wrap"><div class="meal-badge meal-2" id="mealBadge2">Comida 2: 0/8</div><div class="meal-dots" id="mealDots2"></div></div>
+          <div class="meal-badge-wrap"><div class="meal-badge meal-3" id="mealBadge3">Comida 3: 0/8</div><div class="meal-dots" id="mealDots3"></div></div>
+        </div>
+      </div>
+      <div class="drinks-counter-box">
+        <h3>🥤 Contador de Bebidas</h3>
+        <div class="drinks-section"><h4>Bebida 1 (Primera)</h4><div class="drink-count-grid" id="drinkCount1"></div></div>
+        <div class="drinks-section"><h4>Bebida 2 (Segunda)</h4><div class="drink-count-grid" id="drinkCount2"></div></div>
+      </div>
+    </div>
+  </div>
+
+  <div class="seats-section">
+    <div class="seats-header" onclick="const c=document.getElementById('seatsGrid'); c.style.display=c.style.display==='none'?'grid':'none';" style="cursor:pointer; display:flex; justify-content:space-between; align-items:center;">
+      <div style="flex:1;"></div>
+      <h2 style="flex:2; text-align:center; margin:0;">💺 ASIENTOS DE PASAJEROS</h2>
+      <span style="font-size:0.75em; opacity:0.8; color: #aebcd4; flex:1; text-align:right; font-weight:normal;">👁️ Mostrar/Ocultar</span>
+    </div>
+    <div class="seats-grid" id="seatsGrid"></div>
+  </div>
+
+  <div class="action-bar" id="actionBarBottom" style="margin-top:15px;">
+    <button class="action-btn btn-jpg" onclick="exportAs('jpg')">📷 Guardar JPG</button>
+    <button class="action-btn btn-pdf" onclick="exportAs('pdf')">📄 Guardar PDF</button>
+    <button class="action-btn btn-png" onclick="exportAs('png')">🖼️ Guardar PNG</button>
+    <label class="action-btn btn-ocr">📷 Cargar OCR <input type="file" accept="image/jpeg, image/png, image/jpg" class="hidden-input" id="jpg-ocr-input2" onchange="handleOcrJpg(this)"></label>
+    <button class="action-btn btn-new" onclick="newFlight()">✈️ Nuevo Vuelo</button>
+  </div>
+
+  <div class="image-panel">
+    <h3>📸 Imágenes del Vuelo</h3>
+    <div class="image-slots">
+      <div class="image-slot" id="imgSlot1"><span class="slot-number">#1</span><div class="upload-label" onclick="document.getElementById('fileInput1').click()"><div class="icon">📷</div><div>Haga clic para agregar imagen</div></div><input type="file" accept="image/*" class="upload-input" id="fileInput1" onchange="loadImage(this,1)"></div>
+      <div class="image-slot" id="imgSlot2"><span class="slot-number">#2</span><div class="upload-label" onclick="document.getElementById('fileInput2').click()"><div class="icon">📷</div><div>Haga clic para agregar imagen</div></div><input type="file" accept="image/*" class="upload-input" id="fileInput2" onchange="loadImage(this,2)"></div>
+      <div class="image-slot" id="imgSlot3"><span class="slot-number">#3</span><div class="upload-label" onclick="document.getElementById('fileInput3').click()"><div class="icon">📷</div><div>Haga clic para agregar imagen</div></div><input type="file" accept="image/*" class="upload-input" id="fileInput3" onchange="loadImage(this,3)"></div>
+    </div>
+  </div>
+
+  <div class="lightbox-overlay" id="lightbox" onclick="closeLightbox()"><button class="lightbox-close" onclick="closeLightbox()">✕ Cerrar</button><img id="lightboxImg" src="" alt="Imagen ampliada"></div>
+
+  <div class="panel inventory-panel">
+    <h3 onclick="const c=document.getElementById('inventoryContent'); c.style.display=c.style.display==='none'?'block':'none';" style="cursor:pointer; display:flex; justify-content:space-between; align-items:center;">
+      <span>📋 Inventario de Botellas y Envases Utilizados</span>
+      <span style="font-size:0.8em; opacity:0.8;">👁️ Mostrar/Ocultar</span>
+    </h3>
+    <div id="inventoryContent" style="display:none;">
+      <div class="inventory-grid" id="inventoryGrid"></div>
+      <div id="inventoryTotals" class="inventory-totals-box"></div>
+    </div>
+  </div>
+
+  <div class="footer-instructions">
+    <h3 onclick="const c=document.getElementById('instructionsContent'); c.style.display=c.style.display==='none'?'grid':'none';" style="cursor:pointer; display:flex; justify-content:space-between; align-items:center;">
+      <span>📱 Instrucciones de Instalacion</span>
+      <span style="font-size:0.8em; opacity:0.8;">👁️ Mostrar/Ocultar</span>
+    </h3>
+    <div id="instructionsContent" class="footer-columns" style="display:none;">
+      <div class="footer-section"><h4>🍎 iOS</h4><ol><li>Descargar Explorador EDGE</li><li>Abrir link</li><li>Tres puntitos abajo hacer clic</li><li>Compartir</li><li>Ver más</li><li>Agregar a inicio</li><li>Presionar botos azul de agregar</li></ol></div>
+      <div class="footer-section"><h4>🤖 Android</h4><ol><li>Abrir link</li><li>Tres puntitos</li><li>Agregar a pantalla de inicio</li><li>Instalar</li></ol></div>
+    </div>
+  </div>
+  <div style="text-align: center; margin-top: 25px; padding: 15px; font-size: 0.85em; color: #5a7a9a; border-top: 1px solid #0c2340; letter-spacing: 1px;">
+    ✈️ CREADO POR <strong>BASILIO BRATHWAITE</strong>
+  </div>
+</div>
+
+<div class="modal-overlay" id="drinkModal" onclick="closeModalOutside(event)">
+  <div class="bottom-sheet" onclick="event.stopPropagation()">
+    <div class="sheet-handle-bar"></div>
+    <div class="sheet-header">
+      <h3 id="modalTitle">Seleccionar Bebidas</h3>
+      <button class="sheet-close-btn" onclick="closeModal()">✕</button>
+    </div>
+    <div class="sheet-list" id="modalDrinkList"></div>
+  </div>
+</div>
+
+<script>
+const seats = ['1A','1B','1E','1F','2A','2B','2E','2F','3A','3B','3E','3F','4A','4B','4E','4F'];
+const drinksSA = [
+  'Agua', 'Agua con Gas', 'Jugo de Naranja', 'Jugo de Guayaba', 'Jugo de Tomate', 
+  'Coca Cola Regular', 'Coca Cola Cero', 'Sprite', 'Ginger Ale', 
+  'Café', 'Ice Coffee', 'Té Negro', 'Té Manzanilla', 'Té Canela', 'Té Verde', 'Té Limón', 'Ice Tea'
+];
+const drinksCA = [
+  'Cerveza Balboa', 'Cerveza Corona', 'Vino Blanco Casa', 'Vino Blanco Importado', 
+  'Vino Tinto Casa', 'Vino Tinto Importado', 'Vino Espumante/Cava', 
+  'Whisky', 'Whisky con Cola', 'Whisky con Sprite', 'Ron', 'Ron Cola', 'Ron con Sprite', 
+  'Vodka', 'Vodka con Cola', 'Vodka con Sprite', 'Mimosa', 'Sangría', 'Michelada', 
+  'Bloody Mary', 'Highball', 'Destornillador'
+];
+const drinksBase = drinksSA.concat(drinksCA);
+
+let mealLimits = {1:8, 2:8, 3:8};
+let mealCounts = {1:0, 2:0, 3:0};
+let mealNames = {1: 'Comida 1', 2: 'Comida 2', 3: 'Comida 3'};
+let drinkTotals = {1:{}, 2:{}};
+let iceTotals = {1:{}, 2:{}};
+let seatData = {};
+let currentModal = null;
+let imageSlots = {1: null, 2: null, 3: null};
+let delayTimers = {
+  dep: { active: false, startTime: null, interval: null, lastTrigger: 0, pauseTime: 0 },
+  arr: { active: false, startTime: null, interval: null, lastTrigger: 0, pauseTime: 0 }
+};
+
+const announcementTexts = {
+  dep: {
+    15: `Estimados pasajeros, nuestro vuelo saldrá en aproximadamente ____ debido a _____ (razones técnicas / condiciones meteorológicas / espera de pasajeros en tránsito / mantenimiento / embarque de equipaje / abastecimiento de combustible / tráfico aéreo, etc.). Pronto les daremos más información. Gracias por su paciencia.\n\nDear passengers, the flight will be departing in approximately ____ minutes due to _____ (technical reasons / weather conditions / the late arrival of connecting passengers / loading of cargo / aircraft refueling / air traffic). We will give you more information soon. Thank you for your patience.`,
+    30: `Estimados pasajeros, gracias por su paciencia. Nos mantenemos en espera para nuestra salida debido a ________. El capitán nos ha informado que nuestro vuelo saldrá en aproximadamente ________. Pronto les daremos más información.\n\nDear passengers, thank you for your patience. We are waiting for our departure due to ________. The captain has informed us that our flight will depart in approximately ________. We will give you more information soon.`,
+    next: `Estimados pasajeros, gracias por su paciencia. Nos mantendremos en esta posición debido a ________. El capitán nos ha informado que continuaremos con nuestro vuelo en aproximadamente ________. Pronto les daremos más información.\n\nDear passengers, thank you for your patience. We will be in this position due to ________. The captain has informed us that we will continue with our flight in approximately ________. We will give you more information soon.`
+  },
+  arr: {
+    15: `Estimados pasajeros, estaremos en esta posición por aproximadamente ____ debido a _____ (razones técnicas / condiciones meteorológicas / puerta de desembarque ocupada / espera de asignación de puerta de desembarque / tráfico en la calle de rodaje, etc.). Pronto les daremos más información. Gracias por su paciencia.\n\nDear passengers, will be in this position for approximately ____ minutes due to ____ (technical reasons / weather conditions / arrival gate occupied, waiting for landing gate assignment, traffic on the taxiway). We will give you more information soon. Thank you for your patience.`,
+    30: `Estimados pasajeros, estaremos en esta posición por aproximadamente ____ debido a _____ (razones técnicas / condiciones meteorológicas / puerta de desembarque ocupada / espera de asignación de puerta de desembarque / tráfico en la calle de rodaje, etc.). Pronto les daremos más información. Gracias por su paciencia. Adicional al contenido estándar de anuncio en demora, comunique a los clientes que los lavabos están disponibles (Si aplica y previa coordinación con la cabina de mando).\n\nDear passengers, will be in this position for approximately ____ minutes due to ____ (technical reasons / weather conditions / arrival gate occupied, waiting for landing gate assignment, traffic on the taxiway). We will give you more information soon. Thank you for your patience.`,
+    next: `Estimados pasajeros, gracias por su paciencia. Nos mantendremos en esta posición debido a ________. El capitán nos ha informado que continuaremos con nuestro vuelo en aproximadamente ________. Pronto les daremos más información.\n\nDear passengers, thank you for your patience. We will be in this position due to ________. The captain has informed us that we will continue with our flight in approximately ________. We will give you more information soon.\n\nDear passengers, will be in this position for approximately ____ minutes due to ____ (technical reasons / weather conditions / arrival gate occupied, waiting for landing gate assignment, traffic on the taxiway). We will give you more information soon. Thank you for your patience.`
+  }
+};
+
+function toggleDelay(type) {
+  const t = delayTimers[type];
+  if (!t.active) {
+    t.active = true;
+    if (!t.startTime) {
+      if (type === 'dep') {
+        const depInput = document.getElementById('flightDepartureTime');
+        if (depInput && depInput.value) {
+          const now = new Date();
+          const depTimeParts = depInput.value.split(':');
+          const depDate = new Date();
+          depDate.setHours(parseInt(depTimeParts[0], 10), parseInt(depTimeParts[1], 10), 0, 0);
+          if (now.getTime() - depDate.getTime() > 20 * 60 * 60 * 1000) {
+            depDate.setDate(depDate.getDate() + 1);
+          } else if (depDate.getTime() - now.getTime() > 20 * 60 * 60 * 1000) {
+            depDate.setDate(depDate.getDate() - 1);
+          }
+          t.startTime = depDate.getTime();
+        } else {
+          t.startTime = Date.now();
+        }
+      } else {
+        t.startTime = Date.now();
+      }
+    }
+    else if (t.pauseTime) {
+      t.startTime += (Date.now() - t.pauseTime);
+      t.pauseTime = 0;
+    }
+    t.interval = setInterval(() => updateDelayTimer(type), 1000);
+  } else {
+    t.active = false;
+    clearInterval(t.interval);
+    t.pauseTime = Date.now();
+  }
+  restoreDelayTimerUI(type);
+  saveLocalData();
+}
+
+function resetDelay(type) {
+  const t = delayTimers[type];
+  t.active = false;
+  clearInterval(t.interval);
+  t.startTime = null;
+  t.pauseTime = 0;
+  t.lastTrigger = 0;
+  restoreDelayTimerUI(type);
+  document.getElementById(`${type}DelayTimer`).innerText = '00:00';
+  saveLocalData();
+}
+
+function restoreDelayTimerUI(type) {
+  const t = delayTimers[type];
+  const btn = document.getElementById(`btnStart${type}Delay`);
+  const resetBtn = document.getElementById(`btnReset${type}Delay`);
+  if (t.active) {
+    btn.innerText = 'Pausar';
+    btn.style.background = '#8c5a00';
+    resetBtn.style.display = 'inline-block';
+  } else if (t.startTime) {
+    btn.innerText = 'Reanudar';
+    btn.style.background = '#2a6a3a';
+    resetBtn.style.display = 'inline-block';
+  } else {
+    btn.innerText = 'Iniciar';
+    btn.style.background = '#2a6a3a';
+    resetBtn.style.display = 'none';
+  }
+}
+
+function updateDelayTimer(type) {
+  const t = delayTimers[type];
+  let diff = 0;
+  if (t.active) {
+    diff = Date.now() - t.startTime;
+  } else if (t.startTime && t.pauseTime) {
+    diff = t.pauseTime - t.startTime;
+  } else {
+    return;
+  }
+  
+  let isNegative = false;
+  if (diff < 0) {
+    isNegative = true;
+    diff = Math.abs(diff);
+  }
+  
+  const totalSecs = Math.floor(diff / 1000);
+  const mins = Math.floor(totalSecs / 60);
+  const secs = totalSecs % 60;
+  const hours = Math.floor(mins / 60);
+  const displayMins = mins % 60;
+  
+  document.getElementById(`${type}DelayTimer`).innerText = `${isNegative ? '-' : ''}${hours > 0 ? hours.toString().padStart(2,'0')+':' : ''}${displayMins.toString().padStart(2,'0')}:${secs.toString().padStart(2,'0')}`;
+  
+  if (t.active && !isNegative) {
+    if (mins >= 15 && t.lastTrigger < 15) {
+      showAnnouncement(type, 15);
+      t.lastTrigger = 15;
+      saveLocalData();
+    } else if (mins >= 30 && t.lastTrigger < 30) {
+      showAnnouncement(type, 30);
+      t.lastTrigger = 30;
+      saveLocalData();
+    } else if (mins > 30) {
+      const currentBoundary = Math.floor(mins / 30) * 30;
+      if (currentBoundary > 30 && currentBoundary > t.lastTrigger) {
+        showAnnouncement(type, 'next', currentBoundary);
+        t.lastTrigger = currentBoundary;
+        saveLocalData();
+      }
+    }
+  }
+}
+
+function showAnnouncement(type, stage, actualMins = null) {
+  const text = announcementTexts[type][stage];
+  
+  let stageLabel = stage + ' min';
+  if (stage === 'next') {
+    stageLabel = actualMins ? actualMins + ' min' : 'Sig. 30 min';
+  }
+  const now = new Date();
+  const timeStr = now.toLocaleTimeString('es-ES', {hour: '2-digit', minute:'2-digit'});
+  const title = type === 'dep' ? `[${timeStr}] --- 📢 Aviso de Demora - Salida (${stageLabel})` : `[${timeStr}] --- 📢 Aviso de Demora - Llegada (${stageLabel})`;
+  
+  const commentsBox = document.getElementById('commentsArea');
+  if (commentsBox) {
+    const separator = commentsBox.value.trim() !== "" ? "\n\n\n" : "";
+    commentsBox.value = title + "\n" + text + separator + commentsBox.value;
+    commentsBox.style.boxShadow = "0 0 15px #d4af37";
+    setTimeout(() => { commentsBox.style.boxShadow = "none"; }, 3000);
+    saveLocalData();
+  }
+  
+  playBeep();
+}
+
+function playBeep() {
+  if (navigator.vibrate) navigator.vibrate([200, 100, 200, 100, 200]);
+  try {
+    const AudioContext = window.AudioContext || window.webkitAudioContext;
+    if (!AudioContext) return;
+    const ctx = new AudioContext();
+    const osc = ctx.createOscillator();
+    const gain = ctx.createGain();
+    osc.connect(gain);
+    gain.connect(ctx.destination);
+    
+    osc.type = 'sine';
+    osc.frequency.setValueAtTime(880, ctx.currentTime);
+    
+    gain.gain.setValueAtTime(0, ctx.currentTime);
+    gain.gain.linearRampToValueAtTime(1, ctx.currentTime + 0.05);
+    gain.gain.linearRampToValueAtTime(0, ctx.currentTime + 0.2);
+    
+    gain.gain.setValueAtTime(0, ctx.currentTime + 0.3);
+    gain.gain.linearRampToValueAtTime(1, ctx.currentTime + 0.35);
+    gain.gain.linearRampToValueAtTime(0, ctx.currentTime + 0.5);
+    
+    osc.start(ctx.currentTime);
+    osc.stop(ctx.currentTime + 0.6);
+  } catch(e) {}
+}
+
+function saveLocalData() {
+  const times = {};
+  ['planeAtGate', 'crewEntry', 'authBoarding', 'cleanIn', 'cleanOut', 'supplyIn', 'supplyOut', 'copsIn', 'copsOut', 'firstPax', 'lastPax', 'doorClose'].forEach(f => {
+    const el = document.getElementById(f);
+    if (el) times[f] = el.value;
+  });
+
+  const dataToSave = {
+    seatData: seatData,
+    flightInfo: {
+      date: document.getElementById('flightDate').value,
+      time: document.getElementById('flightTime').value,
+      dest: document.getElementById('flightDest').value,
+      number: document.getElementById('flightNumber').value,
+      hp: document.getElementById('flightHP').value,
+      departureTime: document.getElementById('flightDepartureTime') ? document.getElementById('flightDepartureTime').value : '',
+    },
+    comments: document.getElementById('commentsArea').value,
+    paxCounts: {
+      pax: document.getElementById('paxCount').value,
+      inf: document.getElementById('infCount').value,
+      inad: document.getElementById('inadCount').value,
+      pris: document.getElementById('prisCount').value,
+      wchr: document.getElementById('wchrCount').value,
+      pet: document.getElementById('petCount').value,
+      svan: document.getElementById('svanCount').value,
+      esan: document.getElementById('esanCount').value,
+      blind: document.getElementById('blindCount').value,
+      deaf: document.getElementById('deafCount').value,
+      depo: document.getElementById('depoCount').value,
+      umnr: document.getElementById('umnrCount').value,
+    },
+    mealLimits: mealLimits,
+    mealNames: mealNames,
+    times: times,
+    imageSlots: imageSlots,
+    delayTimers: {
+      dep: { active: delayTimers.dep.active, startTime: delayTimers.dep.startTime, lastTrigger: delayTimers.dep.lastTrigger, pauseTime: delayTimers.dep.pauseTime },
+      arr: { active: delayTimers.arr.active, startTime: delayTimers.arr.startTime, lastTrigger: delayTimers.arr.lastTrigger, pauseTime: delayTimers.arr.pauseTime }
+    }
+  };
+  localStorage.setItem('flight_passenger_data', JSON.stringify(dataToSave));
+}
+
+function loadLocalData() {
+  const saved = localStorage.getItem('flight_passenger_data');
+  if (saved) {
+    try {
+      const data = JSON.parse(saved);
+      if (data.seatData) {
+        seats.forEach(s => {
+          if (data.seatData[s]) {
+            seatData[s] = data.seatData[s];
+          }
+        });
+      }
+      if (data.flightInfo) {
+        document.getElementById('flightDate').value = data.flightInfo.date || '';
+        document.getElementById('flightTime').value = data.flightInfo.time || '';
+        if (data.flightInfo.time) {
+          const parts = data.flightInfo.time.split(':');
+          if (document.getElementById('flightTimeH')) document.getElementById('flightTimeH').value = parts[0] || '';
+          if (document.getElementById('flightTimeM')) document.getElementById('flightTimeM').value = parts[1] || '';
+        }
+        document.getElementById('flightDest').value = data.flightInfo.dest || '';
+        document.getElementById('flightNumber').value = data.flightInfo.number || '';
+        document.getElementById('flightHP').value = data.flightInfo.hp || '';
+        if (document.getElementById('flightDepartureTime')) {
+          document.getElementById('flightDepartureTime').value = data.flightInfo.departureTime || '';
+        }
+      }
+      if (data.comments !== undefined) {
+        document.getElementById('commentsArea').value = data.comments;
+      }
+      if (data.paxCounts) {
+        for (const type in data.paxCounts) {
+          const el = document.getElementById(type + 'Count');
+          if (el) el.value = data.paxCounts[type];
+        }
+      }
+      if (data.mealLimits) {
+        mealLimits = data.mealLimits;
+        document.getElementById('limit1').value = mealLimits[1];
+        document.getElementById('limit2').value = mealLimits[2];
+        document.getElementById('limit3').value = mealLimits[3];
+      }
+      if (data.mealNames) {
+        mealNames = data.mealNames;
+        document.getElementById('mealName1').value = mealNames[1];
+        document.getElementById('mealName2').value = mealNames[2];
+        document.getElementById('mealName3').value = mealNames[3];
+      }
+      if (data.times) {
+        for (const f in data.times) {
+          const el = document.getElementById(f);
+          if (el) el.value = data.times[f];
+        }
+      }
+      if (data.delayTimers) {
+        for (const type of ['dep', 'arr']) {
+          if (data.delayTimers[type]) {
+             delayTimers[type] = data.delayTimers[type];
+             if (delayTimers[type].active) {
+               restoreDelayTimerUI(type);
+               delayTimers[type].interval = setInterval(() => updateDelayTimer(type), 1000);
+               updateDelayTimer(type);
+             } else if (delayTimers[type].startTime) {
+               restoreDelayTimerUI(type);
+               updateDelayTimer(type);
+             }
+          }
+        }
+      }
+      if (data.imageSlots) {
+        imageSlots = data.imageSlots;
+        for (let slotNum = 1; slotNum <= 3; slotNum++) {
+          if (imageSlots[slotNum]) {
+            const slot = document.getElementById('imgSlot' + slotNum);
+            if (slot) {
+              slot.classList.add('has-image');
+              slot.innerHTML = `<span class="slot-number">#${slotNum}</span><button class="remove-btn" onclick="resetSlot(${slotNum})">✕</button><img class="thumb-img" src="${imageSlots[slotNum]}" alt="Imagen ${slotNum}" onclick="openLightbox('${imageSlots[slotNum]}')">`;
+            }
+          }
+        }
+      }
+    } catch (e) {
+      console.error("Error loading saved data from localStorage", e);
+    }
+  }
+}
+
+function recalculateTotals() {
+  mealCounts = {1:0, 2:0, 3:0};
+  [1,2].forEach(d => {
+    drinksBase.forEach(dr => {
+      drinkTotals[d][dr] = 0;
+      iceTotals[d][dr] = 0;
+    });
+  });
+
+  seats.forEach(s => {
+    const d = seatData[s];
+    if (!d.blocked) {
+      if (d.meal > 0) {
+        mealCounts[d.meal]++;
+      }
+      d.drinks1.forEach(item => {
+        drinkTotals[1][item.drink] = (drinkTotals[1][item.drink] || 0) + 1;
+        if (item.ice) iceTotals[1][item.drink] = (iceTotals[1][item.drink] || 0) + 1;
+      });
+      d.drinks2.forEach(item => {
+        drinkTotals[2][item.drink] = (drinkTotals[2][item.drink] || 0) + 1;
+        if (item.ice) iceTotals[2][item.drink] = (iceTotals[2][item.drink] || 0) + 1;
+      });
+    }
+  });
+}
+
+function mergeFlightTime() {
+  let h = document.getElementById('flightTimeH').value;
+  let m = document.getElementById('flightTimeM').value;
+  if (!h && !m) {
+    document.getElementById('flightTime').value = '';
+  } else {
+    h = h ? h.toString().padStart(2, '0') : '00';
+    m = m ? m.toString().padStart(2, '0') : '00';
+    document.getElementById('flightTime').value = `${h}:${m}`;
+  }
+  saveLocalData();
+  if (typeof updateFlightTimeCountdown === 'function') updateFlightTimeCountdown();
+}
+
+function newFlight() {
+  if (confirm("¿Está seguro de que desea iniciar un nuevo vuelo? Esto restablecerá todos los datos de los asientos, recuentos y tiempos.")) {
+    localStorage.removeItem('flight_passenger_data');
+    
+    document.getElementById('flightDate').value = '';
+    document.getElementById('flightTime').value = '';
+    if (document.getElementById('flightTimeH')) document.getElementById('flightTimeH').value = '';
+    if (document.getElementById('flightTimeM')) document.getElementById('flightTimeM').value = '';
+    if (document.getElementById('flightDepartureTime')) document.getElementById('flightDepartureTime').value = '';
+    document.getElementById('flightDest').value = '';
+    document.getElementById('flightNumber').value = '';
+    document.getElementById('flightHP').value = '';
+    document.getElementById('commentsArea').value = '';
+    
+    // Reset delay timers
+    ['dep', 'arr'].forEach(type => {
+      const t = delayTimers[type];
+      if (t.interval) clearInterval(t.interval);
+      t.active = false;
+      t.startTime = null;
+      t.interval = null;
+      t.lastTrigger = 0;
+      t.pauseTime = 0;
+      const btn = document.getElementById(`btnStart${type}Delay`);
+      if (btn) {
+        btn.innerText = 'Iniciar';
+        btn.style.background = '';
+      }
+      const resetBtn = document.getElementById(`btnReset${type}Delay`);
+      if (resetBtn) resetBtn.style.display = 'none';
+      const display = document.getElementById(type + 'DelayTimer');
+      if (display) display.innerText = '00:00';
+    });
+    window.triggeredT7 = false;
+    window.triggeredT2 = false;
+    
+    const paxTypes = ['pax', 'inf', 'inad', 'pris', 'wchr', 'pet', 'svan', 'esan'];
+    paxTypes.forEach(type => {
+      const el = document.getElementById(type + 'Count');
+      if (el) el.value = 0;
+    });
+    
+    mealLimits = {1:8, 2:8, 3:8};
+    mealNames = {1: 'Comida 1', 2: 'Comida 2', 3: 'Comida 3'};
+    document.getElementById('limit1').value = 8;
+    document.getElementById('limit2').value = 8;
+    document.getElementById('limit3').value = 8;
+    document.getElementById('mealName1').value = 'Comida 1';
+    document.getElementById('mealName2').value = 'Comida 2';
+    document.getElementById('mealName3').value = 'Comida 3';
+    
+    const timeFields = ['planeAtGate', 'crewEntry', 'authBoarding', 'cleanIn', 'cleanOut', 'supplyIn', 'supplyOut', 'copsIn', 'copsOut', 'firstPax', 'lastPax', 'doorClose'];
+    timeFields.forEach(f => {
+      const el = document.getElementById(f);
+      if (el) el.value = '';
+    });
+
+    seats.forEach(s => {
+      seatData[s] = {
+        name:'', pActive:false, p2Active:false, gActive:false, sActive:false, meal:0,
+        drinks1: [], drinks2: [],
+        extras:{abrigo:false, semillas:false, adItaliano:false, adCesar:false},
+        wakeup:false, blocked:false, seatComment:'',
+        circuloA: false, circuloC: false, circuloS: false
+      };
+    });
+    
+    imageSlots = {1: null, 2: null, 3: null};
+    [1,2,3].forEach(slotNum => {
+      resetSlot(slotNum, true);
+    });
+
+    recalculateTotals();
+    renderSeats();
+    renderDrinkCounters();
+    updateMealBadges();
+    saveLocalData();
+  }
+}
+
+function compressAndSaveImage(dataUrl, slotNum, callback) {
+  const img = new Image();
+  img.onload = function() {
+    const canvas = document.createElement('canvas');
+    let width = img.width;
+    let height = img.height;
+    
+    const max_size = 1024; 
+    if (width > max_size || height > max_size) {
+      if (width > height) {
+        height = Math.round((height * max_size) / width);
+        width = max_size;
+      } else {
+        width = Math.round((width * max_size) / height);
+        height = max_size;
+      }
+    }
+    
+    canvas.width = width;
+    canvas.height = height;
+    const ctx = canvas.getContext('2d');
+    ctx.drawImage(img, 0, 0, width, height);
+    
+    const compressedDataUrl = canvas.toDataURL('image/jpeg', 0.6);
+    imageSlots[slotNum] = compressedDataUrl;
+    saveLocalData();
+    
+    if (callback) callback(compressedDataUrl);
+  };
+  img.src = dataUrl;
+}
+
+function loadImage(input, slotNum) {
+  const file = input.files[0]; if (!file) return;
+  const reader = new FileReader();
+  reader.onload = function(e) {
+    compressAndSaveImage(e.target.result, slotNum, function(compressedUrl) {
+      const slot = document.getElementById('imgSlot' + slotNum);
+      slot.classList.add('has-image');
+      slot.innerHTML = `<span class="slot-number">#${slotNum}</span><button class="remove-btn" onclick="resetSlot(${slotNum})">✕</button><img class="thumb-img" src="${compressedUrl}" alt="Imagen ${slotNum}" onclick="openLightbox('${compressedUrl}')">`;
+    });
+  };
+  reader.readAsDataURL(file);
+}
+
+function openLightbox(src) { document.getElementById('lightboxImg').src = src; document.getElementById('lightbox').classList.add('show'); }
+function closeLightbox() { document.getElementById('lightbox').classList.remove('show'); }
+
+function resetSlot(slotNum, skipSave) {
+  const slot = document.getElementById('imgSlot' + slotNum);
+  slot.classList.remove('has-image');
+  slot.innerHTML = `<span class="slot-number">#${slotNum}</span><div class="upload-label" onclick="document.getElementById('fileInput${slotNum}').click()"><div class="icon">📷</div><div>Haga clic para agregar imagen</div></div><input type="file" accept="image/*" class="upload-input" id="fileInput${slotNum}" onchange="loadImage(this, ${slotNum})">`;
+  imageSlots[slotNum] = null;
+  if (!skipSave) {
+    saveLocalData();
+  }
+}
+
+function autoFillDate() {
+  const el = document.getElementById('flightDate');
+  if (!el.value) { const n = new Date(); el.value = `${String(n.getDate()).padStart(2,'0')}/${String(n.getMonth()+1).padStart(2,'0')}/${n.getFullYear()}`; saveLocalData(); }
+}
+function logTime(field) { const n = new Date(); document.getElementById(field).value = `${String(n.getHours()).padStart(2,'0')}:${String(n.getMinutes()).padStart(2,'0')}`; saveLocalData(); }
+function changePax(type, delta) { const i = document.getElementById(type + 'Count'); i.value = Math.max(0, Math.min(999, (parseInt(i.value)||0) + delta)); saveLocalData(); }
+
+function init() {
+  seats.forEach(s => {
+    seatData[s] = {
+      name:'', pActive:false, p2Active:false, gActive:false, sActive:false, meal:0,
+      drinks1: [], drinks2: [],
+      extras:{abrigo:false, semillas:false, adItaliano:false, adCesar:false},
+      wakeup:false, blocked:false, seatComment:'',
+      circuloA: false, circuloC: false, circuloS: false
+    };
+  });
+  [1,2].forEach(d => { drinksBase.forEach(dr => { drinkTotals[d][dr] = 0; iceTotals[d][dr] = 0; }); });
+  loadLocalData();
+  recalculateTotals();
+  renderSeats(); renderDrinkCounters(); updateMealBadges();
+}
+
+function renderSeats() {
+  const grid = document.getElementById('seatsGrid');
+  grid.innerHTML = '';
+  seats.forEach((s) => {
+    const d = seatData[s];
+    const card = document.createElement('div');
+    const activeClass = d.pActive ? 'active-p' : (d.p2Active ? 'active-p2' : (d.gActive ? 'active-g' : (d.sActive ? 'active-s' : '')));
+    card.className = `seat-card ${activeClass} ${d.blocked ? 'blocked' : ''}`;
+    const mealClass1 = d.meal === 1 ? 'selected' : (d.meal !== 0 ? 'not-selected' : '');
+    const mealClass2 = d.meal === 2 ? 'selected' : (d.meal !== 0 ? 'not-selected' : '');
+    const mealClass3 = d.meal === 3 ? 'selected' : (d.meal !== 0 ? 'not-selected' : '');
+    const isDisabled1 = mealCounts[1] >= mealLimits[1] && d.meal !== 1;
+    const isDisabled2 = mealCounts[2] >= mealLimits[2] && d.meal !== 2;
+    const isDisabled3 = mealCounts[3] >= mealLimits[3] && d.meal !== 3;
+
+    const pClass = d.pActive ? 'active' : '';
+    const p2Class = d.p2Active ? 'active' : '';
+    const gClass = d.gActive ? 'active' : '';
+    const sClass = d.sActive ? 'active' : '';
+    const anyActive = d.pActive || d.p2Active || d.gActive || d.sActive;
+    const pLock = anyActive && !d.pActive ? 'opacity:0.4;cursor:not-allowed;' : '';
+    const p2Lock = anyActive && !d.p2Active ? 'opacity:0.4;cursor:not-allowed;' : '';
+    const gLock = anyActive && !d.gActive ? 'opacity:0.4;cursor:not-allowed;' : '';
+    const sLock = anyActive && !d.sActive ? 'opacity:0.4;cursor:not-allowed;' : '';
+
+    const tags1 = d.drinks1.map((item, idx) =>
+      `<div class="drink-tag"><span class="drink-tag-name">${item.drink}</span><div class="drink-tag-ice ${item.ice ? 'active' : ''}" onclick="event.stopPropagation();toggleSeatIce('${s}',1,${idx})">❄️</div></div>`
+    ).join('');
+
+    const tags2 = d.drinks2.map((item, idx) =>
+      `<div class="drink-tag"><span class="drink-tag-name">${item.drink}</span><div class="drink-tag-ice ${item.ice ? 'active' : ''}" onclick="event.stopPropagation();toggleSeatIce('${s}',2,${idx})">❄️</div></div>`
+    ).join('');
+
+    card.innerHTML = `
+      <div class="seat-top">
+        <span class="seat-label">${s}</span>
+        <div class="circle-group">
+          <div class="status-circle p-circle ${pClass}" style="${pLock}" onclick="togglePGS('${s}','p')">P</div>
+          <div class="status-circle p2-circle ${p2Class}" style="${p2Lock}" onclick="togglePGS('${s}','p2')">P</div>
+          <div class="status-circle g-circle ${gClass}" style="${gLock}" onclick="togglePGS('${s}','g')">G</div>
+          <div class="status-circle s-circle ${sClass}" style="${sLock}" onclick="togglePGS('${s}','s')">S</div>
+        </div>
+      </div>
+      <input class="seat-name-input" placeholder="Nombre pasajero" value="${d.name}" onchange="setName('${s}', this.value)" ${d.blocked ? 'disabled' : ''}>
+      <div class="meal-options">
+        <div class="meal-btn c1 ${mealClass1} ${isDisabled1 ? 'disabled' : ''}" onclick="selectMeal('${s}', 1)">${mealNames[1]}</div>
+        <div class="meal-btn c2 ${mealClass2} ${isDisabled2 ? 'disabled' : ''}" onclick="selectMeal('${s}', 2)">${mealNames[2]}</div>
+        <div class="meal-btn c3 ${mealClass3} ${isDisabled3 ? 'disabled' : ''}" onclick="selectMeal('${s}', 3)">${mealNames[3]}</div>
+      </div>
+      <div class="drink-rows-container">
+        <div class="drink-group">
+          <div style="display: flex; gap: 4px; margin-bottom: 4px;">
+            <div class="drink-multi-btn" style="flex: 1; padding: 4px 2px; font-size: 0.65em;" onclick="${d.blocked ? '' : `openDrinkModal('${s}', 1, 'sa')`}">Bebida 1 S/A</div>
+            <div class="drink-multi-btn" style="flex: 1; padding: 4px 2px; font-size: 0.65em;" onclick="${d.blocked ? '' : `openDrinkModal('${s}', 1, 'ca')`}">Bebida 1 C/A</div>
+          </div>
+          <div class="drink-tags">${tags1}</div>
+        </div>
+        <div class="drink-group">
+          <div style="display: flex; gap: 4px; margin-bottom: 4px;">
+            <div class="drink-multi-btn" style="flex: 1; padding: 4px 2px; font-size: 0.65em;" onclick="${d.blocked ? '' : `openDrinkModal('${s}', 2, 'sa')`}">Bebida 2 S/A</div>
+            <div class="drink-multi-btn" style="flex: 1; padding: 4px 2px; font-size: 0.65em;" onclick="${d.blocked ? '' : `openDrinkModal('${s}', 2, 'ca')`}">Bebida 2 C/A</div>
+          </div>
+          <div class="drink-tags">${tags2}</div>
+        </div>
+      </div>
+      <div class="extras-row" style="align-items: center; justify-content: space-between;">
+        <div style="display: flex; gap: 3px; flex: 1;">
+          <div class="extra-btn choco ${d.extras.abrigo ? 'selected choco' : ''}" onclick="toggleExtra('${s}','abrigo')" style="padding: 4px 1px; font-size: 0.58em;">🧥 A</div>
+          <div class="extra-btn choco ${d.extras.semillas ? 'selected choco' : ''}" onclick="toggleExtra('${s}','semillas')" style="padding: 4px 1px; font-size: 0.58em;">🥜 S</div>
+          <div class="extra-btn green ${d.extras.adItaliano ? 'selected green' : ''}" onclick="toggleExtra('${s}','adItaliano')" style="padding: 4px 1px; font-size: 0.58em;">🇮🇹</div>
+          <div class="extra-btn green ${d.extras.adCesar ? 'selected green' : ''}" onclick="toggleExtra('${s}','adCesar')" style="padding: 4px 1px; font-size: 0.58em;">🥗 C</div>
+        </div>
+        <div style="display: flex; gap: 8px; margin-left: 8px;">
+          <div class="extra-circle-btn ${d.circuloA ? 'selected' : ''}" onclick="toggleCirculo('${s}', 'A')">A</div>
+          <div class="extra-circle-btn ${d.circuloC ? 'selected' : ''}" onclick="toggleCirculo('${s}', 'C')">C</div>
+          <div class="extra-circle-btn ${d.circuloS ? 'selected' : ''}" onclick="toggleCirculo('${s}', 'S')">S</div>
+        </div>
+      </div>
+      <textarea class="seat-comments" placeholder="Comentarios del asiento..." onchange="setSeatComment('${s}', this.value)" ${d.blocked ? 'disabled' : ''}>${d.seatComment}</textarea>
+      <div class="seat-bottom-row">
+        <button class="block-toggle" onclick="toggleBlock('${s}')">${d.blocked ? '🔓' : '🔒'}</button>
+        <button class="wakeup-btn ${d.wakeup ? 'active' : ''}" onclick="toggleWakeup('${s}')">⏰ Wake UP ${d.wakeup ? '✓' : ''}</button>
+      </div>
+    `;
+
+    if (!d.blocked) {
+      card.setAttribute('draggable', 'true');
+      
+      card.addEventListener('dragstart', (e) => {
+        e.dataTransfer.setData('text/plain', s);
+        card.style.opacity = '0.5';
+      });
+      
+      card.addEventListener('dragend', () => {
+        card.style.opacity = '';
+      });
+      
+      card.addEventListener('dragover', (e) => {
+        e.preventDefault();
+      });
+      
+      card.addEventListener('dragenter', (e) => {
+        e.preventDefault();
+        card.classList.add('drag-over');
+      });
+      
+      card.addEventListener('dragleave', () => {
+        card.classList.remove('drag-over');
+      });
+      
+      card.addEventListener('drop', (e) => {
+        e.preventDefault();
+        card.classList.remove('drag-over');
+        const source = e.dataTransfer.getData('text/plain');
+        if (source && source !== s) {
+          swapSeats(source, s);
+        }
+      });
+      
+      const inputs = card.querySelectorAll('input, textarea');
+      inputs.forEach(input => {
+        input.addEventListener('focus', () => card.setAttribute('draggable', 'false'));
+        input.addEventListener('blur', () => card.setAttribute('draggable', 'true'));
+      });
+    }
+
+    grid.appendChild(card);
+  });
+}
+
+function swapSeats(source, target) {
+  if (seatData[source].blocked || seatData[target].blocked) {
+    alert("No se pueden intercambiar asientos si uno de ellos está bloqueado.");
+    return;
+  }
+  const sourceName = seatData[source].name ? `${seatData[source].name} (${source})` : `Asiento ${source}`;
+  const targetName = seatData[target].name ? `${seatData[target].name} (${target})` : `Asiento ${target}`;
+  
+  if (confirm(`¿Está seguro de que desea intercambiar la información del ${sourceName} y el ${targetName}?`)) {
+    const temp = seatData[source];
+    seatData[source] = seatData[target];
+    seatData[target] = temp;
+    
+    recalculateTotals();
+    renderSeats();
+    renderDrinkCounters();
+    updateMealBadges();
+    saveLocalData();
+  }
+}
+
+function toggleSeatIce(s, drinkNum, idx) {
+  if(seatData[s].blocked) return;
+  const field = `drinks${drinkNum}`;
+  const item = seatData[s][field][idx];
+  if(item.ice) { iceTotals[drinkNum][item.drink]--; }
+  else { iceTotals[drinkNum][item.drink]++; }
+  item.ice = !item.ice;
+  renderSeats(); renderDrinkCounters(); saveLocalData();
+}
+
+function togglePGS(s, type) {
+  if(seatData[s].blocked) return;
+  const d = seatData[s];
+  if(d.pActive && type === 'p') d.pActive = false;
+  else if(d.p2Active && type === 'p2') d.p2Active = false;
+  else if(d.gActive && type === 'g') d.gActive = false;
+  else if(d.sActive && type === 's') d.sActive = false;
+  else {
+    d.pActive = false;
+    d.p2Active = false;
+    d.gActive = false;
+    d.sActive = false;
+    if(type==='p') d.pActive=true;
+    else if(type==='p2') d.p2Active=true;
+    else if(type==='g') d.gActive=true;
+    else d.sActive=true;
+  }
+  renderSeats(); saveLocalData();
+}
+
+function setName(s, val) { seatData[s].name = val; saveLocalData(); }
+function setSeatComment(s, val) { seatData[s].seatComment = val; saveLocalData(); }
+
+function selectMeal(s, option) {
+  if(seatData[s].blocked) return;
+  const d = seatData[s];
+  if(d.meal === option) { mealCounts[option]--; d.meal = 0; }
+  else {
+    if(mealCounts[option] >= mealLimits[option]) return;
+    if(d.meal > 0) mealCounts[d.meal]--;
+    d.meal = option; mealCounts[option]++;
+  }
+  updateMealBadges(); renderSeats(); renderInventory(); saveLocalData();
+}
+
+function updateMealBadges() {
+  for(let i=1; i<=3; i++) {
+    const badge = document.getElementById(`mealBadge${i}`);
+    badge.textContent = `${mealNames[i]}: ${mealCounts[i]}/${mealLimits[i]}`;
+    if(mealCounts[i] >= mealLimits[i]) badge.classList.add('blocked');
+    else badge.classList.remove('blocked');
+    const dotsContainer = document.getElementById(`mealDots${i}`);
+    dotsContainer.innerHTML = '';
+    if(mealCounts[i] === 0) {
+      const msg = document.createElement('div'); msg.className = 'meal-zero-msg'; msg.textContent = 'Ninguna seleccionada';
+      dotsContainer.appendChild(msg);
+    } else {
+      for(let j=0; j<mealCounts[i]; j++) { const dot = document.createElement('div'); dot.className = `meal-dot active-${i}`; dot.innerText = j + 1; dotsContainer.appendChild(dot); }
+    }
+  }
+}
+function getMealUsed(option) {
+  let used = 0;
+  for (const s in seatData) {
+    if (seatData[s].meal === option) used++;
+  }
+  return used;
+}
+
+function updateLimits() {
+  mealLimits[1] = parseInt(document.getElementById('limit1').value) || 0;
+  mealLimits[2] = parseInt(document.getElementById('limit2').value) || 0;
+  mealLimits[3] = parseInt(document.getElementById('limit3').value) || 0;
+  updateMealBadges(); renderSeats(); renderInventory(); saveLocalData();
+}
+
+function updateMealNames() {
+  mealNames[1] = document.getElementById('mealName1').value || 'Comida 1';
+  mealNames[2] = document.getElementById('mealName2').value || 'Comida 2';
+  mealNames[3] = document.getElementById('mealName3').value || 'Comida 3';
+  updateMealBadges(); renderSeats(); renderInventory(); saveLocalData();
+}
+
+function toggleExtra(s, extra) { if(seatData[s].blocked) return; seatData[s].extras[extra] = !seatData[s].extras[extra]; renderSeats(); saveLocalData(); }
+function toggleCirculo(s, type) { if(seatData[s].blocked) return; seatData[s][`circulo${type}`] = !seatData[s][`circulo${type}`]; renderSeats(); saveLocalData(); }
+function toggleWakeup(s) { if(seatData[s].blocked) return; seatData[s].wakeup = !seatData[s].wakeup; renderSeats(); saveLocalData(); }
+
+function toggleBlock(s) {
+  const d = seatData[s];
+  d.blocked = !d.blocked;
+  if(d.blocked) {
+    d.drinks1.forEach(item => {
+      drinkTotals[1][item.drink]--;
+      if(item.ice) iceTotals[1][item.drink]--;
+    });
+    d.drinks2.forEach(item => {
+      drinkTotals[2][item.drink]--;
+      if(item.ice) iceTotals[2][item.drink]--;
+    });
+  } else {
+    d.drinks1.forEach(item => {
+      drinkTotals[1][item.drink]++;
+      if(item.ice) iceTotals[1][item.drink]++;
+    });
+    d.drinks2.forEach(item => {
+      drinkTotals[2][item.drink]++;
+      if(item.ice) iceTotals[2][item.drink]++;
+    });
+  }
+  renderDrinkCounters();
+  renderSeats();
+  saveLocalData();
+}
+
+function openDrinkModal(s, drinkNum, type) {
+  if(seatData[s].blocked) return;
+  currentModal = {s, drinkNum, type};
+  const drinkName = drinkNum === 1 ? 'Primera' : 'Segunda';
+  const typeName = type === 'sa' ? 'S/A' : 'C/A';
+  document.getElementById('modalTitle').textContent = `🥤 Bebida ${drinkNum} (${drinkName} ${typeName}) - Asiento ${s}`;
+  
+  const list = document.getElementById('modalDrinkList');
+  list.innerHTML = '';
+  const d = seatData[s];
+  const field = `drinks${drinkNum}`;
+  
+  const iceMap = {};
+  d[field].forEach(item => { iceMap[item.drink] = item.ice; });
+  
+  const listToUse = type === 'sa' ? drinksSA : drinksCA;
+  
+  listToUse.forEach(drink => {
+    const row = document.createElement('div');
+    row.className = 'sheet-item';
+    const isSelected = d[field].some(item => item.drink === drink);
+    if(isSelected) row.classList.add('selected');
+    
+    const nameSpan = document.createElement('span');
+    nameSpan.textContent = drink;
+    nameSpan.style.flex = '1'; nameSpan.style.cursor = 'pointer';
+    nameSpan.onclick = () => toggleDrinkSelect(s, drinkNum, drink);
+    
+    const iceBtn = document.createElement('button');
+    iceBtn.className = `ice-toggle-btn ${isSelected && iceMap[drink] ? 'active' : ''}`;
+    iceBtn.textContent = '❄️';
+    iceBtn.style.opacity = isSelected ? '1' : '0.15';
+    iceBtn.style.cursor = isSelected ? 'pointer' : 'not-allowed';
+    iceBtn.onclick = (e) => { e.stopPropagation(); if(isSelected) toggleDrinkIce(s, drinkNum, drink); };
+    
+    row.appendChild(nameSpan); row.appendChild(iceBtn);
+    list.appendChild(row);
+  });
+  
+  document.getElementById('drinkModal').classList.add('show');
+}
+
+function toggleDrinkSelect(s, drinkNum, drink) {
+  const field = `drinks${drinkNum}`;
+  const arr = seatData[s][field];
+  const idx = arr.findIndex(item => item.drink === drink);
+  if(idx >= 0) {
+    if(arr[idx].ice) iceTotals[drinkNum][drink]--;
+    drinkTotals[drinkNum][drink]--;
+    arr.splice(idx, 1);
+  } else {
+    arr.push({drink, ice: false});
+    drinkTotals[drinkNum][drink]++;
+  }
+  openDrinkModal(s, drinkNum, currentModal.type);
+  renderDrinkCounters();
+  renderSeats();
+  saveLocalData();
+}
+
+function toggleDrinkIce(s, drinkNum, drink) {
+  const field = `drinks${drinkNum}`;
+  const item = seatData[s][field].find(i => i.drink === drink);
+  if(!item) return;
+  if(item.ice) { iceTotals[drinkNum][drink]--; item.ice = false; }
+  else { iceTotals[drinkNum][drink]++; item.ice = true; }
+  openDrinkModal(s, drinkNum, currentModal.type);
+  renderDrinkCounters();
+  renderSeats();
+  saveLocalData();
+}
+
+function closeModal() { document.getElementById('drinkModal').classList.remove('show'); currentModal = null; }
+function closeModalOutside(e) { if(e.target === document.getElementById('drinkModal')) closeModal(); }
+
+function renderDrinkCounters() {
+  for(let d=1; d<=2; d++) {
+    const container = document.getElementById(`drinkCount${d}`);
+    container.innerHTML = '';
+    drinksBase.forEach(dr => {
+      if(drinkTotals[d][dr] > 0) {
+        const div = document.createElement('div');
+        div.className = 'drink-item';
+        let iceHtml = '';
+        const iceCount = iceTotals[d][dr] || 0;
+        if(iceCount > 0) iceHtml = `<span class="ice-indicator">${'❄️'.repeat(iceCount)}</span>`;
+        div.innerHTML = `<span class="drink-name">${dr}</span>${iceHtml}<span class="count">${drinkTotals[d][dr]}</span>`;
+        container.appendChild(div);
+      }
+    });
+  }
+  renderInventory();
+}
+
+function getInventoryData() {
+  const t = (dr) => ((drinkTotals[1][dr] || 0) + (drinkTotals[2][dr] || 0));
+  const totalMealLimits = (mealLimits[1]||0)+(mealLimits[2]||0)+(mealLimits[3]||0);
+  const totalMealUsed = (mealCounts[1]||0)+(mealCounts[2]||0)+(mealCounts[3]||0);
+  return [
+    { name: mealNames[1] || 'Comida 1', yield: mealLimits[1] || 0, category: 'Licores', icon: '🍽️', glasses: getMealUsed(1) || 0, unit: 'comida' },
+    { name: mealNames[2] || 'Comida 2', yield: mealLimits[2] || 0, category: 'Licores', icon: '🍽️', glasses: getMealUsed(2) || 0, unit: 'comida' },
+    { name: mealNames[3] || 'Comida 3', yield: mealLimits[3] || 0, category: 'Licores', icon: '🍽️', glasses: getMealUsed(3) || 0, unit: 'comida' },
+    { name: 'Whisky Johnnie Walker 750 ml', yield: 16, category: 'Licores', icon: '🥃', glasses: t('Whisky') + t('Whisky con Cola') + t('Whisky con Sprite') + t('Highball'), unit: 'botella' },
+    { name: 'Vodka Tito 1000 ml', yield: 16, category: 'Licores', icon: '🍸', glasses: t('Vodka') + t('Vodka con Cola') + t('Vodka con Sprite') + t('Bloody Mary') + t('Destornillador'), unit: 'botella' },
+    { name: 'Ron Abuelo 750 ml', yield: 15, category: 'Licores', icon: '🥃', glasses: t('Ron') + t('Ron Cola') + t('Ron con Sprite'), unit: 'botella' },
+    
+    { name: 'Vino Tinto de la Casa 750 ml', yield: 7, category: 'Vinos', icon: '🍷', glasses: t('Vino Tinto Casa') + t('Sangría'), unit: 'botella' },
+    { name: 'Vino Tinto Importado 750 ml', yield: 7, category: 'Vinos', icon: '🍷', glasses: t('Vino Tinto Importado'), unit: 'botella' },
+    { name: 'Vino Blanco de la Casa 750 ml', yield: 7, category: 'Vinos', icon: '🥂', glasses: t('Vino Blanco Casa'), unit: 'botella' },
+    { name: 'Vino Blanco Importado 750 ml', yield: 7, category: 'Vinos', icon: '🥂', glasses: t('Vino Blanco Importado'), unit: 'botella' },
+    { name: 'Vino Espumante / Cava 750 ml', yield: 7, category: 'Vinos', icon: '🍾', glasses: t('Vino Espumante/Cava') + t('Mimosa'), unit: 'botella' },
+    
+    { name: 'Cerveza Corona', yield: 1, category: 'Cervezas', icon: '🍺', glasses: t('Cerveza Corona') + t('Michelada'), unit: 'lata' },
+    { name: 'Cerveza Balboa', yield: 1, category: 'Cervezas', icon: '🍺', glasses: t('Cerveza Balboa'), unit: 'lata' },
+    
+    { name: 'Ginger Ale', yield: 2, category: 'Refrescos y Aguas', icon: '🥤', glasses: t('Ginger Ale'), unit: 'lata' },
+    { name: 'Sprite', yield: 2, category: 'Refrescos y Aguas', icon: '🥤', glasses: t('Sprite') + t('Whisky con Sprite') + t('Vodka con Sprite') + t('Ron con Sprite'), unit: 'lata' },
+    { name: 'Agua con Gas Perrier', yield: 1, category: 'Refrescos y Aguas', icon: '🫧', glasses: t('Agua con Gas'), unit: 'lata' },
+    { name: 'Coca Cola Cero', yield: 6, category: 'Refrescos y Aguas', icon: '🥤', glasses: t('Coca Cola Cero'), unit: 'botella' },
+    { name: 'Coca Cola Regular', yield: 6, category: 'Refrescos y Aguas', icon: '🥤', glasses: t('Coca Cola Regular') + t('Whisky con Cola') + t('Vodka con Cola') + t('Ron Cola'), unit: 'botella' },
+    { name: 'Agua Regular 1500 ml', yield: 8, category: 'Refrescos y Aguas', icon: '💧', glasses: t('Agua'), unit: 'botella' },
+    
+    { name: 'Jugo de Naranja 946 ml', yield: 6, category: 'Jugos', icon: '🧃', glasses: t('Jugo de Naranja') + t('Mimosa') + t('Destornillador'), unit: 'caja' },
+    { name: 'Jugo de Guayaba Piña 946 ml', yield: 6, category: 'Jugos', icon: '🧃', glasses: t('Jugo de Guayaba'), unit: 'caja' },
+    { name: 'Jugo de Tomate', yield: 1, category: 'Jugos', icon: '🥤', glasses: t('Jugo de Tomate') + t('Bloody Mary'), unit: 'lata' }
+  ];
+}
+
+function formatUnitValue(raw, unit) {
+  if (raw <= 0) return `0 ${unit}s`;
+  
+  const integerPart = Math.floor(raw);
+  const decimalPart = raw - integerPart;
+  
+  let fractionStr = '';
+  if (decimalPart >= 0.875) {
+    const total = integerPart + 1;
+    return `${total} ${total === 1 ? unit : unit + 's'}`;
+  } else if (decimalPart >= 0.625) {
+    fractionStr = '3/4';
+  } else if (decimalPart >= 0.375) {
+    fractionStr = '1/2';
+  } else if (decimalPart >= 0.125) {
+    fractionStr = '1/4';
+  }
+  
+  if (integerPart === 0) {
+    return fractionStr ? `${fractionStr} ${unit}` : `0 ${unit}s`;
+  } else {
+    return fractionStr ? `${integerPart} ${fractionStr} ${unit}s` : `${integerPart} ${integerPart === 1 ? unit : unit + 's'}`;
+  }
+}
+
+function formatBottles(glasses, yieldVal, unit) {
+  if (glasses <= 0) return `0 ${unit}s`;
+  const raw = glasses / yieldVal;
+  if (yieldVal === 1) {
+    return `${glasses} ${glasses === 1 ? unit : unit + 's'}`;
+  }
+  return formatUnitValue(raw, unit);
+}
+
+function renderInventory() {
+  const container = document.getElementById('inventoryGrid');
+  if (!container) return;
+  container.innerHTML = '';
+  
+  const data = getInventoryData();
+  
+  // Quadrants definition (exactly 4 quadrants)
+  const quadrant1 = { title: 'Comidas y Licores', items: data.filter(i => i.category === 'Licores') };
+  const quadrant2 = { title: 'Vinos', items: data.filter(i => i.category === 'Vinos') };
+  const quadrant3 = { title: 'Refrescos y Aguas', items: data.filter(i => i.category === 'Refrescos y Aguas') };
+  const quadrant4 = { 
+    title: 'Cervezas y Jugos', 
+    beers: data.filter(i => i.category === 'Cervezas'), 
+    juices: data.filter(i => i.category === 'Jugos') 
+  };
+
+  function createRowHtml(item) {
+    const bottlesStr = formatBottles(item.glasses, item.yield, item.unit);
+    const remainder = item.glasses % item.yield;
+    const progressPercent = item.glasses > 0 ? (remainder === 0 ? 100 : (remainder / item.yield) * 100) : 0;
+    
+    return `
+      <div class="inventory-item-row">
+        <div class="inventory-item-header">
+          <span class="inventory-item-name">${item.icon} ${item.name}</span>
+          <span class="inventory-item-yield">Rinde ${item.yield} ${item.unit === 'comida' ? 'comida' : (item.yield === 1 ? (item.category === 'Vinos' ? 'copa' : 'vaso') : (item.category === 'Vinos' ? 'copas' : 'vasos'))}</span>
+        </div>
+        <div class="inventory-item-stats">
+          <span class="inventory-glasses-count">${item.glasses} ${item.unit === 'comida' ? 'comida' : (item.glasses === 1 ? (item.category === 'Vinos' ? 'copa servida' : 'vaso servido') : (item.category === 'Vinos' ? 'copas servidas' : 'vasos servidos'))}</span>
+          <span class="inventory-bottles-value">${bottlesStr} <span style="font-size:0.8em; font-weight:normal; color:#aebcd4;">(${item.glasses} de ${item.yield} ${item.unit === 'comida' ? 'comida' : (item.yield === 1 ? (item.category === 'Vinos' ? 'copa' : 'vaso') : (item.category === 'Vinos' ? 'copas' : 'vasos'))})</span></span>
+        </div>
+        <div class="inventory-progress-bar-container">
+          <div class="inventory-progress-bar" style="width: ${progressPercent}%;"></div>
+        </div>
+      </div>
+    `;
+  }
+
+  function createBox(title, htmlContent) {
+    const catBox = document.createElement('div');
+    catBox.className = 'inventory-category-box';
+    
+    const catTitle = document.createElement('div');
+    catTitle.className = 'inventory-category-title';
+    catTitle.innerHTML = `<span>${catTitleText(title)}</span>`;
+    catBox.appendChild(catTitle);
+    
+    const contentDiv = document.createElement('div');
+    contentDiv.innerHTML = htmlContent;
+    catBox.appendChild(contentDiv);
+    
+    return catBox;
+  }
+
+  function catTitleText(title) {
+    if (title === 'Comidas y Licores') return '🍽️ Comidas y Licores';
+    if (title === 'Licores') return '🥃 Licores';
+    if (title === 'Vinos') return '🍷 Vinos';
+    if (title === 'Refrescos y Aguas') return '🥤 Refrescos y Aguas';
+    if (title === 'Cervezas y Jugos') return '🍺 Cervezas y Jugos';
+    return title;
+  }
+
+  // Render Quadrants
+  let html1 = quadrant1.items.map(createRowHtml).join('');
+  container.appendChild(createBox(quadrant1.title, html1));
+
+  let html2 = quadrant2.items.map(createRowHtml).join('');
+  container.appendChild(createBox(quadrant2.title, html2));
+
+  let html3 = quadrant3.items.map(createRowHtml).join('');
+  container.appendChild(createBox(quadrant3.title, html3));
+
+  let htmlBeers = quadrant4.beers.map(createRowHtml).join('');
+  let divider = `<div style="border-top: 1px dashed rgba(74, 138, 202, 0.3); margin: 10px 0;"></div>`;
+  let htmlJuices = quadrant4.juices.map(createRowHtml).join('');
+  container.appendChild(createBox(quadrant4.title, htmlBeers + divider + htmlJuices));
+
+  // Compute totals by type (individual items list)
+  let botellasList = [];
+  let latasList = [];
+  let cajasList = [];
+  let comidasList = [];
+
+  data.forEach(item => {
+    if (item.glasses <= 0) return;
+    
+    const raw = item.glasses / item.yield;
+    const isLiquorOrWine = item.category === 'Licores' || item.category === 'Vinos';
+    let valStr = '';
+    if (item.unit === 'comida') {
+        const count = item.glasses;
+        valStr = `${count} ${count === 1 ? 'comida' : 'comidas'}`;
+    } else if (isLiquorOrWine) {
+        valStr = formatBottles(item.glasses, item.yield, item.unit);
+    } else {
+        const rounded = Math.ceil(raw);
+        valStr = `${rounded} ${rounded === 1 ? item.unit : item.unit + 's'}`;
+    }
+    
+    const rowHtml = `
+      <div class="inventory-total-item-row">
+        <span class="inventory-total-item-name">${item.icon} ${item.name}</span>
+        <span class="inventory-total-item-val">${valStr}</span>
+      </div>
+    `;
+    
+    if (item.unit === 'botella') {
+      botellasList.push(rowHtml);
+    } else if (item.unit === 'lata') {
+      latasList.push(rowHtml);
+    } else if (item.unit === 'caja') {
+      cajasList.push(rowHtml);
+    } else if (item.unit === 'comida') {
+        comidasList.push(rowHtml);
+    }
+  });
+
+  // Render totals
+  const totalsContainer = document.getElementById('inventoryTotals');
+  if (totalsContainer) {
+    if (botellasList.length === 0 && latasList.length === 0 && cajasList.length === 0 && comidasList.length === 0) {
+      totalsContainer.innerHTML = `
+        <div style="text-align: center; width: 100%; color: #5a7a9a; font-size: 0.9em; padding: 10px;">
+          No hay consumos registrados de botellas, latas, cajas y comidas.
+        </div>
+      `;
+    } else {
+      let html = '';
+      
+        // Comidas Consumidas
+        if (comidasList.length > 0) {
+            html += `
+                <div class="inventory-total-group">
+                    <div class="inventory-total-group-title">🍽️ Comidas Consumidas</div>
+                    <div>${comidasList.join('')}</div>
+                </div>
+            `;
+        }
+
+        // Botellas Consumidas
+        if (botellasList.length > 0) {
+            html += `
+                <div class="inventory-total-group">
+                    <div class="inventory-total-group-title">🍼 Botellas Consumidas</div>
+                    <div>${botellasList.join('')}</div>
+                </div>
+            `;
+        }
+
+        // Latas Consumidas
+        if (latasList.length > 0) {
+            html += `
+                <div class="inventory-total-group">
+                    <div class="inventory-total-group-title">🍺 Latas Consumidas</div>
+                    <div>${latasList.join('')}</div>
+                </div>
+            `;
+        }
+
+        // Cajas Consumidas
+        if (cajasList.length > 0) {
+            html += `
+                <div class="inventory-total-group">
+                    <div class="inventory-total-group-title">🧃 Cajas Consumidas</div>
+                    <div>${cajasList.join('')}</div>
+                </div>
+            `;
+        }
+      
+      totalsContainer.innerHTML = html;
+    }
+  }
+}
+
+function handleDocx(input) {
+  const file = input.files[0]; if(!file) return;
+  const reader = new FileReader();
+  reader.onload = function(e) {
+    mammoth.extractRawText({arrayBuffer: e.target.result}).then(result => {
+      const lines = result.value.split('\n').map(l => l.trim()).filter(l => l);
+      let loadedCount = 0;
+      lines.forEach(line => {
+        const seatMatch = line.match(/(?:^|\s|Asiento\s*|Seat\s*|#\s*)([1-4]\s*[ABEF])(?:$|\s|\b|[-:])/i);
+        if (seatMatch) {
+          const foundSeat = seatMatch[1].toUpperCase().replace(/\s+/g, '');
+          if (seats.includes(foundSeat)) {
+            let name = line.replace(new RegExp(seatMatch[1], 'i'), '').replace(/^[-:\s]+|[-:\s]+$/g, '').replace(/Asiento|Seat|#/i, '').trim();
+            seatData[foundSeat].name = name || "Ocupado";
+            seatData[foundSeat].pActive = false;
+            seatData[foundSeat].p2Active = false;
+            seatData[foundSeat].gActive = false;
+            seatData[foundSeat].sActive = false;
+            loadedCount++;
+          }
+        }
+      });
+      renderSeats(); saveLocalData(); alert('Nombres cargados: ' + loadedCount + ' pasajeros');
+    }).catch(err => alert('Error DOCX: ' + err.message));
+  }; reader.readAsArrayBuffer(file);
+}
+
+function handleOcrJpg(input) {
+  const file = input.files[0]; 
+  if(!file) return;
+  
+  const loadingMsg = document.createElement('div');
+  loadingMsg.id = 'ocr-loading';
+  loadingMsg.style.position = 'fixed';
+  loadingMsg.style.top = '50%';
+  loadingMsg.style.left = '50%';
+  loadingMsg.style.transform = 'translate(-50%, -50%)';
+  loadingMsg.style.background = 'rgba(0,0,0,0.8)';
+  loadingMsg.style.color = '#fff';
+  loadingMsg.style.padding = '20px';
+  loadingMsg.style.borderRadius = '10px';
+  loadingMsg.style.zIndex = '9999';
+  loadingMsg.style.fontSize = '1.2em';
+  loadingMsg.style.textAlign = 'center';
+  loadingMsg.innerHTML = '⚙️ Analizando imagen (OCR)...<br><span style="font-size:0.8em;opacity:0.8;">Esto puede tardar unos segundos</span>';
+  document.body.appendChild(loadingMsg);
+  const img = new Image();
+  const reader = new FileReader();
+  
+  reader.onload = function(e) {
+    img.onload = function() {
+      const canvas = document.createElement('canvas');
+      const ctx = canvas.getContext('2d');
+      const MAX_DIM = 1200;
+      let width = img.width;
+      let height = img.height;
+      
+      if (width > height) {
+        if (width > MAX_DIM) {
+          height *= MAX_DIM / width;
+          width = MAX_DIM;
+        }
+      } else {
+        if (height > MAX_DIM) {
+          width *= MAX_DIM / height;
+          height = MAX_DIM;
+        }
+      }
+      
+      canvas.width = width;
+      canvas.height = height;
+      ctx.fillStyle = '#ffffff';
+      ctx.fillRect(0, 0, canvas.width, canvas.height);
+      ctx.drawImage(img, 0, 0, width, height);
+      
+      const dataUrl = canvas.toDataURL('image/jpeg', 0.8);
+      
+      Tesseract.recognize(
+        dataUrl,
+        'spa',
+        { logger: m => { if(m.status === 'recognizing text') { console.log(m.progress); } } }
+      ).then(({ data: { text } }) => {
+        const el = document.getElementById('ocr-loading');
+        if(el) document.body.removeChild(el);
+        
+        const lines = text.split('\n').map(l => l.trim()).filter(l => l.length > 2);
+        let loadedCount = 0;
+        
+        lines.forEach(line => {
+          const seatMatch = line.match(/(?:^|\s|Asiento\s*|Seat\s*|#\s*)([1-4]\s*[ABEF])(?:$|\s|\b|[-:])/i);
+          if (seatMatch) {
+            const foundSeat = seatMatch[1].toUpperCase().replace(/\s+/g, '');
+            if (seats.includes(foundSeat)) {
+              let name = line.replace(new RegExp(seatMatch[1], 'i'), '').replace(/^[-:\s]+|[-:\s]+$/g, '').replace(/Asiento|Seat|#/i, '').trim();
+              seatData[foundSeat].name = name || "Ocupado";
+              seatData[foundSeat].pActive = false;
+              seatData[foundSeat].p2Active = false;
+              seatData[foundSeat].gActive = false;
+              seatData[foundSeat].sActive = false;
+              loadedCount++;
+            }
+          }
+        });
+        
+        renderSeats(); saveLocalData();
+        alert('Texto extraído. Nombres cargados: ' + loadedCount + ' pasajeros');
+        input.value = ''; // Reset input
+      }).catch(err => {
+        const el = document.getElementById('ocr-loading');
+        if(el) document.body.removeChild(el);
+        alert('Error al analizar imagen: ' + err.message);
+        input.value = '';
+      });
+    };
+    img.src = e.target.result;
+  };
+  reader.readAsDataURL(file);
+}
+
+async function exportAs(format) {
+  closeLightbox(); closeModal();
+  const element = document.getElementById('app-content');
+  const canvas = await html2canvas(element, { backgroundColor: '#061224', scale: 2, useCORS: true, logging: false });
+  if(format === 'jpg') { const a = document.createElement('a'); a.download = 'pasajeros_' + new Date().toISOString().slice(0,10) + '.jpg'; a.href = canvas.toDataURL('image/jpeg', 0.95); a.click(); }
+  else if(format === 'png') { const a = document.createElement('a'); a.download = 'pasajeros_' + new Date().toISOString().slice(0,10) + '.png'; a.href = canvas.toDataURL('image/png'); a.click(); }
+  else if(format === 'pdf') {
+    const { jsPDF } = window.jspdf; const imgData = canvas.toDataURL('image/jpeg', 0.95);
+    const imgWidth = 210; const pageHeight = 297; const imgHeight = (canvas.height * imgWidth) / canvas.width;
+    const pdf = new jsPDF('p', 'mm', 'a4'); let heightLeft = imgHeight; let position = 0;
+    pdf.addImage(imgData, 'JPEG', 0, position, imgWidth, imgHeight); heightLeft -= pageHeight;
+    while(heightLeft > 0) { position = heightLeft - imgHeight; pdf.addPage(); pdf.addImage(imgData, 'JPEG', 0, position, imgWidth, imgHeight); heightLeft -= pageHeight; }
+    pdf.save('pasajeros_' + new Date().toISOString().slice(0,10) + '.pdf');
+  }
+}
+
+function updateTimer() {
+  const depInput = document.getElementById('flightDepartureTime');
+  const timerDiv = document.getElementById('countdownTimer');
+  if (!depInput || !timerDiv) return;
+  
+  const depVal = depInput.value;
+  if (!depVal) {
+    timerDiv.innerText = '--:--:--';
+    timerDiv.style.color = '#aebcd4';
+    timerDiv.style.borderColor = '#13345c';
+    timerDiv.style.boxShadow = 'inset 0 0 10px rgba(0,0,0,0.5)';
+    return;
+  }
+
+  const now = new Date();
+  const depTimeParts = depVal.split(':');
+  const depDate = new Date();
+  depDate.setHours(parseInt(depTimeParts[0], 10), parseInt(depTimeParts[1], 10), 0, 0);
+
+  // Si la hora de salida es más de 20 horas en el pasado, asumimos que es para mañana
+  if (now.getTime() - depDate.getTime() > 20 * 60 * 60 * 1000) {
+    depDate.setDate(depDate.getDate() + 1);
+  } else if (depDate.getTime() - now.getTime() > 20 * 60 * 60 * 1000) {
+    depDate.setDate(depDate.getDate() - 1);
+  }
+
+  // Sync the delay timer's start time if it was already initialized
+  if (delayTimers && delayTimers.dep && delayTimers.dep.startTime !== null) {
+    delayTimers.dep.startTime = depDate.getTime();
+    saveLocalData();
+  }
+
+  let diffMs = depDate - now;
+
+  // Auto-start departure delay if the countdown timer reaches exactly or passes -15 minutos
+  if (diffMs <= -15 * 60000 && !delayTimers.dep.active && !delayTimers.dep.startTime && delayTimers.dep.lastTrigger === 0) {
+    toggleDelay('dep');
+  }
+
+  let isPast = false;
+  
+  if (diffMs < 0) {
+     isPast = true;
+     diffMs = Math.abs(diffMs);
+  }
+
+  const hours = Math.floor(diffMs / (1000 * 60 * 60));
+  const mins = Math.floor((diffMs % (1000 * 60 * 60)) / (1000 * 60));
+  const secs = Math.floor((diffMs % (1000 * 60)) / 1000);
+
+  const format = (n) => n.toString().padStart(2, '0');
+  const timeStr = `${isPast ? '-' : ''}${format(hours)}:${format(mins)}:${format(secs)}`;
+  
+  timerDiv.innerText = timeStr;
+  
+  const totalMins = hours * 60 + mins;
+
+  if (!isPast) {
+    if (diffMs > 7 * 60 * 1000) window.triggeredT7 = false;
+    if (diffMs > 2 * 60 * 1000) window.triggeredT2 = false;
+    
+    if (diffMs <= 7 * 60 * 1000 && !window.triggeredT7) {
+      window.triggeredT7 = true;
+      if (typeof playBeep === 'function') playBeep();
+      const commentsBox = document.getElementById('commentsArea');
+      if (commentsBox && commentsBox.value.indexOf("2 MINUTOS PARA EL CIERRE DE PUERTA (-5)") === -1) {
+        const separator = commentsBox.value.trim() !== "" ? "\n\n\n" : "";
+        const now = new Date();
+        const timeStr = now.toLocaleTimeString('es-ES', {hour: '2-digit', minute:'2-digit'});
+        commentsBox.value = `[${timeStr}] --- 📢 Aviso - Salida Próxima\n\n2 MINUTOS PARA EL CIERRE DE PUERTA (-5)` + separator + commentsBox.value;
+        saveLocalData();
+      }
+    }
+    
+    if (diffMs <= 2 * 60 * 1000 && !window.triggeredT2) {
+      window.triggeredT2 = true;
+      if (typeof playBeep === 'function') playBeep();
+    }
+  }
+
+  if (isPast || totalMins < 7) {
+    timerDiv.style.color = '#f0a0a0';
+    timerDiv.style.borderColor = '#6a2a2a';
+    timerDiv.style.boxShadow = '0 0 15px rgba(240,160,160,0.4)';
+  } else if (totalMins >= 7 && totalMins < 10) {
+    timerDiv.style.color = '#d4af37';
+    timerDiv.style.borderColor = '#8a7a3a';
+    timerDiv.style.boxShadow = '0 0 15px rgba(240,208,96,0.5)';
+  } else {
+    timerDiv.style.color = '#a0f0a0';
+    timerDiv.style.borderColor = '#3a8a4a';
+    timerDiv.style.boxShadow = '0 0 15px rgba(160,240,160,0.3)';
+  }
+
+  if (typeof updateFlightTimeCountdown === 'function') {
+    updateFlightTimeCountdown();
+  }
+}
+
+function updateFlightTimeCountdown() {
+  const timeInput = document.getElementById('flightTime').value;
+  const display = document.getElementById('flightTimeCountdownDisplay');
+  const depInput = document.getElementById('flightDepartureTime').value;
+  
+  if (!display) return;
+  
+  if (!timeInput || !/^\\d{1,2}:\\d{2}$/.test(timeInput)) {
+    display.innerText = '--:--:--';
+    display.style.color = '#aebcd4';
+    display.style.borderColor = '#13345c';
+    return;
+  }
+  
+  const [ftH, ftM] = timeInput.split(':').map(Number);
+  const flightDurationMs = (ftH * 3600 + ftM * 60) * 1000;
+  
+  if (!depInput) {
+    display.innerText = `${ftH.toString().padStart(2,'0')}:${ftM.toString().padStart(2,'0')}:00`;
+    display.style.color = '#a0f0a0';
+    display.style.borderColor = '#3a8a4a';
+    return;
+  }
+  
+  const [depH, depM] = depInput.split(':').map(Number);
+  const depDate = new Date();
+  depDate.setHours(depH, depM, 0, 0);
+  const now = new Date();
+  
+  if (now.getTime() - depDate.getTime() > 20 * 60 * 60 * 1000) {
+    depDate.setDate(depDate.getDate() + 1);
+  } else if (depDate.getTime() - now.getTime() > 20 * 60 * 60 * 1000) {
+    depDate.setDate(depDate.getDate() - 1);
+  }
+  
+  const targetArrival = depDate.getTime() + flightDurationMs;
+  let remaining = targetArrival - now.getTime();
+  
+  if (now.getTime() < depDate.getTime()) {
+    remaining = flightDurationMs;
+  }
+  
+  let isNegative = remaining < 0;
+  remaining = Math.abs(remaining);
+  
+  const totalSecs = Math.floor(remaining / 1000);
+  const h = Math.floor(totalSecs / 3600);
+  const m = Math.floor((totalSecs % 3600) / 60);
+  const s = totalSecs % 60;
+  
+  display.innerText = `${isNegative ? '-' : ''}${h.toString().padStart(2,'0')}:${m.toString().padStart(2,'0')}:${s.toString().padStart(2,'0')}`;
+  
+  if (isNegative) {
+    display.style.color = '#f0a0a0';
+    display.style.borderColor = '#6a2a2a';
+  } else if (totalSecs < 1800) {
+    display.style.color = '#d4af37';
+    display.style.borderColor = '#8a7a3a';
+  } else {
+    display.style.color = '#a0f0a0';
+    display.style.borderColor = '#3a8a4a';
+  }
+}
+
+setInterval(updateTimer, 1000);
+
+window.addEventListener('DOMContentLoaded', () => {
+  init();
+  updateTimer();
+});
+
+// Registra el Service Worker de la PWA para soporte offline
+if ('serviceWorker' in navigator) {
+  window.addEventListener('load', () => {
+    navigator.serviceWorker.register('./sw.js').then(reg => {
+      console.log('Service Worker registrado con éxito:', reg.scope);
+    }).catch(err => {
+      console.log('Error al registrar el Service Worker:', err);
+    });
+  });
+}
+
+function sendTimesToWhatsApp() {
+  const timeFields = {
+    'Avión en Puerta': document.getElementById('planeAtGate')?.value,
+    'Ingreso de Tripulación': document.getElementById('crewEntry')?.value,
+    'Aut. Embarque': document.getElementById('authBoarding')?.value,
+    'Limpieza Entrada': document.getElementById('cleanIn')?.value,
+    'Limpieza Salida': document.getElementById('cleanOut')?.value,
+    'Abastecimiento Entrada': document.getElementById('supplyIn')?.value,
+    'Abastecimiento Salida': document.getElementById('supplyOut')?.value,
+    'COPS Entrada': document.getElementById('copsIn')?.value,
+    'COPS Salida': document.getElementById('copsOut')?.value,
+    '1er Pasajero': document.getElementById('firstPax')?.value,
+    'Último Pasajero': document.getElementById('lastPax')?.value,
+    'Cierre de Puerta': document.getElementById('doorClose')?.value
+  };
+
+  let message = "*Registro de Tiempos*\n\n";
+  for (const [label, time] of Object.entries(timeFields)) {
+    if (time) {
+      message += `${label}: ${time}\n`;
+    } else {
+      message += `${label}: --:--\n`;
+    }
+  }
+
+  const encodedMessage = encodeURIComponent(message);
+  window.open(`https://wa.me/?text=${encodedMessage}`, '_blank');
+}
+
+function sendTimesToEmail() {
+  const timeFields = {
+    'Avión en Puerta': document.getElementById('planeAtGate')?.value,
+    'Ingreso de Tripulación': document.getElementById('crewEntry')?.value,
+    'Aut. Embarque': document.getElementById('authBoarding')?.value,
+    'Limpieza Entrada': document.getElementById('cleanIn')?.value,
+    'Limpieza Salida': document.getElementById('cleanOut')?.value,
+    'Abastecimiento Entrada': document.getElementById('supplyIn')?.value,
+    'Abastecimiento Salida': document.getElementById('supplyOut')?.value,
+    'COPS Entrada': document.getElementById('copsIn')?.value,
+    'COPS Salida': document.getElementById('copsOut')?.value,
+    '1er Pasajero': document.getElementById('firstPax')?.value,
+    'Último Pasajero': document.getElementById('lastPax')?.value,
+    'Cierre de Puerta': document.getElementById('doorClose')?.value
+  };
+
+  let message = "Registro de Tiempos\n\n";
+  for (const [label, time] of Object.entries(timeFields)) {
+    if (time) {
+      message += `${label}: ${time}\n`;
+    } else {
+      message += `${label}: --:--\n`;
+    }
+  }
+
+  const encodedMessage = encodeURIComponent(message);
+  window.open(`mailto:?subject=Registro de Tiempos&body=${encodedMessage}`, '_self');
+}
+
+function sendAnnouncementsToWhatsApp() {
+  const announcements = document.getElementById('commentsArea')?.value || "";
+  let message = "*Anuncios y Observaciones*\n\n" + announcements;
+  const encodedMessage = encodeURIComponent(message);
+  window.open(`https://wa.me/?text=${encodedMessage}`, '_blank');
+}
+
+function sendAnnouncementsToEmail() {
+  const announcements = document.getElementById('commentsArea')?.value || "";
+  let message = "Anuncios y Observaciones\n\n" + announcements;
+  const encodedMessage = encodeURIComponent(message);
+  window.open(`mailto:?subject=Anuncios y Observaciones&body=${encodedMessage}`, '_self');
+}
+</script>
+</body>
+</html>

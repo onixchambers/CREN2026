@@ -7,6 +7,7 @@ import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth";
 import { uploadFileToGoogleDrive } from "@/lib/googleDrive";
 import { generateClinicalNotePdfBase64 } from "@/lib/pdfGenerator";
+import { generateUniqueDisplayId } from "@/lib/displayId";
 
 async function verifyTherapistPatientPermission() {
   const session = await getServerSession(authOptions);
@@ -42,8 +43,11 @@ export async function createPatient(data: any) {
       return { success: true, data: existingRecent, isDuplicatePrevented: true };
     }
 
+    const displayId = await generateUniqueDisplayId(prisma);
+
     const patient = await prisma.patient.create({
       data: {
+        displayId,
         name: data.nombre,
         fechaNacimiento: data.fechaNacimiento || null,
         sexo: data.sexo || null,
