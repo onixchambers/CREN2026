@@ -216,7 +216,10 @@ export async function getAsistenciasDB(_ts?: string) {
         // Sumar pago y restar costo de la sesión al saldo acumulado progresivo
         runningBalance = runningBalance + montoP - costoS;
 
-        let metodoPagoStr = (extra.metodoPago && extra.metodoPago !== "SÍ" && extra.metodoPago !== "No") ? extra.metodoPago : (extra.metodoPago2 ? `Mixto (${extra.metodoPago || 'P1'}: $${extra.montoPago || 0}, ${extra.metodoPago2}: $${extra.montoPago2 || 0})` : (extra.metodoPago1 || "Efectivo"));
+        let metodoPagoStr = extra.metodoPago || extra.metodoPagoFinal || extra.metodoPago1 || "Efectivo";
+        if (extra.metodoPago2) {
+          metodoPagoStr = `Mixto (${extra.metodoPago || extra.metodoPago1 || 'P1'}: $${extra.montoPago || 0}, ${extra.metodoPago2}: $${extra.montoPago2 || 0})`;
+        }
 
         asistencias.push({
           id: s.id,

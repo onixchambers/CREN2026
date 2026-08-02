@@ -1421,7 +1421,7 @@ export default function AsistenciaPage() {
                   </div>
                 </div>
                 <div className="text-right text-xs">
-                  <p className="font-black text-amber-300 text-sm tracking-wider uppercase">PREFACTURA</p>
+                  <p className="font-black text-amber-300 text-sm tracking-wider uppercase">RECIBO</p>
                   <p className="text-[10px]">Fecha Emisión: {new Date().toLocaleDateString("es-MX")}</p>
                 </div>
               </div>
@@ -1435,7 +1435,7 @@ export default function AsistenciaPage() {
                     <p className="font-bold text-slate-900 text-sm">Centro de Rehabilitación Especializada y de Neurodesarrollo (CREN)</p>
                     <p className="text-slate-700 font-medium leading-snug">Petén 284, PB, Colonia Narvarte, C.P. 03023, Benito Juárez, Ciudad de México</p>
                     <p className="text-slate-500 text-[9.5px] italic">Responsable del tratamiento de sus datos personales.</p>
-                    <p className="text-slate-800 font-semibold pt-0.5">Contacto de privacidad: <span className="text-[#1c4d6f]">centrocren@gmail.com</span> | <span className="text-slate-900">Tel.: 55 16 87 1232</span></p>
+                    <p className="text-slate-800 font-semibold pt-0.5">Correo: <span className="text-[#1c4d6f]">centrocren@gmail.com</span> | <span className="text-slate-900">Tel.: 55 16 87 1232</span></p>
                   </div>
                   <div className="space-y-1 border-t md:border-t-0 md:border-l border-slate-200 pt-3 md:pt-0 md:pl-4">
                     <h5 className="font-extrabold text-[#1c4d6f] uppercase text-[10px] tracking-wider">DATOS DEL PACIENTE</h5>
@@ -1449,7 +1449,7 @@ export default function AsistenciaPage() {
                 {/* DETALLE DE LA SESIÓN / PREFACTURA (SIN ESTADO) */}
                 <div>
                   <h5 className="font-extrabold text-[#1c4d6f] uppercase text-[10px] tracking-wider mb-2 border-b border-slate-200 pb-1">
-                    DESGLOSE DE SERVICIO Y CONCEPTOS DE PREFACTURA
+                    DESGLOSE DE SERVICIO Y CONCEPTOS RECIBO
                   </h5>
                   <table className="w-full text-xs text-left border border-slate-200 rounded-xl overflow-hidden">
                     <thead className="bg-slate-100/80 font-extrabold text-slate-600 uppercase text-[10px]">
