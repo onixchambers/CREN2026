@@ -113,6 +113,7 @@ export default function AsistenciaPage() {
   };
   const [pacientes, setPacientes] = useState<Paciente[]>([]);
   const [asistencias, setAsistencias] = useState<Asistencia[]>([]);
+  const [agendaCitas, setAgendaCitas] = useState<any[]>([]);
   
   // Filtros de tabla
   const hoy = new Date().toLocaleDateString("en-CA", { timeZone: "America/Mexico_City" });
@@ -197,6 +198,7 @@ export default function AsistenciaPage() {
           horaRegistro: c.horaRegistro || "-",
           paqueteActual: c.paqueteActual || 1,
           pago: c.pago || "-",
+          metodoPago: c.metodoPago || "",
           fact: isFact ? "Sí" : "No",
           subtotal: `$${subVal.toFixed(2)}`,
           iva: `$${ivaVal.toFixed(2)}`,
@@ -257,6 +259,12 @@ export default function AsistenciaPage() {
         }
       }
       
+      // Cargar agenda para frecuencia por default
+      const agendaRes = await getAgenda();
+      if (agendaRes.success && agendaRes.data) {
+        setAgendaCitas(agendaRes.data);
+      }
+
       // Cargar asistencias reales de la BD
       await recargarAsistencias();
     }
@@ -305,7 +313,11 @@ export default function AsistenciaPage() {
         pacienteSexo: normalizeSexo(p.sexo),
         pacienteEdad: p.edad,
         saldoDisponible: p.saldoCalculado || "0.00",
-        numeroSesiones: displaySesiones
+        numeroSesiones: displaySesiones,
+        frecuencia: agendaCitas.find((c: any) => c.paciente === p.paciente) ? (() => {
+          const f = (agendaCitas.find((c: any) => c.paciente === p.paciente).frecuencia || "").toLowerCase();
+          return f === "diario" || f === "diaria" ? "Diaria" : f === "semanal" ? "Semanal" : f === "quincenal" ? "Quincenal" : f === "mensual" ? "Mensual" : formData.frecuencia;
+        })() : formData.frecuencia
       });
     } else {
       setFormData({
@@ -344,9 +356,9 @@ export default function AsistenciaPage() {
   const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
     const { name, value, type } = e.target;
     if (type === "checkbox") {
-      setFormData({ ...formData, [name]: (e.target as HTMLInputElement).checked });
+      setFormData(prev => ({ ...prev, [name]: (e.target as HTMLInputElement).checked }));
     } else {
-      setFormData({ ...formData, [name]: value });
+      setFormData(prev => ({ ...prev, [name]: value }));
     }
   };
 
@@ -459,6 +471,17 @@ export default function AsistenciaPage() {
       return;
     }
     setEditingAsistencia(a);
+    // Extraer el método de pago base (sin montos) de valores compuestos como "Tarjeta $500"
+    let baseMetodo = a.metodoPago || "Efectivo";
+    let baseMonto = "";
+    const validMethods = ["Efectivo", "Transferencia", "Tarjeta", "Mixto", "Por definir", "Beca"];
+    const foundMethod = validMethods.find(m => baseMetodo.startsWith(m));
+    if (foundMethod) {
+      baseMetodo = foundMethod;
+      // Extraer monto si existe (e.g. "Tarjeta $500" → "500")
+      const montoMatch = (a.metodoPago || "").match(/\$([\d.]+)/);
+      if (montoMatch) baseMonto = montoMatch[1];
+    }
     setEditForm({
       fecha: a.fecha,
       area: a.area,
@@ -466,7 +489,8 @@ export default function AsistenciaPage() {
       estado: a.estado,
       sesiones: a.sesiones,
       pago: a.pago,
-        metodoPago: a.metodoPago,
+      metodoPago: baseMetodo,
+      montoPago: baseMonto || (a.total || a.subtotal || "").replace(/[^0-9.]/g, ""),
       fact: a.fact === "Sí",
       subtotal: (a.total || a.subtotal).replace('$', ''),
       obs: a.obs,
@@ -477,9 +501,9 @@ export default function AsistenciaPage() {
   const handleEditChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
     const { name, value, type } = e.target;
     if (type === "checkbox") {
-      setEditForm({ ...editForm, [name]: (e.target as HTMLInputElement).checked });
+      setEditForm((prev: any) => ({ ...prev, [name]: (e.target as HTMLInputElement).checked }));
     } else {
-      setEditForm({ ...editForm, [name]: value });
+      setEditForm((prev: any) => ({ ...prev, [name]: value }));
     }
   };
 
@@ -500,6 +524,12 @@ export default function AsistenciaPage() {
     let asisActualizada: any = null;
     const nuevasAsistencias = asistencias.map(a => {
       if (a.id === editingAsistencia.id) {
+        // Construir metodoPago final con monto, igual que en handleGuardar
+        const editMonto = parseFloat(editForm.montoPago || "0");
+        let editMetodoPagoFinal = editForm.metodoPago || "Efectivo";
+        if (editMonto > 0 && editForm.metodoPago) {
+          editMetodoPagoFinal = `${editForm.metodoPago} $${editMonto}`;
+        }
         asisActualizada = {
           ...a,
           fecha: editForm.fecha,
@@ -507,7 +537,8 @@ export default function AsistenciaPage() {
           tipoSesion: editForm.tipoSesion,
           estado: editForm.estado,
           sesiones: editForm.sesiones,
-          pago: parseFloat(editForm.montoPago || "0") > 0 ? "SÍ" : editForm.pago,
+          pago: editMonto > 0 ? "SÍ" : editForm.pago,
+          metodoPago: editMetodoPagoFinal,
           fact: editForm.fact ? "Sí" : "No",
           subtotal: `$${subVal.toFixed(2)}`,
           iva: `$${ivaVal.toFixed(2)}`,
@@ -752,7 +783,11 @@ export default function AsistenciaPage() {
                               pacienteSexo: normalizeSexo(p.sexo),
                               pacienteEdad: p.edad,
                               saldoDisponible: p.saldoCalculado || "0.00",
-                              numeroSesiones: displaySesiones
+                              numeroSesiones: displaySesiones,
+                              frecuencia: agendaCitas.find((c: any) => c.paciente === p.paciente) ? (() => {
+                                const f = (agendaCitas.find((c: any) => c.paciente === p.paciente).frecuencia || "").toLowerCase();
+                                return f === "diario" || f === "diaria" ? "Diaria" : f === "semanal" ? "Semanal" : f === "quincenal" ? "Quincenal" : f === "mensual" ? "Mensual" : formData.frecuencia;
+                              })() : formData.frecuencia
                             });
                             setShowDropdown(false);
                           }}
@@ -975,10 +1010,6 @@ export default function AsistenciaPage() {
             <svg className="w-5 h-5 text-slate-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" /></svg>
             Registros Recientes
           </h3>
-          <button className="border border-slate-300 text-slate-600 hover:bg-slate-50 px-3 py-1.5 rounded text-xs font-semibold flex items-center gap-2 transition-colors">
-            <svg className="w-3 h-3" fill="currentColor" viewBox="0 0 24 24"><path d="M19 9h-4V3H9v6H5l7 7 7-7zM5 18v2h14v-2H5z"/></svg>
-            Exportar CSV
-          </button>
         </div>
 
         <div className="bg-slate-50 border-b border-slate-200 p-3 flex flex-wrap items-center justify-between gap-3">
@@ -1008,16 +1039,6 @@ export default function AsistenciaPage() {
             <button type="button" onClick={() => { setFiltroDesde(""); setFiltroHasta(""); setFiltroEstado("Todos"); }} className="bg-[#1a5276] text-white hover:bg-[#0e2f44] px-3 py-1 rounded text-xs font-semibold transition-colors cursor-pointer" title="Ver registros pasados, presentes y futuros">
               Ver Todos (Permanente)
             </button>
-            <button type="button" onClick={() => { setFiltroDesde(hoy); setFiltroHasta(hoy); }} className="bg-white border border-slate-300 text-slate-700 hover:bg-slate-100 px-3 py-1 rounded text-xs font-semibold transition-colors cursor-pointer">
-              Hoy
-            </button>
-            <button type="button" onClick={() => { setFiltroDesde(getFirstDayOfMonth()); setFiltroHasta(hoy); }} className="bg-white border border-slate-300 text-slate-700 hover:bg-slate-100 px-3 py-1 rounded text-xs font-semibold transition-colors cursor-pointer">
-              Este Mes
-            </button>
-            <button type="button" onClick={() => { setFiltroDesde(""); setFiltroHasta(""); setFiltroEstado("Todos"); }} className="bg-white border border-slate-300 text-slate-600 hover:bg-slate-50 px-3 py-1 rounded text-xs font-semibold flex items-center gap-1 transition-colors cursor-pointer">
-              <svg className="w-3 h-3" fill="currentColor" viewBox="0 0 24 24"><path d="M19 6.41L17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z"/></svg>
-              Limpiar
-            </button>
           </div>
         </div>
 
@@ -1034,7 +1055,6 @@ export default function AsistenciaPage() {
                 <th className="px-2 py-2.5 border-b border-[#0e2f44]">EDAD</th>
                 <th className="px-2 py-2.5 border-b border-[#0e2f44]">TIPO DE<br/>SESIÓN</th>
                 <th className="px-2 py-2.5 border-b border-[#0e2f44]">ESTADO</th>
-                <th className="px-2 py-2.5 border-b border-[#0e2f44]">TOTAL<br/>SESIONES</th>
                 <th className="px-2 py-2.5 border-b border-[#0e2f44]">FRECUENCIA</th>
                 <th className="px-2 py-2.5 border-b border-[#0e2f44]">MÉTODO DE<br/>PAGO</th>
                 <th className="px-2 py-2.5 border-b border-[#0e2f44]">PAGO</th>
@@ -1065,7 +1085,6 @@ export default function AsistenciaPage() {
                       {a.estado === 'Cancelo anticipadamente' ? 'Canceló C/A' : a.estado === 'Cancelo sin anticipacion' ? 'Canceló S/A' : a.estado === 'Cancelo el centro' ? 'Canceló C' : a.estado === 'Asistio' ? 'Asistió' : a.estado}
                     </span>
                   </td>
-                  <td className="px-2 py-3 text-slate-500 font-bold">{a.sesiones}</td>
                   <td className="px-2 py-3 text-slate-500">{a.frecuencia || "Única"}</td>
                   <td className="px-2 py-3">
                     {(() => {
@@ -1232,10 +1251,7 @@ export default function AsistenciaPage() {
                     <option value="Baja">Baja</option>
                   </select>
                 </div>
-                <div>
-                  <label className="block text-[10px] font-bold text-slate-500 uppercase mb-1">Sesiones</label>
-                  <input type="number" name="sesiones" value={editForm.sesiones} onChange={handleEditChange} className="w-full text-sm p-2 border border-slate-300 rounded focus:border-[#2980b9] outline-none text-slate-900" />
-                </div>
+                
                 <div>
                   <label className="block text-[10px] font-bold text-slate-500 uppercase mb-1">Subtotal (Monto)</label>
                   <select
