@@ -773,7 +773,7 @@ export default function AsistenciaPage() {
             </div>
 
             {/* ROW 2 */}
-            <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
               <div>
                 <label className="block text-[10px] font-bold text-slate-400 uppercase mb-1">SEXO DEL PACIENTE</label>
                 <select name="pacienteSexo" value={formData.pacienteSexo} onChange={handleChange} className="w-full text-sm p-2 border border-slate-300 rounded focus:border-[#2980b9] outline-none text-slate-900">
@@ -794,10 +794,6 @@ export default function AsistenciaPage() {
                   <option value="Quincenal">Quincenal</option>
                   <option value="Mensual">Mensual</option>
                 </select>
-              </div>
-              <div>
-                <label className="block text-[10px] font-bold text-slate-400 uppercase mb-1">TOTAL SESIONES</label>
-                <input type="text" name="numeroSesiones" value={formData.numeroSesiones} onChange={handleChange} readOnly={String(formData.numeroSesiones).includes("/")} placeholder="Ej. 1" className="w-full text-sm p-2 border border-slate-300 rounded focus:border-[#2980b9] outline-none text-slate-900" />
               </div>
               <div>
                 <div className="flex items-center justify-between mb-1">
