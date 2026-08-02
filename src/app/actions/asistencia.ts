@@ -6,6 +6,9 @@ import { unstable_noStore as noStore } from "next/cache";
 
 export async function saveAsistenciaDB(data: any) {
   try {
+    const settings = await prisma.systemSettings.findUnique({ where: { id: 1 } });
+    const tz = settings?.timezone || 'America/Mexico_City';
+
     const pacienteStr = data.paciente || data.pacienteNombre;
     // Buscar paciente
     const patient = await prisma.patient.findFirst({ where: { name: pacienteStr } });
@@ -116,15 +119,15 @@ export async function saveAsistenciaDB(data: any) {
       estadoAsistencia: estadoVal,
       estado: estadoVal,
       sesiones: data.sesiones || data.numeroSesiones,
-      metodoPago: (data.metodoPago && data.metodoPago !== "SÍ" && data.metodoPago !== "No") ? data.metodoPago : (data.metodoPagoFinal || data.metodoPago1 || "Efectivo"),
-      solicitaFactura: data.fact === "Sí" || data.solicitaFactura === "Sí",
+      metodoPago: data.metodoPago || data.metodoPagoFinal || data.metodoPago1 || "Efectivo",
+      solicitaFactura: data.fact === "S" || data.solicitaFactura === "S" || data.solicitaFactura === "Sí" || data.solicitaFactura === true,
       subtotal: data.subtotal ? (typeof data.subtotal === 'string' ? parseFloat(data.subtotal.replace("$", "")) : data.subtotal) : 0,
       total: data.total ? (typeof data.total === 'string' ? parseFloat(data.total.replace("$", "")) : data.total) : 0,
       obs: data.obs,
       creadoPor: data.creadoPor,
       pagado: estadoVal === "Asistio" || estadoVal === "Cancelo sin anticipacion",
       frecuencia: data.frecuencia || "Única",
-      horaRegistro: data.horaRegistro || new Date().toLocaleTimeString('es-MX', { hour12: false })
+      horaRegistro: data.horaRegistro && targetSession ? data.horaRegistro : new Date().toLocaleTimeString('es-MX', { hour12: false, timeZone: tz })
     };
 
     let finalNotes = "";

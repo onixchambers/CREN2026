@@ -115,13 +115,13 @@ export default function AsistenciaPage() {
   const [asistencias, setAsistencias] = useState<Asistencia[]>([]);
   
   // Filtros de tabla
-  const hoy = new Date().toISOString().split("T")[0];
+  const hoy = new Date().toLocaleDateString("en-CA", { timeZone: "America/Mexico_City" });
   
   // By default, show records from the 1st of the current month
   const getFirstDayOfMonth = () => {
     const d = new Date();
     d.setDate(1);
-    return d.toISOString().split("T")[0];
+    return d.toLocaleDateString("en-CA", { timeZone: "America/Mexico_City" });
   };
   
   const [filtroDesde, setFiltroDesde] = useState("");
@@ -274,7 +274,29 @@ export default function AsistenciaPage() {
   const handlePacienteChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const val = e.target.value;
     const p = pacientes.find(x => x.paciente === val);
+    
     if (p) {
+      const patientAsistencias = asistencias.filter(a => a.pacienteId === p.id);
+      let totalS = "1";
+      if (patientAsistencias.length > 0) {
+         const lastAsistencia = patientAsistencias[0]; 
+         if (lastAsistencia.sesiones && lastAsistencia.sesiones.includes("/")) {
+             totalS = lastAsistencia.sesiones.split("/")[1];
+         } else {
+             totalS = lastAsistencia.sesiones || "1";
+         }
+      }
+      
+      const prevAsistencias = patientAsistencias.filter(a => a.estado === "Asistio").length;
+      const currentS = prevAsistencias + 1;
+      
+      let displaySesiones = "";
+      if (parseInt(totalS) > 1) {
+          displaySesiones = `${currentS}/${totalS}`;
+      } else {
+          displaySesiones = currentS.toString();
+      }
+
       setFormData({
         ...formData,
         pacienteId: p.id,
@@ -282,7 +304,8 @@ export default function AsistenciaPage() {
         pacienteNac: p.nac !== "—" ? p.nac : "",
         pacienteSexo: normalizeSexo(p.sexo),
         pacienteEdad: p.edad,
-        saldoDisponible: p.saldoCalculado || "0.00"
+        saldoDisponible: p.saldoCalculado || "0.00",
+        numeroSesiones: displaySesiones
       });
     } else {
       setFormData({
@@ -443,6 +466,7 @@ export default function AsistenciaPage() {
       estado: a.estado,
       sesiones: a.sesiones,
       pago: a.pago,
+        metodoPago: a.metodoPago,
       fact: a.fact === "Sí",
       subtotal: (a.total || a.subtotal).replace('$', ''),
       obs: a.obs,
@@ -676,18 +700,6 @@ export default function AsistenciaPage() {
               <div className="relative">
                 <div className="flex items-center justify-between mb-1">
                   <label className="block text-[10px] font-bold text-slate-400 uppercase">NOMBRE PACIENTE</label>
-                  {formData.pacienteNombre && (
-                    (() => {
-                      const prevAsistencias = asistencias.filter(a => a.pacienteId === formData.pacienteId && a.estado === "Asistio").length;
-                      const current = prevAsistencias + 1;
-                      const total = formData.numeroSesiones || "1";
-                      return (
-                        <span className="text-[10px] font-bold bg-[#1a5276] text-white px-2 py-0.5 rounded shadow-sm">
-                          Sesión: {current}/{total}
-                        </span>
-                      );
-                    })()
-                  )}
                 </div>
                 <input 
                   type="text" 
@@ -712,6 +724,26 @@ export default function AsistenciaPage() {
                           key={p.id} 
                           className="px-3 py-2 text-sm text-slate-700 hover:bg-[#2980b9] hover:text-white cursor-pointer"
                           onClick={() => {
+                            const patientAsistencias = asistencias.filter(a => a.pacienteId === p.id);
+                            let totalS = "1";
+                            if (patientAsistencias.length > 0) {
+                               const lastAsistencia = patientAsistencias[0]; 
+                               if (lastAsistencia.sesiones && lastAsistencia.sesiones.includes("/")) {
+                                   totalS = lastAsistencia.sesiones.split("/")[1];
+                               } else {
+                                   totalS = lastAsistencia.sesiones || "1";
+                               }
+                            }
+                            const prevAsistencias = patientAsistencias.filter(a => a.estado === "Asistio").length;
+                            const currentS = prevAsistencias + 1;
+                            
+                            let displaySesiones = "";
+                            if (parseInt(totalS) > 1) {
+                                displaySesiones = `${currentS}/${totalS}`;
+                            } else {
+                                displaySesiones = currentS.toString();
+                            }
+
                             setFormData({
                               ...formData,
                               pacienteId: p.id,
@@ -719,7 +751,8 @@ export default function AsistenciaPage() {
                               pacienteNac: p.nac !== "—" ? p.nac : "",
                               pacienteSexo: normalizeSexo(p.sexo),
                               pacienteEdad: p.edad,
-                              saldoDisponible: p.saldoCalculado || "0.00"
+                              saldoDisponible: p.saldoCalculado || "0.00",
+                              numeroSesiones: displaySesiones
                             });
                             setShowDropdown(false);
                           }}
@@ -764,7 +797,7 @@ export default function AsistenciaPage() {
               </div>
               <div>
                 <label className="block text-[10px] font-bold text-slate-400 uppercase mb-1">TOTAL SESIONES</label>
-                <input type="number" name="numeroSesiones" value={formData.numeroSesiones} onChange={handleChange} placeholder="Ej. 1" className="w-full text-sm p-2 border border-slate-300 rounded focus:border-[#2980b9] outline-none text-slate-900" />
+                <input type="text" name="numeroSesiones" value={formData.numeroSesiones} onChange={handleChange} readOnly={String(formData.numeroSesiones).includes("/")} placeholder="Ej. 1" className="w-full text-sm p-2 border border-slate-300 rounded focus:border-[#2980b9] outline-none text-slate-900" />
               </div>
               <div>
                 <div className="flex items-center justify-between mb-1">
@@ -1005,7 +1038,7 @@ export default function AsistenciaPage() {
                 <th className="px-2 py-2.5 border-b border-[#0e2f44]">EDAD</th>
                 <th className="px-2 py-2.5 border-b border-[#0e2f44]">TIPO DE<br/>SESIÓN</th>
                 <th className="px-2 py-2.5 border-b border-[#0e2f44]">ESTADO</th>
-                <th className="px-2 py-2.5 border-b border-[#0e2f44]">SESIONES</th>
+                <th className="px-2 py-2.5 border-b border-[#0e2f44]">TOTAL<br/>SESIONES</th>
                 <th className="px-2 py-2.5 border-b border-[#0e2f44]">FRECUENCIA</th>
                 <th className="px-2 py-2.5 border-b border-[#0e2f44]">MÉTODO DE<br/>PAGO</th>
                 <th className="px-2 py-2.5 border-b border-[#0e2f44]">PAGO</th>
@@ -1032,8 +1065,8 @@ export default function AsistenciaPage() {
                   <td className="px-2 py-3 text-slate-500">{a.edad}</td>
                   <td className="px-2 py-3 text-slate-500">{a.tipoSesion}</td>
                   <td className="px-2 py-3">
-                    <span className={`px-2 py-1 rounded text-[10px] font-bold ${a.estado === 'Asistio' ? 'bg-[#e6f4ea] text-[#1e8e3e]' : a.estado === 'Cancelo anticipadamente' || a.estado === 'Cancelo sin anticipacion' ? 'bg-orange-100 text-orange-700' : a.estado === 'Cancelo el centro' ? 'bg-red-100 text-red-700' : a.estado === 'Alta' ? 'bg-blue-100 text-blue-700' : 'bg-slate-100 text-slate-600'}`}>
-                      {a.estado}
+                    <span className={`px-2 py-1 rounded text-[10px] font-bold whitespace-nowrap ${a.estado === 'Asistio' ? 'bg-[#e6f4ea] text-[#1e8e3e]' : a.estado === 'Cancelo anticipadamente' || a.estado === 'Cancelo sin anticipacion' ? 'bg-orange-100 text-orange-700' : a.estado === 'Cancelo el centro' ? 'bg-red-100 text-red-700' : a.estado === 'Alta' ? 'bg-blue-100 text-blue-700' : 'bg-slate-100 text-slate-600'}`}>
+                      {a.estado === 'Cancelo anticipadamente' ? 'Canceló C/A' : a.estado === 'Cancelo sin anticipacion' ? 'Canceló S/A' : a.estado === 'Cancelo el centro' ? 'Canceló C' : a.estado === 'Asistio' ? 'Asistió' : a.estado}
                     </span>
                   </td>
                   <td className="px-2 py-3 text-slate-500 font-bold">{a.sesiones}</td>
@@ -1234,7 +1267,7 @@ export default function AsistenciaPage() {
                 </div>
                 <div>
                   <label className="block text-[10px] font-bold text-slate-500 uppercase mb-1">Método de Pago</label>
-                  <select name="pago" value={editForm.pago} onChange={handleEditChange} className="w-full text-sm p-2 border border-slate-300 rounded focus:border-[#2980b9] outline-none text-slate-900">
+                  <select name="metodoPago" value={editForm.metodoPago || "Efectivo"} onChange={handleEditChange} className="w-full text-sm p-2 border border-slate-300 rounded focus:border-[#2980b9] outline-none text-slate-900">
                     <option value="Efectivo">Efectivo</option>
                     <option value="Transferencia">Transferencia</option>
                     <option value="Tarjeta">Tarjeta</option>
