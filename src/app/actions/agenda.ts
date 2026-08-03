@@ -249,6 +249,11 @@ export async function deleteCita(id: string) {
       return { success: false, error: "No autenticado." };
     }
 
+    const userRole = ((session.user as any)?.role || "").toUpperCase();
+    if (userRole === "TERAPEUTA") {
+      return { success: false, error: "No tienes permisos para eliminar citas. Solo el administrador puede hacerlo." };
+    }
+
     await prisma.session.delete({ where: { id } });
     revalidatePath("/dashboard/agenda");
     return { success: true };

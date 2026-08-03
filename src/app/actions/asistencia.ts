@@ -127,7 +127,19 @@ export async function saveAsistenciaDB(data: any) {
       creadoPor: data.creadoPor,
       pagado: estadoVal === "Asistio" || estadoVal === "Cancelo sin anticipacion",
       frecuencia: data.frecuencia || "Única",
-      horaRegistro: data.horaRegistro && targetSession ? data.horaRegistro : new Date().toLocaleTimeString('es-MX', { hour12: false, timeZone: tz })
+      horaRegistro: (() => {
+        // Usar la hora agendada de la cita (de la session existente en agenda)
+        if (targetSession && targetSession.notes) {
+          try {
+            const existingNotes = JSON.parse(targetSession.notes);
+            if (existingNotes.hora) return existingNotes.hora;
+          } catch(e) {}
+        }
+        // Si se pasa horaRegistro explícitamente, usarla
+        if (data.horaRegistro) return data.horaRegistro;
+        // Fallback: hora actual del sistema
+        return new Date().toLocaleTimeString('es-MX', { hour12: false, timeZone: tz });
+      })()
     };
 
     let finalNotes = "";
@@ -224,7 +236,7 @@ export async function getAsistenciasDB(_ts?: string) {
         asistencias.push({
           id: s.id,
           fecha: extra.fecha || s.date.toISOString().split("T")[0],
-          horaRegistro: extra.horaRegistro || "-",
+          horaRegistro: extra.hora || extra.horaRegistro || "-",
           area: extra.area || "-",
           paciente: s.patient?.name || "-",
           pacienteId: s.patient?.id || "",
@@ -251,7 +263,10 @@ export async function getAsistenciasDB(_ts?: string) {
       const timeA = new Date(a.fecha).getTime();
       const timeB = new Date(b.fecha).getTime();
       if (timeB !== timeA) return timeB - timeA;
-      return (b.id || "").localeCompare(a.id || "");
+      // Dentro del mismo día, ordenar por hora de cita ascendente (08:00 antes que 10:00)
+      const horaA = (a.horaRegistro || "99:99").replace(/[^0-9:]/g, "");
+      const horaB = (b.horaRegistro || "99:99").replace(/[^0-9:]/g, "");
+      return horaA.localeCompare(horaB);
     });
 
     return { success: true, data: asistencias };

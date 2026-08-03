@@ -415,11 +415,13 @@ export default function AgendaPage() {
                                   style={st.style}
                                   className={`absolute left-0 w-full h-full p-2 rounded border text-xs font-semibold flex flex-col items-center justify-center cursor-pointer shadow-sm hover:brightness-95 transition-all ${cita.hora.includes(":30") ? "top-[50%] z-10" : "top-0"} ${st.className}`}>
                                   
+                                  {userRole.toUpperCase() !== "TERAPEUTA" && (
                                   <button 
                                     onClick={(e) => { e.stopPropagation(); handleDeleteCita(cita.id); }} 
                                     className="absolute top-1 right-1 text-red-500 hover:text-red-700 font-bold bg-white/70 hover:bg-white rounded-full w-4 h-4 flex items-center justify-center leading-none shadow-sm cursor-pointer" 
                                     title="Eliminar Cita"
                                   >&times;</button>
+                                  )}
 
                                   <span className="truncate w-full text-center mt-1 font-bold">
                                     {(cita.estado === "Ocupado" || cita.estado === "No Disponible" || cita.paciente === "No Disponible") ? "No Disponible" : cita.paciente}
@@ -674,7 +676,9 @@ export default function AgendaPage() {
               </div>
 
               <div className="pt-4 flex gap-2">
+                {userRole.toUpperCase() !== "TERAPEUTA" && (
                 <button type="button" onClick={() => handleDeleteCita(selectedCita.id)} className="px-4 py-2 bg-red-50 text-red-600 font-semibold rounded-lg hover:bg-red-100 transition-colors">Eliminar</button>
+                )}
                 <button type="button" onClick={() => setIsEditModalOpen(false)} className="flex-1 py-2 bg-slate-100 text-slate-700 font-semibold rounded-lg hover:bg-slate-200 transition-colors">Cancelar</button>
                 <button type="submit" className="flex-1 py-2 bg-[#1a5276] text-white font-semibold rounded-lg hover:bg-[#0e2f44] transition-colors">Guardar</button>
               </div>
