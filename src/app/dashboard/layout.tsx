@@ -62,14 +62,9 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
   const tabs = allTabs.filter(tab => {
     const roleUpper = userRole.toUpperCase();
 
-    // Eliminar la pestaña 'Contraseña' cuando se ingresa como Administrador
-    if (roleUpper === "ADMIN" || roleUpper === "ADMINISTRADOR") {
-      return tab.path !== "/dashboard/contrasena";
-    }
-
-    // El usuario INVITADO NO tiene acceso a Configuración
-    if (roleUpper === "INVITADO" && tab.path === "/dashboard/configuracion") {
-      return false;
+    // Eliminar la pestaña 'Contraseña' cuando se ingresa como Administrador o Invitado
+    if (roleUpper === "ADMIN" || roleUpper === "ADMINISTRADOR" || roleUpper === "INVITADO") {
+      if (tab.path === "/dashboard/contrasena") return false;
     }
 
     if (roleUpper === "TERAPEUTA") {

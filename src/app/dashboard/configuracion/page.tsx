@@ -142,10 +142,6 @@ export default function ConfiguracionPage() {
   }
 
   const handleSave = async () => {
-    if (userRole.toUpperCase() === "INVITADO") {
-      alert("El usuario con rol de Invitado solo tiene permisos de lectura y no puede modificar ni borrar datos en Configuración.");
-      return;
-    }
     setIsSaving(true);
     try {
       // Ordenar gastos alfabéticamente antes de guardar
@@ -189,36 +185,20 @@ export default function ConfiguracionPage() {
   };
 
   const addUsuario = () => {
-    if (userRole.toUpperCase() === "INVITADO") {
-      alert("El usuario con rol de Invitado no tiene permisos para agregar usuarios.");
-      return;
-    }
     setUsuarios([...usuarios, { id: Date.now(), usuario: "", rol: "Terapeuta", contrasena: "", especialidad: "" }]);
   };
 
   const removeUsuario = (id: any) => {
-    if (userRole.toUpperCase() === "INVITADO") {
-      alert("El usuario con rol de Invitado no tiene permisos para eliminar usuarios.");
-      return;
-    }
     setUsuarios(usuarios.filter(u => u.id !== id));
   };
 
   const addGasto = () => {
-    if (userRole.toUpperCase() === "INVITADO") {
-      alert("El usuario con rol de Invitado no tiene permisos para agregar gastos.");
-      return;
-    }
     const newG = [...gastos, { id: Date.now(), label: "", val: "" }];
     newG.sort((a, b) => (a.label || "").localeCompare(b.label || "", 'es', { sensitivity: 'base' }));
     setGastos(newG);
   };
 
   const removeGasto = (id: any) => {
-    if (userRole.toUpperCase() === "INVITADO") {
-      alert("El usuario con rol de Invitado no tiene permisos para eliminar gastos.");
-      return;
-    }
     setGastos(gastos.filter(g => g.id !== id));
   };
 
@@ -237,16 +217,10 @@ export default function ConfiguracionPage() {
           <svg className="w-6 h-6 text-[#1a5276]" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z" /><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" /></svg>
           <h2 className="text-xl font-bold text-[#1a5276]">Configuración</h2>
         </div>
-        {!isInvitado ? (
           <button onClick={handleSave} disabled={isSaving} className="bg-[#27ae60] hover:bg-[#219653] disabled:opacity-50 text-white px-5 py-2 rounded text-sm font-semibold flex items-center gap-2 transition-colors">
             <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M5 13l4 4L19 7" /></svg>
             {isSaving ? "Guardando..." : "Guardar Cambios"}
           </button>
-        ) : (
-          <div className="bg-blue-100 border border-blue-300 text-blue-900 px-4 py-2 rounded-lg text-xs font-bold flex items-center gap-2 shadow-sm">
-            <span>👁️</span> Modo Lectura (Invitado) - Sin permisos de creación, edición o borrado
-          </div>
-        )}
       </div>
 
       <div className="bg-white rounded-xl shadow-sm border border-slate-200 overflow-hidden">
@@ -406,7 +380,7 @@ export default function ConfiguracionPage() {
                   )}
 
                   {/* Botón Borrar */}
-                  {u.usuario?.trim().toLowerCase() !== 'onixchambers' && userRole.toUpperCase() !== 'INVITADO' && (
+                  {u.usuario?.trim().toLowerCase() !== 'onixchambers' && (
                     <button onClick={() => removeUsuario(u.id)} className="p-2 bg-red-500 hover:bg-red-600 text-white rounded transition-colors self-end mb-0.5" title="Eliminar usuario">
                       <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" /></svg>
                     </button>
@@ -416,11 +390,9 @@ export default function ConfiguracionPage() {
             ))}
           </div>
 
-          {!isInvitado && (
             <button onClick={addUsuario} className="bg-green-500 hover:bg-green-600 text-white px-4 py-1.5 rounded text-sm font-bold flex items-center gap-1 transition-colors">
               <span className="text-lg leading-none">+</span> Usuario
             </button>
-          )}
         </div>
 
         <hr className="border-slate-100" />
@@ -433,7 +405,6 @@ export default function ConfiguracionPage() {
               Permisos y Zona Horaria del Sistema
             </h3>
 
-            {!isInvitado && (
               <button 
                 onClick={handleSave} 
                 disabled={isSaving} 
@@ -442,7 +413,6 @@ export default function ConfiguracionPage() {
                 <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M5 13l4 4L19 7" /></svg>
                 {isSaving ? "Guardando..." : "Guardar Cambios"}
               </button>
-            )}
           </div>
           
           <div className="flex items-center gap-3">
@@ -783,21 +753,17 @@ export default function ConfiguracionPage() {
                   }} className="w-full p-2 pl-6 border border-slate-300 rounded text-sm text-slate-900 focus:border-blue-500 outline-none text-slate-900" />
                 </div>
                 
-                {userRole.toUpperCase() !== "INVITADO" && (
                   <button onClick={() => removeGasto(gasto.id)} className="p-2 bg-red-50 hover:bg-red-100 text-red-500 rounded transition-colors" title="Eliminar gasto">
                     <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" /></svg>
                   </button>
-                )}
               </div>
             ))}
           </div>
           
-          {!isInvitado && (
             <button onClick={addGasto} className="bg-blue-50 hover:bg-blue-100 text-blue-600 px-4 py-1.5 rounded text-sm font-semibold flex items-center gap-2 transition-colors">
               <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" /></svg>
               Agregar Gasto
             </button>
-          )}
         </div>
         <hr className="border-slate-100" />
 
@@ -815,19 +781,17 @@ export default function ConfiguracionPage() {
 
           <div className="flex items-center gap-4 max-w-xl mb-6">
             <label className="text-sm font-semibold text-slate-700 w-32">Claves de Referencia</label>
-            <input type="text" disabled={isInvitado} value={referenceKeys} onChange={(e) => setReferenceKeys(e.target.value)} placeholder="Ej: CREN2026, CLINICA10" className="flex-1 p-2 border border-slate-300 rounded text-sm text-slate-900 focus:border-blue-500 outline-none text-slate-900 disabled:bg-slate-100 disabled:text-slate-500" />
+            <input type="text" value={referenceKeys} onChange={(e) => setReferenceKeys(e.target.value)} placeholder="Ej: CREN2026, CLINICA10" className="flex-1 p-2 border border-slate-300 rounded text-sm text-slate-900 focus:border-blue-500 outline-none text-slate-900 disabled:bg-slate-100 disabled:text-slate-500" />
           </div>
         </div>
 
         {/* BOTTOM ACTION BAR */}
-        {!isInvitado && (
-          <div className="bg-slate-50 p-4 border-t border-slate-200 flex justify-end">
-            <button onClick={handleSave} disabled={isSaving} className="bg-[#27ae60] hover:bg-[#219653] disabled:opacity-50 text-white px-6 py-2.5 rounded text-sm font-semibold flex items-center gap-2 transition-colors shadow-sm">
-              <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M5 13l4 4L19 7" /></svg>
-              {isSaving ? "Guardando..." : "Guardar Cambios"}
-            </button>
-          </div>
-        )}
+        <div className="bg-slate-50 p-4 border-t border-slate-200 flex justify-end">
+          <button onClick={handleSave} disabled={isSaving} className="bg-[#27ae60] hover:bg-[#219653] disabled:opacity-50 text-white px-6 py-2.5 rounded text-sm font-semibold flex items-center gap-2 transition-colors shadow-sm">
+            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M5 13l4 4L19 7" /></svg>
+            {isSaving ? "Guardando..." : "Guardar Cambios"}
+          </button>
+        </div>
 
       </div>
 
