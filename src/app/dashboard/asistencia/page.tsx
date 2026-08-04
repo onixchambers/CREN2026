@@ -836,7 +836,7 @@ export default function AsistenciaPage() {
             </div>
 
             {/* ROW 2 */}
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+            <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
               <div>
                 <label className="block text-[10px] font-bold text-slate-400 uppercase mb-1">SEXO DEL PACIENTE</label>
                 <select name="pacienteSexo" value={formData.pacienteSexo} onChange={handleChange} className="w-full text-sm p-2 border border-slate-300 rounded focus:border-[#2980b9] outline-none text-slate-900">
@@ -857,6 +857,10 @@ export default function AsistenciaPage() {
                   <option value="Quincenal">Quincenal</option>
                   <option value="Mensual">Mensual</option>
                 </select>
+              </div>
+              <div>
+                <label className="block text-[10px] font-bold text-slate-400 uppercase mb-1">NÚMERO DE SESIONES</label>
+                <input type="text" name="numeroSesiones" value={formData.numeroSesiones} onChange={handleChange} placeholder="Ej: 1 o 1/5" className="w-full text-sm p-2 border border-slate-300 rounded focus:border-[#2980b9] outline-none text-slate-900" />
               </div>
               <div>
                 <div className="flex items-center justify-between mb-1">
@@ -884,7 +888,7 @@ export default function AsistenciaPage() {
             </div>
 
             {/* ROW 3 */}
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+            <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
               <div>
                 <label className="block text-[10px] font-bold text-slate-400 uppercase mb-1">COSTO DE SESIÓN</label>
                 <div className="relative">
@@ -914,7 +918,7 @@ export default function AsistenciaPage() {
                   );
                 })()}
               </div>
-              <div>
+              <div className="md:col-span-2">
                 <label className="block text-[10px] font-bold text-slate-400 uppercase mb-1">ESTADO ASISTENCIA</label>
                 <select name="estadoAsistencia" value={formData.estadoAsistencia} onChange={handleChange} className="w-full text-sm p-2 border border-slate-300 rounded focus:border-[#2980b9] outline-none text-slate-900">
                   <option value="">Seleccionar...</option>
