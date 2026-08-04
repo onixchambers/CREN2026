@@ -4,7 +4,7 @@ import { useSession } from "next-auth/react";
 import { useRouter } from "next/navigation";
 import { getPatients } from "@/app/actions/pacientes";
 import { getAsistenciasDB } from "@/app/actions/asistencia";
-import { getAgenda } from "@/app/actions/agenda";
+import { getAgenda, addCita } from "@/app/actions/agenda";
 import { saveAsistenciaDB } from "@/app/actions/asistencia";
 import { deleteCita } from "@/app/actions/agenda";
 import { getTerapeutasFull, getSystemIvaRate, getTherapyPrices, addTherapyPrice, removeTherapyPrice } from "@/app/actions/configuracion";
@@ -457,6 +457,24 @@ export default function AsistenciaPage() {
       alert("Error al guardar en BD: " + (dbRes as any).error);
       return;
     }
+    
+    // También guardar en Agenda
+    try {
+      await addCita({
+        paciente: formData.paciente,
+        fecha: formData.fecha,
+        hora: formData.hora,
+        terapeuta: formData.terapeuta,
+        tipoServicio: formData.tipoServicio,
+        frecuencia: formData.frecuencia,
+        estado: "Asistio",
+        pagado: formData.pagado,
+        metodoPago: formData.metodoPago,
+        numeroSesiones: 1
+      });
+    } catch (e) {
+      console.error("Error agendando cita al guardar asistencia", e);
+    }
 
     alert("Sesión guardada exitosamente en la base de datos");
     handleLimpiarForm();
@@ -649,7 +667,7 @@ export default function AsistenciaPage() {
 
           <div className="space-y-5">
             {/* ROW 1 */}
-            <div className="grid grid-cols-1 md:grid-cols-7 gap-4">
+            <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
               <div className="md:col-span-1">
                 <div className="flex items-center justify-between mb-1">
                   <label className="block text-[10px] font-bold text-slate-400 uppercase">FECHA</label>
@@ -667,7 +685,7 @@ export default function AsistenciaPage() {
                       className="px-1.5 py-0.5 bg-slate-100 hover:bg-slate-200 text-slate-700 text-[10px] font-bold rounded cursor-pointer transition"
                       title="Día anterior"
                     >
-                      ◀
+                      ←
                     </button>
                     <button
                       type="button"
@@ -690,7 +708,7 @@ export default function AsistenciaPage() {
                       className="px-1.5 py-0.5 bg-slate-100 hover:bg-slate-200 text-slate-700 text-[10px] font-bold rounded cursor-pointer transition"
                       title="Día siguiente"
                     >
-                      ▶
+                      →
                     </button>
                   </div>
                 </div>
@@ -723,7 +741,7 @@ export default function AsistenciaPage() {
                   ))}
                 </select>
               </div>
-              <div>
+              <div className="md:col-span-1">
                 <label className="block text-[10px] font-bold text-slate-400 uppercase mb-1">ÁREA</label>
                 <select name="area" value={formData.area} onChange={handleChange} className="w-full text-sm p-2 border border-slate-300 rounded focus:border-[#2980b9] outline-none text-slate-900">
                   <option value="">Seleccionar especialidad...</option>
@@ -732,19 +750,10 @@ export default function AsistenciaPage() {
                   ))}
                 </select>
               </div>
-              <div>
-                <label className="block text-[10px] font-bold text-slate-400 uppercase mb-1">TIPO DE SESIÓN</label>
-                <select name="tipoSesion" value={formData.tipoSesion} onChange={handleChange} className="w-full text-sm p-2 border border-slate-300 rounded focus:border-[#2980b9] outline-none text-slate-900 font-medium">
-                  <option value="">Seleccionar...</option>
-                  <option value="Valoracion">Valoración</option>
-                  <option value="Individual">Individual</option>
-                  <option value="Escuela">Escuela</option>
-                  <option value="Reposicion">Reposición</option>
-                  <option value="Terapia Grupal">Terapia grupal</option>
-                  <option value="Orientacion Padres">Orientación padres</option>
-                  <option value="Otros">Otros</option>
-                </select>
-              </div>
+            </div>
+
+            {/* ROW 2 */}
+            <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mt-4">
               <div className="relative md:col-span-2">
                 <div className="flex items-center justify-between mb-1">
                   <label className="block text-[10px] font-bold text-slate-400 uppercase">NOMBRE PACIENTE</label>
@@ -783,26 +792,6 @@ export default function AsistenciaPage() {
                           key={p.id} 
                           className="px-3 py-2 text-sm text-slate-700 hover:bg-[#2980b9] hover:text-white cursor-pointer"
                           onClick={() => {
-                            const patientAsistencias = asistencias.filter(a => a.pacienteId === p.id);
-                            let totalS = "1";
-                            if (patientAsistencias.length > 0) {
-                               const lastAsistencia = patientAsistencias[0]; 
-                               if (lastAsistencia.sesiones && lastAsistencia.sesiones.includes("/")) {
-                                   totalS = lastAsistencia.sesiones.split("/")[1];
-                               } else {
-                                   totalS = lastAsistencia.sesiones || "1";
-                               }
-                            }
-                            const prevAsistencias = patientAsistencias.filter(a => a.estado === "Asistio").length;
-                            const currentS = prevAsistencias + 1;
-                            
-                            let displaySesiones = "";
-                            if (parseInt(totalS) > 1) {
-                                displaySesiones = `${currentS}/${totalS}`;
-                            } else {
-                                displaySesiones = currentS.toString();
-                            }
-
                             setFormData({
                               ...formData,
                               pacienteId: p.id,
@@ -811,7 +800,6 @@ export default function AsistenciaPage() {
                               pacienteSexo: normalizeSexo(p.sexo),
                               pacienteEdad: p.edad,
                               saldoDisponible: p.saldoCalculado || "0.00",
-                              numeroSesiones: displaySesiones,
                               frecuencia: agendaCitas.find((c: any) => c.paciente === p.paciente) ? (() => {
                                 const f = (agendaCitas.find((c: any) => c.paciente === p.paciente).frecuencia || "").toLowerCase();
                                 return f === "diario" || f === "diaria" ? "Diaria" : f === "semanal" ? "Semanal" : f === "quincenal" ? "Quincenal" : f === "mensual" ? "Mensual" : formData.frecuencia;
@@ -829,15 +817,11 @@ export default function AsistenciaPage() {
                   </ul>
                 )}
               </div>
-                <div>
-                  <label className="block text-[10px] font-bold text-slate-400 uppercase mb-1">FECHA DE NACIMIENTO</label>
-                  <input type="date" name="pacienteNac" value={formData.pacienteNac} onChange={handleChange} className="w-full text-sm p-2 border border-slate-300 rounded focus:border-[#2980b9] outline-none text-slate-900" />
-                </div>
-            </div>
-
-            {/* ROW 2 */}
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-              <div>
+              <div className="md:col-span-1">
+                <label className="block text-[10px] font-bold text-slate-400 uppercase mb-1">FECHA DE NACIMIENTO</label>
+                <input type="date" name="pacienteNac" value={formData.pacienteNac} onChange={handleChange} className="w-full text-sm p-2 border border-slate-300 rounded focus:border-[#2980b9] outline-none text-slate-900" />
+              </div>
+              <div className="md:col-span-1">
                 <label className="block text-[10px] font-bold text-slate-400 uppercase mb-1">SEXO DEL PACIENTE</label>
                 <select name="pacienteSexo" value={formData.pacienteSexo} onChange={handleChange} className="w-full text-sm p-2 border border-slate-300 rounded focus:border-[#2980b9] outline-none text-slate-900">
                   <option value="">Seleccionar...</option>
@@ -848,7 +832,24 @@ export default function AsistenciaPage() {
                   <option value="—">—</option>
                 </select>
               </div>
-              <div>
+            </div>
+
+            {/* ROW 3 */}
+            <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mt-4">
+              <div className="md:col-span-1">
+                <label className="block text-[10px] font-bold text-slate-400 uppercase mb-1">TIPO DE SESIÓN</label>
+                <select name="tipoSesion" value={formData.tipoSesion} onChange={handleChange} className="w-full text-sm p-2 border border-slate-300 rounded focus:border-[#2980b9] outline-none text-slate-900 font-medium">
+                  <option value="">Seleccionar...</option>
+                  <option value="Valoracion">Valoración</option>
+                  <option value="Individual">Individual</option>
+                  <option value="Escuela">Escuela</option>
+                  <option value="Reposicion">Reposición</option>
+                  <option value="Terapia Grupal">Terapia grupal</option>
+                  <option value="Orientacion Padres">Orientación padres</option>
+                  <option value="Otros">Otros</option>
+                </select>
+              </div>
+              <div className="md:col-span-1">
                 <label className="block text-[10px] font-bold text-slate-400 uppercase mb-1">FRECUENCIA</label>
                 <select name="frecuencia" value={formData.frecuencia} onChange={handleChange} className="w-full text-sm p-2 border border-slate-300 rounded focus:border-[#2980b9] outline-none text-slate-900">
                   <option value="Única">Única</option>
@@ -858,7 +859,7 @@ export default function AsistenciaPage() {
                   <option value="Mensual">Mensual</option>
                 </select>
               </div>
-              <div>
+              <div className="md:col-span-1">
                 <div className="flex items-center justify-between mb-1">
                   <label className="block text-[10px] font-bold text-slate-400 uppercase">PRECIO DE TERAPIA</label>
                   {(userRole.toUpperCase() === "ADMIN" || userRole.toUpperCase() === "ADMINISTRADOR") && (
@@ -868,7 +869,7 @@ export default function AsistenciaPage() {
                       className="text-[10px] font-bold text-[#27ae60] hover:text-[#219653] hover:underline flex items-center gap-0.5 cursor-pointer"
                       title="Agregar nuevo precio de terapia"
                     >
-                      <span>+ Agregar precio</span>
+                      <span>+ Agregar</span>
                     </button>
                   )}
                 </div>
@@ -881,11 +882,7 @@ export default function AsistenciaPage() {
                   </select>
                 </div>
               </div>
-            </div>
-
-            {/* ROW 3 */}
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-              <div>
+              <div className="md:col-span-1">
                 <label className="block text-[10px] font-bold text-slate-400 uppercase mb-1">COSTO DE SESIÓN</label>
                 <div className="relative">
                   <span className="absolute left-2 top-1.5 text-slate-500">$</span>
@@ -895,7 +892,11 @@ export default function AsistenciaPage() {
                   })()} className="w-full text-sm p-2 pl-6 border border-slate-300 rounded bg-slate-50 outline-none text-slate-600 font-bold" />
                 </div>
               </div>
-              <div>
+            </div>
+
+            {/* ROW 4 */}
+            <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mt-4">
+              <div className="md:col-span-1">
                 <label className="block text-[10px] font-bold text-slate-400 uppercase mb-1">SALDO DISPONIBLE</label>
                 {(() => {
                   const saldoPrevioF = parseFloat(formData.saldoDisponible || "0");
@@ -914,7 +915,7 @@ export default function AsistenciaPage() {
                   );
                 })()}
               </div>
-              <div>
+              <div className="md:col-span-1">
                 <label className="block text-[10px] font-bold text-slate-400 uppercase mb-1">ESTADO ASISTENCIA</label>
                 <select name="estadoAsistencia" value={formData.estadoAsistencia} onChange={handleChange} className="w-full text-sm p-2 border border-slate-300 rounded focus:border-[#2980b9] outline-none text-slate-900">
                   <option value="">Seleccionar...</option>
@@ -927,8 +928,7 @@ export default function AsistenciaPage() {
                 </select>
               </div>
             </div>
-
-            {/* PAYMENT SECTION */}
+{/* PAYMENT SECTION */}
             <div className="pt-2">
               <div className="flex items-center gap-2 max-w-2xl mb-1">
                 <label className="flex-1 text-[10px] font-bold text-slate-400 uppercase">MÉTODO DE PAGO (PAGOS MIXTOS DISPONIBLES)</label>
@@ -1097,7 +1097,19 @@ export default function AsistenciaPage() {
             </thead>
             <tbody className="divide-y divide-slate-100">
               {(() => {
-                const currentItems = asistenciasFiltradas.slice(indexOfFirstItem, indexOfLastItem);
+                const asistenciasOrdenadas = [...asistenciasFiltradas].sort((a, b) => {
+    const dateA = new Date(a.fecha);
+    const dateB = new Date(b.fecha);
+    if (dateA.getTime() !== dateB.getTime()) {
+      return dateB.getTime() - dateA.getTime();
+    }
+    const [hA, mA] = (a.hora || "00:00").split(":").map(Number);
+    const [hB, mB] = (b.hora || "00:00").split(":").map(Number);
+    const minsA = (hA || 0) * 60 + (mA || 0);
+    const minsB = (hB || 0) * 60 + (mB || 0);
+    return minsA - minsB;
+  });
+  const currentItems = asistenciasOrdenadas.slice(indexOfFirstItem, indexOfLastItem);
                 return currentItems.length > 0 ? currentItems.map(a => (
                 <tr key={a.id} className="hover:bg-slate-50 transition-colors">
                   <td className="px-2 py-3 text-slate-500 font-medium">{formatDateStr(a.fecha)}</td>
@@ -1205,11 +1217,11 @@ export default function AsistenciaPage() {
               Mostrando {indexOfFirstItem + 1} - {Math.min(indexOfLastItem, asistenciasFiltradas.length)} de {asistenciasFiltradas.length}
             </div>
             <div className="flex gap-1">
-              <button onClick={() => setCurrentPage(prev => Math.max(prev - 1, 1))} disabled={currentPage === 1} className="px-3 py-1 border border-slate-300 rounded text-xs font-medium text-slate-600 disabled:opacity-50">Anterior</button>
+              <button onClick={() => setCurrentPage(prev => Math.max(prev - 1, 1))} disabled={currentPage === 1} className="px-3 py-1 border border-slate-300 rounded text-xs font-bold text-black disabled:opacity-50">Anterior</button>
               {Array.from({ length: Math.ceil(asistenciasFiltradas.length / itemsPerPage) }, (_, i) => (
                 <button key={i} onClick={() => setCurrentPage(i + 1)} className={`px-3 py-1 border rounded text-xs font-medium ${currentPage === i + 1 ? 'bg-[#0e2f44] text-white border-[#0e2f44]' : 'border-slate-300 text-slate-600'}`}>{i + 1}</button>
               ))}
-              <button onClick={() => setCurrentPage(prev => Math.min(prev + 1, Math.ceil(asistenciasFiltradas.length / itemsPerPage)))} disabled={currentPage === Math.ceil(asistenciasFiltradas.length / itemsPerPage)} className="px-3 py-1 border border-slate-300 rounded text-xs font-medium text-slate-600 disabled:opacity-50">Siguiente</button>
+              <button onClick={() => setCurrentPage(prev => Math.min(prev + 1, Math.ceil(asistenciasFiltradas.length / itemsPerPage)))} disabled={currentPage === Math.ceil(asistenciasFiltradas.length / itemsPerPage)} className="px-3 py-1 border border-slate-300 rounded text-xs font-bold text-black disabled:opacity-50">Siguiente</button>
             </div>
           </div>
         )}

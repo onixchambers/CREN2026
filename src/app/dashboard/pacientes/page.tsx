@@ -836,18 +836,18 @@ export default function PacientesPage() {
                                               type="button"
                                               disabled={activePage === 1}
                                               onClick={() => setDocsCurrentPage(prev => prev - 1)}
-                                              className="px-2.5 py-1 border border-slate-300 rounded bg-white text-slate-700 disabled:opacity-50 hover:bg-slate-50 cursor-pointer font-bold"
+                                              className="px-2.5 py-1 border border-slate-300 rounded bg-white text-black disabled:opacity-50 hover:bg-slate-50 cursor-pointer font-bold"
                                             >
                                               Anterior
                                             </button>
-                                            <span className="px-2.5 py-1 text-slate-700 font-bold">
+                                            <span className="px-2.5 py-1 text-black font-bold">
                                               Página {activePage} de {totalDocsPages}
                                             </span>
                                             <button 
                                               type="button"
                                               disabled={activePage === totalDocsPages}
                                               onClick={() => setDocsCurrentPage(prev => prev + 1)}
-                                              className="px-2.5 py-1 border border-slate-300 rounded bg-white text-slate-700 disabled:opacity-50 hover:bg-slate-50 cursor-pointer font-bold"
+                                              className="px-2.5 py-1 border border-slate-300 rounded bg-white text-black disabled:opacity-50 hover:bg-slate-50 cursor-pointer font-bold"
                                             >
                                               Siguiente
                                             </button>
@@ -1233,7 +1233,7 @@ export default function PacientesPage() {
               <button 
                 type="button" 
                 onClick={() => setViewingPatient(null)} 
-                className="w-full bg-[#1a5276] hover:bg-[#0e2f44] text-white font-bold py-2.5 rounded-xl text-xs transition-colors shadow-sm cursor-pointer"
+                className="w-full bg-[#1a5276] hover:bg-[#0e2f44] text-white font-bold py-2.5 rounded-xl text-sm transition-colors shadow-sm"
               >
                 Cerrar Expediente
               </button>
@@ -1242,78 +1242,128 @@ export default function PacientesPage() {
         </div>
       )}
 
-      {/* MODAL EDITAR PACIENTE */}
+      {/* MODAL EDITAR PACIENTE (Ficha ID){/* MODAL EDITAR PACIENTE (Ficha ID) */}
       {editingPatient && (
         <div className="fixed inset-0 z-50 bg-black/50 flex items-center justify-center p-4">
-          <div className="bg-white rounded-xl max-w-md w-full p-6 space-y-4 shadow-2xl animate-in zoom-in-95 duration-200">
-            <h3 className="text-lg font-bold text-slate-800 border-b border-slate-200 pb-2">Editar Información de Paciente</h3>
+          <div className="bg-white rounded-xl max-w-2xl w-full p-6 space-y-4 shadow-2xl animate-in zoom-in-95 duration-200 overflow-y-auto max-h-[90vh]">
+            <h3 className="text-lg font-bold text-slate-800 border-b border-slate-200 pb-2 flex items-center gap-2 justify-between w-full">
+              <div className="flex items-center gap-2">
+                <svg className="w-5 h-5 text-[#2980b9]" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" /></svg>
+                Editar Ficha ID del Paciente
+              </div>
+              <span className="text-xs font-semibold text-slate-500">Fecha de Registro: {editingPatient.createdAt ? new Date(editingPatient.createdAt).toLocaleDateString("es-MX", { day: "2-digit", month: "2-digit", year: "numeric" }) : "—"}</span>
+            </h3>
             
-            <div className="space-y-3">
-              <div>
-                <label className="block text-xs font-bold text-slate-700 mb-1">Nombre Completo</label>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div className="space-y-1">
+                <label className="block text-xs font-bold text-slate-700">Nombre Completo</label>
                 <input
                   type="text"
                   name="nombre"
                   value={editForm.nombre}
                   onChange={handleEditChange}
-                  className="w-full p-2 border border-slate-300 rounded text-sm text-slate-900"
+                  className="w-full p-2 border border-slate-300 rounded text-sm text-slate-900 focus:border-[#2980b9] outline-none"
                 />
               </div>
 
-              <div className="grid grid-cols-2 gap-2">
-                <div>
-                  <label className="block text-xs font-bold text-slate-700 mb-1">Precio Terapia (MXN)</label>
-                  <select
-                    name="precioTerapia"
-                    value={editForm.precioTerapia}
-                    onChange={handleEditChange}
-                    className="w-full p-2 border border-slate-300 rounded text-sm text-slate-700 font-medium bg-white"
-                  >
-                    <option value="">Seleccionar precio...</option>
-                    {(() => {
-                      const numVal = parseFloat((editForm.precioTerapia || "0").toString().replace(/[^0-9.]/g, ""));
-                      const list = [...therapyPrices];
-                      if (!isNaN(numVal) && numVal > 0 && !list.includes(numVal)) {
-                        list.push(numVal);
-                        list.sort((a, b) => a - b);
-                      }
-                      return list.map(p => (
-                        <option key={p} value={p.toString()}>${p.toFixed(2)}</option>
-                      ));
-                    })()}
-                  </select>
-                </div>
-                <div>
-                  <label className="block text-xs font-bold text-slate-700 mb-1">Estado</label>
-                  <select
-                    name="estatus"
-                    value={editForm.estatus}
-                    onChange={handleEditChange}
-                    style={{ color: (editForm.estatus || 'Activo').toLowerCase() === 'activo' ? '#065f46' : '#ffffff' }}
-                    className={`w-full p-2 border rounded text-sm font-semibold outline-none transition-colors ${
-                      (editForm.estatus || 'Activo').toLowerCase() === 'activo'
-                        ? 'bg-emerald-100 border-emerald-300'
-                        : 'bg-slate-800 border-slate-900'
-                    }`}
-                  >
-                    <option value="Activo" className="bg-white text-slate-800 font-medium">Activo</option>
-                    <option value="Inactivo" className="bg-white text-slate-800 font-medium">Inactivo</option>
-                  </select>
-                </div>
+              <div className="space-y-1">
+                <label className="block text-xs font-bold text-slate-700">Fecha Nacimiento</label>
+                <input
+                  type="date"
+                  name="fechaNacimiento"
+                  value={editForm.fechaNacimiento}
+                  onChange={handleEditChange}
+                  className="w-full p-2 border border-slate-300 rounded text-sm text-slate-900 focus:border-[#2980b9] outline-none"
+                />
+              </div>
+
+              <div className="space-y-1">
+                <label className="block text-xs font-bold text-slate-700">Sexo</label>
+                <select
+                  name="sexo"
+                  value={editForm.sexo}
+                  onChange={handleEditChange}
+                  className="w-full p-2 border border-slate-300 rounded text-sm text-slate-900 bg-white focus:border-[#2980b9] outline-none"
+                >
+                  <option value="">Seleccionar...</option>
+                  <option value="M">M (Masculino)</option>
+                  <option value="F">F (Femenino)</option>
+                  <option value="Masculino">Masculino</option>
+                  <option value="Femenino">Femenino</option>
+                  <option value="—">—</option>
+                </select>
+              </div>
+
+              <div className="space-y-1">
+                <label className="block text-xs font-bold text-slate-700">Precio Terapia (MXN)</label>
+                <select
+                  name="precioTerapia"
+                  value={editForm.precioTerapia}
+                  onChange={handleEditChange}
+                  className="w-full p-2 border border-slate-300 rounded text-sm text-slate-700 font-medium bg-white focus:border-[#2980b9] outline-none"
+                >
+                  <option value="">Seleccionar precio...</option>
+                  {(() => {
+                    const numVal = parseFloat((editForm.precioTerapia || "0").toString().replace(/[^0-9.]/g, ""));
+                    const list = [...therapyPrices];
+                    if (!isNaN(numVal) && numVal > 0 && !list.includes(numVal)) {
+                      list.push(numVal);
+                      list.sort((a, b) => a - b);
+                    }
+                    return list.map(p => (
+                      <option key={p} value={p.toString()}>${p.toFixed(2)}</option>
+                    ));
+                  })()}
+                </select>
+              </div>
+
+              <div className="space-y-1">
+                <label className="block text-xs font-bold text-slate-700">Método de Pago</label>
+                <select
+                  name="metodoPago"
+                  value={editForm.metodoPago}
+                  onChange={handleEditChange}
+                  className="w-full p-2 border border-slate-300 rounded text-sm text-slate-700 bg-white focus:border-[#2980b9] outline-none"
+                >
+                  <option value="">Seleccionar...</option>
+                  <option value="Efectivo">Efectivo</option>
+                  <option value="Transferencia">Transferencia</option>
+                  <option value="Tarjeta">Tarjeta</option>
+                  <option value="Por definir">Por definir</option>
+                  <option value="Beca">Beca</option>
+                </select>
+              </div>
+
+              <div className="space-y-1">
+                <label className="block text-xs font-bold text-slate-700">Estado</label>
+                <select
+                  name="estatus"
+                  value={editForm.estatus}
+                  onChange={handleEditChange}
+                  style={{ color: (editForm.estatus || 'Activo').toLowerCase() === 'activo' ? '#065f46' : '#ffffff' }}
+                  className={`w-full p-2 border rounded text-sm font-semibold outline-none transition-colors ${
+                    (editForm.estatus || 'Activo').toLowerCase() === 'activo'
+                      ? 'bg-emerald-100 border-emerald-300'
+                      : 'bg-slate-800 border-slate-900'
+                  }`}
+                >
+                  <option value="Activo" className="bg-white text-slate-800 font-medium">Activo</option>
+                  <option value="Inactivo" className="bg-white text-slate-800 font-medium">Inactivo</option>
+                </select>
               </div>
             </div>
 
-            <div className="flex gap-2 pt-2">
+            <div className="flex gap-2 pt-4 border-t border-slate-100">
               <button
                 disabled={isSaving}
                 onClick={saveEdit}
-                className="flex-1 bg-[#1a5276] hover:bg-[#0e2f44] text-white font-bold py-2 rounded text-xs transition disabled:opacity-50"
+                className="flex-1 bg-[#1a5276] hover:bg-[#0e2f44] text-white font-bold py-2.5 rounded-lg text-sm transition disabled:opacity-50 flex items-center justify-center gap-2 shadow-sm"
               >
                 {isSaving ? "Guardando..." : "Guardar Cambios"}
               </button>
               <button
                 onClick={() => setEditingPatient(null)}
-                className="flex-1 bg-slate-100 text-slate-600 font-semibold py-2 rounded text-xs hover:bg-slate-200 transition"
+                className="flex-1 bg-slate-100 text-slate-600 font-bold py-2.5 rounded-lg text-sm hover:bg-slate-200 transition shadow-sm"
               >
                 Cancelar
               </button>

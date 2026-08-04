@@ -1,7 +1,7 @@
 "use client";
 import { useState, useEffect } from "react";
 import { getTerapeutas } from "@/app/actions/configuracion";
-import { getPatients } from "@/app/actions/pacientes";
+import { getPatients, updatePatientFast } from "@/app/actions/pacientes";
 import { getAgenda, addCita, updateCita, deleteCita } from "@/app/actions/agenda";
 import { useSession } from "next-auth/react";
 import { DateInput } from "@/components/DateInput";
@@ -53,6 +53,14 @@ export default function AgendaPage() {
     paciente: "", fecha: hoy, hora: "09:00", terapeuta: "", tipoServicio: "individual", frecuencia: "semanal", numeroSesiones: 1, estado: "Agendado" as Cita["estado"], pagado: false, metodoPago: ""
   });
 
+  const [editingPatient, setEditingPatient] = useState<any>(null);
+  const [editForm, setEditForm] = useState({
+    nombre: "", sexo: "", fechaNacimiento: "", precioTerapia: "500", metodoPago: "", estatus: "Activo"
+  });
+  const [isSaving, setIsSaving] = useState(false);
+  const [isLoading, setIsLoading] = useState(false);
+  const allowTherapistEdit = false;
+
   useEffect(() => {
     if (status === "loading") return;
     async function loadTerapeutas() {
@@ -74,7 +82,7 @@ export default function AgendaPage() {
           const st = (p.estatus || "Activo").toLowerCase();
           return st === "activo";
         });
-        setPacientes(activosOnly.map((p: any) => ({ id: p.id, name: p.name, medicoTratante: p.medicoTratante })));
+        setPacientes(activosOnly.map((p: any) => ({ id: p.id, name: p.name, medicoTratante: p.medicoTratante, sexo: p.sexo, fechaNacimiento: p.fechaNacimiento, precioTerapia: p.precioTerapia, metodoPago: p.metodoPago, estatus: p.estatus })));
       }
       
       const agendaRes = await getAgenda();
@@ -108,6 +116,63 @@ export default function AgendaPage() {
     }
   };
 
+  const openPatientEditModal = (patientName: string) => {
+    if (userRole.toUpperCase() === "TERAPEUTA" && !allowTherapistEdit) {
+      alert("La administración no tiene habilitado el permiso para editar pacientes.");
+      return;
+    }
+    const searchNorm = patientName.trim().toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "");
+    const fullPatient = pacientes.find(p => p.name.toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "") === searchNorm);
+    if (!fullPatient) {
+      alert("No se encontró la ficha del paciente para edición.");
+      return;
+    }
+    
+    setEditingPatient(fullPatient);
+    setEditForm({
+      nombre: fullPatient.name || "",
+      sexo: fullPatient.sexo || "",
+      fechaNacimiento: fullPatient.fechaNacimiento || "",
+      precioTerapia: fullPatient.precioTerapia || "500",
+      metodoPago: fullPatient.metodoPago || "",
+      estatus: fullPatient.estatus || "Activo"
+    });
+  };
+
+  const handlePatientEditChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
+    setEditForm({ ...editForm, [e.target.name]: e.target.value });
+  };
+
+  const savePatientEdit = async () => {
+    if (!editingPatient) return;
+    setIsSaving(true);
+    const res = await updatePatientFast(editingPatient.id, editForm);
+    setIsSaving(false);
+    
+    if (res.success) {
+      setEditingPatient(null);
+      const pRes = await getPatients();
+      if (pRes.success) {
+        setPacientes(pRes.data || []);
+      }
+      
+      if (editForm.nombre !== editingPatient.name) {
+        const matchingCitas = citas.filter(c => c.paciente === editingPatient.name);
+        for (const cita of matchingCitas) {
+           await updateCita(cita.id, { paciente: editForm.nombre });
+        }
+        if (selectedCita && selectedCita.paciente === editingPatient.name) {
+           setSelectedCita({...selectedCita, paciente: editForm.nombre});
+        }
+        
+        const aRes = await getAgenda();
+        if (aRes.success) setCitas(aRes.data || []);
+      }
+    } else {
+      alert("Error al actualizar paciente: " + res.error);
+    }
+  };
+
   const [isSubmittingCita, setIsSubmittingCita] = useState(false);
 
   const handleAddCita = async (e: React.FormEvent) => {
@@ -131,7 +196,7 @@ export default function AgendaPage() {
         terapeuta: formData.terapeuta,
         tipoServicio: formData.tipoServicio,
         frecuencia: formData.frecuencia,
-        numeroSesiones: formData.numeroSesiones,
+        numeroSesiones: 1,
         estado: formData.estado,
         pagado: formData.pagado,
         metodoPago: formData.metodoPago
@@ -154,25 +219,6 @@ export default function AgendaPage() {
     }
   };
   
-    const handleUpdateInline = (id: string, updates: any) => {
-    setCitas(citas.map(c => c.id === id ? { ...c, ...updates } : c));
-  };
-
-  const handleSaveInline = async (id: string) => {
-    const current = citas.find(c => c.id === id);
-    if (!current) return;
-    const res = await updateCita(id, { 
-      estado: current.estado,
-      pagado: current.pagado,
-      metodoPago: current.metodoPago
-    });
-    if (res.success) {
-      alert("Cita guardada correctamente");
-    } else {
-      alert("Error al guardar cita");
-    }
-  };
-
   const handleDeleteCita = async (id: string) => {
     if (!confirm("¿Eliminar esta cita permanentemente?")) return;
     const res = await deleteCita(id);
@@ -193,14 +239,6 @@ export default function AgendaPage() {
     if (res.success) {
       setCitas(citas.map(c => c.id === selectedCita.id ? selectedCita : c));
       setIsEditModalOpen(false);
-    }
-  };
-
-  const handleTogglePagado = async (citaId: string, currentPagado: boolean) => {
-    const newVal = !currentPagado;
-    const res = await updateCita(citaId, { pagado: newVal });
-    if (res.success) {
-      setCitas(citas.map(c => c.id === citaId ? { ...c, pagado: newVal } : c));
     }
   };
 
@@ -239,7 +277,6 @@ export default function AgendaPage() {
   const citasFiltradas = citas.filter(c => c.fecha === fechaSeleccionada);
 
   const getCitaParaCelda = (hora: string, terapeuta: string) => {
-    // Busca una cita cuya hora empiece con la misma hora de la celda (ej. "09:" coincide con "09:00" o "09:30")
     const horaPrefix = hora.split(":")[0];
     return citasFiltradas.find(c => c.terapeuta === terapeuta && c.hora.startsWith(horaPrefix));
   };
@@ -248,42 +285,36 @@ export default function AgendaPage() {
     const est = (estado || "").trim().toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "");
     
     if (est.includes("centro")) {
-      // Cancelo el centro -> Amarillo traslucido
       return {
         className: "bg-amber-100/90 text-amber-900 border-amber-300 font-bold shadow-sm",
         style: { color: "#78350f", backgroundColor: "rgba(254, 240, 138, 0.85)" }
       };
     }
     if (est.includes("sin anticipacion") || est.includes("sin anticipa")) {
-      // Cancelo sin anticipacion -> Rojo traslucido
       return {
         className: "bg-red-100/90 text-red-900 border-red-300 font-bold shadow-sm",
         style: { color: "#7f1d1d", backgroundColor: "rgba(254, 226, 226, 0.85)" }
       };
     }
     if (est.includes("anticipad") || est.includes("con anticipacion")) {
-      // Cancelo con anticipacion -> Naranja traslucido
       return {
         className: "bg-orange-100/90 text-orange-900 border-orange-300 font-bold shadow-sm",
         style: { color: "#7c2d12", backgroundColor: "rgba(254, 215, 170, 0.85)" }
       };
     }
     if (est === "agendado" || est === "alta") {
-      // Agendado / Alta -> Verde por defecto
       return {
         className: "bg-emerald-100 text-emerald-900 border-emerald-400 font-bold shadow-sm",
         style: { color: "#065f46", backgroundColor: "#d1fae5" }
       };
     }
     if (est.includes("asisti") || est === "asistio") {
-      // Asistio -> Gris
       return {
         className: "bg-slate-200 text-slate-800 border-slate-300 font-bold shadow-sm",
         style: { color: "#1e293b", backgroundColor: "#e2e8f0" }
       };
     }
     if (est === "baja") {
-      // Baja -> Negro con letras blancas
       return {
         className: "bg-slate-900 text-white border-slate-950 font-bold shadow-sm",
         style: { color: "#ffffff", backgroundColor: "#0f172a" }
@@ -296,14 +327,13 @@ export default function AgendaPage() {
       };
     }
     
-    // Default fallback -> Agendado (Verde por defecto)
     return {
       className: "bg-emerald-100 text-emerald-900 border-emerald-400 font-bold shadow-sm",
       style: { color: "#065f46", backgroundColor: "#d1fae5" }
     };
   };
 
-  if (isLoadingTerapeutas) {
+  if (isLoading || isLoadingTerapeutas) {
     return (
       <div className="flex items-center justify-center p-12">
         <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div>
@@ -669,9 +699,22 @@ export default function AgendaPage() {
             </div>
             
             <form onSubmit={handleUpdateSelectedCita} className="p-6 space-y-4">
-              <div>
-                <p className="font-bold text-slate-800">{selectedCita.paciente}</p>
-                <p className="text-slate-500 text-sm">{selectedCita.fecha} a las {selectedCita.hora}</p>
+              <div className="flex items-center justify-between">
+                <div>
+                  <p className="font-bold text-slate-800">{selectedCita.paciente}</p>
+                  <p className="text-slate-500 text-sm">{selectedCita.fecha} a las {selectedCita.hora}</p>
+                </div>
+                {selectedCita.paciente !== "No Disponible" && selectedCita.paciente !== "Bloqueado" && (
+                  <button
+                    type="button"
+                    onClick={() => openPatientEditModal(selectedCita.paciente)}
+                    title="Editar Ficha ID del Paciente"
+                    className="p-2 border border-slate-200 rounded-lg bg-amber-50 text-amber-600 font-bold text-xs hover:bg-amber-100 transition-colors flex items-center gap-1 cursor-pointer"
+                  >
+                    <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z" /></svg>
+                    Ficha ID
+                  </button>
+                )}
               </div>
 
               <div>
@@ -701,6 +744,136 @@ export default function AgendaPage() {
           </div>
         </div>
       )}
+
+      {/* MODAL EDITAR PACIENTE (Ficha ID) DESDE LA AGENDA */}
+      {editingPatient && (
+        <div className="fixed inset-0 z-[60] bg-black/60 flex items-center justify-center p-4">
+          <div className="bg-white rounded-xl max-w-2xl w-full p-6 space-y-4 shadow-2xl animate-in zoom-in-95 duration-200 overflow-y-auto max-h-[90vh]">
+            <h3 className="text-lg font-bold text-slate-800 border-b border-slate-200 pb-2 flex items-center gap-2">
+              <svg className="w-5 h-5 text-[#2980b9]" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" /></svg>
+              Editar Ficha ID del Paciente
+            </h3>
+            
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div className="space-y-1">
+                <label className="block text-xs font-bold text-slate-700">Nombre Completo</label>
+                <input
+                  type="text"
+                  name="nombre"
+                  value={editForm.nombre}
+                  onChange={handlePatientEditChange}
+                  className="w-full p-2 border border-slate-300 rounded text-sm text-slate-900 focus:border-[#2980b9] outline-none"
+                />
+              </div>
+
+              <div className="space-y-1">
+                <label className="block text-xs font-bold text-slate-700">Fecha Nacimiento</label>
+                <input
+                  type="date"
+                  name="fechaNacimiento"
+                  value={editForm.fechaNacimiento}
+                  onChange={handlePatientEditChange}
+                  className="w-full p-2 border border-slate-300 rounded text-sm text-slate-900 focus:border-[#2980b9] outline-none"
+                />
+              </div>
+
+              <div className="space-y-1">
+                <label className="block text-xs font-bold text-slate-700">Sexo</label>
+                <select
+                  name="sexo"
+                  value={editForm.sexo}
+                  onChange={handlePatientEditChange}
+                  className="w-full p-2 border border-slate-300 rounded text-sm text-slate-900 bg-white focus:border-[#2980b9] outline-none"
+                >
+                  <option value="">Seleccionar...</option>
+                  <option value="M">M (Masculino)</option>
+                  <option value="F">F (Femenino)</option>
+                  <option value="Masculino">Masculino</option>
+                  <option value="Femenino">Femenino</option>
+                  <option value="—">—</option>
+                </select>
+              </div>
+
+              <div className="space-y-1">
+                <label className="block text-xs font-bold text-slate-700">Precio Terapia (MXN)</label>
+                <select
+                  name="precioTerapia"
+                  value={editForm.precioTerapia}
+                  onChange={handlePatientEditChange}
+                  className="w-full p-2 border border-slate-300 rounded text-sm text-slate-700 font-medium bg-white focus:border-[#2980b9] outline-none"
+                >
+                  <option value="">Seleccionar precio...</option>
+                  <option value="500">$500.00</option>
+                  <option value="600">$600.00</option>
+                  <option value="700">$700.00</option>
+                  <option value="800">$800.00</option>
+                  <option value="1000">$1000.00</option>
+                  {(() => {
+                    const numVal = parseFloat((editForm.precioTerapia || "0").toString().replace(/[^0-9.]/g, ""));
+                    const stdPrices = [500, 600, 700, 800, 1000];
+                    if (!isNaN(numVal) && numVal > 0 && !stdPrices.includes(numVal)) {
+                      return <option value={numVal.toString()}>${numVal.toFixed(2)}</option>;
+                    }
+                    return null;
+                  })()}
+                </select>
+              </div>
+
+              <div className="space-y-1">
+                <label className="block text-xs font-bold text-slate-700">Método de Pago</label>
+                <select
+                  name="metodoPago"
+                  value={editForm.metodoPago}
+                  onChange={handlePatientEditChange}
+                  className="w-full p-2 border border-slate-300 rounded text-sm text-slate-700 bg-white focus:border-[#2980b9] outline-none"
+                >
+                  <option value="">Seleccionar...</option>
+                  <option value="Efectivo">Efectivo</option>
+                  <option value="Transferencia">Transferencia</option>
+                  <option value="Tarjeta">Tarjeta</option>
+                  <option value="Por definir">Por definir</option>
+                  <option value="Beca">Beca</option>
+                </select>
+              </div>
+
+              <div className="space-y-1">
+                <label className="block text-xs font-bold text-slate-700">Estado</label>
+                <select
+                  name="estatus"
+                  value={editForm.estatus}
+                  onChange={handlePatientEditChange}
+                  style={{ color: (editForm.estatus || 'Activo').toLowerCase() === 'activo' ? '#065f46' : '#ffffff' }}
+                  className={`w-full p-2 border rounded text-sm font-semibold outline-none transition-colors ${
+                    (editForm.estatus || 'Activo').toLowerCase() === 'activo'
+                      ? 'bg-emerald-100 border-emerald-300'
+                      : 'bg-slate-800 border-slate-900'
+                  }`}
+                >
+                  <option value="Activo" className="bg-white text-slate-800 font-medium">Activo</option>
+                  <option value="Inactivo" className="bg-white text-slate-800 font-medium">Inactivo</option>
+                </select>
+              </div>
+            </div>
+
+            <div className="flex gap-2 pt-4 border-t border-slate-100">
+              <button
+                disabled={isSaving}
+                onClick={savePatientEdit}
+                className="flex-1 bg-[#1a5276] hover:bg-[#0e2f44] text-white font-bold py-2.5 rounded-lg text-sm transition disabled:opacity-50 flex items-center justify-center gap-2 shadow-sm"
+              >
+                {isSaving ? "Guardando..." : "Guardar Cambios"}
+              </button>
+              <button
+                onClick={() => setEditingPatient(null)}
+                className="flex-1 bg-slate-100 text-slate-600 font-bold py-2.5 rounded-lg text-sm hover:bg-slate-200 transition shadow-sm"
+              >
+                Cancelar
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
     </div>
   );
 }
