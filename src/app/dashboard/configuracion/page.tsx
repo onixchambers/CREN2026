@@ -446,7 +446,7 @@ export default function ConfiguracionPage() {
           </div>
           
           <div className="flex items-center gap-3">
-            <span className="text-sm font-medium text-slate-700">Permitir a terapeutas e Invitados editar Pacientes</span>
+            <span className="text-sm font-medium text-slate-700">Permitir a terapeutas editar Pacientes</span>
             <label className="flex items-center gap-2 cursor-pointer">
               <input type="checkbox" checked={allowTherapistEdit} onChange={(e) => setAllowTherapistEdit(e.target.checked)} className="w-4 h-4 text-blue-600 border-slate-300 rounded focus:ring-blue-500" />
               <span className="text-sm text-slate-600">Habilitado</span>
@@ -488,6 +488,7 @@ export default function ConfiguracionPage() {
         <hr className="border-slate-100" />
 
         {/* NOTIFICACIONES Y RECORDATORIOS DE SALDO PENDIENTE */}
+        {!isInvitado && (
         <div className="p-6 space-y-6">
           <div className="flex items-center justify-between border-b border-slate-100 pb-3">
             <h3 className="text-[#1a5276] font-bold flex items-center gap-2 text-base">
@@ -713,7 +714,7 @@ export default function ConfiguracionPage() {
             </div>
           </div>
         </div>
-
+        )}
 
         {/* GASTOS OPERATIVOS */}
         <div className="p-6">

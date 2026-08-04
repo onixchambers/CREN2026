@@ -357,7 +357,7 @@ export default function PacientesPage() {
                         return (
                           <div className="w-full max-w-[130px] mx-auto flex flex-col items-stretch justify-center gap-0.5 my-0.5">
                             {lines.map((line, idx) => (
-                              <span key={idx} className="w-full bg-blue-50 text-blue-800 border border-blue-200 px-1.5 py-0.5 rounded text-[9.5px] font-bold block text-center whitespace-nowrap leading-tight shadow-xs">
+                              <span key={idx} className={`w-full px-1.5 py-0.5 rounded text-[9.5px] font-bold block text-center whitespace-nowrap leading-tight shadow-xs ${line.toLowerCase() === 'por definir' ? 'bg-red-500/20 text-red-800 border border-red-300' : 'bg-blue-50 text-blue-800 border border-blue-200'}`}>
                                 {line}
                               </span>
                             ))}
@@ -444,7 +444,7 @@ export default function PacientesPage() {
             <button 
               disabled={currentPage === 1}
               onClick={() => setCurrentPage(prev => prev - 1)}
-              className="px-3 py-1 border border-slate-300 rounded text-sm disabled:opacity-50 hover:bg-slate-50"
+              className="px-3 py-1 border border-slate-300 rounded text-sm text-black disabled:opacity-50 hover:bg-slate-50"
             >
               Anterior
             </button>
@@ -454,7 +454,7 @@ export default function PacientesPage() {
             <button 
               disabled={currentPage === totalPages}
               onClick={() => setCurrentPage(prev => prev + 1)}
-              className="px-3 py-1 border border-slate-300 rounded text-sm disabled:opacity-50 hover:bg-slate-50"
+              className="px-3 py-1 border border-slate-300 rounded text-sm text-black disabled:opacity-50 hover:bg-slate-50"
             >
               Siguiente
             </button>
@@ -534,7 +534,10 @@ export default function PacientesPage() {
                   </label>
                 </div>
                 <div>
-                  <h3 className="text-base md:text-lg font-bold text-slate-900 leading-tight">{viewingPatient.name}</h3>
+                  <div className="flex items-center gap-2 mb-1">
+                    <h3 className="text-base md:text-lg font-bold text-slate-900 leading-tight">{viewingPatient.name}</h3>
+                    <span className="text-[10px] font-bold bg-slate-100 text-slate-600 px-2 py-0.5 rounded-full border border-slate-200 shadow-sm whitespace-nowrap">Fecha de Registro: {viewingPatient.createdAt ? new Date(viewingPatient.createdAt).toLocaleDateString('es-ES', { day: '2-digit', month: '2-digit', year: 'numeric' }) : "01/12/2026"}</span>
+                  </div>
                   <p className="text-xs text-slate-500 font-medium">Médico Tratante: <span className="font-semibold text-slate-700">{viewingPatient.medicoTratante || "Sin asignar"}</span></p>
                 </div>
               </div>
@@ -784,19 +787,21 @@ export default function PacientesPage() {
                                           >
                                             <span>👁️ VER / PDF</span>
                                           </button>
-                                          <button
-                                            type="button"
-                                            onClick={async () => {
-                                              if (window.confirm("¿Deseas borrar este documento clínico?")) {
-                                                const res = await deletePatientDocument(viewingPatient.id, doc.id);
-                                                if (res.success && res.data) setPatientDocs(res.data);
-                                              }
-                                            }}
-                                            className="text-red-500 hover:text-red-700 text-xs p-1"
-                                            title="Eliminar registro"
-                                          >
-                                            🗑️
-                                          </button>
+                                          {(userRole.toUpperCase() === 'ADMIN' || userRole.toUpperCase() === 'INVITADO' || allowTherapistEdit) && (
+                                            <button
+                                              type="button"
+                                              onClick={async () => {
+                                                if (window.confirm("¿Deseas borrar este documento clínico?")) {
+                                                  const res = await deletePatientDocument(viewingPatient.id, doc.id);
+                                                  if (res.success && res.data) setPatientDocs(res.data);
+                                                }
+                                              }}
+                                              className="text-red-500 hover:text-red-700 text-xs p-1"
+                                              title="Eliminar registro"
+                                            >
+                                              🗑️
+                                            </button>
+                                          )}
                                         </div>
                                       </td>
                                     </tr>
