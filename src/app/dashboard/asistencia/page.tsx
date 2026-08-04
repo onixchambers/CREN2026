@@ -135,10 +135,12 @@ export default function AsistenciaPage() {
   // Predictivo
   const [showDropdown, setShowDropdown] = useState(false);
   const [showSegundoPago, setShowSegundoPago] = useState(false);
+  const [verTodosLosPacientes, setVerTodosLosPacientes] = useState(false);
   
   // Formulario
   const [formData, setFormData] = useState({
     fecha: hoy,
+    hora: "09:00",
     terapeuta: "",
     area: "",
     tipoSesion: "",
@@ -427,6 +429,7 @@ export default function AsistenciaPage() {
     const nuevaAsistencia: Asistencia = {
       id: Date.now().toString(),
       fecha: formData.fecha,
+      hora: formData.hora,
       area: formData.area,
       paciente: formData.pacienteNombre,
       sexo: formData.pacienteSexo,
@@ -457,8 +460,12 @@ export default function AsistenciaPage() {
 
     alert("Sesión guardada exitosamente en la base de datos");
     handleLimpiarForm();
-    // Recargar desde BD para que el registro persista al cambiar de pestaña
     await recargarAsistencias();
+    
+    // Redirigir a Pacientes y abrir la Nota Clínica Nueva
+    if (formData.pacienteId) {
+      router.push(`/dashboard/pacientes?action=nota&patientId=${formData.pacienteId}`);
+    }
   };
 
   // --- Lógica de Edición ---
@@ -642,8 +649,8 @@ export default function AsistenciaPage() {
 
           <div className="space-y-5">
             {/* ROW 1 */}
-            <div className="grid grid-cols-1 md:grid-cols-6 gap-4">
-              <div>
+            <div className="grid grid-cols-1 md:grid-cols-7 gap-4">
+              <div className="md:col-span-1">
                 <div className="flex items-center justify-between mb-1">
                   <label className="block text-[10px] font-bold text-slate-400 uppercase">FECHA</label>
                   <div className="flex items-center gap-1">
@@ -697,7 +704,17 @@ export default function AsistenciaPage() {
                   className="w-full text-sm p-2 border border-slate-300 rounded focus:border-[#2980b9] outline-none text-slate-900 bg-white cursor-pointer font-medium"
                 />
               </div>
-              <div>
+              <div className="md:col-span-1">
+                <label className="block text-[10px] font-bold text-slate-400 uppercase mb-1">HORA</label>
+                <input 
+                  type="time" 
+                  name="hora" 
+                  value={formData.hora} 
+                  onChange={handleChange} 
+                  className="w-full text-sm p-2 border border-slate-300 rounded focus:border-[#2980b9] outline-none text-slate-900 bg-white cursor-pointer font-medium" 
+                />
+              </div>
+              <div className="md:col-span-1">
                 <label className="block text-[10px] font-bold text-slate-400 uppercase mb-1">TERAPEUTA</label>
                 <select name="terapeuta" value={formData.terapeuta} onChange={handleChange} className="w-full text-sm p-2 border border-slate-300 rounded focus:border-[#2980b9] outline-none text-slate-900" disabled={userRole.toUpperCase() === "TERAPEUTA"}>
                   {userRole.toUpperCase() !== "TERAPEUTA" && <option value="">Seleccionar...</option>}
@@ -728,9 +745,20 @@ export default function AsistenciaPage() {
                   <option value="Otros">Otros</option>
                 </select>
               </div>
-              <div className="relative">
+              <div className="relative md:col-span-2">
                 <div className="flex items-center justify-between mb-1">
                   <label className="block text-[10px] font-bold text-slate-400 uppercase">NOMBRE PACIENTE</label>
+                  {userRole.toUpperCase() === "TERAPEUTA" && (
+                    <label className="flex items-center gap-1 text-[10px] font-bold text-slate-500 cursor-pointer">
+                      <input 
+                        type="checkbox" 
+                        checked={verTodosLosPacientes} 
+                        onChange={(e) => setVerTodosLosPacientes(e.target.checked)} 
+                        className="cursor-pointer"
+                      />
+                      Ver todos
+                    </label>
+                  )}
                 </div>
                 <input 
                   type="text" 
@@ -749,7 +777,7 @@ export default function AsistenciaPage() {
                 {showDropdown && (
                   <ul className="absolute z-10 w-full bg-white border border-slate-300 rounded-md mt-1 max-h-48 overflow-y-auto shadow-lg">
                     {pacientes
-                      .filter(p => p.paciente.toLowerCase().includes(formData.pacienteNombre.toLowerCase()))
+                      .filter(p => p.paciente.toLowerCase().includes(formData.pacienteNombre.toLowerCase()) && (userRole.toUpperCase() !== "TERAPEUTA" || verTodosLosPacientes || (p.medicoTratante && p.medicoTratante.toLowerCase().includes(userName.toLowerCase()))))
                       .map(p => (
                         <li 
                           key={p.id} 
@@ -795,7 +823,7 @@ export default function AsistenciaPage() {
                           {p.paciente}
                         </li>
                       ))}
-                    {pacientes.filter(p => p.paciente.toLowerCase().includes(formData.pacienteNombre.toLowerCase())).length === 0 && (
+                    {pacientes.filter(p => p.paciente.toLowerCase().includes(formData.pacienteNombre.toLowerCase()) && (userRole.toUpperCase() !== "TERAPEUTA" || verTodosLosPacientes || (p.medicoTratante && p.medicoTratante.toLowerCase().includes(userName.toLowerCase())))).length === 0 && (
                       <li className="px-3 py-2 text-sm text-slate-400">No se encontraron pacientes</li>
                     )}
                   </ul>

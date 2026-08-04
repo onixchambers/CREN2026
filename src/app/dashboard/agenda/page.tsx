@@ -41,8 +41,9 @@ export default function AgendaPage() {
   
   const [citas, setCitas] = useState<Cita[]>([]);
   const [terapeutas, setTerapeutas] = useState<string[]>([]);
-  const [pacientes, setPacientes] = useState<{id: string, name: string}[]>([]);
+  const [pacientes, setPacientes] = useState<{id: string, name: string, medicoTratante?: string}[]>([]);
   const [showDropdown, setShowDropdown] = useState(false);
+  const [verTodosLosPacientes, setVerTodosLosPacientes] = useState(false);
   const [isLoadingTerapeutas, setIsLoadingTerapeutas] = useState(true);
   
   const [isModalOpen, setIsModalOpen] = useState(false);
@@ -73,7 +74,7 @@ export default function AgendaPage() {
           const st = (p.estatus || "Activo").toLowerCase();
           return st === "activo";
         });
-        setPacientes(activosOnly.map((p: any) => ({ id: p.id, name: p.name })));
+        setPacientes(activosOnly.map((p: any) => ({ id: p.id, name: p.name, medicoTratante: p.medicoTratante })));
       }
       
       const agendaRes = await getAgenda();
@@ -464,9 +465,22 @@ export default function AgendaPage() {
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 {/* Paciente y Terapeuta */}
                 <div className="relative">
-                  <label className="block text-xs font-semibold text-slate-600 uppercase mb-1">
-                    Nombre del Paciente {formData.estado === "Ocupado" && <span className="text-red-500 font-bold">(Bloqueado - No Disponible)</span>}
-                  </label>
+                  <div className="flex items-center justify-between mb-1">
+                    <label className="block text-xs font-semibold text-slate-600 uppercase">
+                      Nombre del Paciente {formData.estado === "Ocupado" && <span className="text-red-500 font-bold">(Bloqueado)</span>}
+                    </label>
+                    {userRole.toUpperCase() === "TERAPEUTA" && (
+                      <label className="flex items-center gap-1 text-[10px] font-bold text-slate-500 cursor-pointer">
+                        <input 
+                          type="checkbox" 
+                          checked={verTodosLosPacientes} 
+                          onChange={(e) => setVerTodosLosPacientes(e.target.checked)} 
+                          className="cursor-pointer"
+                        />
+                        Ver todos
+                      </label>
+                    )}
+                  </div>
                   <input 
                     required={formData.estado !== "Ocupado"}
                     disabled={formData.estado === "Ocupado"}
@@ -488,8 +502,9 @@ export default function AgendaPage() {
                       {(() => {
                         const searchNorm = (formData.paciente || "").trim().toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "");
                         const filtered = pacientes.filter(p => {
-                          const pNorm = (p.name || "").toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "");
-                          return pNorm.includes(searchNorm);
+                          const matchesName = p.name.toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "").includes(searchNorm);
+                          const matchesRole = userRole.toUpperCase() !== "TERAPEUTA" || verTodosLosPacientes || (p.medicoTratante && p.medicoTratante.toLowerCase().includes(userName.toLowerCase()));
+                          return matchesName && matchesRole;
                         });
                         return filtered.map(p => (
                           <li 

@@ -147,11 +147,7 @@ export async function addCita(data: any) {
       });
 
       if (existingSession) {
-        let existingNotes: any = {};
-        try { if (existingSession.notes) existingNotes = JSON.parse(existingSession.notes); } catch (e) {}
-        if (existingNotes.estado === "Ocupado" || existingNotes.estado === "No Disponible") {
-          return { success: false, error: `El terapeuta ${data.terapeuta} se encuentra No Disponible en la fecha ${finalDateStr} a las ${data.hora}.` };
-        }
+        return { success: false, error: `Ya hay una cita programada para la fecha ${finalDateStr} a las ${data.hora}.` };
       }
       
       const notesJson = JSON.stringify({

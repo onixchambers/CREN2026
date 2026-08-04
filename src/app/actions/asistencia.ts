@@ -32,8 +32,8 @@ export async function saveAsistenciaDB(data: any) {
     
     if (!therapistId) return { success: false, error: "Terapeuta no encontrado." };
 
-    // Construir fecha base (00:00:00) local
-    const jsDate = new Date(`${data.fecha}T00:00:00`);
+    const horaVal = data.hora || "09:00";
+    const jsDate = new Date(`${data.fecha}T${horaVal}:00`);
 
     // Intentar buscar una cita existente de este paciente en este día
     // Para simplificar, buscamos todas y comparamos la fecha ignorando la hora
@@ -114,6 +114,7 @@ export async function saveAsistenciaDB(data: any) {
       montoPago: data.montoPago || "",
       costoSesion: data.costoSesion || data.precioTerapia || "",
       fecha: data.fecha,
+      hora: data.hora || "09:00",
       area: data.area,
       tipoSesion: data.tipoSesion,
       estadoAsistencia: estadoVal,
@@ -263,10 +264,10 @@ export async function getAsistenciasDB(_ts?: string) {
       const timeA = new Date(a.fecha).getTime();
       const timeB = new Date(b.fecha).getTime();
       if (timeB !== timeA) return timeB - timeA;
-      // Dentro del mismo día, ordenar por hora de cita ascendente (08:00 antes que 10:00)
-      const horaA = (a.horaRegistro || "99:99").replace(/[^0-9:]/g, "");
-      const horaB = (b.horaRegistro || "99:99").replace(/[^0-9:]/g, "");
-      return horaA.localeCompare(horaB);
+      // Dentro del mismo día, ordenar por hora de cita descendente (más reciente arriba)
+      const horaA = (a.horaRegistro || "00:00").replace(/[^0-9:]/g, "");
+      const horaB = (b.horaRegistro || "00:00").replace(/[^0-9:]/g, "");
+      return horaB.localeCompare(horaA);
     });
 
     return { success: true, data: asistencias };
