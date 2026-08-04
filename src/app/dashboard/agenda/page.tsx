@@ -458,13 +458,7 @@ export default function AgendaPage() {
                                   )}
 
                                   <span 
-                                    className="truncate w-full text-center mt-1 font-bold hover:underline cursor-pointer"
-                                    onClick={(e) => {
-                                      if (cita.estado !== "Ocupado" && cita.estado !== "No Disponible" && cita.paciente !== "No Disponible") {
-                                        e.stopPropagation();
-                                        openPatientEditModal(cita.paciente);
-                                      }
-                                    }}
+                                    className="truncate w-full text-center mt-1 font-bold"
                                   >
                                     {(cita.estado === "Ocupado" || cita.estado === "No Disponible" || cita.paciente === "No Disponible") ? "No Disponible" : cita.paciente}
                                   </span>
