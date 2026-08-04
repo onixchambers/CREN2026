@@ -1,10 +1,12 @@
 "use client";
 import { useState, useEffect } from "react";
-import { getTerapeutas } from "@/app/actions/configuracion";
+import { getTerapeutas, getTerapeutasFull, getTherapyPrices } from "@/app/actions/configuracion";
 import { getPatients, updatePatientFast } from "@/app/actions/pacientes";
 import { getAgenda, addCita, updateCita, deleteCita } from "@/app/actions/agenda";
 import { useSession } from "next-auth/react";
 import { DateInput } from "@/components/DateInput";
+import { AsistenciaForm } from "@/components/AsistenciaForm";
+import { saveAsistenciaDB } from "@/app/actions/asistencia";
 import { EditPatientModal } from "@/components/EditPatientModal";
 
 type Cita = {
@@ -42,6 +44,9 @@ export default function AgendaPage() {
   
   const [citas, setCitas] = useState<Cita[]>([]);
   const [terapeutas, setTerapeutas] = useState<string[]>([]);
+  const [terapeutasFullData, setTerapeutasFullData] = useState<any[]>([]);
+  const [therapyPrices, setTherapyPrices] = useState<number[]>([400, 450, 500, 550, 600, 650, 700, 750, 800, 850, 900, 950]);
+  const [availableAreas, setAvailableAreas] = useState<string[]>(["Psicología", "Lenguaje", "Fisioterapia", "Terapia Ocupacional"]);
   const [pacientes, setPacientes] = useState<{id: string, name: string, medicoTratante?: string}[]>([]);
   const [showDropdown, setShowDropdown] = useState(false);
   const [verTodosLosPacientes, setVerTodosLosPacientes] = useState(false);
@@ -64,6 +69,16 @@ export default function AgendaPage() {
     async function loadData() {
       const { getAllowTherapistEdit } = await import('@/app/actions/configuracion');
       const allowRes = await getAllowTherapistEdit();
+      
+      const pricesRes = await getTherapyPrices();
+      if (pricesRes.success && pricesRes.prices) {
+        setTherapyPrices(pricesRes.prices);
+      }
+      
+      const tRes = await getTerapeutasFull();
+      if (tRes.success && tRes.data) {
+        setTerapeutasFullData(tRes.data);
+      }
       setAllowTherapistEdit(allowRes);
 
       const res = await getTerapeutas();
@@ -442,7 +457,15 @@ export default function AgendaPage() {
                                   >&times;</button>
                                   )}
 
-                                  <span className="truncate w-full text-center mt-1 font-bold">
+                                  <span 
+                                    className="truncate w-full text-center mt-1 font-bold hover:underline cursor-pointer"
+                                    onClick={(e) => {
+                                      if (cita.estado !== "Ocupado" && cita.estado !== "No Disponible" && cita.paciente !== "No Disponible") {
+                                        e.stopPropagation();
+                                        openPatientEditModal(cita.paciente);
+                                      }
+                                    }}
+                                  >
                                     {(cita.estado === "Ocupado" || cita.estado === "No Disponible" || cita.paciente === "No Disponible") ? "No Disponible" : cita.paciente}
                                   </span>
                                   <span className="text-[10px] opacity-90 uppercase mt-0.5 truncate w-full text-center">
@@ -679,56 +702,101 @@ export default function AgendaPage() {
 
       {/* MODAL DE EDICION */}
       {isEditModalOpen && selectedCita && (
-        <div className="fixed inset-0 bg-slate-900/50 backdrop-blur-sm z-50 flex items-center justify-center p-4 animate-in fade-in">
-          <div className="bg-white rounded-xl shadow-xl w-full max-w-sm overflow-hidden">
-            <div className="px-6 py-4 border-b border-slate-100 flex justify-between items-center bg-slate-50">
-              <h3 className="font-bold text-lg text-[#0e2f44]">Editar Cita</h3>
-              <button onClick={() => setIsEditModalOpen(false)} className="text-slate-400 hover:text-slate-600 text-xl font-bold">&times;</button>
-            </div>
-            
-            <form onSubmit={handleUpdateSelectedCita} className="p-6 space-y-4">
-              <div className="flex items-center justify-between">
-                <div>
-                  <p className="font-bold text-slate-800">{selectedCita.paciente}</p>
-                  <p className="text-slate-500 text-sm">{selectedCita.fecha} a las {selectedCita.hora}</p>
-                </div>
-                {selectedCita.paciente !== "No Disponible" && selectedCita.paciente !== "Bloqueado" && (
-                  <button
-                    type="button"
-                    onClick={() => openPatientEditModal(selectedCita.paciente)}
-                    title="Editar Ficha ID del Paciente"
-                    className="p-2 border border-slate-200 rounded-lg bg-amber-50 text-amber-600 font-bold text-xs hover:bg-amber-100 transition-colors flex items-center gap-1 cursor-pointer"
-                  >
-                    <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z" /></svg>
-                    Ficha ID
-                  </button>
-                )}
-              </div>
+        <div className="fixed inset-0 bg-slate-900/50 backdrop-blur-sm z-50 flex items-center justify-center p-4 animate-in fade-in overflow-y-auto">
+          <div className="bg-white rounded-xl shadow-xl w-full max-w-4xl max-h-[90vh] overflow-y-auto relative my-8">
+            <button onClick={() => setIsEditModalOpen(false)} className="absolute top-4 right-6 text-slate-400 hover:text-slate-600 text-3xl font-bold z-10">&times;</button>
+            <AsistenciaForm 
+              initialData={{
+                fecha: selectedCita.fecha,
+                hora: selectedCita.hora,
+                terapeuta: selectedCita.terapeuta,
+                pacienteNombre: selectedCita.paciente,
+                tipoSesion: selectedCita.tipoServicio,
+                frecuencia: selectedCita.frecuencia,
+                estadoAsistencia: selectedCita.estado,
+                metodoPago: selectedCita.metodoPago || "",
+                montoPago: selectedCita.pagado ? (therapyPrices[0]?.toString() || "400") : "" // approximate initial data
+              }}
+              pacientes={pacientes.map((p: any) => ({ ...p, paciente: p.name }))}
+              terapeutasFullData={terapeutasFullData}
+              agendaCitas={citas}
+              availableAreasInput={availableAreas}
+              therapyPrices={therapyPrices}
+              userRole={userRole}
+              userName={userName}
+              onCancel={() => setIsEditModalOpen(false)}
+              onSave={async (formData, subVal, ivaVal, totVal, metodoPagoFinal) => {
+                const isFinalizado = formData.estadoAsistencia !== "Agendado";
 
-              <div>
-                <label className="block text-xs font-semibold text-slate-600 uppercase mb-1">Estado de Asistencia</label>
-                <select 
-                  value={selectedCita.estado} 
-                  onChange={e => setSelectedCita({...selectedCita, estado: e.target.value})} 
-                  className="w-full text-slate-900 font-medium border border-slate-300 rounded-lg px-3 py-2 outline-none focus:border-[#2980b9] bg-white"
-                >
-                  <option value="Agendado">Agendado (Verde)</option>
-                  <option value="Asistio">Asistió (Gris)</option>
-                  <option value="Cancelo con anticipacion">Canceló con anticipación (Naranja traslúcido)</option>
-                  <option value="Cancelo sin anticipacion">Canceló sin anticipación (Rojo traslúcido)</option>
-                  <option value="Cancelo el centro">Canceló el centro (Amarillo traslúcido)</option>
-                  <option value="Ocupado">Ocupado / No Disponible (Rojo)</option>
-                </select>
-              </div>
+                const nuevaAsistencia = {
+                  id: Date.now().toString(),
+                  fecha: formData.fecha,
+                  hora: formData.hora,
+                  area: formData.area,
+                  paciente: formData.pacienteNombre,
+                  sexo: formData.pacienteSexo,
+                  edad: formData.pacienteEdad,
+                  tipoSesion: formData.tipoSesion,
+                  estado: formData.estadoAsistencia,
+                  sesiones: formData.numeroSesiones || "1",
+                  frecuencia: formData.frecuencia || "Única",
+                  pago: totVal > 0 ? "SÍ" : (metodoPagoFinal || "No"),
+                  fact: formData.solicitaFactura ? "Sí" : "No",
+                  subtotal: `$${subVal.toFixed(2)}`,
+                  iva: `$${ivaVal.toFixed(2)}`,
+                  total: `$${totVal.toFixed(2)}`,
+                  precioTerapia: formData.precioTerapia,
+                  montoPago: totVal.toString(),
+                  metodoPago: metodoPagoFinal,
+                  obs: formData.observaciones || "—",
+                  creadoPor: userName,
+                  terapeuta: formData.terapeuta
+                };
 
-              <div className="pt-4 flex gap-2">
-                {userRole.toUpperCase() !== "TERAPEUTA" && (
-                <button type="button" onClick={() => handleDeleteCita(selectedCita.id)} className="px-4 py-2 bg-red-50 text-red-600 font-semibold rounded-lg hover:bg-red-100 transition-colors">Eliminar</button>
-                )}
-                <button type="button" onClick={() => setIsEditModalOpen(false)} className="flex-1 py-2 bg-slate-100 text-slate-700 font-semibold rounded-lg hover:bg-slate-200 transition-colors">Cancelar</button>
-                <button type="submit" className="flex-1 py-2 bg-[#1a5276] text-white font-semibold rounded-lg hover:bg-[#0e2f44] transition-colors">Guardar</button>
-              </div>
-            </form>
+                // Actualizar cita en agenda (siempre)
+                const citaActualizada = {
+                    ...selectedCita,
+                    paciente: formData.pacienteNombre,
+                    fecha: formData.fecha,
+                    hora: formData.hora,
+                    terapeuta: formData.terapeuta,
+                    tipoServicio: formData.tipoSesion,
+                    frecuencia: formData.frecuencia,
+                    estado: formData.estadoAsistencia,
+                    pagado: totVal > 0,
+                    metodoPago: metodoPagoFinal
+                };
+                
+                await updateCita(selectedCita.id, citaActualizada);
+
+                if (isFinalizado) {
+                   const dbRes = await saveAsistenciaDB(nuevaAsistencia);
+                   if (dbRes?.success === false) {
+                     alert("Error al guardar en BD: " + (dbRes as any).error);
+                     return;
+                   }
+                   alert("Sesión finalizada y guardada exitosamente en la base de datos.");
+                   
+                   // Si Asistió, redirigir a nota clínica
+                   if (formData.estadoAsistencia === "Asistio" && formData.pacienteId) {
+                      window.location.href = `/dashboard/pacientes?action=nota&patientId=${formData.pacienteId}`;
+                      return;
+                   }
+                } else {
+                   // Solo se pre-carga la información
+                   // To keep it simple, we save it to the DB as "Agendado" which doesn't count as complete.
+                   const dbRes = await saveAsistenciaDB(nuevaAsistencia);
+                   if (dbRes?.success === false) {
+                     alert("Error al guardar en BD: " + (dbRes as any).error);
+                     return;
+                   }
+                   alert("Información precargada y guardada.");
+                }
+                
+                setCitas(citas.map(c => c.id === selectedCita.id ? citaActualizada : c));
+                setIsEditModalOpen(false);
+              }}
+            />
           </div>
         </div>
       )}

@@ -50,7 +50,7 @@ export async function middleware(req: NextRequest) {
         }
       }
 
-      if (role === "ADMIN" || role === "ADMINISTRADOR") {
+      if (role === "ADMIN" || role === "ADMINISTRADOR" || role === "INVITADO") {
         if (pathname.startsWith("/dashboard/contrasena")) {
           return NextResponse.redirect(new URL("/dashboard/configuracion", req.url));
         }
