@@ -2,6 +2,7 @@
 import { useState, useEffect } from "react";
 import { useSession } from "next-auth/react";
 import { DateInput } from "@/components/DateInput";
+import { EditPatientModal } from "@/components/EditPatientModal";
 import { 
   getPatients, 
   updatePatientPhoto, 
@@ -158,47 +159,21 @@ export default function PacientesPage() {
   );
 
   const [editingPatient, setEditingPatient] = useState<any>(null);
-  const [editForm, setEditForm] = useState({
-    nombre: "", sexo: "", fechaNacimiento: "", precioTerapia: "500", metodoPago: "", estatus: "Activo"
-  });
   const [isSaving, setIsSaving] = useState(false);
 
   const openEditModal = (p: any) => {
-    if (userRole.toUpperCase() === "TERAPEUTA" && !allowTherapistEdit) {
-      alert("La administración no tiene habilitado el permiso para editar pacientes.");
-      return;
-    }
     setEditingPatient(p);
-    setEditForm({
-      nombre: p.name || "",
-      sexo: p.sexo || "",
-      fechaNacimiento: p.fechaNacimiento || "",
-      precioTerapia: p.precioTerapia || "500",
-      metodoPago: p.metodoPago || "",
-      estatus: p.estatus || "Activo"
-    });
   };
 
-  const handleEditChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
-    setEditForm({ ...editForm, [e.target.name]: e.target.value });
-  };
-
-  const saveEdit = async () => {
-    if (!editingPatient || isSaving) return;
-    setIsSaving(true);
-    const { updatePatientFast, getPatients } = await import('@/app/actions/pacientes');
-    const result = await updatePatientFast(editingPatient.id, editForm);
-    if (result.success) {
-      alert("Paciente actualizado.");
-      setEditingPatient(null);
-      const updated = await getPatients();
-      if (updated.success && updated.data) {
-        setPacientes(updated.data);
-      }
-    } else {
-      alert(result.error);
+  const saveEdit = async (updatedPatientData: any) => {
+    // Already updated by EditPatientModal, just refresh the list
+    alert("Paciente actualizado.");
+    setEditingPatient(null);
+    const { getPatients } = await import('@/app/actions/pacientes');
+    const updated = await getPatients();
+    if (updated.success && updated.data) {
+      setPacientes(updated.data);
     }
-    setIsSaving(false);
   };
 
   const handleDelete = async (p: any) => {
@@ -1242,134 +1217,15 @@ export default function PacientesPage() {
         </div>
       )}
 
-      {/* MODAL EDITAR PACIENTE (Ficha ID){/* MODAL EDITAR PACIENTE (Ficha ID) */}
+      {/* MODAL EDITAR PACIENTE (UNIFICADO) */}
       {editingPatient && (
-        <div className="fixed inset-0 z-50 bg-black/50 flex items-center justify-center p-4">
-          <div className="bg-white rounded-xl max-w-2xl w-full p-6 space-y-4 shadow-2xl animate-in zoom-in-95 duration-200 overflow-y-auto max-h-[90vh]">
-            <h3 className="text-lg font-bold text-slate-800 border-b border-slate-200 pb-2 flex items-center gap-2 justify-between w-full">
-              <div className="flex items-center gap-2">
-                <svg className="w-5 h-5 text-[#2980b9]" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" /></svg>
-                Editar Ficha ID del Paciente
-              </div>
-              <span className="text-xs font-semibold text-slate-500">Fecha de Registro: {editingPatient.createdAt ? new Date(editingPatient.createdAt).toLocaleDateString("es-MX", { day: "2-digit", month: "2-digit", year: "numeric" }) : "—"}</span>
-            </h3>
-            
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              <div className="space-y-1">
-                <label className="block text-xs font-bold text-slate-700">Nombre Completo</label>
-                <input
-                  type="text"
-                  name="nombre"
-                  value={editForm.nombre}
-                  onChange={handleEditChange}
-                  className="w-full p-2 border border-slate-300 rounded text-sm text-slate-900 focus:border-[#2980b9] outline-none"
-                />
-              </div>
-
-              <div className="space-y-1">
-                <label className="block text-xs font-bold text-slate-700">Fecha Nacimiento</label>
-                <input
-                  type="date"
-                  name="fechaNacimiento"
-                  value={editForm.fechaNacimiento}
-                  onChange={handleEditChange}
-                  className="w-full p-2 border border-slate-300 rounded text-sm text-slate-900 focus:border-[#2980b9] outline-none"
-                />
-              </div>
-
-              <div className="space-y-1">
-                <label className="block text-xs font-bold text-slate-700">Sexo</label>
-                <select
-                  name="sexo"
-                  value={editForm.sexo}
-                  onChange={handleEditChange}
-                  className="w-full p-2 border border-slate-300 rounded text-sm text-slate-900 bg-white focus:border-[#2980b9] outline-none"
-                >
-                  <option value="">Seleccionar...</option>
-                  <option value="M">M (Masculino)</option>
-                  <option value="F">F (Femenino)</option>
-                  <option value="Masculino">Masculino</option>
-                  <option value="Femenino">Femenino</option>
-                  <option value="—">—</option>
-                </select>
-              </div>
-
-              <div className="space-y-1">
-                <label className="block text-xs font-bold text-slate-700">Precio Terapia (MXN)</label>
-                <select
-                  name="precioTerapia"
-                  value={editForm.precioTerapia}
-                  onChange={handleEditChange}
-                  className="w-full p-2 border border-slate-300 rounded text-sm text-slate-700 font-medium bg-white focus:border-[#2980b9] outline-none"
-                >
-                  <option value="">Seleccionar precio...</option>
-                  {(() => {
-                    const numVal = parseFloat((editForm.precioTerapia || "0").toString().replace(/[^0-9.]/g, ""));
-                    const list = [...therapyPrices];
-                    if (!isNaN(numVal) && numVal > 0 && !list.includes(numVal)) {
-                      list.push(numVal);
-                      list.sort((a, b) => a - b);
-                    }
-                    return list.map(p => (
-                      <option key={p} value={p.toString()}>${p.toFixed(2)}</option>
-                    ));
-                  })()}
-                </select>
-              </div>
-
-              <div className="space-y-1">
-                <label className="block text-xs font-bold text-slate-700">Método de Pago</label>
-                <select
-                  name="metodoPago"
-                  value={editForm.metodoPago}
-                  onChange={handleEditChange}
-                  className="w-full p-2 border border-slate-300 rounded text-sm text-slate-700 bg-white focus:border-[#2980b9] outline-none"
-                >
-                  <option value="">Seleccionar...</option>
-                  <option value="Efectivo">Efectivo</option>
-                  <option value="Transferencia">Transferencia</option>
-                  <option value="Tarjeta">Tarjeta</option>
-                  <option value="Por definir">Por definir</option>
-                  <option value="Beca">Beca</option>
-                </select>
-              </div>
-
-              <div className="space-y-1">
-                <label className="block text-xs font-bold text-slate-700">Estado</label>
-                <select
-                  name="estatus"
-                  value={editForm.estatus}
-                  onChange={handleEditChange}
-                  style={{ color: (editForm.estatus || 'Activo').toLowerCase() === 'activo' ? '#065f46' : '#ffffff' }}
-                  className={`w-full p-2 border rounded text-sm font-semibold outline-none transition-colors ${
-                    (editForm.estatus || 'Activo').toLowerCase() === 'activo'
-                      ? 'bg-emerald-100 border-emerald-300'
-                      : 'bg-slate-800 border-slate-900'
-                  }`}
-                >
-                  <option value="Activo" className="bg-white text-slate-800 font-medium">Activo</option>
-                  <option value="Inactivo" className="bg-white text-slate-800 font-medium">Inactivo</option>
-                </select>
-              </div>
-            </div>
-
-            <div className="flex gap-2 pt-4 border-t border-slate-100">
-              <button
-                disabled={isSaving}
-                onClick={saveEdit}
-                className="flex-1 bg-[#1a5276] hover:bg-[#0e2f44] text-white font-bold py-2.5 rounded-lg text-sm transition disabled:opacity-50 flex items-center justify-center gap-2 shadow-sm"
-              >
-                {isSaving ? "Guardando..." : "Guardar Cambios"}
-              </button>
-              <button
-                onClick={() => setEditingPatient(null)}
-                className="flex-1 bg-slate-100 text-slate-600 font-bold py-2.5 rounded-lg text-sm hover:bg-slate-200 transition shadow-sm"
-              >
-                Cancelar
-              </button>
-            </div>
-          </div>
-        </div>
+        <EditPatientModal
+          patient={editingPatient}
+          userRole={userRole}
+          allowTherapistEdit={allowTherapistEdit}
+          onClose={() => setEditingPatient(null)}
+          onSaved={saveEdit}
+        />
       )}
 
       {/* MODAL PARA DAR DE BAJA / MOTIVO DE LA BAJA */}

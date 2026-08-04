@@ -5,6 +5,7 @@ import { getPatients, updatePatientFast } from "@/app/actions/pacientes";
 import { getAgenda, addCita, updateCita, deleteCita } from "@/app/actions/agenda";
 import { useSession } from "next-auth/react";
 import { DateInput } from "@/components/DateInput";
+import { EditPatientModal } from "@/components/EditPatientModal";
 
 type Cita = {
   id: string;
@@ -54,16 +55,17 @@ export default function AgendaPage() {
   });
 
   const [editingPatient, setEditingPatient] = useState<any>(null);
-  const [editForm, setEditForm] = useState({
-    nombre: "", sexo: "", fechaNacimiento: "", precioTerapia: "500", metodoPago: "", estatus: "Activo"
-  });
   const [isSaving, setIsSaving] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
-  const allowTherapistEdit = false;
+  const [allowTherapistEdit, setAllowTherapistEdit] = useState(true);
 
   useEffect(() => {
     if (status === "loading") return;
-    async function loadTerapeutas() {
+    async function loadData() {
+      const { getAllowTherapistEdit } = await import('@/app/actions/configuracion');
+      const allowRes = await getAllowTherapistEdit();
+      setAllowTherapistEdit(allowRes);
+
       const res = await getTerapeutas();
       if (res.success && res.terapeutas) {
         let teraList = res.terapeutas;
@@ -92,7 +94,7 @@ export default function AgendaPage() {
 
       setIsLoadingTerapeutas(false);
     }
-    loadTerapeutas();
+    loadData();
   }, [status, userRole, userName]);
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
@@ -116,60 +118,46 @@ export default function AgendaPage() {
     }
   };
 
-  const openPatientEditModal = (patientName: string) => {
+  const openPatientEditModal = async (patientName: string) => {
     if (userRole.toUpperCase() === "TERAPEUTA" && !allowTherapistEdit) {
       alert("La administración no tiene habilitado el permiso para editar pacientes.");
       return;
     }
     const searchNorm = patientName.trim().toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "");
-    const fullPatient = pacientes.find(p => p.name.toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "") === searchNorm);
+    const { getPatients } = await import('@/app/actions/pacientes');
+    const pRes = await getPatients();
+    const patientsList = pRes.success && pRes.data ? pRes.data : pacientes;
+
+    const fullPatient = patientsList.find((p: any) => p.name.toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "") === searchNorm);
     if (!fullPatient) {
       alert("No se encontró la ficha del paciente para edición.");
       return;
     }
     
     setEditingPatient(fullPatient);
-    setEditForm({
-      nombre: fullPatient.name || "",
-      sexo: fullPatient.sexo || "",
-      fechaNacimiento: fullPatient.fechaNacimiento || "",
-      precioTerapia: fullPatient.precioTerapia || "500",
-      metodoPago: fullPatient.metodoPago || "",
-      estatus: fullPatient.estatus || "Activo"
-    });
   };
 
-  const handlePatientEditChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
-    setEditForm({ ...editForm, [e.target.name]: e.target.value });
-  };
-
-  const savePatientEdit = async () => {
-    if (!editingPatient) return;
-    setIsSaving(true);
-    const res = await updatePatientFast(editingPatient.id, editForm);
-    setIsSaving(false);
+  const savePatientEdit = async (updatedPatient: any) => {
+    alert("Paciente actualizado.");
+    setEditingPatient(null);
+    const { getPatients } = await import('@/app/actions/pacientes');
+    const pRes = await getPatients();
+    if (pRes.success && pRes.data) {
+      setPacientes(pRes.data);
+    }
     
-    if (res.success) {
-      setEditingPatient(null);
-      const pRes = await getPatients();
-      if (pRes.success) {
-        setPacientes(pRes.data || []);
+    // Update agenda citations to reflect possible name change
+    if (updatedPatient.name && updatedPatient.name !== editingPatient.name) {
+      const matchingCitas = citas.filter(c => c.paciente === editingPatient.name);
+      for (const cita of matchingCitas) {
+         await updateCita(cita.id, { paciente: updatedPatient.name });
+      }
+      if (selectedCita && selectedCita.paciente === editingPatient.name) {
+         setSelectedCita({...selectedCita, paciente: updatedPatient.name});
       }
       
-      if (editForm.nombre !== editingPatient.name) {
-        const matchingCitas = citas.filter(c => c.paciente === editingPatient.name);
-        for (const cita of matchingCitas) {
-           await updateCita(cita.id, { paciente: editForm.nombre });
-        }
-        if (selectedCita && selectedCita.paciente === editingPatient.name) {
-           setSelectedCita({...selectedCita, paciente: editForm.nombre});
-        }
-        
-        const aRes = await getAgenda();
-        if (aRes.success) setCitas(aRes.data || []);
-      }
-    } else {
-      alert("Error al actualizar paciente: " + res.error);
+      const aRes = await getAgenda();
+      if (aRes.success && aRes.data) setCitas(aRes.data);
     }
   };
 
@@ -747,131 +735,13 @@ export default function AgendaPage() {
 
       {/* MODAL EDITAR PACIENTE (Ficha ID) DESDE LA AGENDA */}
       {editingPatient && (
-        <div className="fixed inset-0 z-[60] bg-black/60 flex items-center justify-center p-4">
-          <div className="bg-white rounded-xl max-w-2xl w-full p-6 space-y-4 shadow-2xl animate-in zoom-in-95 duration-200 overflow-y-auto max-h-[90vh]">
-            <h3 className="text-lg font-bold text-slate-800 border-b border-slate-200 pb-2 flex items-center gap-2">
-              <svg className="w-5 h-5 text-[#2980b9]" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" /></svg>
-              Editar Ficha ID del Paciente
-            </h3>
-            
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              <div className="space-y-1">
-                <label className="block text-xs font-bold text-slate-700">Nombre Completo</label>
-                <input
-                  type="text"
-                  name="nombre"
-                  value={editForm.nombre}
-                  onChange={handlePatientEditChange}
-                  className="w-full p-2 border border-slate-300 rounded text-sm text-slate-900 focus:border-[#2980b9] outline-none"
-                />
-              </div>
-
-              <div className="space-y-1">
-                <label className="block text-xs font-bold text-slate-700">Fecha Nacimiento</label>
-                <input
-                  type="date"
-                  name="fechaNacimiento"
-                  value={editForm.fechaNacimiento}
-                  onChange={handlePatientEditChange}
-                  className="w-full p-2 border border-slate-300 rounded text-sm text-slate-900 focus:border-[#2980b9] outline-none"
-                />
-              </div>
-
-              <div className="space-y-1">
-                <label className="block text-xs font-bold text-slate-700">Sexo</label>
-                <select
-                  name="sexo"
-                  value={editForm.sexo}
-                  onChange={handlePatientEditChange}
-                  className="w-full p-2 border border-slate-300 rounded text-sm text-slate-900 bg-white focus:border-[#2980b9] outline-none"
-                >
-                  <option value="">Seleccionar...</option>
-                  <option value="M">M (Masculino)</option>
-                  <option value="F">F (Femenino)</option>
-                  <option value="Masculino">Masculino</option>
-                  <option value="Femenino">Femenino</option>
-                  <option value="—">—</option>
-                </select>
-              </div>
-
-              <div className="space-y-1">
-                <label className="block text-xs font-bold text-slate-700">Precio Terapia (MXN)</label>
-                <select
-                  name="precioTerapia"
-                  value={editForm.precioTerapia}
-                  onChange={handlePatientEditChange}
-                  className="w-full p-2 border border-slate-300 rounded text-sm text-slate-700 font-medium bg-white focus:border-[#2980b9] outline-none"
-                >
-                  <option value="">Seleccionar precio...</option>
-                  <option value="500">$500.00</option>
-                  <option value="600">$600.00</option>
-                  <option value="700">$700.00</option>
-                  <option value="800">$800.00</option>
-                  <option value="1000">$1000.00</option>
-                  {(() => {
-                    const numVal = parseFloat((editForm.precioTerapia || "0").toString().replace(/[^0-9.]/g, ""));
-                    const stdPrices = [500, 600, 700, 800, 1000];
-                    if (!isNaN(numVal) && numVal > 0 && !stdPrices.includes(numVal)) {
-                      return <option value={numVal.toString()}>${numVal.toFixed(2)}</option>;
-                    }
-                    return null;
-                  })()}
-                </select>
-              </div>
-
-              <div className="space-y-1">
-                <label className="block text-xs font-bold text-slate-700">Método de Pago</label>
-                <select
-                  name="metodoPago"
-                  value={editForm.metodoPago}
-                  onChange={handlePatientEditChange}
-                  className="w-full p-2 border border-slate-300 rounded text-sm text-slate-700 bg-white focus:border-[#2980b9] outline-none"
-                >
-                  <option value="">Seleccionar...</option>
-                  <option value="Efectivo">Efectivo</option>
-                  <option value="Transferencia">Transferencia</option>
-                  <option value="Tarjeta">Tarjeta</option>
-                  <option value="Por definir">Por definir</option>
-                  <option value="Beca">Beca</option>
-                </select>
-              </div>
-
-              <div className="space-y-1">
-                <label className="block text-xs font-bold text-slate-700">Estado</label>
-                <select
-                  name="estatus"
-                  value={editForm.estatus}
-                  onChange={handlePatientEditChange}
-                  style={{ color: (editForm.estatus || 'Activo').toLowerCase() === 'activo' ? '#065f46' : '#ffffff' }}
-                  className={`w-full p-2 border rounded text-sm font-semibold outline-none transition-colors ${
-                    (editForm.estatus || 'Activo').toLowerCase() === 'activo'
-                      ? 'bg-emerald-100 border-emerald-300'
-                      : 'bg-slate-800 border-slate-900'
-                  }`}
-                >
-                  <option value="Activo" className="bg-white text-slate-800 font-medium">Activo</option>
-                  <option value="Inactivo" className="bg-white text-slate-800 font-medium">Inactivo</option>
-                </select>
-              </div>
-            </div>
-
-            <div className="flex gap-2 pt-4 border-t border-slate-100">
-              <button
-                disabled={isSaving}
-                onClick={savePatientEdit}
-                className="flex-1 bg-[#1a5276] hover:bg-[#0e2f44] text-white font-bold py-2.5 rounded-lg text-sm transition disabled:opacity-50 flex items-center justify-center gap-2 shadow-sm"
-              >
-                {isSaving ? "Guardando..." : "Guardar Cambios"}
-              </button>
-              <button
-                onClick={() => setEditingPatient(null)}
-                className="flex-1 bg-slate-100 text-slate-600 font-bold py-2.5 rounded-lg text-sm hover:bg-slate-200 transition shadow-sm"
-              >
-                Cancelar
-              </button>
-            </div>
-          </div>
-        </div>
+        <EditPatientModal
+          patient={editingPatient}
+          userRole={userRole}
+          allowTherapistEdit={allowTherapistEdit}
+          onClose={() => setEditingPatient(null)}
+          onSaved={savePatientEdit}
+        />
       )}
 
     </div>
