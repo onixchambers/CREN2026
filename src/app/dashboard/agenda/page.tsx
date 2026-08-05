@@ -1111,13 +1111,23 @@ export default function AgendaPage() {
             
             <hr className="my-6 border-slate-200" />
             
-            <button onClick={() => {
-              setIsStatusModalOpen(false);
-              setSelectedCita(selectedCitaForStatus);
-              setIsEditModalOpen(true);
-            }} className="w-full py-2 border-2 border-[#1a5276] text-[#1a5276] font-bold rounded-lg hover:bg-[#1a5276] hover:text-white transition-colors">
-              📋 Asistencia (Pre-llenado)
-            </button>
+            <div className="flex flex-col gap-3">
+              <button onClick={() => {
+                setFormData(selectedCitaForStatus as any);
+                setIsStatusModalOpen(false);
+                setIsModalOpen(true);
+              }} className="w-full py-2 bg-blue-600 text-white font-semibold rounded-lg hover:bg-blue-700 transition-colors mb-2">
+                ✏️ Editar Fecha / Hora / Terapeuta
+              </button>
+
+              <button onClick={() => {
+                setIsStatusModalOpen(false);
+                setSelectedCita(selectedCitaForStatus);
+                setIsEditModalOpen(true);
+              }} className="w-full py-2 border-2 border-[#1a5276] text-[#1a5276] font-bold rounded-lg hover:bg-[#1a5276] hover:text-white transition-colors">
+                📋 Asistencia (Pre-llenado)
+              </button>
+            </div>
           </div>
         </div>
       )}
