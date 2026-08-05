@@ -8,6 +8,9 @@ import { DateInput } from "@/components/DateInput";
 import { AsistenciaForm } from "@/components/AsistenciaForm";
 import { saveAsistenciaDB } from "@/app/actions/asistencia";
 import { EditPatientModal } from "@/components/EditPatientModal";
+import { polyfill } from "mobile-drag-drop";
+// Importar los estilos por defecto opcional para feedback visual (opcional)
+import "mobile-drag-drop/default.css";
 
 type Cita = {
   id: string;
@@ -70,6 +73,11 @@ export default function AgendaPage() {
   const [allowTherapistEdit, setAllowTherapistEdit] = useState(true);
 
   useEffect(() => {
+    // Iniciar polyfill para drag and drop en móviles
+    polyfill({
+      dragImageTranslateOverride: "scrollBehavior",
+    });
+
     if (status === "loading") return;
     async function loadData() {
       const { getAllowTherapistEdit } = await import('@/app/actions/configuracion');
