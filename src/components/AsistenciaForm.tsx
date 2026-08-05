@@ -39,7 +39,7 @@ interface AsistenciaFormProps {
   therapyPrices: number[];
   userRole: string;
   userName: string;
-  onSave: (data: AsistenciaFormData, subVal: number, ivaVal: number, totVal: number, metodoPagoFinal: string) => void;
+  onSave: (data: AsistenciaFormData, subVal: number, ivaVal: number, totVal: number, metodoPagoFinal: string, isDraft?: boolean) => void;
   onCancel?: () => void;
   onAddPrice?: () => void;
   onClear?: () => void;
@@ -174,7 +174,7 @@ export function AsistenciaForm({
     }
   };
 
-  const handleGuardar = async () => {
+  const handleGuardar = async (isDraft: boolean = false) => {
     if (!formData.pacienteNombre || !formData.area || !formData.estadoAsistencia || !formData.tipoSesion || !formData.terapeuta) {
       alert("Por favor completa los campos principales (Paciente, Terapeuta, Área, Tipo de Sesión, Estado).");
       return;
@@ -206,7 +206,7 @@ export function AsistenciaForm({
       metodoPagoFinal = `${formData.metodoPago} $${p1}`;
     }
 
-    onSave(formData, subVal, ivaVal, totVal, metodoPagoFinal);
+    onSave(formData, subVal, ivaVal, totVal, metodoPagoFinal, isDraft);
   };
 
   const terapeutasOptions = (userRole.toUpperCase() === "TERAPEUTA" && formData.terapeuta) ? [formData.terapeuta] : terapeutasFullData.map(t => t.name);
@@ -578,12 +578,18 @@ export function AsistenciaForm({
             </div>
           </div>
 
+          
           {/* BUTTONS */}
           <div className="flex items-center gap-3 pt-2">
-            <button type="button" onClick={handleGuardar} className="bg-[#27ae60] hover:bg-[#219653] text-white px-5 py-2 rounded text-[13px] font-semibold flex items-center gap-2 transition-colors">
+            <button type="button" onClick={() => handleGuardar(false)} className="bg-[#27ae60] hover:bg-[#219653] text-white px-5 py-2 rounded text-[13px] font-semibold flex items-center gap-2 transition-colors">
               <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 24 24"><path d="M9 16.17L4.83 12l-1.42 1.41L9 19 21 7l-1.41-1.41z"/></svg>
-              Guardar Sesión
+              Finalizar Sesión
             </button>
+            <button type="button" onClick={() => handleGuardar(true)} className="bg-[#f39c12] hover:bg-[#e67e22] text-white px-5 py-2 rounded text-[13px] font-semibold flex items-center gap-2 transition-colors">
+              <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 24 24"><path d="M17 3H5c-1.11 0-2 .9-2 2v14c0 1.1.89 2 2 2h14c1.1 0 2-.9 2-2V7l-4-4zm-5 16c-1.66 0-3-1.34-3-3s1.34-3 3-3 3 1.34 3 3-1.34 3-3 3zm3-10H5V5h10v4z"/></svg>
+              Guardar Borrador
+            </button>
+
             {onCancel && (
               <button type="button" onClick={onCancel} className="bg-white border border-slate-300 text-[#1a5276] hover:bg-slate-50 px-5 py-2 rounded text-[13px] font-semibold flex items-center gap-2 transition-colors">
                 <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 24 24"><path d="M19 6.41L17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z"/></svg>

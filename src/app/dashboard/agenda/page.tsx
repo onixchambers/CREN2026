@@ -54,6 +54,10 @@ export default function AgendaPage() {
   const [isLoadingTerapeutas, setIsLoadingTerapeutas] = useState(true);
   
   const [isModalOpen, setIsModalOpen] = useState(false);
+  const [isConfirmMoveModalOpen, setIsConfirmMoveModalOpen] = useState(false);
+  const [pendingMoveCita, setPendingMoveCita] = useState<{citaId: string, newHora: string, newTerapeuta: string, newFecha?: string} | null>(null);
+  const [isStatusModalOpen, setIsStatusModalOpen] = useState(false);
+  const [selectedCitaForStatus, setSelectedCitaForStatus] = useState<any>(null);
   const [isEditModalOpen, setIsEditModalOpen] = useState(false);
   const [selectedCita, setSelectedCita] = useState<Cita | null>(null);
   const [formData, setFormData] = useState({
@@ -520,8 +524,10 @@ export default function AgendaPage() {
                         return (
                           <div 
                             key={cita.id} 
-                            onClick={() => { setSelectedCita(cita); setIsEditModalOpen(true); }}
+                            onClick={() => { setSelectedCitaForStatus(cita); setIsStatusModalOpen(true); }}
                             style={st.style}
+                            draggable={true}
+                            onDragStart={(e) => { e.stopPropagation(); e.dataTransfer.setData("citaId", cita.id); }}
                             className={`text-[9px] p-1 rounded font-bold cursor-pointer truncate shadow-sm hover:brightness-95 ${st.className}`}
                             title={`${cita.hora} - ${cita.paciente}`}
                           >
@@ -566,8 +572,10 @@ export default function AgendaPage() {
                                 const st = getEstadoStyle(cita.estado);
                                 return (
                                   <div 
-                                    onClick={() => { setSelectedCita(cita); setIsEditModalOpen(true); }}
+                                    onClick={() => { setSelectedCitaForStatus(cita); setIsStatusModalOpen(true); }}
                                     style={st.style}
+                                    draggable={true}
+                                    onDragStart={(e) => { e.stopPropagation(); e.dataTransfer.setData("citaId", cita.id); }}
                                     className={`absolute left-0 w-full h-full p-1 rounded border text-[10px] font-semibold flex flex-col items-center justify-center cursor-pointer shadow-sm hover:brightness-95 transition-all ${cita.hora.includes(":30") ? "top-[50%] z-10" : "top-0"} ${st.className}`}>
                                     <span className="truncate w-full text-center mt-0.5 font-bold">
                                       {(cita.estado === "Ocupado" || cita.estado === "No Disponible" || cita.paciente === "No Disponible") ? "No Disp." : cita.paciente.split(' ')[0]}
@@ -580,7 +588,15 @@ export default function AgendaPage() {
                               })()
                           ) : (
                             <div 
-                              onDragOver={(e) => e.preventDefault()} onDrop={(e) => { e.preventDefault(); const id = e.dataTransfer.getData("citaId"); if (id) handleMoveCita(id, hora, userName, d.dateStr); }} onClick={() => { setFechaSeleccionada(d.dateStr); handleOpenModal(userName, hora); }}
+                              onDragOver={(e) => e.preventDefault()}
+                              onDrop={(e) => {
+                                e.preventDefault();
+                                const id = e.dataTransfer.getData("citaId");
+                                if (id) {
+                                  setPendingMoveCita({citaId: id, newHora: hora, newTerapeuta: userName, newFecha: d.dateStr});
+                                  setIsConfirmMoveModalOpen(true);
+                                }
+                              }} onClick={() => { setFechaSeleccionada(d.dateStr); handleOpenModal(userName, hora); }}
                               className="w-full h-full flex items-center justify-center cursor-pointer hover:bg-blue-50/60 transition-colors group/cell"
                               title={`Agendar el ${d.name} a las ${hora}`}
                             >
@@ -625,8 +641,10 @@ export default function AgendaPage() {
                               const st = getEstadoStyle(cita.estado);
                               return (
                                 <div 
-                                  onClick={() => { setSelectedCita(cita); setIsEditModalOpen(true); }}
+                                  onClick={() => { setSelectedCitaForStatus(cita); setIsStatusModalOpen(true); }}
                                   style={st.style}
+                                  draggable={true}
+                                  onDragStart={(e) => { e.stopPropagation(); e.dataTransfer.setData("citaId", cita.id); }}
                                   className={`absolute left-0 w-full h-full p-2 rounded border text-xs font-semibold flex flex-col items-center justify-center cursor-pointer shadow-sm hover:brightness-95 transition-all ${cita.hora.includes(":30") ? "top-[50%] z-10" : "top-0"} ${st.className}`}>
                                   
                                   {userRole.toUpperCase() !== "TERAPEUTA" && (
@@ -650,6 +668,15 @@ export default function AgendaPage() {
                             })()
                         ) : (
                           <div 
+                            onDragOver={(e) => e.preventDefault()}
+                            onDrop={(e) => {
+                              e.preventDefault();
+                              const id = e.dataTransfer.getData("citaId");
+                              if (id) {
+                                setPendingMoveCita({citaId: id, newHora: hora, newTerapeuta: t, newFecha: fechaSeleccionada});
+                                setIsConfirmMoveModalOpen(true);
+                              }
+                            }}
                             onClick={() => handleOpenModal(t, hora)}
                             className="w-full h-full flex items-center justify-center cursor-pointer hover:bg-blue-50/60 transition-colors group/cell"
                             title="Haz clic para agendar en esta hora"
@@ -900,8 +927,8 @@ export default function AgendaPage() {
               userRole={userRole}
               userName={userName}
               onCancel={() => setIsEditModalOpen(false)}
-              onSave={async (formData, subVal, ivaVal, totVal, metodoPagoFinal) => {
-                const isFinalizado = formData.estadoAsistencia !== "Agendado";
+              onSave={async (formData, subVal, ivaVal, totVal, metodoPagoFinal, isDraft) => {
+                const isFinalizado = formData.estadoAsistencia !== "Agendado" && !isDraft;
 
                 const nuevaAsistencia = {
                   id: Date.now().toString(),
