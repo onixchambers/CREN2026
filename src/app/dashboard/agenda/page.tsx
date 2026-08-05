@@ -1024,36 +1024,9 @@ export default function AgendaPage() {
               therapyPrices={therapyPrices}
               userRole={userRole}
               userName={userName}
+              isPrellenado={true}
               onCancel={() => setIsEditModalOpen(false)}
               onSave={async (formData, subVal, ivaVal, totVal, metodoPagoFinal, isDraft) => {
-                const isFinalizado = formData.estadoAsistencia !== "Agendado" && !isDraft;
-
-                const nuevaAsistencia = {
-                  id: Date.now().toString(),
-                  agendaId: selectedCita.id,
-                  fecha: formData.fecha,
-                  hora: formData.hora,
-                  area: formData.area,
-                  paciente: formData.pacienteNombre,
-                  sexo: formData.pacienteSexo,
-                  edad: formData.pacienteEdad,
-                  tipoSesion: formData.tipoSesion,
-                  estado: formData.estadoAsistencia,
-                  sesiones: formData.numeroSesiones || "1",
-                  frecuencia: formData.frecuencia || "Única",
-                  pago: totVal > 0 ? "SÍ" : (metodoPagoFinal || "No"),
-                  fact: formData.solicitaFactura ? "Sí" : "No",
-                  subtotal: `$${subVal.toFixed(2)}`,
-                  iva: `$${ivaVal.toFixed(2)}`,
-                  total: `$${totVal.toFixed(2)}`,
-                  precioTerapia: formData.precioTerapia,
-                  montoPago: totVal.toString(),
-                  metodoPago: metodoPagoFinal,
-                  obs: formData.observaciones || "—",
-                  creadoPor: userName,
-                  terapeuta: formData.terapeuta
-                };
-
                 // Actualizar cita en agenda (siempre)
                 const citaActualizada = {
                     ...selectedCita,
@@ -1069,30 +1042,8 @@ export default function AgendaPage() {
                 };
                 
                 await updateCita(selectedCita.id, citaActualizada);
-
-                if (isFinalizado) {
-                   const dbRes = await saveAsistenciaDB(nuevaAsistencia);
-                   if (dbRes?.success === false) {
-                     alert("Error al guardar en BD: " + (dbRes as any).error);
-                     return;
-                   }
-                   alert("Sesión finalizada y guardada exitosamente en la base de datos.");
-                   
-                   // Si Asistió, redirigir a nota clínica
-                   if (formData.estadoAsistencia === "Asistio" && formData.pacienteId) {
-                      window.location.href = `/dashboard/pacientes?action=nota&patientId=${formData.pacienteId}`;
-                      return;
-                   }
-                } else {
-                   // Solo se pre-carga la información
-                   // To keep it simple, we save it to the DB as "Agendado" which doesn't count as complete.
-                   const dbRes = await saveAsistenciaDB(nuevaAsistencia);
-                   if (dbRes?.success === false) {
-                     alert("Error al guardar en BD: " + (dbRes as any).error);
-                     return;
-                   }
-                   alert("Información precargada y guardada.");
-                }
+                
+                alert("Información precargada y guardada exitosamente.");
                 
                 setCitas(citas.map(c => c.id === selectedCita.id ? citaActualizada : c));
                 setIsEditModalOpen(false);

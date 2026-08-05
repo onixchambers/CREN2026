@@ -43,6 +43,7 @@ interface AsistenciaFormProps {
   onCancel?: () => void;
   onAddPrice?: () => void;
   onClear?: () => void;
+  isPrellenado?: boolean;
 }
 
 export function AsistenciaForm({
@@ -57,7 +58,8 @@ export function AsistenciaForm({
   onSave,
   onCancel,
   onAddPrice,
-  onClear
+  onClear,
+  isPrellenado = false
 }: AsistenciaFormProps) {
   const hoy = new Date().toLocaleDateString("en-CA", { timeZone: "America/Mexico_City" });
 
@@ -477,7 +479,7 @@ export function AsistenciaForm({
             </div>
             <div className="md:col-span-4">
               <label className="block text-[10px] font-bold text-slate-400 uppercase mb-1">ESTADO ASISTENCIA</label>
-              <select name="estadoAsistencia" value={formData.estadoAsistencia} onChange={handleChange} className="w-full text-sm p-2 border border-slate-300 rounded focus:border-[#2980b9] outline-none text-slate-900">
+              <select disabled={isPrellenado} name="estadoAsistencia" value={formData.estadoAsistencia} onChange={handleChange} className={`w-full text-sm p-2 border border-slate-300 rounded focus:border-[#2980b9] outline-none ${isPrellenado ? 'bg-slate-100 text-slate-400 cursor-not-allowed' : 'text-slate-900'}`}>
                 <option value="">Seleccionar...</option>
                 <option value="Agendado">Agendado</option>
                 <option value="Asistio">Asistió</option>
@@ -581,13 +583,15 @@ export function AsistenciaForm({
           
           {/* BUTTONS */}
           <div className="flex items-center gap-3 pt-2">
-            <button type="button" onClick={() => handleGuardar(false)} className="bg-[#27ae60] hover:bg-[#219653] text-white px-5 py-2 rounded text-[13px] font-semibold flex items-center gap-2 transition-colors">
-              <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 24 24"><path d="M9 16.17L4.83 12l-1.42 1.41L9 19 21 7l-1.41-1.41z"/></svg>
-              Finalizar Sesión
-            </button>
+            {!isPrellenado && (
+              <button type="button" onClick={() => handleGuardar(false)} className="bg-[#27ae60] hover:bg-[#219653] text-white px-5 py-2 rounded text-[13px] font-semibold flex items-center gap-2 transition-colors">
+                <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 24 24"><path d="M9 16.17L4.83 12l-1.42 1.41L9 19 21 7l-1.41-1.41z"/></svg>
+                Finalizar Sesión
+              </button>
+            )}
             <button type="button" onClick={() => handleGuardar(true)} className="bg-[#f39c12] hover:bg-[#e67e22] text-white px-5 py-2 rounded text-[13px] font-semibold flex items-center gap-2 transition-colors">
               <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 24 24"><path d="M17 3H5c-1.11 0-2 .9-2 2v14c0 1.1.89 2 2 2h14c1.1 0 2-.9 2-2V7l-4-4zm-5 16c-1.66 0-3-1.34-3-3s1.34-3 3-3 3 1.34 3 3-1.34 3-3 3zm3-10H5V5h10v4z"/></svg>
-              Guardar Borrador
+              {isPrellenado ? "Guardar Pre-llenado" : "Guardar Borrador"}
             </button>
 
             {onCancel && (
