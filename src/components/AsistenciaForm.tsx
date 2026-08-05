@@ -106,15 +106,42 @@ export function AsistenciaForm({
   }, [initialData]);
 
   useEffect(() => {
-    if (userRole.toUpperCase() !== "TERAPEUTA" && formData.terapeuta && terapeutasFullData.length > 0) {
-      const match = terapeutasFullData.find(t => t.name === formData.terapeuta);
-      if (match && match.especialidad) {
-        const parts = match.especialidad.split(',').map((x: string) => x.trim()).filter(Boolean);
-        setAvailableAreas(parts);
-        if (!parts.includes(formData.area)) {
-          setFormData(prev => ({ ...prev, area: parts[0] || "" }));
+    if (terapeutasFullData.length > 0) {
+      if (userRole.toUpperCase() === "TERAPEUTA" && !formData.terapeuta) {
+        // Encontrar el terapeuta actual basado en userName
+        let matched = terapeutasFullData.find(t => t.name.toLowerCase().includes(userName.toLowerCase()) || userName.toLowerCase().includes(t.name.toLowerCase()));
+        const miTerapeuta = matched ? matched.name : (userName || terapeutasFullData[0]?.name);
+        
+        let initialArea = formData.area;
+        if (matched && matched.especialidad && !initialArea) {
+          const parts = matched.especialidad.split(',').map((x: string) => x.trim()).filter(Boolean);
+          initialArea = parts[0] || "";
         }
-      } else {
+        
+        setFormData(prev => ({
+          ...prev,
+          terapeuta: miTerapeuta,
+          area: initialArea
+        }));
+      } else if (userRole.toUpperCase() !== "TERAPEUTA" && formData.terapeuta) {
+        const match = terapeutasFullData.find(t => t.name === formData.terapeuta);
+        if (match && match.especialidad) {
+          const parts = match.especialidad.split(',').map((x: string) => x.trim()).filter(Boolean);
+          setAvailableAreas(parts);
+          if (!parts.includes(formData.area)) {
+            setFormData(prev => ({ ...prev, area: parts[0] || "" }));
+          }
+        } else {
+          let allAreas: string[] = [];
+          terapeutasFullData.forEach(t => {
+            if (t.especialidad) {
+              allAreas = allAreas.concat(t.especialidad.split(',').map((x: string) => x.trim()).filter(Boolean));
+            }
+          });
+          setAvailableAreas(Array.from(new Set(allAreas)));
+        }
+      } else if (!formData.terapeuta) {
+        // Initialize all areas if no therapist is selected
         let allAreas: string[] = [];
         terapeutasFullData.forEach(t => {
           if (t.especialidad) {
@@ -124,7 +151,7 @@ export function AsistenciaForm({
         setAvailableAreas(Array.from(new Set(allAreas)));
       }
     }
-  }, [formData.terapeuta, terapeutasFullData, userRole]);
+  }, [formData.terapeuta, terapeutasFullData, userRole, userName]);
 
   const normalizeSexo = (rawSexo: string) => {
     if (!rawSexo || rawSexo === "—") return "—";
@@ -139,14 +166,27 @@ export function AsistenciaForm({
     const p = pacientes.find(x => x.paciente === val);
     
     if (p) {
-      // Simplificado: asumiendo que el componente padre ya le pasa el saldo calculado
+      const citaHoy = agendaCitas.find((c: any) => c.paciente === p.paciente && c.fecha === formData.fecha);
+      let horaAgenda = formData.hora;
+      let terapeutaAgenda = p.medicoTratante || formData.terapeuta;
+      let tipoSesionAgenda = formData.tipoSesion;
+
+      if (citaHoy) {
+         horaAgenda = citaHoy.hora || horaAgenda;
+         terapeutaAgenda = citaHoy.terapeuta || terapeutaAgenda;
+         tipoSesionAgenda = citaHoy.tipoServicio || tipoSesionAgenda;
+      }
+
       setFormData({
         ...formData,
         pacienteId: p.id,
         pacienteNombre: p.paciente,
-        pacienteNac: p.nac !== "—" ? p.nac : "",
+        pacienteNac: p.nac !== "?" ? p.nac : "",
         pacienteSexo: normalizeSexo(p.sexo),
         pacienteEdad: p.edad,
+        terapeuta: terapeutaAgenda,
+        hora: horaAgenda,
+        tipoSesion: tipoSesionAgenda,
         saldoDisponible: p.saldoCalculado || "0.00",
         numeroSesiones: "1", 
         frecuencia: agendaCitas.find((c: any) => c.paciente === p.paciente) ? (() => {
