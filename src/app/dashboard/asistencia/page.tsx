@@ -321,6 +321,17 @@ export default function AsistenciaPage() {
           displaySesiones = currentS.toString();
       }
 
+      const citaHoy = agendaCitas.find((c: any) => c.paciente === p.paciente && c.fecha === formData.fecha);
+      let horaAgenda = formData.hora;
+      let terapeutaAgenda = p.medicoTratante || formData.terapeuta;
+      let tipoSesionAgenda = formData.tipoSesion;
+
+      if (citaHoy) {
+         horaAgenda = citaHoy.hora || horaAgenda;
+         terapeutaAgenda = citaHoy.terapeuta || terapeutaAgenda;
+         tipoSesionAgenda = citaHoy.tipoServicio || tipoSesionAgenda;
+      }
+
       setFormData({
         ...formData,
         pacienteId: p.id,
@@ -328,7 +339,9 @@ export default function AsistenciaPage() {
         pacienteNac: p.nac !== "—" ? p.nac : "",
         pacienteSexo: normalizeSexo(p.sexo),
         pacienteEdad: p.edad,
-        terapeuta: p.medicoTratante || formData.terapeuta,
+        terapeuta: terapeutaAgenda,
+        hora: horaAgenda,
+        tipoSesion: tipoSesionAgenda,
         saldoDisponible: p.saldoCalculado || "0.00",
         numeroSesiones: displaySesiones,
         frecuencia: agendaCitas.find((c: any) => c.paciente === p.paciente) ? (() => {
