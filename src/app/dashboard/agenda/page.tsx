@@ -197,6 +197,50 @@ export default function AgendaPage() {
     setIsSubmittingCita(true);
 
     try {
+      if ((formData as any).id) {
+        // Editing existing cita
+        const updated = citas.find((c: any) => c.id === (formData as any).id);
+        if (updated) {
+          const newCita = { ...updated, ...formData };
+          await updateCita(updated.id, newCita);
+          setCitas(citas.map((c: any) => c.id === updated.id ? newCita : c));
+          
+          if (formData.estado === "Asistio" && updated.estado !== "Asistio") {
+             const nuevaAsistencia = {
+                id: Date.now().toString(),
+                agendaId: updated.id,
+                fecha: formData.fecha,
+                hora: formData.hora,
+                area: "",
+                paciente: formData.paciente,
+                sexo: "",
+                edad: "",
+                tipoSesion: formData.tipoServicio,
+                estado: formData.estado,
+                sesiones: formData.numeroSesiones?.toString() || "1",
+                frecuencia: formData.frecuencia || "unica",
+                pago: "SÍ",
+                fact: "No",
+                subtotal: "$0.00",
+                iva: "$0.00",
+                total: "$0.00",
+                precioTerapia: 400,
+                montoPago: "0",
+                metodoPago: "Efectivo",
+                obs: "Generado automáticamente desde agenda (Preregistro rápido)",
+                creadoPor: userName,
+                terapeuta: formData.terapeuta
+             };
+             await fetch('/api/test', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ action: 'crear_asistencia', table: 'asistencias', data: nuevaAsistencia }) });
+             alert("Cita editada y asistencia generada automáticamente.");
+          } else {
+             alert("Cita actualizada.");
+          }
+        }
+        setIsModalOpen(false);
+        return;
+      }
+
       const nuevaCitaObj = {
         paciente: formData.paciente,
         fecha: formData.fecha,
@@ -684,7 +728,22 @@ export default function AgendaPage() {
         <div className="fixed inset-0 bg-slate-900/50 backdrop-blur-sm z-50 flex items-center justify-center p-4 animate-in fade-in">
           <div className="bg-white rounded-xl shadow-xl w-full max-w-2xl overflow-hidden">
             <div className="px-6 py-4 border-b border-slate-100 flex justify-between items-center bg-slate-50">
-              <h3 className="font-bold text-lg text-[#0e2f44]">Programar Cita</h3>
+              <div className="flex items-center gap-4">
+                <h3 className="font-bold text-lg text-[#0e2f44]">{(formData as any).id ? 'Editar Cita' : 'Programar Cita'}</h3>
+                {(formData as any).id && (
+                  <button 
+                    type="button"
+                    onClick={() => {
+                      setIsModalOpen(false);
+                      setSelectedCita(citas.find((c: any) => c.id === (formData as any).id) || null);
+                      setIsEditModalOpen(true);
+                    }} 
+                    className="bg-indigo-600 hover:bg-indigo-700 text-white px-3 py-1 rounded text-sm font-bold flex items-center gap-1 transition"
+                  >
+                    ✏️ Asistencia
+                  </button>
+                )}
+              </div>
               <button onClick={() => setIsModalOpen(false)} className="text-slate-400 hover:text-slate-600 text-xl font-bold">&times;</button>
             </div>
             
@@ -995,13 +1054,13 @@ export default function AgendaPage() {
           <div className="bg-white rounded-xl shadow-xl w-full max-w-md overflow-hidden text-center p-6">
             <h3 className="font-bold text-lg text-[#0e2f44] mb-4">Confirmar Movimiento</h3>
             <p className="text-sm text-slate-600 mb-6">
-              ¿Estás seguro que deseas mover esta cita a las <strong>{pendingMoveCita.newHora}</strong> del <strong>{pendingMoveCita.newFecha}</strong>?
+              ¿Estás seguro que deseas mover esta cita a las <strong>{pendingMoveCita.newHora}</strong> del <strong>{pendingMoveCita.newFecha || fechaSeleccionada}</strong>?
             </p>
             <div className="flex flex-col gap-3">
               <button onClick={async () => {
                 const updated = citas.find((c: any) => c.id === pendingMoveCita.citaId);
                 if (updated) {
-                  const newCita = { ...updated, hora: pendingMoveCita.newHora, terapeuta: pendingMoveCita.newTerapeuta, fecha: pendingMoveCita.newFecha };
+                  const newCita = { ...updated, hora: pendingMoveCita.newHora, terapeuta: pendingMoveCita.newTerapeuta, fecha: pendingMoveCita.newFecha || updated.fecha };
                   await updateCita(updated.id, newCita);
                   setCitas(citas.map((c: any) => c.id === updated.id ? newCita : c));
                 }
@@ -1028,7 +1087,7 @@ export default function AgendaPage() {
                     if (index !== -1) updatedCitas[index] = newCita;
                   }
                   
-                  const newMainCita = { ...updated, hora: pendingMoveCita.newHora, terapeuta: pendingMoveCita.newTerapeuta, fecha: pendingMoveCita.newFecha };
+                  const newMainCita = { ...updated, hora: pendingMoveCita.newHora, terapeuta: pendingMoveCita.newTerapeuta, fecha: pendingMoveCita.newFecha || updated.fecha };
                   await updateCita(updated.id, newMainCita);
                   const mainIndex = updatedCitas.findIndex((c: any) => c.id === updated.id);
                   if (mainIndex !== -1) updatedCitas[mainIndex] = newMainCita;

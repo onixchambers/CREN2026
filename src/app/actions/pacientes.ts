@@ -141,6 +141,8 @@ export async function getPatients() {
           } catch (e) {}
         }
 
+        const therapistName = extraName || s.therapist?.name || "General";
+
         if (s.therapist?.name) sessionTherapists.push(s.therapist.name);
         if (extraName) sessionTherapists.push(extraName);
 
@@ -148,9 +150,9 @@ export async function getPatients() {
           const sesNum = parseInt(parsedNotes.sesiones || parsedNotes.numeroSesiones || "0");
           if (sesNum > 0) {
             latestTotalSesiones = sesNum;
-            if (extraName) {
-              if (!asistenciasDetailed[extraName]) asistenciasDetailed[extraName] = { asistencias: 0, total: 0 };
-              asistenciasDetailed[extraName].total = Math.max(asistenciasDetailed[extraName].total, sesNum);
+            if (therapistName) {
+              if (!asistenciasDetailed[therapistName]) asistenciasDetailed[therapistName] = { asistencias: 0, total: 0 };
+              asistenciasDetailed[therapistName].total = Math.max(asistenciasDetailed[therapistName].total, sesNum);
             }
           }
 
@@ -158,9 +160,9 @@ export async function getPatients() {
           const isAttended = est === "asistio" || est === "cancelo sin anticipacion" || s.status === "COMPLETED";
           if (isAttended) {
             asistenciasCount++;
-            if (extraName) {
-              if (!asistenciasDetailed[extraName]) asistenciasDetailed[extraName] = { asistencias: 0, total: 0 };
-              asistenciasDetailed[extraName].asistencias++;
+            if (therapistName) {
+              if (!asistenciasDetailed[therapistName]) asistenciasDetailed[therapistName] = { asistencias: 0, total: 0 };
+              asistenciasDetailed[therapistName].asistencias++;
             }
           }
 
