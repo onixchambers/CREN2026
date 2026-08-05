@@ -248,7 +248,11 @@ export default function AsistenciaPage() {
         const areas = Array.from(new Set(allAreas));
         
         if (userRole.toUpperCase() === "TERAPEUTA") {
-          const matched = tRes.data.find((t: any) => t.name.toLowerCase().includes(userName.toLowerCase()) || userName.toLowerCase().includes(t.name.toLowerCase()));
+          const userId = (session?.user as any)?.id;
+          let matched = userId ? tRes.data.find((t: any) => t.id === userId) : undefined;
+          if (!matched) {
+            matched = tRes.data.find((t: any) => t.name.toLowerCase().includes(userName.toLowerCase()) || userName.toLowerCase().includes(t.name.toLowerCase()));
+          }
           const miTerapeutaStr = matched ? matched.name : (tRes.data[0]?.name || userName);
           const miAreaStr = matched ? matched.especialidad : "";
           let misAreas: string[] = [];
