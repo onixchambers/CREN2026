@@ -254,13 +254,21 @@ export default function AsistenciaPage() {
             matched = tRes.data.find((t: any) => t.name.toLowerCase().includes(userName.toLowerCase()) || userName.toLowerCase().includes(t.name.toLowerCase()));
           }
           const miTerapeutaStr = matched ? matched.name : (tRes.data[0]?.name || userName);
-          const miAreaStr = matched ? matched.especialidad : "";
-          let misAreas: string[] = [];
-          if (miAreaStr) misAreas = miAreaStr.split(',').map((x: string) => x.trim()).filter(Boolean);
-          
-          setAvailableAreas(misAreas.length > 0 ? misAreas : (areas.length > 0 ? areas : ["Psicología", "Lenguaje", "Fisioterapia", "Terapia Ocupacional"]));
-          setTerapeutas([miTerapeutaStr]);
-          setFormData(prev => ({...prev, terapeuta: miTerapeutaStr, area: misAreas[0] || ""}));
+          if (userRole.toUpperCase() === "TERAPEUTA" && !allowTherapistEdit) {
+            let misAreas = areas;
+            if (matched && matched.especialidad) {
+               misAreas = matched.especialidad.split(',').map((x: string) => x.trim()).filter(Boolean);
+            }
+            setAvailableAreas(misAreas.length > 0 ? misAreas : (areas.length > 0 ? areas : ["Psicología", "Lenguaje", "Fisioterapia", "Terapia Ocupacional"]));
+            setTerapeutas([miTerapeutaStr]);
+            setFormData(prev => ({...prev, terapeuta: miTerapeutaStr, area: misAreas[0] || ""}));
+          } else {
+            setAvailableAreas(areas.length > 0 ? areas : ["Psicología", "Lenguaje", "Fisioterapia", "Terapia Ocupacional"]);
+            if (miTerapeutaStr) {
+               setFormData(prev => ({ ...prev, terapeuta: miTerapeutaStr }));
+            }
+            setTerapeutas(tRes.data.map((t: any) => t.name));
+          }
         } else {
           setAvailableAreas(areas.length > 0 ? areas : ["Psicología", "Lenguaje", "Fisioterapia", "Terapia Ocupacional"]);
           setTerapeutas(tRes.data.map((t: any) => t.name));
@@ -320,6 +328,7 @@ export default function AsistenciaPage() {
         pacienteNac: p.nac !== "—" ? p.nac : "",
         pacienteSexo: normalizeSexo(p.sexo),
         pacienteEdad: p.edad,
+        terapeuta: p.medicoTratante || formData.terapeuta,
         saldoDisponible: p.saldoCalculado || "0.00",
         numeroSesiones: displaySesiones,
         frecuencia: agendaCitas.find((c: any) => c.paciente === p.paciente) ? (() => {
@@ -371,9 +380,10 @@ export default function AsistenciaPage() {
   };
 
   const handleLimpiarForm = () => {
-    setFormData({
+    setFormData(prev => ({
+      ...prev,
       fecha: hoy,
-      terapeuta: userRole.toUpperCase() === "TERAPEUTA" ? userName : "",
+      terapeuta: (userRole.toUpperCase() === "TERAPEUTA") ? userName : (prev.terapeuta || ""),
       area: (availableAreas.length === 1 && userRole.toUpperCase() === "TERAPEUTA") ? availableAreas[0] : "",
       tipoSesion: "",
       pacienteId: "",
@@ -395,7 +405,7 @@ export default function AsistenciaPage() {
       frecuencia: "Única",
       solicitaFactura: false,
       observaciones: ""
-    });
+    }));
     setShowSegundoPago(false);
     setShowDropdown(false);
   };
