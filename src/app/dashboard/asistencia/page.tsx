@@ -253,7 +253,7 @@ export default function AsistenciaPage() {
           if (!matched) {
             matched = tRes.data.find((t: any) => t.name.toLowerCase().includes(userName.toLowerCase()) || userName.toLowerCase().includes(t.name.toLowerCase()));
           }
-          const miTerapeutaStr = matched ? matched.name : (tRes.data[0]?.name || userName);
+          const miTerapeutaStr = matched ? matched.name : (userName || tRes.data[0]?.name);
           if (userRole.toUpperCase() === "TERAPEUTA" && !allowTherapistEdit) {
             let misAreas = areas;
             if (matched && matched.especialidad) {
@@ -267,7 +267,11 @@ export default function AsistenciaPage() {
             if (miTerapeutaStr) {
                setFormData(prev => ({ ...prev, terapeuta: miTerapeutaStr }));
             }
-            setTerapeutas(tRes.data.map((t: any) => t.name));
+            const names = tRes.data.map((t: any) => t.name);
+            if (miTerapeutaStr && !names.includes(miTerapeutaStr)) {
+               names.unshift(miTerapeutaStr);
+            }
+            setTerapeutas(names);
           }
         } else {
           setAvailableAreas(areas.length > 0 ? areas : ["Psicología", "Lenguaje", "Fisioterapia", "Terapia Ocupacional"]);

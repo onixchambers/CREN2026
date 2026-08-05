@@ -82,7 +82,12 @@ export async function getSettings(month: string) {
 export async function getTerapeutasFull() {
   try {
     const terapeutas = await prisma.user.findMany({
-      where: { role: "Terapeuta" },
+      where: {
+        role: {
+          equals: "Terapeuta",
+          mode: "insensitive"
+        }
+      },
       orderBy: { name: 'asc' },
     });
     return { success: true, data: terapeutas };
