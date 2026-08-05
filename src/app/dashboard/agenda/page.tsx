@@ -42,6 +42,7 @@ export default function AgendaPage() {
   const hoy = new Date().toISOString().split("T")[0];
   const [fechaSeleccionada, setFechaSeleccionada] = useState(hoy);
   
+  const [viewMode, setViewMode] = useState<"day" | "week" | "month">("day");
   const [citas, setCitas] = useState<Cita[]>([]);
   const [terapeutas, setTerapeutas] = useState<string[]>([]);
   const [terapeutasFullData, setTerapeutasFullData] = useState<any[]>([]);
@@ -254,6 +255,51 @@ export default function AgendaPage() {
     setFechaSeleccionada(`${year}-${month}-${day}`);
   };
 
+  
+  const getDaysOfWeek = (dateStr: string) => {
+    const d = new Date(dateStr + "T00:00:00");
+    const day = d.getDay();
+    const diff = d.getDate() - day + (day === 0 ? -6 : 1);
+    const monday = new Date(d.setDate(diff));
+    const days = [];
+    const dayNames = ['Lun', 'Mar', 'Mié', 'Jue', 'Vie', 'Sáb', 'Dom'];
+    for (let i = 0; i < 7; i++) {
+      const current = new Date(monday);
+      current.setDate(monday.getDate() + i);
+      const year = current.getFullYear();
+      const month = String(current.getMonth() + 1).padStart(2, '0');
+      const dNum = String(current.getDate()).padStart(2, '0');
+      days.push({ name: dayNames[i], dateStr: `${year}-${month}-${dNum}`, dayNum: current.getDate() });
+    }
+    return days;
+  };
+
+  const getDaysOfMonth = (dateStr: string) => {
+    const d = new Date(dateStr + "T00:00:00");
+    const year = d.getFullYear();
+    const month = d.getMonth();
+    const firstDay = new Date(year, month, 1);
+    const lastDay = new Date(year, month + 1, 0);
+    const days = [];
+    let startDay = firstDay.getDay() - 1;
+    if (startDay < 0) startDay = 6;
+    for (let i = startDay - 1; i >= 0; i--) {
+      const prev = new Date(year, month, -i);
+      days.push({ dateStr: `${prev.getFullYear()}-${String(prev.getMonth() + 1).padStart(2, '0')}-${String(prev.getDate()).padStart(2, '0')}`, num: prev.getDate(), currentMonth: false });
+    }
+    for (let i = 1; i <= lastDay.getDate(); i++) {
+      days.push({ dateStr: `${year}-${String(month + 1).padStart(2, '0')}-${String(i).padStart(2, '0')}`, num: i, currentMonth: true });
+    }
+    let endDay = lastDay.getDay();
+    if (endDay === 0) endDay = 7;
+    let nextDays = 7 - endDay;
+    for (let i = 1; i <= nextDays; i++) {
+      const next = new Date(year, month + 1, i);
+      days.push({ dateStr: `${next.getFullYear()}-${String(next.getMonth() + 1).padStart(2, '0')}-${String(next.getDate()).padStart(2, '0')}`, num: next.getDate(), currentMonth: false });
+    }
+    return days;
+  };
+
   const handleNextDay = () => {
     const d = new Date(fechaSeleccionada + "T00:00:00");
     d.setDate(d.getDate() + 1);
@@ -279,9 +325,9 @@ export default function AgendaPage() {
 
   const citasFiltradas = citas.filter(c => c.fecha === fechaSeleccionada);
 
-  const getCitaParaCelda = (hora: string, terapeuta: string) => {
+  const getCitaParaCelda = (hora: string, terapeuta: string, dateOverride?: string) => {
     const horaPrefix = hora.split(":")[0];
-    return citasFiltradas.find(c => c.terapeuta === terapeuta && c.hora.startsWith(horaPrefix));
+    return (dateOverride ? citas : citasFiltradas).find(c => c.terapeuta === terapeuta && c.hora.startsWith(horaPrefix) && (!dateOverride || c.fecha === dateOverride));
   };
 
   const getEstadoStyle = (estado: string) => {
@@ -401,7 +447,16 @@ export default function AgendaPage() {
             </button>
           </div>
 
-          <div className="flex flex-wrap items-center gap-3">
+          
+            {userRole.toUpperCase() === "TERAPEUTA" && (
+              <div className="flex bg-slate-200 p-1 rounded-lg">
+                <button type="button" onClick={() => setViewMode('day')} className={`px-3 py-1 text-xs font-bold rounded ${viewMode === 'day' ? 'bg-white shadow text-[#1a5276]' : 'text-slate-600'}`}>Día</button>
+                <button type="button" onClick={() => setViewMode('week')} className={`px-3 py-1 text-xs font-bold rounded ${viewMode === 'week' ? 'bg-white shadow text-[#1a5276]' : 'text-slate-600'}`}>Semana</button>
+                <button type="button" onClick={() => setViewMode('month')} className={`px-3 py-1 text-xs font-bold rounded ${viewMode === 'month' ? 'bg-white shadow text-[#1a5276]' : 'text-slate-600'}`}>Mes</button>
+              </div>
+            )}
+
+            <div className="flex flex-wrap items-center gap-3">
             <span className="text-xs font-extrabold text-[#1a5276]">
               📅 {formatFechaLarga(fechaSeleccionada)}
             </span>
@@ -416,7 +471,114 @@ export default function AgendaPage() {
           </div>
         </div>
         
-        <div className="overflow-x-auto">
+                {viewMode === 'month' && userRole.toUpperCase() === "TERAPEUTA" ? (
+          <div className="bg-white rounded-xl shadow-sm border border-slate-200 overflow-hidden mt-4">
+            <div className="grid grid-cols-7 bg-[#0e2f44] text-white">
+              {['Lun', 'Mar', 'Mié', 'Jue', 'Vie', 'Sáb', 'Dom'].map(d => (
+                <div key={d} className="p-2 text-center text-xs font-bold uppercase border-r border-slate-700/50">{d}</div>
+              ))}
+            </div>
+            <div className="grid grid-cols-7 border-l border-slate-200">
+              {getDaysOfMonth(fechaSeleccionada).map((d, i) => {
+                const dayCitas = citas.filter(c => c.fecha === d.dateStr && c.terapeuta === userName);
+                return (
+                  <div 
+                    key={i} 
+                    className={`min-h-[120px] p-2 border-b border-r border-slate-200 ${!d.currentMonth ? 'bg-slate-50 opacity-60' : 'bg-white'} ${d.dateStr === hoy ? 'ring-2 ring-inset ring-blue-500' : ''}`}
+                    onClick={(e) => {
+                      if (e.target === e.currentTarget) {
+                        setFechaSeleccionada(d.dateStr);
+                        setViewMode('day');
+                      }
+                    }}
+                  >
+                    <div className="flex justify-between items-center mb-1">
+                      <span className={`text-xs font-bold ${d.dateStr === hoy ? 'bg-blue-600 text-white w-6 h-6 rounded-full flex items-center justify-center' : 'text-slate-700'}`}>{d.num}</span>
+                      <button onClick={(e) => { e.stopPropagation(); setFechaSeleccionada(d.dateStr); handleOpenModal(userName, '09:00'); }} className="text-[#1a5276] hover:bg-blue-50 p-1 rounded-full text-xs font-bold w-5 h-5 flex items-center justify-center">+</button>
+                    </div>
+                    <div className="space-y-1 overflow-y-auto max-h-[80px]">
+                      {dayCitas.sort((a,b) => a.hora.localeCompare(b.hora)).map(cita => {
+                        const st = getEstadoStyle(cita.estado);
+                        return (
+                          <div 
+                            key={cita.id} 
+                            onClick={() => { setSelectedCita(cita); setIsEditModalOpen(true); }}
+                            style={st.style}
+                            className={`text-[9px] p-1 rounded font-bold cursor-pointer truncate shadow-sm hover:brightness-95 ${st.className}`}
+                            title={`${cita.hora} - ${cita.paciente}`}
+                          >
+                            {cita.hora} - {cita.paciente === 'No Disponible' ? 'Bloq.' : cita.paciente.split(' ')[0]}
+                          </div>
+                        );
+                      })}
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+          </div>
+        ) : viewMode === 'week' && userRole.toUpperCase() === "TERAPEUTA" ? (
+          <div className="overflow-x-auto mt-4 bg-white rounded-xl shadow-sm border border-slate-200">
+            <table className="w-full text-sm text-center border-collapse">
+              <thead>
+                <tr>
+                  <th className="border-b border-r border-slate-200 bg-[#0e2f44] text-white px-4 py-3 font-semibold uppercase text-xs w-24 sticky left-0 z-20">
+                    HORA
+                  </th>
+                  {getDaysOfWeek(fechaSeleccionada).map(d => (
+                    <th key={d.dateStr} className={`border-b border-r border-slate-200 px-2 py-3 font-semibold text-xs ${d.dateStr === hoy ? 'bg-blue-600 text-white' : 'bg-[#0e2f44] text-white'}`}>
+                      <div className="uppercase">{d.name}</div>
+                      <div className="text-lg">{d.dayNum}</div>
+                    </th>
+                  ))}
+                </tr>
+              </thead>
+              <tbody>
+                {HORAS.map(hora => (
+                  <tr key={hora} className="hover:bg-slate-50 transition-colors">
+                    <td className="border-b border-r border-slate-200 px-4 py-3 font-bold text-[#0e2f44] bg-slate-50 sticky left-0 z-20 shadow-[1px_0_2px_rgba(0,0,0,0.05)]">
+                      {hora}
+                    </td>
+                    {getDaysOfWeek(fechaSeleccionada).map(d => {
+                      const cita = getCitaParaCelda(hora, userName, d.dateStr);
+                      return (
+                        <td key={`${hora}-${d.dateStr}`} className="border-b border-r border-slate-200 p-0 h-16 w-32 relative align-top group">
+                          {cita ? (
+                              (() => {
+                                const st = getEstadoStyle(cita.estado);
+                                return (
+                                  <div 
+                                    onClick={() => { setSelectedCita(cita); setIsEditModalOpen(true); }}
+                                    style={st.style}
+                                    className={`absolute left-0 w-full h-full p-1 rounded border text-[10px] font-semibold flex flex-col items-center justify-center cursor-pointer shadow-sm hover:brightness-95 transition-all ${cita.hora.includes(":30") ? "top-[50%] z-10" : "top-0"} ${st.className}`}>
+                                    <span className="truncate w-full text-center mt-0.5 font-bold">
+                                      {(cita.estado === "Ocupado" || cita.estado === "No Disponible" || cita.paciente === "No Disponible") ? "No Disp." : cita.paciente.split(' ')[0]}
+                                    </span>
+                                    <span className="opacity-90 uppercase mt-0.5 truncate w-full text-center">
+                                      {(cita.estado === "Ocupado" || cita.estado === "No Disponible" || cita.paciente === "No Disponible") ? "Bloqueado" : (cita.estado || "Agendado")}
+                                    </span>
+                                  </div>
+                                );
+                              })()
+                          ) : (
+                            <div 
+                              onClick={() => { setFechaSeleccionada(d.dateStr); handleOpenModal(userName, hora); }}
+                              className="w-full h-full flex items-center justify-center cursor-pointer hover:bg-blue-50/60 transition-colors group/cell"
+                              title={`Agendar el ${d.name} a las ${hora}`}
+                            >
+                              <span className="text-slate-300 group-hover/cell:text-[#1a5276] font-extrabold text-sm">+</span>
+                            </div>
+                          )}
+                        </td>
+                      );
+                    })}
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        ) : (
+<div className="overflow-x-auto">
           <table className="w-full text-sm text-center border-collapse">
             <thead>
               <tr>
@@ -485,6 +647,7 @@ export default function AgendaPage() {
             </tbody>
           </table>
         </div>
+        )}
       </div>
 
       {/* MODAL PARA NUEVA CITA */}
