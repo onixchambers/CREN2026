@@ -227,8 +227,8 @@ export function AsistenciaForm({
     let finalTotal = totVal;
 
     if (formData.solicitaFactura) {
-      ivaVal = subVal * ivaDec;
-      finalTotal = subVal + ivaVal;
+      ivaVal = totVal * ivaDec;
+      subVal = totVal - ivaVal;
     }
 
     let metodoPagoFinal = formData.metodoPago;

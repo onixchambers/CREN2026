@@ -582,8 +582,8 @@ export default function AsistenciaPage() {
     let finalTotal = totVal;
 
     if (editForm.fact) {
-      ivaVal = subVal * ivaDec;
-      finalTotal = subVal + ivaVal;
+      ivaVal = totVal * ivaDec;
+      subVal = totVal - ivaVal;
     }
 
     let asisActualizada: any = null;
