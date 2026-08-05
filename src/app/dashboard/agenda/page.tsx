@@ -456,6 +456,11 @@ export default function AgendaPage() {
     );
   }
 
+  const handleEditCitaModal = (cita: any) => {
+    setSelectedCitaForStatus(cita);
+    setIsStatusModalOpen(true);
+  };
+
   const handleOpenModal = (tName?: string, hStr?: string) => {
     setFormData({
       paciente: "",
@@ -616,18 +621,15 @@ export default function AgendaPage() {
                           onDragOver={(e) => e.preventDefault()}
                           onDrop={(e) => {
                             e.preventDefault();
-                            const draggedData = e.dataTransfer.getData('application/json');
+                            const draggedData = e.dataTransfer.getData('citaId');
                             if (draggedData) {
-                              try {
-                                const payload = JSON.parse(draggedData);
                                 setPendingMoveCita({
-                                  citaId: payload.id,
+                                  citaId: draggedData,
                                   newHora: hora,
                                   newTerapeuta: userName,
                                   newFecha: d.dateStr
                                 });
                                 setIsConfirmMoveModalOpen(true);
-                              } catch(err){}
                             }
                           }}
                         >
@@ -697,18 +699,15 @@ export default function AgendaPage() {
                         onDragOver={(e) => e.preventDefault()}
                         onDrop={(e) => {
                           e.preventDefault();
-                          const draggedData = e.dataTransfer.getData('application/json');
+                          const draggedData = e.dataTransfer.getData('citaId');
                           if (draggedData) {
-                            try {
-                              const payload = JSON.parse(draggedData);
                               setPendingMoveCita({
-                                citaId: payload.id,
+                                citaId: draggedData,
                                 newHora: hora,
                                 newTerapeuta: t,
                                 newFecha: fechaSeleccionada
                               });
                               setIsConfirmMoveModalOpen(true);
-                            } catch(err){}
                           }
                         }}
                       >
