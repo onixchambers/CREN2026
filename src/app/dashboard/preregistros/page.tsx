@@ -439,6 +439,19 @@ export default function PreregistrosPage() {
       return;
     }
 
+    if (!editingId) {
+      const isSimilar = fichas.some(f => {
+        const n1 = (f.name || f.nombre || "").toLowerCase().replace(/\s+/g, " ").trim();
+        const n2 = formData.nombre.toLowerCase().replace(/\s+/g, " ").trim();
+        return n1 && n2 && (n1 === n2 || (n1.length > 5 && n2.length > 5 && (n1.includes(n2) || n2.includes(n1))));
+      });
+      if (isSimilar) {
+         if (!confirm("Ya existe un paciente con un nombre similar en el sistema. ¿Deseas continuar y crearlo de todos modos?")) {
+           return;
+         }
+      }
+    }
+
     if (!formData.reglamentoFirmado || !formData.consentimientoFirmado) {
       if (!confirm("Atención: Los ganchos de Reglamento y Consentimiento Firmado no están marcados. ¿Deseas guardar de todos modos?")) {
         return;
