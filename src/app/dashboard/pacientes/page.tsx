@@ -307,9 +307,20 @@ export default function PacientesPage() {
                     <td className="px-2 py-4 text-slate-500 text-[10px] whitespace-nowrap">{p.fechaNacimiento || "—"}</td>
                     <td className="px-2 py-4 text-slate-500">{p.age || "—"}</td>
                     <td className="px-2 py-4">
-                      <span className="bg-[#e6f4ea] text-[#1e8e3e] px-2.5 py-1 rounded text-xs font-extrabold shadow-xs">
-                        {asistencias}/{totalSesiones}
-                      </span>
+                      {p.asistenciasDetailed && Object.keys(p.asistenciasDetailed).length > 0 ? (
+                        <div className="flex flex-col gap-1">
+                          {Object.entries(p.asistenciasDetailed).map(([terap, data]: [string, any]) => (
+                            <span key={terap} className="bg-[#e6f4ea] text-[#1e8e3e] px-2 py-0.5 rounded text-[10px] font-extrabold shadow-xs flex items-center justify-between gap-1">
+                              <span>{terap.split(' ')[0]}:</span>
+                              <span>{data.asistencias}/{Math.max(data.total, data.asistencias, 1)}</span>
+                            </span>
+                          ))}
+                        </div>
+                      ) : (
+                        <span className="bg-[#e6f4ea] text-[#1e8e3e] px-2.5 py-1 rounded text-xs font-extrabold shadow-xs">
+                          {asistencias}/{totalSesiones}
+                        </span>
+                      )}
                     </td>
                     <td className="px-2 py-4">
                       <span className="bg-purple-50 text-purple-700 border border-purple-200 px-2.5 py-1 rounded text-xs font-bold">
@@ -588,7 +599,18 @@ export default function PacientesPage() {
                     </div>
                     <div className="bg-slate-50 p-3 rounded-xl border border-slate-200">
                       <span className="font-bold text-slate-400 block text-[10px] uppercase">Asistencia Acumulada:</span>
-                      <span className="text-emerald-700 font-extrabold text-sm">{viewingPatient.asistencias || 0}/{viewingPatient.sesiones || 10}</span>
+                      {viewingPatient.asistenciasDetailed && Object.keys(viewingPatient.asistenciasDetailed).length > 0 ? (
+                        <div className="flex flex-col gap-1 mt-1">
+                          {Object.entries(viewingPatient.asistenciasDetailed).map(([terap, data]: [string, any]) => (
+                            <span key={terap} className="text-emerald-700 font-extrabold text-xs flex justify-between">
+                              <span>{terap.split(' ')[0]}:</span>
+                              <span>{data.asistencias}/{Math.max(data.total, data.asistencias, 1)}</span>
+                            </span>
+                          ))}
+                        </div>
+                      ) : (
+                        <span className="text-emerald-700 font-extrabold text-sm">{viewingPatient.asistencias || 0}/{viewingPatient.sesiones || 10}</span>
+                      )}
                     </div>
                     <div className="bg-slate-50 p-3 rounded-xl border border-slate-200">
                       <span className="font-bold text-slate-400 block text-[10px] uppercase">Precio por Terapia:</span>

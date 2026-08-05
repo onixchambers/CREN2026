@@ -114,6 +114,7 @@ export async function getPatients() {
     const mapped = patients.map(p => {
       const sessionTherapists: string[] = [];
       let asistenciasCount = 0;
+      let asistenciasDetailed: Record<string, { asistencias: number, total: number }> = {};
       let valoracionesCount = 0;
       let totalPagadoSum = 0;
       let totalCostoSum = 0;
@@ -147,12 +148,20 @@ export async function getPatients() {
           const sesNum = parseInt(parsedNotes.sesiones || parsedNotes.numeroSesiones || "0");
           if (sesNum > 0) {
             latestTotalSesiones = sesNum;
+            if (extraName) {
+              if (!asistenciasDetailed[extraName]) asistenciasDetailed[extraName] = { asistencias: 0, total: 0 };
+              asistenciasDetailed[extraName].total = Math.max(asistenciasDetailed[extraName].total, sesNum);
+            }
           }
 
           const est = (parsedNotes.estadoAsistencia || "").toLowerCase();
           const isAttended = est === "asistio" || est === "cancelo sin anticipacion" || s.status === "COMPLETED";
           if (isAttended) {
             asistenciasCount++;
+            if (extraName) {
+              if (!asistenciasDetailed[extraName]) asistenciasDetailed[extraName] = { asistencias: 0, total: 0 };
+              asistenciasDetailed[extraName].asistencias++;
+            }
           }
 
           const tipo = (parsedNotes.tipoSesion || parsedNotes.tipoServicio || parsedNotes.serviceType || "").toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "");
@@ -228,6 +237,7 @@ export async function getPatients() {
       return {
         ...p,
         medicoTratante: effectiveMedicoTratante || p.medicoTratante || "General",
+        asistenciasDetailed,
         sessionTherapists: uniqueTherapists,
         asistencias: asistenciasCount,
         valoraciones: finalValoracionesCount,

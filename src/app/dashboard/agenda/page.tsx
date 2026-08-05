@@ -524,7 +524,7 @@ export default function AgendaPage() {
                         return (
                           <div 
                             key={cita.id} 
-                            onClick={() => { setSelectedCitaForStatus(cita); setIsStatusModalOpen(true); }}
+                            onClick={(e) => { e.stopPropagation(); handleEditCitaModal(cita); }}
                             style={st.style}
                             draggable={true}
                             onDragStart={(e) => { e.stopPropagation(); e.dataTransfer.setData("citaId", cita.id); }}
@@ -566,13 +566,13 @@ export default function AgendaPage() {
                     {getDaysOfWeek(fechaSeleccionada).map(d => {
                       const cita = getCitaParaCelda(hora, userName, d.dateStr);
                       return (
-                        <td key={`${hora}-${d.dateStr}`} className="border-b border-r border-slate-200 p-0 h-16 w-32 relative align-top group">
+                        <td key={`${hora}-${d.dateStr}`} className="border-b border-r border-slate-200 p-0 h-16 w-32 relative align-top group" >
                           {cita ? (
                               (() => {
                                 const st = getEstadoStyle(cita.estado);
                                 return (
                                   <div 
-                                    onClick={() => { setSelectedCitaForStatus(cita); setIsStatusModalOpen(true); }}
+                                    onClick={(e) => { e.stopPropagation(); handleEditCitaModal(cita); }}
                                     style={st.style}
                                     draggable={true}
                                     onDragStart={(e) => { e.stopPropagation(); e.dataTransfer.setData("citaId", cita.id); }}
@@ -588,15 +588,7 @@ export default function AgendaPage() {
                               })()
                           ) : (
                             <div 
-                              onDragOver={(e) => e.preventDefault()}
-                              onDrop={(e) => {
-                                e.preventDefault();
-                                const id = e.dataTransfer.getData("citaId");
-                                if (id) {
-                                  setPendingMoveCita({citaId: id, newHora: hora, newTerapeuta: userName, newFecha: d.dateStr});
-                                  setIsConfirmMoveModalOpen(true);
-                                }
-                              }} onClick={() => { setFechaSeleccionada(d.dateStr); handleOpenModal(userName, hora); }}
+                               onClick={() => { setFechaSeleccionada(d.dateStr); handleOpenModal(userName, hora); }}
                               className="w-full h-full flex items-center justify-center cursor-pointer hover:bg-blue-50/60 transition-colors group/cell"
                               title={`Agendar el ${d.name} a las ${hora}`}
                             >
@@ -635,13 +627,13 @@ export default function AgendaPage() {
                   {terapeutas.map(t => {
                     const cita = getCitaParaCelda(hora, t);
                     return (
-                      <td key={`${hora}-${t}`} className="border border-slate-200 p-0 h-16 w-40 relative align-top group">
+                      <td key={`${hora}-${t}`} className="border border-slate-200 p-0 h-16 w-40 relative align-top group" >
                         {cita ? (
                             (() => {
                               const st = getEstadoStyle(cita.estado);
                               return (
                                 <div 
-                                  onClick={() => { setSelectedCitaForStatus(cita); setIsStatusModalOpen(true); }}
+                                  onClick={(e) => { e.stopPropagation(); handleEditCitaModal(cita); }}
                                   style={st.style}
                                   draggable={true}
                                   onDragStart={(e) => { e.stopPropagation(); e.dataTransfer.setData("citaId", cita.id); }}
@@ -668,15 +660,7 @@ export default function AgendaPage() {
                             })()
                         ) : (
                           <div 
-                            onDragOver={(e) => e.preventDefault()}
-                            onDrop={(e) => {
-                              e.preventDefault();
-                              const id = e.dataTransfer.getData("citaId");
-                              if (id) {
-                                setPendingMoveCita({citaId: id, newHora: hora, newTerapeuta: t, newFecha: fechaSeleccionada});
-                                setIsConfirmMoveModalOpen(true);
-                              }
-                            }}
+                            
                             onClick={() => handleOpenModal(t, hora)}
                             className="w-full h-full flex items-center justify-center cursor-pointer hover:bg-blue-50/60 transition-colors group/cell"
                             title="Haz clic para agendar en esta hora"
@@ -1000,6 +984,67 @@ export default function AgendaPage() {
                 setIsEditModalOpen(false);
               }}
             />
+          </div>
+        </div>
+      )}
+
+      
+      {/* CONFIRM MOVE CITA MODAL */}
+      {isConfirmMoveModalOpen && pendingMoveCita && (
+        <div className="fixed inset-0 bg-slate-900/50 backdrop-blur-sm z-50 flex items-center justify-center p-4 animate-in fade-in">
+          <div className="bg-white rounded-xl shadow-xl w-full max-w-md overflow-hidden text-center p-6">
+            <h3 className="font-bold text-lg text-[#0e2f44] mb-4">Confirmar Movimiento</h3>
+            <p className="text-sm text-slate-600 mb-6">
+              ¿Estás seguro que deseas mover esta cita a las <strong>{pendingMoveCita.newHora}</strong> del <strong>{pendingMoveCita.newFecha}</strong>?
+            </p>
+            <div className="flex flex-col gap-3">
+              <button onClick={async () => {
+                const updated = citas.find((c: any) => c.id === pendingMoveCita.citaId);
+                if (updated) {
+                  const newCita = { ...updated, hora: pendingMoveCita.newHora, terapeuta: pendingMoveCita.newTerapeuta, fecha: pendingMoveCita.newFecha };
+                  await updateCita(updated.id, newCita);
+                  setCitas(citas.map((c: any) => c.id === updated.id ? newCita : c));
+                }
+                setIsConfirmMoveModalOpen(false);
+                setPendingMoveCita(null);
+              }} className="w-full py-2 bg-[#1a5276] text-white font-semibold rounded-lg hover:bg-[#0e2f44] transition-colors">
+                Mover solo esta cita
+              </button>
+              
+              <button onClick={async () => {
+                const updated = citas.find((c: any) => c.id === pendingMoveCita.citaId);
+                if (updated) {
+                  const updatedCitas = [...citas];
+                  const futureCitas = citas.filter((c: any) => 
+                    c.paciente === updated.paciente && 
+                    c.terapeuta === updated.terapeuta && 
+                    c.fecha >= updated.fecha 
+                  );
+                  
+                  for (const fc of futureCitas) {
+                    const newCita = { ...fc, hora: pendingMoveCita.newHora, terapeuta: pendingMoveCita.newTerapeuta };
+                    await updateCita(fc.id, newCita);
+                    const index = updatedCitas.findIndex((c: any) => c.id === fc.id);
+                    if (index !== -1) updatedCitas[index] = newCita;
+                  }
+                  
+                  const newMainCita = { ...updated, hora: pendingMoveCita.newHora, terapeuta: pendingMoveCita.newTerapeuta, fecha: pendingMoveCita.newFecha };
+                  await updateCita(updated.id, newMainCita);
+                  const mainIndex = updatedCitas.findIndex((c: any) => c.id === updated.id);
+                  if (mainIndex !== -1) updatedCitas[mainIndex] = newMainCita;
+
+                  setCitas(updatedCitas);
+                }
+                setIsConfirmMoveModalOpen(false);
+                setPendingMoveCita(null);
+              }} className="w-full py-2 bg-[#27ae60] text-white font-semibold rounded-lg hover:bg-[#219653] transition-colors">
+                Mover esta y futuras (cambiar hora)
+              </button>
+
+              <button onClick={() => { setIsConfirmMoveModalOpen(false); setPendingMoveCita(null); }} className="w-full py-2 bg-slate-100 text-slate-700 font-semibold rounded-lg hover:bg-slate-200 transition-colors">
+                Cancelar
+              </button>
+            </div>
           </div>
         </div>
       )}
