@@ -19,6 +19,9 @@ type Paciente = {
   nac: string;
   edad: string;
   medicoTratante?: string;
+  saldoCalculado?: string;
+  precioTerapia?: string;
+  estatus?: string;
 };
 
 type Asistencia = {
@@ -229,7 +232,9 @@ export default function AsistenciaPage() {
           nac: p.fechaNacimiento || "—",
           edad: p.age ? p.age.toString() : "—",
           medicoTratante: p.medicoTratante,
-          saldoCalculado: p.saldoCalculado || "0.00"
+          saldoCalculado: p.saldoCalculado || "0.00",
+          precioTerapia: p.precioTerapia?.toString() || "",
+          estatus: p.estatus || "Activo"
         }));
         setPacientes(mapped);
       }
@@ -347,6 +352,7 @@ export default function AsistenciaPage() {
         hora: horaAgenda,
         tipoSesion: tipoSesionAgenda,
         saldoDisponible: p.saldoCalculado || "0.00",
+        precioTerapia: p.precioTerapia || formData.precioTerapia,
         numeroSesiones: displaySesiones,
         frecuencia: agendaCitas.find((c: any) => c.paciente === p.paciente) ? (() => {
           const f = (agendaCitas.find((c: any) => c.paciente === p.paciente).frecuencia || "").toLowerCase();
@@ -573,10 +579,11 @@ export default function AsistenciaPage() {
     const ivaDec = (ivaPct || 16) / 100;
     let subVal = totVal;
     let ivaVal = 0;
+    let finalTotal = totVal;
 
     if (editForm.fact) {
-      ivaVal = totVal * ivaDec;
-      subVal = totVal - ivaVal;
+      ivaVal = subVal * ivaDec;
+      finalTotal = subVal + ivaVal;
     }
 
     let asisActualizada: any = null;
@@ -600,7 +607,7 @@ export default function AsistenciaPage() {
           fact: editForm.fact ? "Sí" : "No",
           subtotal: `$${subVal.toFixed(2)}`,
           iva: `$${ivaVal.toFixed(2)}`,
-          total: `$${totVal.toFixed(2)}`,
+          total: `$${finalTotal.toFixed(2)}`,
           obs: editForm.obs || "—",
           creadoPor: a.creadoPor || userName,
           terapeuta: editForm.terapeuta || a.terapeuta

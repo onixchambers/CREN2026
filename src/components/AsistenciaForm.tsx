@@ -178,6 +178,7 @@ export function AsistenciaForm({
         hora: horaAgenda,
         tipoSesion: tipoSesionAgenda,
         saldoDisponible: p.saldoCalculado || "0.00",
+        precioTerapia: p.precioTerapia || formData.precioTerapia,
         numeroSesiones: "1", 
         frecuencia: agendaCitas.find((c: any) => c.paciente === p.paciente) ? (() => {
           const f = (agendaCitas.find((c: any) => c.paciente === p.paciente).frecuencia || "").toLowerCase();
@@ -216,17 +217,18 @@ export function AsistenciaForm({
     const p2 = showSegundoPago ? parseFloat(formData.montoPago2 || "0") : 0;
     const montoPagado = p1 + p2;
     const precioTerapia = parseFloat(formData.precioTerapia || "0");
-    const totVal = montoPagado > 0 ? montoPagado : precioTerapia;
+    let totVal = montoPagado > 0 ? montoPagado : precioTerapia;
 
     const ivaPct = await getSystemIvaRate();
     const ivaDec = (ivaPct || 16) / 100;
 
     let subVal = totVal;
     let ivaVal = 0;
+    let finalTotal = totVal;
 
     if (formData.solicitaFactura) {
-      ivaVal = totVal * ivaDec;
-      subVal = totVal - ivaVal;
+      ivaVal = subVal * ivaDec;
+      finalTotal = subVal + ivaVal;
     }
 
     let metodoPagoFinal = formData.metodoPago;
@@ -238,7 +240,7 @@ export function AsistenciaForm({
       metodoPagoFinal = `${formData.metodoPago} $${p1}`;
     }
 
-    onSave(formData, subVal, ivaVal, totVal, metodoPagoFinal, isDraft);
+    onSave(formData, subVal, ivaVal, finalTotal, metodoPagoFinal, isDraft);
   };
 
   const terapeutasOptions = (userRole.toUpperCase() === "TERAPEUTA" && formData.terapeuta) ? [formData.terapeuta] : terapeutasFullData.map(t => t.name);
@@ -391,6 +393,7 @@ export function AsistenciaForm({
                             pacienteSexo: normalizeSexo(p.sexo),
                             pacienteEdad: p.edad,
                             saldoDisponible: p.saldoCalculado || "0.00",
+                            precioTerapia: p.precioTerapia || formData.precioTerapia,
                             numeroSesiones: "1",
                             frecuencia: agendaCitas.find((c: any) => c.paciente === p.paciente) ? (() => {
                               const f = (agendaCitas.find((c: any) => c.paciente === p.paciente).frecuencia || "").toLowerCase();

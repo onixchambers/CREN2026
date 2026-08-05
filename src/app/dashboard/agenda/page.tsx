@@ -1114,6 +1114,23 @@ export default function AgendaPage() {
                 Ocupado
               </button>
             </div>
+
+            {(selectedCitaForStatus.estado === "Ocupado" || selectedCitaForStatus.estado === "No Disponible" || selectedCitaForStatus.paciente === "No Disponible") && (
+              <div className="mt-3">
+                <button onClick={async () => {
+                  if (!confirm("¿Seguro que deseas liberar este horario?")) return;
+                  const res = await deleteCita(selectedCitaForStatus.id);
+                  if (res.success) {
+                    setCitas(citas.filter(c => c.id !== selectedCitaForStatus.id));
+                    setIsStatusModalOpen(false);
+                  } else {
+                    alert("No se pudo liberar el horario");
+                  }
+                }} className="w-full py-2 bg-emerald-600 text-white font-semibold rounded-lg hover:bg-emerald-700 transition-colors">
+                  ✅ Liberar Horario (Disponible)
+                </button>
+              </div>
+            )}
             
             <hr className="my-6 border-slate-200" />
             
