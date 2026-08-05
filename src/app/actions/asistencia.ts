@@ -45,10 +45,27 @@ export async function saveAsistenciaDB(data: any) {
     });
 
     let targetSession = null;
-    for (const s of existingSessions) {
-      if (s.date.toISOString().split("T")[0] === data.fecha) {
-        targetSession = s;
-        break;
+    if (data.agendaId) {
+      for (const s of existingSessions) {
+        if (s.notes) {
+          try {
+             const extra = JSON.parse(s.notes);
+             if (extra.agendaId === data.agendaId) {
+                targetSession = s;
+                break;
+             }
+          } catch(e) {}
+        }
+      }
+    }
+    
+    // Fallback por fecha si no hay agendaId
+    if (!targetSession) {
+      for (const s of existingSessions) {
+        if (s.date.toISOString().split("T")[0] === data.fecha) {
+          targetSession = s;
+          break;
+        }
       }
     }
 
@@ -108,7 +125,8 @@ export async function saveAsistenciaDB(data: any) {
     // Datos financieros a guardar
     const estadoVal = data.estado || data.estadoAsistencia || "";
     const extra = {
-      asistenciaGuardada: true,
+      asistenciaGuardada: estadoVal !== "Agendado",
+      agendaId: data.agendaId || "",
       paqueteActual: paqueteActual,
       saldo: saldo,
       montoPago: data.montoPago || "",
@@ -154,6 +172,9 @@ export async function saveAsistenciaDB(data: any) {
       await prisma.session.update({
         where: { id: targetSession.id },
         data: {
+          date: jsDate,
+          patientId: patient.id,
+          therapistId: therapistId,
           status: estadoVal === "Asistio" ? "COMPLETED" : (estadoVal.includes("Cancelo") ? "CANCELLED" : targetSession.status),
           notes: finalNotes
         }

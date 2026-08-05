@@ -724,6 +724,7 @@ export default function AgendaPage() {
 
                 const nuevaAsistencia = {
                   id: Date.now().toString(),
+                  agendaId: selectedCita.id,
                   fecha: formData.fecha,
                   hora: formData.hora,
                   area: formData.area,
