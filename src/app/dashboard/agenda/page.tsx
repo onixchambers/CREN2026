@@ -298,8 +298,13 @@ export default function AgendaPage() {
             creadoPor: userName,
             terapeuta: selectedCitaForStatus.terapeuta
          };
-         await fetch('/api/test', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ action: 'crear_asistencia', table: 'asistencias', data: nuevaAsistencia }) });
-         alert(`Estado actualizado a '${estado}' y asistencia registrada.`);
+         
+         const dbRes = await saveAsistenciaDB(nuevaAsistencia);
+         if (dbRes?.success === false) {
+           alert("Error al guardar asistencia: " + dbRes.error);
+         } else {
+           alert(`Estado actualizado a '${estado}' y asistencia registrada.`);
+         }
       } else {
          alert(`Estado actualizado a '${estado}'.`);
       }
