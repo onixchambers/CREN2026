@@ -623,7 +623,7 @@ export default function AgendaPage() {
                             className={`text-[9px] p-1 rounded font-bold cursor-pointer truncate shadow-sm hover:brightness-95 touch-none ${st.className}`}
                             title={`${cita.hora} - ${cita.paciente}`}
                           >
-                            {cita.hora} - {cita.paciente === 'No Disponible' ? 'Bloq.' : cita.paciente.split(' ')[0]}
+                            {cita.hora} - {cita.estado === 'Disponible' ? 'DISPONIBLE' : (cita.paciente === 'No Disponible' ? 'Bloq.' : cita.paciente.split(' ')[0])}
                           </div>
                         );
                       })}
@@ -687,10 +687,10 @@ export default function AgendaPage() {
                                     onDragStart={(e) => { e.stopPropagation(); e.dataTransfer.setData("citaId", cita.id); }}
                                     className={`absolute left-0 w-full h-full p-1 rounded border text-[10px] font-semibold flex flex-col items-center justify-center cursor-pointer shadow-sm hover:brightness-95 touch-none transition-all ${cita.hora.includes(":30") ? "top-[50%] z-10" : "top-0"} ${st.className}`}>
                                     <span className="truncate w-full text-center mt-0.5 font-bold">
-                                      {(cita.estado === "Ocupado" || cita.estado === "No Disponible" || cita.paciente === "No Disponible") ? "No Disp." : cita.paciente.split(' ')[0]}
+                                      {cita.estado === 'Disponible' ? 'DISPONIBLE' : ((cita.estado === "Ocupado" || cita.estado === "No Disponible" || cita.paciente === "No Disponible") ? "No Disp." : cita.paciente.split(' ')[0])}
                                     </span>
                                     <span className="opacity-90 uppercase mt-0.5 truncate w-full text-center">
-                                      {(cita.estado === "Ocupado" || cita.estado === "No Disponible" || cita.paciente === "No Disponible") ? "Bloqueado" : (cita.estado || "Agendado")}
+                                      {cita.estado === 'Disponible' ? 'Abierto' : ((cita.estado === "Ocupado" || cita.estado === "No Disponible" || cita.paciente === "No Disponible") ? "Bloqueado" : (cita.estado || "Agendado"))}
                                     </span>
                                   </div>
                                 );
@@ -776,10 +776,10 @@ export default function AgendaPage() {
                                   <span 
                                     className="truncate w-full text-center mt-1 font-bold"
                                   >
-                                    {(cita.estado === "Ocupado" || cita.estado === "No Disponible" || cita.paciente === "No Disponible") ? "No Disponible" : cita.paciente}
+                                    {cita.estado === 'Disponible' ? 'DISPONIBLE' : ((cita.estado === "Ocupado" || cita.estado === "No Disponible" || cita.paciente === "No Disponible") ? "No Disponible" : cita.paciente)}
                                   </span>
                                   <span className="text-[10px] opacity-90 uppercase mt-0.5 truncate w-full text-center">
-                                    {(cita.estado === "Ocupado" || cita.estado === "No Disponible" || cita.paciente === "No Disponible") ? "Bloqueado" : (cita.estado || "Agendado")}
+                                    {cita.estado === 'Disponible' ? 'Abierto' : ((cita.estado === "Ocupado" || cita.estado === "No Disponible" || cita.paciente === "No Disponible") ? "Bloqueado" : (cita.estado || "Agendado"))}
                                   </span>
                                 </div>
                               );
@@ -835,7 +835,7 @@ export default function AgendaPage() {
                 <div className="relative">
                   <div className="flex items-center justify-between mb-1">
                     <label className="block text-xs font-semibold text-slate-600 uppercase">
-                      Nombre del Paciente {formData.estado === "Ocupado" && <span className="text-red-500 font-bold">(Bloqueado)</span>}
+                      Nombre del Paciente {formData.estado === "Ocupado" && <span className="text-red-500 font-bold">(Bloqueado)</span>}{formData.estado === "Disponible" && <span className="text-blue-500 font-bold ml-1">(Horario Abierto)</span>}
                     </label>
                     {userRole.toUpperCase() === "TERAPEUTA" && (
                       <label className="flex items-center gap-1 text-[10px] font-bold text-slate-500 cursor-pointer">
@@ -850,22 +850,22 @@ export default function AgendaPage() {
                     )}
                   </div>
                   <input 
-                    required={formData.estado !== "Ocupado"}
-                    disabled={formData.estado === "Ocupado"}
+                    required={formData.estado !== "Ocupado" && formData.estado !== "Disponible"}
+                    disabled={formData.estado === "Ocupado" || formData.estado === "Disponible"}
                     type="text" 
                     name="paciente" 
                     autoComplete="off"
-                    value={formData.estado === "Ocupado" ? "No Disponible" : formData.paciente} 
+                    value={formData.estado === "Ocupado" ? "No Disponible" : (formData.estado === "Disponible" ? "Disponible" : formData.paciente)} 
                     onChange={(e) => {
                       handleInputChange(e);
                       setShowDropdown(true);
                     }}
                     onFocus={() => setShowDropdown(true)}
                     onBlur={() => setTimeout(() => setShowDropdown(false), 250)}
-                    className={`w-full text-slate-900 font-medium border border-slate-300 rounded-lg px-3 py-2 outline-none focus:border-[#2980b9] ${formData.estado === "Ocupado" ? "bg-slate-100 text-slate-400 cursor-not-allowed" : ""}`} 
-                    placeholder={formData.estado === "Ocupado" ? "No Disponible" : "Escribir para buscar paciente..."} 
+                    className={`w-full text-slate-900 font-medium border border-slate-300 rounded-lg px-3 py-2 outline-none focus:border-[#2980b9] ${(formData.estado === "Ocupado" || formData.estado === "Disponible") ? "bg-slate-100 text-slate-400 cursor-not-allowed" : ""}`} 
+                    placeholder={formData.estado === "Ocupado" ? "No Disponible" : (formData.estado === "Disponible" ? "Disponible" : "Escribir para buscar paciente...")} 
                   />
-                  {showDropdown && formData.estado !== "Ocupado" && (
+                  {showDropdown && formData.estado !== "Ocupado" && formData.estado !== "Disponible" && (
                     <ul className="absolute z-10 w-full bg-white border border-slate-300 rounded-md mt-1 max-h-48 overflow-y-auto shadow-lg">
                       {(() => {
                         const searchNorm = (formData.paciente || "").trim().toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "");
@@ -974,7 +974,7 @@ export default function AgendaPage() {
                 {/* Servicio y Frecuencia */}
                 <div>
                   <label className="block text-xs font-semibold text-slate-600 uppercase mb-1">Tipo de Servicio</label>
-                  <select disabled={formData.estado === "Ocupado"} name="tipoServicio" value={formData.tipoServicio} onChange={handleInputChange} className={`w-full text-slate-900 font-medium border border-slate-300 rounded-lg px-3 py-2 outline-none focus:border-[#2980b9] ${formData.estado === "Ocupado" ? "bg-slate-100 text-slate-400 cursor-not-allowed" : ""}`}>
+                  <select disabled={formData.estado === "Ocupado" || formData.estado === "Disponible"} name="tipoServicio" value={formData.tipoServicio} onChange={handleInputChange} className={`w-full text-slate-900 font-medium border border-slate-300 rounded-lg px-3 py-2 outline-none focus:border-[#2980b9] ${(formData.estado === "Ocupado" || formData.estado === "Disponible") ? "bg-slate-100 text-slate-400 cursor-not-allowed" : ""}`}>
                     <option value="individual">Individual</option>
                     <option value="valoracion">Valoración</option>
                     <option value="taller">Taller</option>
@@ -986,7 +986,7 @@ export default function AgendaPage() {
                 </div>
                   <div>
                     <label className="block text-xs font-semibold text-slate-600 uppercase mb-1">Frecuencia</label>
-                    <select disabled={formData.estado === "Ocupado"} name="frecuencia" value={formData.estado === "Ocupado" ? "unica" : formData.frecuencia} onChange={handleInputChange} className={`w-full text-slate-900 font-medium border border-slate-300 rounded-lg px-3 py-2 outline-none focus:border-[#2980b9] ${formData.estado === "Ocupado" ? "bg-slate-100 text-slate-400 cursor-not-allowed" : ""}`}>
+                    <select disabled={formData.estado === "Ocupado" || formData.estado === "Disponible"} name="frecuencia" value={(formData.estado === "Ocupado" || formData.estado === "Disponible") ? "unica" : formData.frecuencia} onChange={handleInputChange} className={`w-full text-slate-900 font-medium border border-slate-300 rounded-lg px-3 py-2 outline-none focus:border-[#2980b9] ${(formData.estado === "Ocupado" || formData.estado === "Disponible") ? "bg-slate-100 text-slate-400 cursor-not-allowed" : ""}`}>
                       <option value="diario">Diario</option>
                       <option value="semanal">Semanal</option>
                       <option value="quincenal">Quincenal</option>
@@ -996,7 +996,7 @@ export default function AgendaPage() {
                   </div>
                   <div>
                     <label className="block text-xs font-semibold text-slate-600 uppercase mb-1">Número de Sesiones</label>
-                    <input disabled={formData.estado === "Ocupado"} required type="number" min="1" max="100" name="numeroSesiones" value={formData.estado === "Ocupado" ? 1 : formData.numeroSesiones} onChange={handleInputChange} className={`w-full text-slate-900 font-medium border border-slate-300 rounded-lg px-3 py-2 outline-none focus:border-[#2980b9] ${formData.estado === "Ocupado" ? "bg-slate-100 text-slate-400 cursor-not-allowed" : ""}`} />
+                    <input disabled={formData.estado === "Ocupado" || formData.estado === "Disponible"} required type="number" min="1" max="100" name="numeroSesiones" value={(formData.estado === "Ocupado" || formData.estado === "Disponible") ? 1 : formData.numeroSesiones} onChange={handleInputChange} className={`w-full text-slate-900 font-medium border border-slate-300 rounded-lg px-3 py-2 outline-none focus:border-[#2980b9] ${(formData.estado === "Ocupado" || formData.estado === "Disponible") ? "bg-slate-100 text-slate-400 cursor-not-allowed" : ""}`} />
                   </div>
 
                 {/* Estado */}
@@ -1008,7 +1008,8 @@ export default function AgendaPage() {
                     <option value="Cancelo con anticipacion">Canceló con anticipación (Naranja traslúcido)</option>
                     <option value="Cancelo sin anticipacion">Canceló sin anticipación (Rojo traslúcido)</option>
                     <option value="Cancelo el centro">Canceló el centro (Amarillo traslúcido)</option>
-                    <option value="Ocupado">Ocupado (Terapeuta No Disponible)</option>
+                    <option value="Disponible">Disponible (Horario Abierto)</option>
+                      <option value="Ocupado">Ocupado (Terapeuta No Disponible)</option>
                   </select>
                   {formData.estado === "Ocupado" && (
                     <p className="text-xs text-red-600 font-bold mt-1.5 flex items-center gap-1">
