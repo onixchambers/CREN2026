@@ -58,7 +58,7 @@ export default function AgendaPage() {
   
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [isConfirmMoveModalOpen, setIsConfirmMoveModalOpen] = useState(false);
-  const [pendingMoveCita, setPendingMoveCita] = useState<{citaId: string, newHora: string, newTerapeuta: string, newFecha?: string} | null>(null);
+  const [pendingMoveCita, setPendingMoveCita] = useState<{citaId: string, newHora: string, newTerapeuta: string, newFecha?: string, newFormData?: any} | null>(null);
   const [isStatusModalOpen, setIsStatusModalOpen] = useState(false);
   const [selectedCitaForStatus, setSelectedCitaForStatus] = useState<any>(null);
   const [isEditModalOpen, setIsEditModalOpen] = useState(false);
@@ -215,15 +215,20 @@ export default function AgendaPage() {
 
     try {
       if ((formData as any).id) {
-        // Editing existing cita
+        // Editing existing cita - trigger move confirmation modal to ask about future appointments
         const updated = citas.find((c: any) => c.id === (formData as any).id);
         if (updated) {
-          const newCita = { ...updated, ...formData };
-          await updateCita(updated.id, newCita);
-          setCitas(citas.map((c: any) => c.id === updated.id ? newCita : c));
-          alert("Cita actualizada.");
+          setPendingMoveCita({
+            citaId: updated.id,
+            newHora: formData.hora,
+            newTerapeuta: formData.terapeuta,
+            newFecha: formData.fecha,
+            newFormData: formData
+          });
+          setIsConfirmMoveModalOpen(true);
         }
         setIsModalOpen(false);
+        setIsSubmittingCita(false);
         return;
       }
 
@@ -1117,7 +1122,7 @@ export default function AgendaPage() {
                 setIsStatusModalOpen(false);
                 setIsModalOpen(true);
               }} className="w-full py-2 bg-blue-600 text-white font-semibold rounded-lg hover:bg-blue-700 transition-colors mb-2">
-                ✏️ Editar Fecha / Hora / Terapeuta
+                ✏️ Editar Hora
               </button>
 
               <button onClick={() => {
@@ -1144,7 +1149,9 @@ export default function AgendaPage() {
               <button onClick={async () => {
                 const updated = citas.find((c: any) => c.id === pendingMoveCita.citaId);
                 if (updated) {
-                  const newCita = { ...updated, hora: pendingMoveCita.newHora, terapeuta: pendingMoveCita.newTerapeuta, fecha: pendingMoveCita.newFecha || updated.fecha };
+                  const newCita = pendingMoveCita.newFormData 
+                    ? { ...updated, ...pendingMoveCita.newFormData, hora: pendingMoveCita.newHora, terapeuta: pendingMoveCita.newTerapeuta, fecha: pendingMoveCita.newFecha || updated.fecha }
+                    : { ...updated, hora: pendingMoveCita.newHora, terapeuta: pendingMoveCita.newTerapeuta, fecha: pendingMoveCita.newFecha || updated.fecha };
                   await updateCita(updated.id, newCita);
                   setCitas(citas.map((c: any) => c.id === updated.id ? newCita : c));
                 }
@@ -1165,13 +1172,17 @@ export default function AgendaPage() {
                   );
                   
                   for (const fc of futureCitas) {
-                    const newCita = { ...fc, hora: pendingMoveCita.newHora, terapeuta: pendingMoveCita.newTerapeuta };
+                    const newCita = pendingMoveCita.newFormData 
+                      ? { ...fc, ...pendingMoveCita.newFormData, id: fc.id, fecha: fc.fecha, hora: pendingMoveCita.newHora, terapeuta: pendingMoveCita.newTerapeuta }
+                      : { ...fc, hora: pendingMoveCita.newHora, terapeuta: pendingMoveCita.newTerapeuta };
                     await updateCita(fc.id, newCita);
                     const index = updatedCitas.findIndex((c: any) => c.id === fc.id);
                     if (index !== -1) updatedCitas[index] = newCita;
                   }
                   
-                  const newMainCita = { ...updated, hora: pendingMoveCita.newHora, terapeuta: pendingMoveCita.newTerapeuta, fecha: pendingMoveCita.newFecha || updated.fecha };
+                  const newMainCita = pendingMoveCita.newFormData 
+                    ? { ...updated, ...pendingMoveCita.newFormData, hora: pendingMoveCita.newHora, terapeuta: pendingMoveCita.newTerapeuta, fecha: pendingMoveCita.newFecha || updated.fecha }
+                    : { ...updated, hora: pendingMoveCita.newHora, terapeuta: pendingMoveCita.newTerapeuta, fecha: pendingMoveCita.newFecha || updated.fecha };
                   await updateCita(updated.id, newMainCita);
                   const mainIndex = updatedCitas.findIndex((c: any) => c.id === updated.id);
                   if (mainIndex !== -1) updatedCitas[mainIndex] = newMainCita;
