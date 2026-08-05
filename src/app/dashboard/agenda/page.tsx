@@ -204,38 +204,7 @@ export default function AgendaPage() {
           const newCita = { ...updated, ...formData };
           await updateCita(updated.id, newCita);
           setCitas(citas.map((c: any) => c.id === updated.id ? newCita : c));
-          
-          if (formData.estado === "Asistio" && updated.estado !== "Asistio") {
-             const nuevaAsistencia = {
-                id: Date.now().toString(),
-                agendaId: updated.id,
-                fecha: formData.fecha,
-                hora: formData.hora,
-                area: "",
-                paciente: formData.paciente,
-                sexo: "",
-                edad: "",
-                tipoSesion: formData.tipoServicio,
-                estado: formData.estado,
-                sesiones: formData.numeroSesiones?.toString() || "1",
-                frecuencia: formData.frecuencia || "unica",
-                pago: "SÍ",
-                fact: "No",
-                subtotal: "$0.00",
-                iva: "$0.00",
-                total: "$0.00",
-                precioTerapia: 400,
-                montoPago: "0",
-                metodoPago: "Efectivo",
-                obs: "Generado automáticamente desde agenda (Preregistro rápido)",
-                creadoPor: userName,
-                terapeuta: formData.terapeuta
-             };
-             await fetch('/api/test', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ action: 'crear_asistencia', table: 'asistencias', data: nuevaAsistencia }) });
-             alert("Cita editada y asistencia generada automáticamente.");
-          } else {
-             alert("Cita actualizada.");
-          }
+          alert("Cita actualizada.");
         }
         setIsModalOpen(false);
         return;
@@ -248,7 +217,7 @@ export default function AgendaPage() {
         terapeuta: formData.terapeuta,
         tipoServicio: formData.tipoServicio,
         frecuencia: formData.frecuencia,
-        numeroSesiones: 1,
+        numeroSesiones: formData.numeroSesiones || 1,
         estado: formData.estado,
         pagado: formData.pagado,
         metodoPago: formData.metodoPago
@@ -294,6 +263,53 @@ export default function AgendaPage() {
     }
   };
 
+  const handleStatusChange = async (estado: string) => {
+    if (!selectedCitaForStatus) return;
+    const isAttendanceStatus = ["Asistió", "Canceló con Anticipación", "Canceló sin Anticipación", "Canceló el Centro"].includes(estado);
+    
+    try {
+      const updatedData = { ...selectedCitaForStatus, estado };
+      await updateCita(selectedCitaForStatus.id, updatedData);
+      setCitas(citas.map(c => c.id === selectedCitaForStatus.id ? updatedData : c));
+      
+      if (isAttendanceStatus) {
+         const nuevaAsistencia = {
+            id: Date.now().toString(),
+            agendaId: selectedCitaForStatus.id,
+            fecha: selectedCitaForStatus.fecha,
+            hora: selectedCitaForStatus.hora,
+            area: "",
+            paciente: selectedCitaForStatus.paciente,
+            sexo: "",
+            edad: "",
+            tipoSesion: selectedCitaForStatus.tipoServicio,
+            estado: estado,
+            sesiones: selectedCitaForStatus.numeroSesiones?.toString() || "1",
+            frecuencia: selectedCitaForStatus.frecuencia || "unica",
+            pago: selectedCitaForStatus.pagado ? "SÍ" : "NO",
+            fact: "No",
+            subtotal: "$0.00",
+            iva: "$0.00",
+            total: "$0.00",
+            precioTerapia: 400,
+            montoPago: "0",
+            metodoPago: selectedCitaForStatus.metodoPago || "Efectivo",
+            obs: "Generado desde estado de cita",
+            creadoPor: userName,
+            terapeuta: selectedCitaForStatus.terapeuta
+         };
+         await fetch('/api/test', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ action: 'crear_asistencia', table: 'asistencias', data: nuevaAsistencia }) });
+         alert(`Estado actualizado a '${estado}' y asistencia registrada.`);
+      } else {
+         alert(`Estado actualizado a '${estado}'.`);
+      }
+    } catch (err) {
+      console.error(err);
+      alert("Hubo un error al actualizar el estado.");
+    } finally {
+      setIsStatusModalOpen(false);
+    }
+  };
   
   const handleMoveCita = async (citaId: string, newHora: string, newTerapeuta: string, newFecha?: string) => {
     try {
@@ -1096,38 +1112,26 @@ export default function AgendaPage() {
               className="absolute top-4 right-4 text-slate-400 hover:text-slate-600 font-bold text-xl"
             >&times;</button>
             <h3 className="font-bold text-lg text-[#0e2f44] mb-4 text-center">Estado de Cita</h3>
-            <p className="text-center font-semibold mb-6">{selectedCitaForStatus.paciente}</p>
+            <p className="text-center font-semibold mb-6 text-black">{selectedCitaForStatus.paciente}</p>
             
             <div className="flex flex-col gap-3">
-              <button onClick={async () => {
-                await updateCita(selectedCitaForStatus.id, { ...selectedCitaForStatus, estado: "Asistió" });
-                setCitas(citas.map(c => c.id === selectedCitaForStatus.id ? { ...c, estado: "Asistió" } : c));
-                setIsStatusModalOpen(false);
-              }} className="w-full py-2 bg-emerald-500 text-white font-semibold rounded-lg hover:bg-emerald-600 transition-colors">
+              <button onClick={() => handleStatusChange("Asistió")} className="w-full py-2 bg-emerald-500 text-white font-semibold rounded-lg hover:bg-emerald-600 transition-colors">
                 Asistió
               </button>
               
-              <button onClick={async () => {
-                await updateCita(selectedCitaForStatus.id, { ...selectedCitaForStatus, estado: "Canceló con Anticipación" });
-                setCitas(citas.map(c => c.id === selectedCitaForStatus.id ? { ...c, estado: "Canceló con Anticipación" } : c));
-                setIsStatusModalOpen(false);
-              }} className="w-full py-2 bg-orange-500 text-white font-semibold rounded-lg hover:bg-orange-600 transition-colors">
+              <button onClick={() => handleStatusChange("Canceló con Anticipación")} className="w-full py-2 bg-orange-500 text-white font-semibold rounded-lg hover:bg-orange-600 transition-colors">
                 Canceló con Anticipación
               </button>
 
-              <button onClick={async () => {
-                await updateCita(selectedCitaForStatus.id, { ...selectedCitaForStatus, estado: "Canceló sin Anticipación" });
-                setCitas(citas.map(c => c.id === selectedCitaForStatus.id ? { ...c, estado: "Canceló sin Anticipación" } : c));
-                setIsStatusModalOpen(false);
-              }} className="w-full py-2 bg-red-500 text-white font-semibold rounded-lg hover:bg-red-600 transition-colors">
+              <button onClick={() => handleStatusChange("Canceló sin Anticipación")} className="w-full py-2 bg-red-500 text-white font-semibold rounded-lg hover:bg-red-600 transition-colors">
                 Canceló sin Anticipación
               </button>
+
+              <button onClick={() => handleStatusChange("Canceló el Centro")} className="w-full py-2 bg-yellow-500 text-white font-semibold rounded-lg hover:bg-yellow-600 transition-colors">
+                Canceló el Centro
+              </button>
               
-              <button onClick={async () => {
-                await updateCita(selectedCitaForStatus.id, { ...selectedCitaForStatus, estado: "Ocupado" });
-                setCitas(citas.map(c => c.id === selectedCitaForStatus.id ? { ...c, estado: "Ocupado" } : c));
-                setIsStatusModalOpen(false);
-              }} className="w-full py-2 bg-slate-500 text-white font-semibold rounded-lg hover:bg-slate-600 transition-colors">
+              <button onClick={() => handleStatusChange("Ocupado")} className="w-full py-2 bg-slate-500 text-white font-semibold rounded-lg hover:bg-slate-600 transition-colors">
                 Ocupado
               </button>
             </div>
