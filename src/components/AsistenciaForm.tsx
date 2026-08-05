@@ -107,48 +107,38 @@ export function AsistenciaForm({
 
   useEffect(() => {
     if (terapeutasFullData.length > 0) {
+      const activeTerapeuta = formData.terapeuta || (userRole.toUpperCase() === "TERAPEUTA" ? userName : null);
+      
+      let matched = null;
+      if (activeTerapeuta) {
+        matched = terapeutasFullData.find(t => t.name === activeTerapeuta || t.name.toLowerCase().includes(activeTerapeuta.toLowerCase()) || activeTerapeuta.toLowerCase().includes(t.name.toLowerCase()));
+      }
+
+      let parts: string[] = [];
+      if (matched && matched.especialidad) {
+        parts = matched.especialidad.split(',').map((x: string) => x.trim()).filter(Boolean);
+      } else {
+        terapeutasFullData.forEach(t => {
+          if (t.especialidad) {
+            parts = parts.concat(t.especialidad.split(',').map((x: string) => x.trim()).filter(Boolean));
+          }
+        });
+        parts = Array.from(new Set(parts));
+      }
+
+      if (parts.length > 0) {
+        setAvailableAreas(parts);
+      }
+
       if (userRole.toUpperCase() === "TERAPEUTA" && !formData.terapeuta) {
-        // Encontrar el terapeuta actual basado en userName
-        let matched = terapeutasFullData.find(t => t.name.toLowerCase().includes(userName.toLowerCase()) || userName.toLowerCase().includes(t.name.toLowerCase()));
         const miTerapeuta = matched ? matched.name : (userName || terapeutasFullData[0]?.name);
-        
-        let initialArea = formData.area;
-        if (matched && matched.especialidad && !initialArea) {
-          const parts = matched.especialidad.split(',').map((x: string) => x.trim()).filter(Boolean);
-          initialArea = parts[0] || "";
-        }
-        
         setFormData(prev => ({
           ...prev,
           terapeuta: miTerapeuta,
-          area: initialArea
+          area: formData.area || parts[0] || ""
         }));
-      } else if (userRole.toUpperCase() !== "TERAPEUTA" && formData.terapeuta) {
-        const match = terapeutasFullData.find(t => t.name === formData.terapeuta);
-        if (match && match.especialidad) {
-          const parts = match.especialidad.split(',').map((x: string) => x.trim()).filter(Boolean);
-          setAvailableAreas(parts);
-          if (!parts.includes(formData.area)) {
-            setFormData(prev => ({ ...prev, area: parts[0] || "" }));
-          }
-        } else {
-          let allAreas: string[] = [];
-          terapeutasFullData.forEach(t => {
-            if (t.especialidad) {
-              allAreas = allAreas.concat(t.especialidad.split(',').map((x: string) => x.trim()).filter(Boolean));
-            }
-          });
-          setAvailableAreas(Array.from(new Set(allAreas)));
-        }
-      } else if (!formData.terapeuta) {
-        // Initialize all areas if no therapist is selected
-        let allAreas: string[] = [];
-        terapeutasFullData.forEach(t => {
-          if (t.especialidad) {
-            allAreas = allAreas.concat(t.especialidad.split(',').map((x: string) => x.trim()).filter(Boolean));
-          }
-        });
-        setAvailableAreas(Array.from(new Set(allAreas)));
+      } else if (formData.terapeuta && parts.length > 0 && !parts.includes(formData.area)) {
+        setFormData(prev => ({ ...prev, area: parts[0] || "" }));
       }
     }
   }, [formData.terapeuta, terapeutasFullData, userRole, userName]);
