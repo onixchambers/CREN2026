@@ -146,12 +146,17 @@ export async function getPatients() {
         if (s.therapist?.name) sessionTherapists.push(s.therapist.name);
         if (extraName) sessionTherapists.push(extraName);
 
+        // Inicializar el conteo detallado para este terapeuta
+        if (therapistName) {
+          if (!asistenciasDetailed[therapistName]) asistenciasDetailed[therapistName] = { asistencias: 0, total: 0 };
+          asistenciasDetailed[therapistName].total++; // Incrementar por cada cita agendada
+        }
+
         if (parsedNotes) {
           const sesNum = parseInt(parsedNotes.sesiones || parsedNotes.numeroSesiones || "0");
           if (sesNum > 0) {
             latestTotalSesiones = sesNum;
             if (therapistName) {
-              if (!asistenciasDetailed[therapistName]) asistenciasDetailed[therapistName] = { asistencias: 0, total: 0 };
               asistenciasDetailed[therapistName].total = Math.max(asistenciasDetailed[therapistName].total, sesNum);
             }
           }
@@ -161,7 +166,6 @@ export async function getPatients() {
           if (isAttended) {
             asistenciasCount++;
             if (therapistName) {
-              if (!asistenciasDetailed[therapistName]) asistenciasDetailed[therapistName] = { asistencias: 0, total: 0 };
               asistenciasDetailed[therapistName].asistencias++;
             }
           }

@@ -610,7 +610,27 @@ export default function AgendaPage() {
                     {getDaysOfWeek(fechaSeleccionada).map(d => {
                       const cita = getCitaParaCelda(hora, userName, d.dateStr);
                       return (
-                        <td key={`${hora}-${d.dateStr}`} className="border-b border-r border-slate-200 p-0 h-16 w-32 relative align-top group" >
+                        <td 
+                          key={`${hora}-${d.dateStr}`} 
+                          className="border-b border-r border-slate-200 p-0 h-16 w-32 relative align-top group" 
+                          onDragOver={(e) => e.preventDefault()}
+                          onDrop={(e) => {
+                            e.preventDefault();
+                            const draggedData = e.dataTransfer.getData('application/json');
+                            if (draggedData) {
+                              try {
+                                const payload = JSON.parse(draggedData);
+                                setPendingMoveCita({
+                                  citaId: payload.id,
+                                  newHora: hora,
+                                  newTerapeuta: userName,
+                                  newFecha: d.dateStr
+                                });
+                                setIsConfirmMoveModalOpen(true);
+                              } catch(err){}
+                            }
+                          }}
+                        >
                           {cita ? (
                               (() => {
                                 const st = getEstadoStyle(cita.estado);
@@ -671,7 +691,27 @@ export default function AgendaPage() {
                   {terapeutas.map(t => {
                     const cita = getCitaParaCelda(hora, t);
                     return (
-                      <td key={`${hora}-${t}`} className="border border-slate-200 p-0 h-16 w-40 relative align-top group" >
+                      <td 
+                        key={`${hora}-${t}`} 
+                        className="border border-slate-200 p-0 h-16 w-40 relative align-top group" 
+                        onDragOver={(e) => e.preventDefault()}
+                        onDrop={(e) => {
+                          e.preventDefault();
+                          const draggedData = e.dataTransfer.getData('application/json');
+                          if (draggedData) {
+                            try {
+                              const payload = JSON.parse(draggedData);
+                              setPendingMoveCita({
+                                citaId: payload.id,
+                                newHora: hora,
+                                newTerapeuta: t,
+                                newFecha: fechaSeleccionada
+                              });
+                              setIsConfirmMoveModalOpen(true);
+                            } catch(err){}
+                          }
+                        }}
+                      >
                         {cita ? (
                             (() => {
                               const st = getEstadoStyle(cita.estado);

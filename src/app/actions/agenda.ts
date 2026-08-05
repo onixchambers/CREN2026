@@ -5,8 +5,10 @@ import { revalidatePath } from "next/cache";
 import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth";
 import { generateUniqueDisplayId } from "@/lib/displayId";
+import { unstable_noStore as noStore } from "next/cache";
 
 export async function getAgenda() {
+  noStore();
   try {
     const sessions = await prisma.session.findMany({
       include: {
