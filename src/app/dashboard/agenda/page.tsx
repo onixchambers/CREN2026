@@ -78,6 +78,11 @@ export default function AgendaPage() {
       dragImageTranslateOverride: "scrollBehavior",
     });
 
+    // Requerido por mobile-drag-drop para funcionar en Safari/Chrome mobile
+    const passiveFalse = { passive: false };
+    const noop = () => {};
+    window.addEventListener('touchmove', noop, passiveFalse);
+
     if (status === "loading") return;
     async function loadData() {
       const { getAllowTherapistEdit } = await import('@/app/actions/configuracion');
@@ -123,7 +128,11 @@ export default function AgendaPage() {
       setIsLoadingTerapeutas(false);
     }
     loadData();
-  }, [status, userRole, userName]);
+
+    return () => {
+      window.removeEventListener('touchmove', noop, passiveFalse);
+    };
+  }, [status, userRole, userName, hoy]);
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
     const { name, value } = e.target;
@@ -606,7 +615,7 @@ export default function AgendaPage() {
                             style={st.style}
                             draggable={true}
                             onDragStart={(e) => { e.stopPropagation(); e.dataTransfer.setData("citaId", cita.id); }}
-                            className={`text-[9px] p-1 rounded font-bold cursor-pointer truncate shadow-sm hover:brightness-95 ${st.className}`}
+                            className={`text-[9px] p-1 rounded font-bold cursor-pointer truncate shadow-sm hover:brightness-95 touch-none ${st.className}`}
                             title={`${cita.hora} - ${cita.paciente}`}
                           >
                             {cita.hora} - {cita.paciente === 'No Disponible' ? 'Bloq.' : cita.paciente.split(' ')[0]}
@@ -671,7 +680,7 @@ export default function AgendaPage() {
                                     style={st.style}
                                     draggable={true}
                                     onDragStart={(e) => { e.stopPropagation(); e.dataTransfer.setData("citaId", cita.id); }}
-                                    className={`absolute left-0 w-full h-full p-1 rounded border text-[10px] font-semibold flex flex-col items-center justify-center cursor-pointer shadow-sm hover:brightness-95 transition-all ${cita.hora.includes(":30") ? "top-[50%] z-10" : "top-0"} ${st.className}`}>
+                                    className={`absolute left-0 w-full h-full p-1 rounded border text-[10px] font-semibold flex flex-col items-center justify-center cursor-pointer shadow-sm hover:brightness-95 touch-none transition-all ${cita.hora.includes(":30") ? "top-[50%] z-10" : "top-0"} ${st.className}`}>
                                     <span className="truncate w-full text-center mt-0.5 font-bold">
                                       {(cita.estado === "Ocupado" || cita.estado === "No Disponible" || cita.paciente === "No Disponible") ? "No Disp." : cita.paciente.split(' ')[0]}
                                     </span>
@@ -749,7 +758,7 @@ export default function AgendaPage() {
                                   style={st.style}
                                   draggable={true}
                                   onDragStart={(e) => { e.stopPropagation(); e.dataTransfer.setData("citaId", cita.id); }}
-                                  className={`absolute left-0 w-full h-full p-2 rounded border text-xs font-semibold flex flex-col items-center justify-center cursor-pointer shadow-sm hover:brightness-95 transition-all ${cita.hora.includes(":30") ? "top-[50%] z-10" : "top-0"} ${st.className}`}>
+                                  className={`absolute left-0 w-full h-full p-2 rounded border text-xs font-semibold flex flex-col items-center justify-center cursor-pointer shadow-sm hover:brightness-95 touch-none transition-all ${cita.hora.includes(":30") ? "top-[50%] z-10" : "top-0"} ${st.className}`}>
                                   
                                   {userRole.toUpperCase() !== "TERAPEUTA" && (
                                   <button 
