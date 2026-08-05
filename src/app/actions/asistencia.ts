@@ -297,3 +297,14 @@ export async function getAsistenciasDB(_ts?: string) {
     return { success: false, error: error.message };
   }
 }
+
+export async function getSessionByAgendaId(agendaId: string) {
+  try {
+    const session = await prisma.session.findFirst({
+      where: { notes: { contains: `agendaId:${agendaId}` } }
+    });
+    return { success: true, data: session };
+  } catch (error: any) {
+    return { success: false, error: error.message };
+  }
+}

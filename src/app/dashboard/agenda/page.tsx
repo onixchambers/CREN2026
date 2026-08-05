@@ -246,6 +246,24 @@ export default function AgendaPage() {
     }
   };
 
+  
+  const handleMoveCita = async (citaId: string, newHora: string, newTerapeuta: string, newFecha?: string) => {
+    try {
+      const payload: any = { hora: newHora, terapeuta: newTerapeuta };
+      if (newFecha) payload.fecha = newFecha;
+      
+      // Update locally immediately for optimistic UI
+      setCitas(prev => prev.map(c => c.id === citaId ? { ...c, ...payload } : c));
+      
+      // Update in DB
+      await updateCita(citaId, payload);
+    } catch (error) {
+      console.error(error);
+      alert("Error al mover la cita");
+      getAgenda().then(r => { if (r.success && r.data) setCitas(r.data); }); // Revert on error
+    }
+  };
+
   const handlePrevDay = () => {
     const d = new Date(fechaSeleccionada + "T00:00:00");
     d.setDate(d.getDate() - 1);
@@ -562,7 +580,7 @@ export default function AgendaPage() {
                               })()
                           ) : (
                             <div 
-                              onClick={() => { setFechaSeleccionada(d.dateStr); handleOpenModal(userName, hora); }}
+                              onDragOver={(e) => e.preventDefault()} onDrop={(e) => { e.preventDefault(); const id = e.dataTransfer.getData("citaId"); if (id) handleMoveCita(id, hora, userName, d.dateStr); }} onClick={() => { setFechaSeleccionada(d.dateStr); handleOpenModal(userName, hora); }}
                               className="w-full h-full flex items-center justify-center cursor-pointer hover:bg-blue-50/60 transition-colors group/cell"
                               title={`Agendar el ${d.name} a las ${hora}`}
                             >

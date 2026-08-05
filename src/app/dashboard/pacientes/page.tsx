@@ -150,7 +150,7 @@ export default function PacientesPage() {
       }
     }
     return p.name?.toLowerCase().includes(searchTerm.toLowerCase());
-  });
+  }).sort((a, b) => (a.name || "").localeCompare(b.name || ""));
 
   const totalPages = Math.ceil(pacientesFiltrados.length / ITEMS_PER_PAGE);
   const paginatedPacientes = pacientesFiltrados.slice(
