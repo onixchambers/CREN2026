@@ -1095,16 +1095,25 @@ export default function AsistenciaPage() {
                     })()}
                   </select>
                 </div>
-                <div>
-                  <label className="block text-[10px] font-bold text-slate-500 uppercase mb-1">Método de Pago</label>
-                  <select name="metodoPago" value={editForm.metodoPago || "Efectivo"} onChange={handleEditChange} className="w-full text-sm p-2 border border-slate-300 rounded focus:border-[#2980b9] outline-none text-slate-900">
-                    <option value="Efectivo">Efectivo</option>
-                    <option value="Transferencia">Transferencia</option>
-                    <option value="Tarjeta">Tarjeta</option>
-                    <option value="Mixto">Mixto</option>
-                    <option value="Por definir">Por definir</option>
-                    <option value="Beca">Beca</option>
-                  </select>
+                <div className="grid grid-cols-2 gap-2">
+                  <div>
+                    <label className="block text-[10px] font-bold text-slate-500 uppercase mb-1">Método de Pago</label>
+                    <select name="metodoPago" value={editForm.metodoPago || "Efectivo"} onChange={handleEditChange} className="w-full text-sm p-2 border border-slate-300 rounded focus:border-[#2980b9] outline-none text-slate-900">
+                      <option value="Efectivo">Efectivo</option>
+                      <option value="Transferencia">Transferencia</option>
+                      <option value="Tarjeta">Tarjeta</option>
+                      <option value="Mixto">Mixto</option>
+                      <option value="Por definir">Por definir</option>
+                      <option value="Beca">Beca</option>
+                    </select>
+                  </div>
+                  <div>
+                    <label className="block text-[10px] font-bold text-slate-500 uppercase mb-1">Monto Pagado</label>
+                    <div className="relative">
+                      <span className="absolute left-2 top-1.5 text-slate-500">$</span>
+                      <input type="number" name="montoPago" value={editForm.montoPago || ""} onChange={handleEditChange} placeholder="0" className="w-full text-sm p-2 pl-6 border border-slate-300 rounded focus:border-[#2980b9] outline-none text-slate-900" />
+                    </div>
+                  </div>
                 </div>
                 <div className="flex items-center gap-2 mt-6">
                   <input type="checkbox" name="fact" checked={editForm.fact} onChange={handleEditChange} className="w-4 h-4 rounded border-slate-300" />
