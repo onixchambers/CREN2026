@@ -38,6 +38,7 @@ export default function PacientesPage() {
   const [therapyPrices, setTherapyPrices] = useState<number[]>([400, 450, 500, 550, 600, 650, 700, 750, 800, 850, 900, 950]);
 
   const [pacientes, setPacientes] = useState<any[]>([]);
+  const [agendaCitas, setAgendaCitas] = useState<any[]>([]);
   const [searchTerm, setSearchTerm] = useState("");
   const [bajaModalPatient, setBajaModalPatient] = useState<any | null>(null);
   const [bajaReason, setBajaReason] = useState("");
@@ -96,13 +97,20 @@ export default function PacientesPage() {
     async function loadData() {
       const { getPatients } = await import('@/app/actions/pacientes');
       const { getAllowTherapistEdit, getTherapyPrices } = await import('@/app/actions/configuracion');
-      const [result, allowed, pricesRes] = await Promise.all([
+      const { getAgendaDB } = await import('@/app/actions/agenda');
+      
+      const [result, allowed, pricesRes, agendaRes] = await Promise.all([
         getPatients(),
         getAllowTherapistEdit(),
-        getTherapyPrices()
+        getTherapyPrices(),
+        getAgendaDB()
       ]);
       if (result.success && result.data) {
         setPacientes(result.data);
+      }
+      if (agendaRes.success && agendaRes.data) {
+        setAgendaCitas(agendaRes.data);
+      }
         
         // Auto-open clinical note if requested via URL
         if (typeof window !== "undefined") {
@@ -1159,84 +1167,111 @@ export default function PacientesPage() {
                       aside, nav, header { display: none !important; }
                     }
                   `}</style>
-                  <div className="bg-white border border-slate-300 rounded-xl shadow-sm overflow-hidden text-slate-900 font-serif print:border-none print:shadow-none print:p-0 max-w-3xl mx-auto w-full">
-                    {/* BANNER DEGRADADO CREN IDÉNTICO AL DOCUMENTO CREN */}
-                    <div className="bg-gradient-to-r from-[#1c4d6f] via-[#2c6185] to-[#1c4d6f] text-white p-4 flex items-center justify-between border-b-4 border-[#0e2f44]">
-                      <div className="flex items-center gap-4">
-                        <div className="shrink-0 flex items-center justify-center max-w-[160px] h-14">
-                          <img src="/logo-white.png" alt="CREN Logo" className="h-full w-auto object-contain" onError={(e) => {(e.target as any).style.display = 'none';}} />
+                  `}</style>
+                  
+                  {(() => {
+                    let citaAgendada = null;
+                    if (activeDocToView && agendaCitas) {
+                      citaAgendada = agendaCitas.find(
+                        (c: any) =>
+                          (c.paciente === viewingPatient?.name || c.pacienteId === viewingPatient?.id) &&
+                          c.fecha === activeDocToView.fecha
+                      );
+                    }
+                    const horaAgendada = citaAgendada?.hora || activeDocToView.hora || "No registrada";
+                    const emailAMostrar = viewingPatient?.correoPrincipal || viewingPatient?.email || "Sin correo";
+                    
+                    return (
+                      <div className="bg-white border border-slate-300 rounded-xl shadow-sm overflow-hidden text-slate-900 font-serif print:border-none print:shadow-none print:p-0 max-w-4xl mx-auto w-full text-xs">
+                        {/* CABECERA (LOGO INVISIBLE PERO ESPACIO PARA ÉL, TEXTOS CENTRADOS COMO LA IMAGEN 3) */}
+                        <div className="text-center py-6 px-10 border-b border-slate-200">
+                          <h1 className="text-lg font-bold text-[#1c4d6f] uppercase tracking-wide">
+                            CENTRO DE REHABILITACIÓN ESPECIALIZADA Y NEURODESARROLLO (CREN)
+                          </h1>
+                          <h2 className="text-sm font-extrabold text-[#f39c12] mt-1">
+                            {activeDocToView.tipo || "Registro de Evolución"}
+                          </h2>
+                          <p className="text-[10px] text-slate-500 mt-2">
+                            Petén 286, P.B, Col. Narvarte, C.P 03020, Benito Juárez, CDMX | Tel: 55 16 87 12 02
+                          </p>
                         </div>
-                        <div>
-                          <h1 className="text-sm md:text-base font-bold tracking-wide uppercase leading-tight">Centro de Rehabilitación Especializada y de Neurodesarrollo (CREN)</h1>
+                        
+                        <div className="p-8 space-y-6">
+                          {/* DATOS GENERALES DE LA CONSULTA */}
+                          <div>
+                            <div className="bg-[#1c4d6f] text-white text-[10px] font-bold px-3 py-1 inline-block uppercase mb-2 rounded-t-sm">
+                              DATOS GENERALES DE LA CONSULTA
+                            </div>
+                            <table className="w-full border-collapse border border-slate-300 text-[11px]">
+                              <tbody>
+                                <tr>
+                                  <td className="border border-slate-300 p-2 w-1/3">
+                                    <span className="font-extrabold">PACIENTE:</span> {viewingPatient.name}
+                                  </td>
+                                  <td className="border border-slate-300 p-2 w-1/3">
+                                    <span className="font-extrabold">FECHA:</span> {activeDocToView.fecha} a las {horaAgendada}
+                                  </td>
+                                  <td className="border border-slate-300 p-2 w-1/3">
+                                    <span className="font-extrabold">TERAPEUTA:</span> Lic. {activeDocToView.terapeuta || "Lourdes"}
+                                  </td>
+                                </tr>
+                                <tr>
+                                  <td colSpan={3} className="border border-slate-300 p-2">
+                                    <span className="font-extrabold">EMAIL:</span> {emailAMostrar}
+                                  </td>
+                                </tr>
+                              </tbody>
+                            </table>
+                          </div>
+
+                          {/* REGISTRO DE INFORMACIÓN CLÍNICA */}
+                          <div>
+                            <div className="bg-[#1c4d6f] text-white text-[10px] font-bold px-3 py-1 inline-block uppercase mb-2 rounded-t-sm">
+                              REGISTRO DE INFORMACIÓN CLÍNICA
+                            </div>
+                            <table className="w-full border-collapse border border-slate-300 text-[11px] leading-relaxed">
+                              <tbody>
+                                {activeDocToView.contenido && Object.keys(activeDocToView.contenido).length > 0 ? (
+                                  Object.entries(activeDocToView.contenido).map(([key, val]) => {
+                                    if (!val || key === "fecha" || key === "terapeuta") return null;
+                                    
+                                    const titleFormatted = key
+                                      .replace(/([A-Z])/g, ' $1')
+                                      .replace(/^./, str => str.toUpperCase())
+                                      .replace("Obs Inicial", "Obs. Inicial.")
+                                      .replace("Objetivos Tratamiento", "Objetivos Tratamiento.")
+                                      .replace("Actividades Sesion", "Actividades Sesion.")
+                                      .replace("Obs Sesion", "Obs. Sesion.")
+                                      .replace("Recomendaciones", "Recomendaciones.");
+                                      
+                                    return (
+                                      <tr key={key}>
+                                        <td className="border border-slate-300 p-3 w-1/4 align-top bg-slate-50 font-bold text-slate-800">
+                                          {titleFormatted}
+                                        </td>
+                                        <td className="border border-slate-300 p-3 w-3/4 align-top whitespace-pre-wrap text-justify text-slate-700">
+                                          {String(val)}
+                                        </td>
+                                      </tr>
+                                    );
+                                  })
+                                ) : (
+                                  <tr>
+                                    <td className="border border-slate-300 p-4 text-center text-slate-500 italic">
+                                      Sin observaciones registradas.
+                                    </td>
+                                  </tr>
+                                )}
+                              </tbody>
+                            </table>
+                          </div>
+                          
                         </div>
                       </div>
-                    </div>
-
-                    {/* CONTENIDO DEL EXPEDIENTE PDF */}
-                    <div className="p-6 md:p-10 space-y-6 text-sm leading-relaxed">
-                      {/* DATOS DEL PACIENTE SIN ID */}
-                      <div className="space-y-1.5 border-b border-slate-200 pb-5 text-sm">
-                        <p className="font-bold text-slate-900"><span className="font-extrabold text-black">Nombre:</span> {viewingPatient.name}</p>
-                        <p className="font-semibold text-slate-800"><span className="font-extrabold text-black">Email:</span> {viewingPatient.email || "glooriaa67@hotmail.com"}</p>
-                        <p className="font-semibold text-slate-800"><span className="font-extrabold text-black">Teléfono:</span> {viewingPatient.phone || "55 63 49 78 58"}</p>
-                        <p className="font-semibold text-slate-800"><span className="font-extrabold text-black">Fecha Nacimiento:</span> {viewingPatient.fechaNacimiento || "2020-09-17"}</p>
-                      </div>
-
-                      {/* TÍTULO DEL DOCUMENTO Y FECHA DE CREACIÓN COMO EN EL PDF */}
-                      <div className="space-y-1">
-                        <h2 className="text-lg font-black text-black tracking-wide">{activeDocToView.tipo}</h2>
-                        <p className="text-xs font-semibold text-slate-700">
-                          Nota Clínica escrita por <span className="font-bold text-black">{activeDocToView.terapeuta || "Lourdes Rincón"}</span> el {activeDocToView.fecha} a las {activeDocToView.hora || "19:33:24"}
-                        </p>
-                      </div>
-
-                      <div className="pt-2">
-                        <h3 className="text-base font-black text-black mb-2">Detalles</h3>
-                        <p className="text-xs italic text-slate-600 mb-4">
-                          Registro de todas las interacciones llevadas a cabo con los pacientes y de padres de pacientes en caso de niños
-                        </p>
-                        <div className="text-xs space-y-1 mb-4">
-                          <p><span className="font-bold">Fecha:</span> {activeDocToView.fecha}</p>
-                          <p><span className="font-bold">Terapeuta:</span> {activeDocToView.terapeuta || "Lourdes"}</p>
-                        </div>
-                      </div>
-
-                      {/* CAMPOS LLENADOS EN ORDEN EXACTO */}
-                      <div className="space-y-6 pt-2">
-                        {activeDocToView.contenido && Object.keys(activeDocToView.contenido).length > 0 ? (
-                          Object.entries(activeDocToView.contenido).map(([key, val]) => {
-                            if (!val || key === "fecha" || key === "terapeuta") return null;
-                            const titleFormatted = key
-                              .replace(/([A-Z])/g, ' $1')
-                              .replace(/^./, str => str.toUpperCase())
-                              .replace("Obs Inicial", "1. Observacion inicial")
-                              .replace("Objetivos Tratamiento", "2. Objetivos del Tratamiento")
-                              .replace("Actividades Sesion", "3. Actividades realizadas durante la sesión")
-                              .replace("Obs Sesion", "4. Observaciones durante la sesión")
-                              .replace("Recomendaciones", "5. Recomendaciones");
-                            return (
-                              <div key={key} className="space-y-1.5">
-                                <h4 className="font-black text-black text-sm">{titleFormatted}</h4>
-                                <p className="text-slate-800 font-normal whitespace-pre-wrap leading-relaxed justify-start text-xs md:text-sm">
-                                  {String(val)}
-                                </p>
-                              </div>
-                            );
-                          })
-                        ) : (
-                          <p className="text-slate-500 italic">Sin observaciones registradas.</p>
-                        )}
-                      </div>
-                    </div>
-
-                    {/* FOOTER OLIVE GREEN BANNER IDÉNTICO AL PDF */}
-                    <div className="bg-[#4c772d] text-white p-4 text-center text-xs space-y-1 font-sans border-t-2 border-[#3a5d22]">
-                      <p className="font-bold text-sm">Centro de Rehabilitación Especializada y Neurodesarrollo (CREN)</p>
-                      <p className="text-slate-200 text-[11px]">Domicilio - Teléfono - Correo</p>
-                    </div>
-                  </div>
+                    );
+                  })()}
                 </div>
-              )}
+
             </div>
 
             {/* BOTÓN INFERIOR DE CERRAR EXPEDIENTE */}
