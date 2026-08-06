@@ -1248,7 +1248,17 @@ export default function AsistenciaPage() {
                 </div>
                 <div className="col-span-2">
                   <label className="block text-[10px] font-bold text-slate-500 uppercase mb-1">Observaciones</label>
-                  <input type="text" name="obs" value={editForm.obs} onChange={handleEditChange} className="w-full text-sm p-2 border border-slate-300 rounded focus:border-[#2980b9] outline-none text-slate-900" />
+                  <textarea 
+                    name="obs" 
+                    value={editForm.obs} 
+                    onChange={(e) => {
+                      handleEditChange(e);
+                      e.target.style.height = 'auto';
+                      e.target.style.height = `${e.target.scrollHeight}px`;
+                    }} 
+                    rows={2}
+                    className="w-full text-sm p-2 border border-slate-300 rounded focus:border-[#2980b9] outline-none text-slate-900 resize-none overflow-hidden" 
+                  />
                 </div>
               </div>
             </div>
