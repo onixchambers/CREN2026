@@ -360,12 +360,6 @@ export default function AgendaPage() {
     }
   };
 
-  const getLocalToday = () => {
-    const now = new Date();
-    const offset = now.getTimezoneOffset() * 60000;
-    return new Date(now.getTime() - offset).toISOString().split("T")[0];
-  };
-  const hoy = getLocalToday();
 
   const handlePrevDay = () => {
     const d = new Date(fechaSeleccionada + "T00:00:00");
