@@ -139,6 +139,9 @@ export default function AsistenciaPage() {
   const [filtroDesde, setFiltroDesde] = useState("");
   const [filtroHasta, setFiltroHasta] = useState("");
   const [filtroEstado, setFiltroEstado] = useState("Todos");
+  const [filtroPaciente, setFiltroPaciente] = useState("");
+  const [filtroTerapeuta, setFiltroTerapeuta] = useState("Todos");
+  const [verTodosLosPacientes, setVerTodosLosPacientes] = useState(false);
   const [availableAreas, setAvailableAreas] = useState<string[]>(["Psicología", "Lenguaje", "Fisioterapia"]);
   const [terapeutas, setTerapeutas] = useState<string[]>([]);
   const [terapeutasFullData, setTerapeutasFullData] = useState<any[]>([]);
@@ -227,7 +230,6 @@ export default function AsistenciaPage() {
 
   useEffect(() => {
     async function loadData() {
-      // Cargar pacientes de la BD real
       const res = await getPatients();
       if (res.success && res.data) {
         let validPatients = res.data;
@@ -689,17 +691,30 @@ export default function AsistenciaPage() {
       
       const isForMe = teraLower.includes(userLower) || userLower.includes(teraLower);
       const isByMe = creadoLower.includes(userLower) || userLower.includes(creadoLower);
-      const isMyPatient = pacientes.some(p => 
-        p.paciente.trim().toLowerCase() === (a.paciente || "").trim().toLowerCase() && 
-        p.medicoTratante && (p.medicoTratante.trim().toLowerCase().includes(userLower) || userLower.includes(p.medicoTratante.trim().toLowerCase()))
-      );
-
-      if (!isForMe && !isByMe && !isMyPatient) return false;
+    let match = true;
+    if (filtroEstado !== "Todos") {
+      if (a.estado !== filtroEstado) match = false;
     }
-    if (filtroEstado !== "Todos" && a.estado !== filtroEstado) return false;
-    if (filtroDesde && a.fecha < filtroDesde) return false;
-    if (filtroHasta && a.fecha > filtroHasta) return false;
-    return true;
+    if (filtroDesde && a.fecha < filtroDesde) match = false;
+    if (filtroHasta && a.fecha > filtroHasta) match = false;
+    
+    if (filtroPaciente) {
+      const searchNorm = filtroPaciente.trim().toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "");
+      const patNorm = (a.paciente || "").toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "");
+      if (!patNorm.includes(searchNorm)) match = false;
+    }
+    
+    if (filtroTerapeuta !== "Todos") {
+      if ((a.terapeuta || "") !== filtroTerapeuta) match = false;
+    }
+
+    if (userRole.toUpperCase() === "TERAPEUTA" && !verTodosLosPacientes) {
+      if ((a.terapeuta || "") !== userName && !(a.creadoPor || "").includes(userName)) {
+        match = false;
+      }
+    }
+    
+    return match;
   });
 
   const indexOfLastItem = currentPage * itemsPerPage;
@@ -716,7 +731,7 @@ export default function AsistenciaPage() {
 
       {/* CARD 1: NUEVA SESIÓN */}
       <AsistenciaForm 
-        pacientes={pacientes}
+        pacientes={pacientes.filter(p => userRole.toUpperCase() !== "TERAPEUTA" || verTodosLosPacientes || (p.medicoTratante && p.medicoTratante.toLowerCase().includes(userName.toLowerCase())))}
         terapeutasFullData={terapeutasFullData}
         agendaCitas={agendaCitas}
         availableAreasInput={availableAreas}
@@ -810,10 +825,31 @@ export default function AsistenciaPage() {
                 <option value="Agendado">Agendado</option>
               </select>
             </div>
+            <div className="flex items-center gap-2">
+              <label className="text-[11px] font-semibold text-slate-500">Terapeuta:</label>
+              <select value={filtroTerapeuta} onChange={e => setFiltroTerapeuta(e.target.value)} className="w-32 text-xs p-1.5 border border-slate-300 rounded outline-none text-slate-700 bg-white font-medium">
+                <option value="Todos">Todos</option>
+                {terapeutas.map(t => (
+                  <option key={t} value={t}>{t}</option>
+                ))}
+              </select>
+            </div>
+            <div className="flex items-center gap-2">
+              <label className="text-[11px] font-semibold text-slate-500">Paciente:</label>
+              <input type="text" value={filtroPaciente} onChange={e => setFiltroPaciente(e.target.value)} placeholder="Buscar..." className="w-32 text-xs p-1.5 border border-slate-300 rounded outline-none text-slate-700 bg-white font-medium" />
+            </div>
+            {userRole.toUpperCase() === "TERAPEUTA" && (
+              <div className="flex items-center gap-2 ml-2">
+                <label className="flex items-center gap-1 text-[11px] font-bold text-slate-600 cursor-pointer">
+                  <input type="checkbox" checked={verTodosLosPacientes} onChange={e => setVerTodosLosPacientes(e.target.checked)} className="cursor-pointer" />
+                  Ver todos los registros
+                </label>
+              </div>
+            )}
           </div>
 
           <div className="flex flex-wrap items-center gap-2">
-            <button type="button" onClick={() => { setFiltroDesde(""); setFiltroHasta(""); setFiltroEstado("Todos"); }} className="bg-[#1a5276] text-white hover:bg-[#0e2f44] px-3 py-1 rounded text-xs font-semibold transition-colors cursor-pointer" title="Ver registros pasados, presentes y futuros">
+            <button type="button" onClick={() => { setFiltroDesde(""); setFiltroHasta(""); setFiltroEstado("Todos"); setFiltroPaciente(""); setFiltroTerapeuta("Todos"); }} className="bg-[#1a5276] text-white hover:bg-[#0e2f44] px-3 py-1 rounded text-xs font-semibold transition-colors cursor-pointer" title="Ver registros pasados, presentes y futuros">
               Ver Todos (Permanente)
             </button>
           </div>
