@@ -100,8 +100,9 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
               alt="CREN Logo" 
               className="h-16 w-auto flex-shrink-0 object-contain drop-shadow-md" 
             />
-            <div>
-              <h1 className="text-xs md:text-sm font-semibold text-white tracking-wide">Sistema Financiero</h1>
+            <div className="flex flex-col text-[10px] md:text-xs font-semibold text-white/90 leading-tight tracking-wide">
+              <span>Sistema</span>
+              <span>Financiero</span>
             </div>
           </div>
           <div className="flex items-center gap-4">
