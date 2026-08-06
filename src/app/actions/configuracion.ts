@@ -148,7 +148,7 @@ export async function saveSettings(data: {
   try {
     const session = await getServerSession(authOptions);
     const userRole = ((session?.user as any)?.role || "").toUpperCase();
-    if (userRole === "TERAPEUTA" || userRole === "INVITADO") {
+    if (userRole === "TERAPEUTA") {
       return { success: false, error: "No tienes permisos para modificar la configuración." };
     }
 
