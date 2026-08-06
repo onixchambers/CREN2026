@@ -689,13 +689,7 @@ export default function AsistenciaPage() {
       return false;
     }
 
-    if (userRole.toUpperCase() === "TERAPEUTA") {
-      const teraLower = (a.terapeuta || "").trim().toLowerCase();
-      const userLower = userName.trim().toLowerCase();
-      const creadoLower = (a.creadoPor || "").trim().toLowerCase();
-      
-      const isForMe = teraLower.includes(userLower) || userLower.includes(teraLower);
-      const isByMe = creadoLower.includes(userLower) || userLower.includes(creadoLower);
+
     let match = true;
     if (filtroEstado !== "Todos") {
       if (a.estado !== filtroEstado) match = false;
