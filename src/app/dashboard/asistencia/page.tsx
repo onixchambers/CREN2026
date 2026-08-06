@@ -363,10 +363,14 @@ export default function AsistenciaPage() {
         saldoDisponible: p.saldoCalculado || "0.00",
         precioTerapia: p.precioTerapia || formData.precioTerapia,
         numeroSesiones: displaySesiones,
-        frecuencia: agendaCitas.find((c: any) => c.paciente === p.paciente) ? (() => {
-          const f = (agendaCitas.find((c: any) => c.paciente === p.paciente).frecuencia || "").toLowerCase();
-          return f === "diario" || f === "diaria" ? "Diaria" : f === "semanal" ? "Semanal" : f === "quincenal" ? "Quincenal" : f === "mensual" ? "Mensual" : formData.frecuencia;
-        })() : formData.frecuencia
+        frecuencia: (() => {
+          const cita = agendaCitas.find((c: any) => c.paciente === p.paciente);
+          if (cita) {
+            const f = (cita.frecuencia || "").toLowerCase();
+            return f === "diario" || f === "diaria" ? "Diaria" : f === "semanal" ? "Semanal" : f === "quincenal" ? "Quincenal" : f === "mensual" ? "Mensual" : formData.frecuencia;
+          }
+          return formData.frecuencia;
+        })()
       });
     } else {
       setFormData({
