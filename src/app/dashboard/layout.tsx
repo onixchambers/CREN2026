@@ -94,16 +94,13 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
       {/* Header */}
       <header className="bg-gradient-to-r from-[#0e2f44] via-[#1a5276] to-[#2980b9] text-white shadow-lg sticky top-0 z-50">
         <div className="flex items-center justify-between px-6 py-3">
-          <div className="flex items-center gap-4">
+          <div className="flex flex-col items-center justify-center">
             <img 
               src="/logo.png" 
               alt="CREN Logo" 
-              className="h-16 w-auto flex-shrink-0 object-contain drop-shadow-md" 
+              className="h-12 w-auto flex-shrink-0 object-contain drop-shadow-md" 
             />
-            <div className="flex flex-col text-[10px] md:text-xs font-semibold text-white/90 leading-tight tracking-wide">
-              <span>Sistema</span>
-              <span>Financiero</span>
-            </div>
+            <span className="text-[8px] md:text-[9px] font-bold text-white/90 tracking-widest mt-1 uppercase">Sistema Financiero</span>
           </div>
           <div className="flex items-center gap-4">
             <div 

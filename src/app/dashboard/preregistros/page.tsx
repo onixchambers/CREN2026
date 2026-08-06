@@ -13,7 +13,7 @@ import {
 import { uploadInformePDFToDrive, uploadConsentPDFAction } from "@/app/actions/informes";
 import { getPhonePlaceholder } from "@/lib/phonePlaceholder";
 import { generateConsentPdfBase64 } from "@/lib/pdfGenerator";
-import { getSystemTimezone } from "@/app/actions/configuracion";
+import { getSystemTimezone, getTerapeutasFull } from "@/app/actions/configuracion";
 
 export default function PreregistrosPage() {
   const { data: session } = useSession();
@@ -21,6 +21,7 @@ export default function PreregistrosPage() {
   const userRole = (session?.user as any)?.role || "ADMIN";
   const [editingId, setEditingId] = useState<string | null>(null);
   const [allowTherapistEdit, setAllowTherapistEdit] = useState(true);
+  const [terapeutas, setTerapeutas] = useState<any[]>([]);
 
   // QR Modal & Preregistros
   const [showQrModal, setShowQrModal] = useState(false);
@@ -30,12 +31,16 @@ export default function PreregistrosPage() {
   const [selectedPreReg, setSelectedPreReg] = useState<any>(null);
 
   useEffect(() => {
-    async function loadPermission() {
+    async function loadInitialData() {
       const { getAllowTherapistEdit } = await import("@/app/actions/configuracion");
       const allowed = await getAllowTherapistEdit();
       setAllowTherapistEdit(allowed);
+      const terRes = await getTerapeutasFull();
+      if (terRes.success && terRes.data) {
+        setTerapeutas(terRes.data);
+      }
     }
-    loadPermission();
+    loadInitialData();
     refreshPendingPreRegs();
 
     // Auto polling cada 3 segundos para detectar registros entrantes en tiempo real
@@ -115,6 +120,7 @@ export default function PreregistrosPage() {
     fechaIngreso: new Date().toISOString().split("T")[0],
     estatus: "Activo",
     origen: "Google",
+    nombreMedico: "",
     medicoTratante: userName,
     escuela: "",
     pacienteContacto: "",
@@ -250,6 +256,7 @@ export default function PreregistrosPage() {
       sexo: preReg.sexo || "Masculino",
       fechaIngreso: preReg.fechaIngreso || new Date().toISOString().split("T")[0],
       origen: preReg.origen || "Google",
+      nombreMedico: preReg.nombreMedico || "",
       medicoTratante: preReg.medicoTratante || userName,
       escuela: preReg.escuela || "",
       pacienteContacto: pacContact,
@@ -779,16 +786,35 @@ export default function PreregistrosPage() {
                   </select>
                 </div>
 
+                {formData.origen === "Médico" && (
+                  <div>
+                    <label className="block text-xs font-bold text-slate-700 mb-1 uppercase">Nombre del Médico</label>
+                    <input
+                      type="text"
+                      name="nombreMedico"
+                      value={formData.nombreMedico}
+                      onChange={handleInputChange}
+                      placeholder="Ej. Dr. Pérez"
+                      className="w-full p-2 border border-slate-300 rounded text-sm text-slate-900 focus:border-blue-500 outline-none"
+                    />
+                  </div>
+                )}
+
                 <div>
-                  <label className="block text-xs font-bold text-slate-700 mb-1 uppercase">Médico Tratante / Terapeuta</label>
-                  <input
-                    type="text"
+                  <label className="block text-xs font-bold text-slate-700 mb-1 uppercase">Terapeuta</label>
+                  <select
                     name="medicoTratante"
                     value={formData.medicoTratante}
                     onChange={handleInputChange}
-                    placeholder="Nombre del médico o terapeuta"
-                    className="w-full p-2 border border-slate-300 rounded text-sm text-slate-900 focus:border-blue-500 outline-none"
-                  />
+                    className="w-full p-2 border border-slate-300 rounded text-sm text-slate-900 focus:border-blue-500 outline-none bg-white"
+                  >
+                    {!terapeutas.some(t => t.name === formData.medicoTratante) && (
+                      <option value={formData.medicoTratante}>{formData.medicoTratante}</option>
+                    )}
+                    {terapeutas.map(t => (
+                      <option key={t.id} value={t.name}>{t.name}</option>
+                    ))}
+                  </select>
                 </div>
 
                 <div>

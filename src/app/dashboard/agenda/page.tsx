@@ -81,6 +81,7 @@ export default function AgendaPage() {
     // Iniciar polyfill para drag and drop en móviles
     polyfill({
       dragImageTranslateOverride: "scrollBehavior",
+      holdToDrag: 300
     });
 
     // Requerido por mobile-drag-drop para funcionar en Safari/Chrome mobile
