@@ -96,14 +96,10 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
         <div className="flex items-center justify-between px-6 py-3">
           <div className="flex items-center gap-3">
             <img 
-              src="/cren-logo.png" 
+              src="/logo.png" 
               alt="CREN Logo" 
-              className="w-11 h-11 min-w-11 min-h-11 flex-shrink-0 rounded-full object-cover shadow-sm border border-white/20" 
+              className="h-11 w-auto flex-shrink-0 object-contain drop-shadow-sm" 
             />
-            <div>
-              <h1 className="text-lg font-bold">CREN</h1>
-              <p className="text-xs opacity-80">Sistema Operativo</p>
-            </div>
           </div>
           <div className="flex items-center gap-4">
             <div 
