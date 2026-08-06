@@ -646,6 +646,7 @@ export default function AsistenciaPage() {
     }
     setEditForm({
       fecha: a.fecha,
+      hora: a.hora || "",
       area: a.area,
       tipoSesion: a.tipoSesion,
       estado: a.estado,
@@ -696,6 +697,7 @@ export default function AsistenciaPage() {
         asisActualizada = {
           ...a,
           fecha: editForm.fecha,
+          hora: editForm.hora,
           area: editForm.area,
           tipoSesion: editForm.tipoSesion,
           estado: editForm.estado,
@@ -1105,9 +1107,15 @@ export default function AsistenciaPage() {
                     ))}
                   </select>
                 </div>
-                <div>
-                  <label className="block text-[10px] font-bold text-slate-500 uppercase mb-1">Fecha</label>
-                  <DateInput name="fecha" value={editForm.fecha} onChange={(val) => setEditForm((prev: any) => ({ ...prev, fecha: val }))} className="w-full text-sm p-2 border border-slate-300 rounded focus:border-[#2980b9] outline-none text-slate-900" />
+                <div className="grid grid-cols-2 gap-2">
+                  <div>
+                    <label className="block text-[10px] font-bold text-slate-500 uppercase mb-1">Fecha</label>
+                    <DateInput name="fecha" value={editForm.fecha} onChange={(val) => setEditForm((prev: any) => ({ ...prev, fecha: val }))} className="w-full text-sm p-2 border border-slate-300 rounded focus:border-[#2980b9] outline-none text-slate-900" />
+                  </div>
+                  <div>
+                    <label className="block text-[10px] font-bold text-slate-500 uppercase mb-1">Hora</label>
+                    <input type="time" name="hora" value={editForm.hora || ""} onChange={handleEditChange} className="w-full text-sm p-2 border border-slate-300 rounded focus:border-[#2980b9] outline-none text-slate-900" />
+                  </div>
                 </div>
                 <div>
                   <label className="block text-[10px] font-bold text-slate-500 uppercase mb-1">Área</label>
