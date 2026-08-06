@@ -232,7 +232,7 @@ export default function PacientesPage() {
   return (
     <div className="space-y-6 animate-in fade-in duration-500 max-w-[1200px] mx-auto pb-12">
       {/* HEADER */}
-      <div className="flex flex-wrap items-center justify-between gap-4 pb-2 border-b border-slate-200">
+      <div className="flex flex-wrap items-center justify-between gap-4 pb-2 border-b border-slate-200 print:hidden">
         <div className="flex items-center gap-2">
           <svg className="w-6 h-6 text-slate-700" fill="none" stroke="currentColor" viewBox="0 0 24 24">
             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197M13 7a4 4 0 11-8 0 4 4 0 018 0z" />
@@ -241,7 +241,7 @@ export default function PacientesPage() {
         </div>
       </div>
 
-      <div className="bg-white rounded-xl shadow-sm border border-slate-200 overflow-hidden">
+      <div className="bg-white rounded-xl shadow-sm border border-slate-200 overflow-hidden print:hidden">
         {/* BUSCADOR Y FILTROS */}
         <div className="p-4 bg-slate-50 border-b border-slate-200 flex flex-wrap gap-4 items-center justify-between">
           <div className="flex items-center gap-2">
@@ -438,7 +438,7 @@ export default function PacientesPage() {
 
       {/* PAGINACIÓN */}
       {totalPages > 1 && (
-        <div className="flex justify-between items-center bg-white p-4 rounded-xl shadow-sm border border-slate-200 mt-4">
+        <div className="flex justify-between items-center bg-white p-4 rounded-xl shadow-sm border border-slate-200 mt-4 print:hidden">
           <div className="text-sm text-slate-500">
             Mostrando {((currentPage - 1) * ITEMS_PER_PAGE) + 1} a {Math.min(currentPage * ITEMS_PER_PAGE, pacientesFiltrados.length)} de {pacientesFiltrados.length}
           </div>
@@ -466,10 +466,10 @@ export default function PacientesPage() {
 
       {/* MODAL DETALLES Y EXPEDIENTE DE DOCUMENTOS CLINICOS (ESTRUCTURA DEL PDF) */}
       {viewingPatient && (
-        <div className="fixed inset-0 z-50 bg-black/60 backdrop-blur-xs flex items-center justify-center p-2 md:p-4 overflow-y-auto">
-          <div className="bg-white rounded-2xl max-w-5xl w-full p-4 md:p-6 space-y-4 shadow-2xl animate-in zoom-in-95 duration-200 border border-slate-100 max-h-[92vh] flex flex-col my-auto">
+        <div className="fixed inset-0 z-50 bg-black/60 backdrop-blur-xs flex items-center justify-center p-2 md:p-4 overflow-y-auto print:static print:bg-transparent print:p-0 print:overflow-visible print:block">
+          <div className="bg-white rounded-2xl max-w-5xl w-full p-4 md:p-6 space-y-4 shadow-2xl animate-in zoom-in-95 duration-200 border border-slate-100 max-h-[92vh] flex flex-col my-auto print:max-w-none print:shadow-none print:border-none print:max-h-none print:m-0 print:p-0 print:block print:overflow-visible">
             {/* CABECERA PRINCIPAL CON DATOS DEL PACIENTE Y TABS */}
-            <div className="flex flex-wrap justify-between items-center border-b border-slate-200 pb-3 gap-3">
+            <div className="flex flex-wrap justify-between items-center border-b border-slate-200 pb-3 gap-3 print:hidden">
               <div className="flex items-center gap-3">
                 <div className="relative group cursor-pointer" title="Hacer clic para subir o cambiar foto del paciente">
                   <input
@@ -584,7 +584,7 @@ export default function PacientesPage() {
             </div>
 
             {/* CONTENIDO DEL MODAL SEGÚN LA PESTAÑA */}
-            <div className="overflow-y-auto flex-1 pr-1 space-y-4">
+            <div className="overflow-y-auto flex-1 pr-1 space-y-4 print:overflow-visible print:p-0">
               {/* PESTAÑA 1: EXPEDIENTE GENERAL */}
               {modalTab === "expediente" && (
                 <div className="space-y-4 animate-in fade-in duration-150">
@@ -1145,7 +1145,21 @@ export default function PacientesPage() {
                   </div>
 
                   {/* PLANTILLA DE HOJA CLÍNICA IDÉNTICA A LAS 3 PÁGINAS DEL PDF DEL CLIENTE */}
-                  <div className="bg-white border border-slate-300 rounded-xl shadow-sm overflow-hidden text-slate-900 font-serif print:border-none print:shadow-none print:p-0 max-w-3xl mx-auto">
+                  <style>{`
+                    @media print {
+                      @page {
+                        size: letter;
+                        margin: 1cm;
+                      }
+                      body {
+                        -webkit-print-color-adjust: exact !important;
+                        print-color-adjust: exact !important;
+                      }
+                      /* Esconder navegación del layout principal si existe */
+                      aside, nav, header { display: none !important; }
+                    }
+                  `}</style>
+                  <div className="bg-white border border-slate-300 rounded-xl shadow-sm overflow-hidden text-slate-900 font-serif print:border-none print:shadow-none print:p-0 max-w-3xl mx-auto w-full">
                     {/* BANNER DEGRADADO CREN IDÉNTICO AL DOCUMENTO CREN */}
                     <div className="bg-gradient-to-r from-[#1c4d6f] via-[#2c6185] to-[#1c4d6f] text-white p-4 flex items-center justify-between border-b-4 border-[#0e2f44]">
                       <div className="flex items-center gap-4">
@@ -1226,7 +1240,7 @@ export default function PacientesPage() {
             </div>
 
             {/* BOTÓN INFERIOR DE CERRAR EXPEDIENTE */}
-            <div className="pt-2 border-t border-slate-200">
+            <div className="pt-2 border-t border-slate-200 print:hidden">
               <button 
                 type="button" 
                 onClick={() => setViewingPatient(null)} 

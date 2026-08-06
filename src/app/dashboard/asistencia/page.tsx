@@ -49,6 +49,8 @@ type Asistencia = {
   obs: string;
   creadoPor?: string;
   terapeuta?: string;
+  hora?: string;
+  iva?: string;
 };
 
 export default function AsistenciaPage() {
@@ -149,7 +151,6 @@ export default function AsistenciaPage() {
   // Predictivo
   const [showDropdown, setShowDropdown] = useState(false);
   const [showSegundoPago, setShowSegundoPago] = useState(false);
-  const [verTodosLosPacientes, setVerTodosLosPacientes] = useState(false);
   
   // Formulario
   const [formData, setFormData] = useState({
