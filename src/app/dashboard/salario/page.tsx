@@ -142,6 +142,7 @@ export default function SalarioPage() {
             let ingresoBrutoTotalGen = 0;
             let honorariosTotalGen = 0;
             let ivaTotalRetenidoGen = 0;
+            let ivaCrenTotalGen = 0;
 
             asistenciasT.forEach((a: any) => {
               const day = parseInt((a.fecha || "").split("-")[2] || "1");
@@ -152,21 +153,26 @@ export default function SalarioPage() {
               // Honorario terapeuta por esta sesión
               let pagoSesionTerapeuta = 0;
               let ivaSesionRetenido = 0;
+              let ivaCrenSesion = 0;
               const hasFactura = a.fact === "Sí" || a.fact === "SI" || a.solicitaFactura === true || a.solicitaFactura === "Sí";
 
               if (t.tipoPago === "Porcentaje") {
                 pagoSesionTerapeuta = precioSession * ((t.porcentaje || 50) / 100);
-                if (hasFactura) {
-                  ivaSesionRetenido = precioSession * 0.16;
-                } else if (t.retieneIVA) {
+                if (t.retieneIVA) {
                   ivaSesionRetenido = pagoSesionTerapeuta * 0.16;
                 }
+                
+                const crenGross = precioSession - (pagoSesionTerapeuta + ivaSesionRetenido);
+                if (hasFactura) {
+                  ivaCrenSesion = crenGross * 0.16;
+                }
               } else if (hasFactura) {
-                ivaSesionRetenido = precioSession * 0.16;
+                ivaCrenSesion = precioSession * 0.16;
               }
 
               honorariosTotalGen += pagoSesionTerapeuta;
               ivaTotalRetenidoGen += ivaSesionRetenido;
+              ivaCrenTotalGen += ivaCrenSesion;
 
               // Semanas
               if (day >= 1 && day <= 7) sem1 += pagoSesionTerapeuta;
@@ -216,7 +222,7 @@ export default function SalarioPage() {
               sem5 = 0;
             }
 
-            const utilidadCrenFinal = ingresoBrutoTotalGen - totalAPagarFinal - ivaTotalRetenidoGen;
+            const utilidadCrenFinal = ingresoBrutoTotalGen - totalAPagarFinal - ivaTotalRetenidoGen - ivaCrenTotalGen;
             const pacienteList = Array.from(pacienteMap.values());
 
             return (
@@ -258,7 +264,13 @@ export default function SalarioPage() {
                     </div>
                     <div className="flex justify-between max-w-xl">
                       <span className="font-semibold text-amber-700">IVA RETENIDO / FACTURADO (16%):</span>
-                      <span className="font-bold text-amber-700">${ivaTotalRetenidoGen.toLocaleString('es-MX', {minimumFractionDigits: 2})}</span>
+                      <span className="font-bold text-amber-700">
+                        {ivaTotalRetenidoGen > 0 || ivaCrenTotalGen > 0 ? (
+                          <>Terapeuta: ${ivaTotalRetenidoGen.toLocaleString('es-MX', {minimumFractionDigits: 2})} | CREN: ${ivaCrenTotalGen.toLocaleString('es-MX', {minimumFractionDigits: 2})}</>
+                        ) : (
+                          `$0.00`
+                        )}
+                      </span>
                     </div>
                   </div>
 
