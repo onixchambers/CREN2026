@@ -127,6 +127,7 @@ export default function PreregistrosPage() {
 
     madreNombre: "",
     padreNombre: "",
+    otrosVinculo: "Otros (Nombre)",
     otrosNombre: "",
     madreContacto: "",
     padreContacto: "",
@@ -324,6 +325,14 @@ export default function PreregistrosPage() {
     const fullName = ficha.name || ficha.nombre || "";
     const { nombres, apellidos } = splitName(fullName);
 
+    let parsedOtrosVinculo = "Otros (Nombre)";
+    let parsedOtrosNombre = ficha.otrosNombre || "";
+    if (parsedOtrosNombre.includes("|")) {
+      const parts = parsedOtrosNombre.split("|");
+      parsedOtrosVinculo = parts[0];
+      parsedOtrosNombre = parts[1];
+    }
+
     setFormData({
       ...formData,
       ...ficha,
@@ -334,6 +343,8 @@ export default function PreregistrosPage() {
       madreContacto: mContact,
       padreContacto: pContact,
       otrosContacto: oContact,
+      otrosVinculo: parsedOtrosVinculo,
+      otrosNombre: parsedOtrosNombre,
       foto: ficha.foto || "",
     });
     setPhotoPreview(ficha.foto || null);
@@ -476,6 +487,7 @@ export default function PreregistrosPage() {
         madreContacto: formData.madreContacto ? (formData.madreContacto.startsWith("+") ? formData.madreContacto : `${madreCountryCode} ${formData.madreContacto}`) : "",
         padreContacto: formData.padreContacto ? (formData.padreContacto.startsWith("+") ? formData.padreContacto : `${padreCountryCode} ${formData.padreContacto}`) : "",
         otrosContacto: formData.otrosContacto ? (formData.otrosContacto.startsWith("+") ? formData.otrosContacto : `${otrosCountryCode} ${formData.otrosContacto}`) : "",
+        otrosNombre: formData.otrosVinculo ? `${formData.otrosVinculo}|${formData.otrosNombre}` : formData.otrosNombre,
       };
 
       let result;
@@ -950,7 +962,14 @@ export default function PreregistrosPage() {
 
                 {/* Otros */}
                 <div className="p-3 bg-slate-50 border border-slate-200 rounded-lg space-y-2">
-                  <label className="block text-xs font-bold text-slate-700 uppercase">Otros (Nombre)</label>
+                  <input
+                    type="text"
+                    name="otrosVinculo"
+                    value={formData.otrosVinculo || "Otros (Nombre)"}
+                    onChange={handleInputChange}
+                    className="block text-xs font-bold text-slate-700 uppercase bg-transparent border-b border-dashed border-slate-400 focus:border-blue-500 outline-none w-full mb-1 pb-1"
+                    title="Puedes editar este campo (Ej. Tío, Abuelo)"
+                  />
                   <input
                     type="text"
                     name="otrosNombre"
