@@ -300,6 +300,53 @@ export default function AsistenciaPage() {
 
       // Cargar asistencias reales de la BD
       await recargarAsistencias();
+
+      const prefill = sessionStorage.getItem("prefillAsistencia");
+      if (prefill) {
+        try {
+          const pd = JSON.parse(prefill);
+          let pMatch = null;
+          const pacRes = await getPatients();
+          if (pacRes.success && pacRes.data) {
+             const pac = pacRes.data.find((x: any) => x.name === pd.pacienteNombre);
+             if (pac) {
+               pMatch = {
+                  id: pac.id,
+                  paciente: pac.name,
+                  sexo: pac.sexo || "—",
+                  nac: pac.fechaNacimiento || "—",
+                  edad: pac.age ? pac.age.toString() : "—",
+                  saldoCalculado: pac.saldoCalculado || "0.00",
+                  precioTerapia: pac.precioTerapia?.toString() || ""
+               };
+             }
+          }
+          
+          setFormData(prev => ({
+             ...prev,
+             agendaId: pd.agendaId,
+             pacienteId: pMatch ? pMatch.id : "",
+             pacienteNombre: pd.pacienteNombre,
+             pacienteNac: pMatch ? pMatch.nac : "",
+             pacienteSexo: pMatch ? (pMatch.sexo.toUpperCase().startsWith("M") ? "M" : (pMatch.sexo.toUpperCase().startsWith("F") ? "F" : pMatch.sexo)) : "",
+             pacienteEdad: pMatch ? pMatch.edad : "",
+             fecha: pd.fecha,
+             hora: pd.hora,
+             terapeuta: pd.terapeuta,
+             tipoSesion: pd.tipoSesion,
+             estadoAsistencia: pd.estadoAsistencia,
+             numeroSesiones: pd.numeroSesiones,
+             frecuencia: pd.frecuencia,
+             saldoDisponible: pMatch ? pMatch.saldoCalculado : "0.00",
+             precioTerapia: pMatch && pMatch.precioTerapia ? pMatch.precioTerapia : prev.precioTerapia,
+             metodoPago: pd.metodoPago || "",
+             montoPago: pd.pagado ? (pMatch?.precioTerapia || "400") : ""
+          }));
+          sessionStorage.removeItem("prefillAsistencia");
+        } catch (e) {
+          console.error(e);
+        }
+      }
     }
     loadData();
   }, [userName, userRole]);

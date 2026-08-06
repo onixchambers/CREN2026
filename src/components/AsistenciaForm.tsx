@@ -642,15 +642,9 @@ export function AsistenciaForm({
           
           {/* BUTTONS */}
           <div className="flex items-center gap-3 pt-2">
-            {!isPrellenado && (
-              <button type="button" onClick={() => handleGuardar(false)} className="bg-[#27ae60] hover:bg-[#219653] text-white px-5 py-2 rounded text-[13px] font-semibold flex items-center gap-2 transition-colors">
-                <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 24 24"><path d="M9 16.17L4.83 12l-1.42 1.41L9 19 21 7l-1.41-1.41z"/></svg>
-                Finalizar Sesión
-              </button>
-            )}
-            <button type="button" onClick={() => handleGuardar(true)} className="bg-[#f39c12] hover:bg-[#e67e22] text-white px-5 py-2 rounded text-[13px] font-semibold flex items-center gap-2 transition-colors">
-              <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 24 24"><path d="M17 3H5c-1.11 0-2 .9-2 2v14c0 1.1.89 2 2 2h14c1.1 0 2-.9 2-2V7l-4-4zm-5 16c-1.66 0-3-1.34-3-3s1.34-3 3-3 3 1.34 3 3-1.34 3-3 3zm3-10H5V5h10v4z"/></svg>
-              {isPrellenado ? "Guardar Pre-llenado" : "Guardar Borrador"}
+            <button type="button" onClick={() => handleGuardar(false)} className="bg-[#27ae60] hover:bg-[#219653] text-white px-5 py-2 rounded text-[13px] font-semibold flex items-center gap-2 transition-colors">
+              <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 24 24"><path d="M9 16.17L4.83 12l-1.42 1.41L9 19 21 7l-1.41-1.41z"/></svg>
+              Finalizar Sesión
             </button>
 
             {onCancel && (

@@ -301,38 +301,22 @@ export default function AgendaPage() {
       setCitas(citas.map(c => c.id === selectedCitaForStatus.id ? updatedData : c));
       
       if (isAttendanceStatus) {
-         const nuevaAsistencia = {
-            id: Date.now().toString(),
-            agendaId: selectedCitaForStatus.id,
-            fecha: selectedCitaForStatus.fecha,
-            hora: selectedCitaForStatus.hora,
-            area: "",
-            paciente: selectedCitaForStatus.paciente,
-            sexo: "",
-            edad: "",
-            tipoSesion: selectedCitaForStatus.tipoServicio,
-            estado: estado,
-            sesiones: selectedCitaForStatus.numeroSesiones?.toString() || "1",
-            frecuencia: selectedCitaForStatus.frecuencia || "unica",
-            pago: selectedCitaForStatus.pagado ? "SÍ" : "NO",
-            fact: "No",
-            subtotal: "$0.00",
-            iva: "$0.00",
-            total: "$0.00",
-            precioTerapia: 400,
-            montoPago: "0",
-            metodoPago: selectedCitaForStatus.metodoPago || "Efectivo",
-            obs: "Generado desde estado de cita",
-            creadoPor: userName,
-            terapeuta: selectedCitaForStatus.terapeuta
+         const prefillData = {
+           agendaId: selectedCitaForStatus.id,
+           pacienteNombre: selectedCitaForStatus.paciente,
+           fecha: selectedCitaForStatus.fecha,
+           hora: selectedCitaForStatus.hora,
+           terapeuta: selectedCitaForStatus.terapeuta,
+           tipoSesion: selectedCitaForStatus.tipoServicio,
+           estadoAsistencia: estado,
+           numeroSesiones: selectedCitaForStatus.numeroSesiones?.toString() || "1",
+           frecuencia: selectedCitaForStatus.frecuencia || "unica",
+           pagado: selectedCitaForStatus.pagado,
+           metodoPago: selectedCitaForStatus.metodoPago
          };
-         
-         const dbRes = await saveAsistenciaDB(nuevaAsistencia);
-         if (dbRes?.success === false) {
-           alert("Error al guardar asistencia: " + dbRes.error);
-         } else {
-           alert(`Estado actualizado a '${estado}' y asistencia registrada.`);
-         }
+         sessionStorage.setItem("prefillAsistencia", JSON.stringify(prefillData));
+         window.location.href = "/dashboard/asistencia";
+         return;
       } else {
          alert(`Estado actualizado a '${estado}'.`);
       }
@@ -819,19 +803,6 @@ export default function AgendaPage() {
             <div className="px-6 py-4 border-b border-slate-100 flex justify-between items-center bg-slate-50">
               <div className="flex items-center gap-4">
                 <h3 className="font-bold text-lg text-[#0e2f44]">{(formData as any).id ? 'Editar Cita' : 'Programar Cita'}</h3>
-                {(formData as any).id && (
-                  <button 
-                    type="button"
-                    onClick={() => {
-                      setIsModalOpen(false);
-                      setSelectedCita(citas.find((c: any) => c.id === (formData as any).id) || null);
-                      setIsEditModalOpen(true);
-                    }} 
-                    className="bg-indigo-600 hover:bg-indigo-700 text-white px-3 py-1 rounded text-sm font-bold flex items-center gap-1 transition"
-                  >
-                    ✏️ Asistencia
-                  </button>
-                )}
               </div>
               <button onClick={() => setIsModalOpen(false)} className="text-slate-400 hover:text-slate-600 text-xl font-bold">&times;</button>
             </div>
