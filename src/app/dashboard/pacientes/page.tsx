@@ -810,6 +810,20 @@ export default function PacientesPage() {
                                           {(userRole.toUpperCase() === 'ADMIN' || userRole.toUpperCase() === 'INVITADO' || allowTherapistEdit) && (
                                             <button
                                               type="button"
+                                              onClick={() => {
+                                                setActiveDocToView(doc);
+                                                setSelectedNoteType(doc.tipo || "Registro de Evolución");
+                                                setDocFormData({ ...doc.contenido, fecha: doc.fecha, hora: doc.hora, id: doc.id });
+                                                setModalTab("nuevo_documento");
+                                              }}
+                                              className="bg-[#f39c12] hover:bg-[#e67e22] text-white font-black px-3 py-1 rounded text-[10px] uppercase shadow-2xs transition-colors cursor-pointer flex items-center gap-1"
+                                            >
+                                              <span>✏️ EDITAR</span>
+                                            </button>
+                                          )}
+                                          {(userRole.toUpperCase() === 'ADMIN' || userRole.toUpperCase() === 'INVITADO' || allowTherapistEdit) && (
+                                            <button
+                                              type="button"
                                               onClick={async () => {
                                                 if (window.confirm("¿Deseas borrar este documento clínico?")) {
                                                   const res = await deletePatientDocument(viewingPatient.id, doc.id);
@@ -884,7 +898,7 @@ export default function PacientesPage() {
                   <div className="flex items-center justify-between border-b border-slate-200 pb-3">
                     <div className="flex items-center gap-2">
                       <span className="text-xl">📋</span>
-                      <h4 className="font-extrabold text-slate-800 text-base">Nota Clínica Nueva</h4>
+                      <h4 className="font-extrabold text-slate-800 text-base">{docFormData.id ? "Editar Nota Clínica" : "Nota Clínica Nueva"}</h4>
                     </div>
                     <button
                       type="button"
@@ -950,8 +964,11 @@ export default function PacientesPage() {
                           setIsSavingDoc(true);
                           try {
                             const res = await savePatientDocument(viewingPatient.id, {
+                              id: docFormData.id,
                               tipo: selectedNoteType,
                               terapeuta: docFormData.terapeuta || userName || "LOURDES RINCÓN",
+                              fecha: docFormData.fecha,
+                              hora: docFormData.hora,
                               contenido: docFormData
                             });
                             if (res.success && res.data) {
@@ -969,6 +986,33 @@ export default function PacientesPage() {
                         }}
                         className="space-y-3"
                       >
+                        {/* VINCULAR CON CITA AGENDADA */}
+                        {agendaCitas && (
+                          <div className="bg-blue-50/50 p-2.5 rounded-xl border border-blue-100 flex flex-col gap-1.5">
+                            <label className="block text-[10px] font-bold text-blue-700 uppercase">Vincular con Cita (Autocompletar Fecha/Hora)</label>
+                            <select 
+                              className="w-full text-xs p-2 border border-blue-200 rounded-lg bg-white outline-none font-medium text-slate-700"
+                              onChange={(e) => {
+                                const val = e.target.value;
+                                if (!val) return;
+                                const cita = agendaCitas.find((c: any) => c.id === val);
+                                if (cita) {
+                                  setDocFormData({ ...docFormData, fecha: cita.fecha, hora: cita.hora });
+                                }
+                              }}
+                            >
+                              <option value="">Seleccionar cita de la agenda...</option>
+                              {agendaCitas
+                                .filter((c: any) => c.paciente === viewingPatient?.name || c.pacienteId === viewingPatient?.id)
+                                .map((cita: any) => (
+                                  <option key={cita.id} value={cita.id}>
+                                    {cita.fecha} a las {cita.hora} - {cita.tipoServicio || "Terapia"} ({cita.estado})
+                                  </option>
+                                ))}
+                            </select>
+                          </div>
+                        )}
+
                         {/* SELECCIÓN DE TERAPEUTA RESPONSABLE */}
                         <div className="grid grid-cols-3 gap-2 bg-slate-50 p-2.5 rounded-xl border border-slate-200">
                           <div>
