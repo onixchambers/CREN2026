@@ -121,13 +121,19 @@ export default function AsistenciaPage() {
   const [agendaCitas, setAgendaCitas] = useState<any[]>([]);
   
   // Filtros de tabla
-  const hoy = new Date().toLocaleDateString("en-CA", { timeZone: "America/Mexico_City" });
+  const getLocalToday = () => {
+    const now = new Date();
+    const offset = now.getTimezoneOffset() * 60000;
+    return new Date(now.getTime() - offset).toISOString().split("T")[0];
+  };
+  const hoy = getLocalToday();
   
   // By default, show records from the 1st of the current month
   const getFirstDayOfMonth = () => {
     const d = new Date();
     d.setDate(1);
-    return d.toLocaleDateString("en-CA", { timeZone: "America/Mexico_City" });
+    const offset = d.getTimezoneOffset() * 60000;
+    return new Date(d.getTime() - offset).toISOString().split("T")[0];
   };
   
   const [filtroDesde, setFiltroDesde] = useState("");

@@ -61,7 +61,12 @@ export function AsistenciaForm({
   onClear,
   isPrellenado = false
 }: AsistenciaFormProps) {
-  const hoy = new Date().toLocaleDateString("en-CA", { timeZone: "America/Mexico_City" });
+  const getLocalToday = () => {
+    const now = new Date();
+    const offset = now.getTimezoneOffset() * 60000;
+    return new Date(now.getTime() - offset).toISOString().split("T")[0];
+  };
+  const hoy = getLocalToday();
 
   const [formData, setFormData] = useState<AsistenciaFormData>({
     fecha: hoy,

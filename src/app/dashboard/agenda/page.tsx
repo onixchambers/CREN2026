@@ -42,7 +42,12 @@ export default function AgendaPage() {
     if (parts.length === 3) return `//`;
     return dateStr;
   };
-  const hoy = new Date().toISOString().split("T")[0];
+  const getLocalToday = () => {
+    const now = new Date();
+    const offset = now.getTimezoneOffset() * 60000;
+    return new Date(now.getTime() - offset).toISOString().split("T")[0];
+  };
+  const hoy = getLocalToday();
   const [fechaSeleccionada, setFechaSeleccionada] = useState(hoy);
   
   const [viewMode, setViewMode] = useState<"day" | "week" | "month">("day");
@@ -354,6 +359,13 @@ export default function AgendaPage() {
       getAgenda().then(r => { if (r.success && r.data) setCitas(r.data); }); // Revert on error
     }
   };
+
+  const getLocalToday = () => {
+    const now = new Date();
+    const offset = now.getTimezoneOffset() * 60000;
+    return new Date(now.getTime() - offset).toISOString().split("T")[0];
+  };
+  const hoy = getLocalToday();
 
   const handlePrevDay = () => {
     const d = new Date(fechaSeleccionada + "T00:00:00");
