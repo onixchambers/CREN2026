@@ -170,7 +170,7 @@ export default function PacientesPage() {
 
     // 4. Filtro por Método de Pago
     if (filtroMetodoPago !== "Todos") {
-      const pagoPaciente = (p.metodo || "").trim();
+      const pagoPaciente = (p.metodoPago || p.metodo || "").trim();
       if (!pagoPaciente.toLowerCase().includes(filtroMetodoPago.toLowerCase())) return false;
     }
 
