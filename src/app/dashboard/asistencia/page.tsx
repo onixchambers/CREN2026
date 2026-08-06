@@ -499,18 +499,34 @@ export default function AsistenciaPage() {
     
     // También guardar en Agenda
     try {
-      await addCita({
-        paciente: formData.paciente,
-        fecha: formData.fecha,
-        hora: formData.hora,
-        terapeuta: formData.terapeuta,
-        tipoServicio: formData.tipoServicio,
-        frecuencia: formData.frecuencia,
-        estado: "Asistio",
-        pagado: formData.pagado,
-        metodoPago: formData.metodoPago,
-        numeroSesiones: 1
-      });
+      const citaExistente = agendaCitas.find((c: any) => 
+        c.paciente === formData.pacienteNombre && 
+        c.fecha === formData.fecha && 
+        (c.hora === formData.hora || !formData.hora)
+      );
+
+      if (citaExistente) {
+        await updateCita(citaExistente.id, {
+          ...citaExistente,
+          estado: formData.estadoAsistencia || "Asistió",
+          pagado: totVal > 0,
+          metodoPago: metodoPagoFinal,
+          terapeuta: formData.terapeuta
+        });
+      } else {
+        await addCita({
+          paciente: formData.pacienteNombre,
+          fecha: formData.fecha,
+          hora: formData.hora,
+          terapeuta: formData.terapeuta,
+          tipoServicio: formData.tipoSesion,
+          frecuencia: formData.frecuencia,
+          estado: formData.estadoAsistencia || "Asistió",
+          pagado: totVal > 0,
+          metodoPago: metodoPagoFinal,
+          numeroSesiones: parseInt(formData.numeroSesiones) || 1
+        });
+      }
     } catch (e) {
       console.error("Error agendando cita al guardar asistencia", e);
     }

@@ -385,6 +385,17 @@ export function AsistenciaForm({
                         key={p.id} 
                         className="px-3 py-2 text-sm text-slate-700 hover:bg-[#2980b9] hover:text-white cursor-pointer"
                         onClick={() => {
+                          let horaAgenda = formData.hora;
+                          let terapeutaAgenda = p.medicoTratante || formData.terapeuta;
+                          let tipoSesionAgenda = formData.tipoSesion;
+
+                          const citaHoy = agendaCitas.find((c: any) => c.paciente === p.paciente && c.fecha === formData.fecha);
+                          if (citaHoy) {
+                            horaAgenda = citaHoy.hora || horaAgenda;
+                            terapeutaAgenda = citaHoy.terapeuta || terapeutaAgenda;
+                            tipoSesionAgenda = citaHoy.tipoServicio || tipoSesionAgenda;
+                          }
+
                           setFormData({
                             ...formData,
                             pacienteId: p.id,
@@ -395,6 +406,9 @@ export function AsistenciaForm({
                             saldoDisponible: p.saldoCalculado || "0.00",
                             precioTerapia: p.precioTerapia || formData.precioTerapia,
                             numeroSesiones: "1",
+                            hora: horaAgenda,
+                            terapeuta: terapeutaAgenda,
+                            tipoSesion: tipoSesionAgenda,
                             frecuencia: agendaCitas.find((c: any) => c.paciente === p.paciente) ? (() => {
                               const f = (agendaCitas.find((c: any) => c.paciente === p.paciente).frecuencia || "").toLowerCase();
                               return f === "diario" || f === "diaria" ? "Diaria" : f === "semanal" ? "Semanal" : f === "quincenal" ? "Quincenal" : f === "mensual" ? "Mensual" : formData.frecuencia;
