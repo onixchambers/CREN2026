@@ -6,9 +6,15 @@ export async function uploadInformePDFToDrive(formData: FormData) {
   try {
     const file = formData.get("file") as File;
     let terapeutaName = (formData.get("terapeutaName") as string) || "General";
+    let pacienteNombre = (formData.get("pacienteNombre") as string) || "";
 
     if (!file) {
       return { success: false, error: "No se recibió ningún archivo." };
+    }
+
+    let finalFileName = file.name;
+    if (pacienteNombre && !finalFileName.toLowerCase().includes(pacienteNombre.toLowerCase())) {
+      finalFileName = `${pacienteNombre} - ${finalFileName}`;
     }
 
     const cleanName = terapeutaName.trim();
@@ -35,7 +41,7 @@ export async function uploadInformePDFToDrive(formData: FormData) {
     const arrayBuffer = await file.arrayBuffer();
     const buffer = Buffer.from(arrayBuffer);
 
-    const res = await uploadFileToGoogleDrive(buffer, file.name, file.type || "application/pdf", subfolderPath);
+    const res = await uploadFileToGoogleDrive(buffer, finalFileName, file.type || "application/pdf", subfolderPath);
     return res;
   } catch (error: any) {
     console.error("Error in uploadInformePDFToDrive action:", error);
