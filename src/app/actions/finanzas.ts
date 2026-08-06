@@ -74,6 +74,7 @@ export async function getFinanzasMensuales(month: string, fechaDesde?: string, f
           salarioBase: s.therapist?.salarioBase || 0,
           retieneIVA: s.therapist?.retieneIVA || false,
           ivaRetenido: 0,
+          ivaPaciente: 0,
           tieneFacturasEnPeriodo: false
         });
       }
@@ -85,7 +86,7 @@ export async function getFinanzasMensuales(month: string, fechaDesde?: string, f
 
         if (hasFactura || sessionIva > 0) {
           tData.tieneFacturasEnPeriodo = true;
-          tData.ivaRetenido += sessionIva;
+          tData.ivaPaciente += sessionIva;
         }
 
         // Calcular pago
@@ -150,7 +151,8 @@ export async function getFinanzasMensuales(month: string, fechaDesde?: string, f
             porcentaje: t.porcentaje,
             salarioBase: t.salarioBase,
             retieneIVA: t.retieneIVA,
-            ivaRetenido: 0
+            ivaRetenido: 0,
+            ivaPaciente: 0
           });
         } else {
           if (t.tipoPago === "Salario Base") {

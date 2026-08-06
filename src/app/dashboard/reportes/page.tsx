@@ -20,6 +20,7 @@ export default function ReportesPage() {
     ingresoBruto: 0,
     honorarios: 0,
     ivaHonorarios: 0,
+    ivaCren: 0,
     gastosOperativos: 0,
     utilidadCren: 0
   });
@@ -42,6 +43,7 @@ export default function ReportesPage() {
           nomina: 0,
           gastosOperativos: 0,
           ivaHonorarios: 0,
+          totalIvaFacturas: 0,
           utilidadNeta: 0
         };
 
@@ -60,6 +62,7 @@ export default function ReportesPage() {
           ingresoBrutoTotal: finData.ingresosBrutos,
           honorariosTerapeutas: finData.nomina,
           ivaHonorarios: finData.ivaHonorarios,
+          ivaCren: finData.totalIvaFacturas,
           gastosOperativos: finData.gastosOperativos,
           utilidadCren: utilidadCren
         };
@@ -74,6 +77,7 @@ export default function ReportesPage() {
         ingresoBruto: tot.ingresoBruto + r.ingresoBrutoTotal,
         honorarios: tot.honorarios + r.honorariosTerapeutas,
         ivaHonorarios: tot.ivaHonorarios + r.ivaHonorarios,
+        ivaCren: tot.ivaCren + r.ivaCren,
         gastosOperativos: tot.gastosOperativos + r.gastosOperativos,
         utilidadCren: tot.utilidadCren + r.utilidadCren
       }), {
@@ -81,6 +85,7 @@ export default function ReportesPage() {
         ingresoBruto: 0,
         honorarios: 0,
         ivaHonorarios: 0,
+        ivaCren: 0,
         gastosOperativos: 0,
         utilidadCren: 0
       });
@@ -96,7 +101,8 @@ export default function ReportesPage() {
   const donutData = [
     { label: "Honorarios Terapeutas", value: totalesAnuales.honorarios, color: "#2563eb" },
     { label: "Gastos Operativos", value: totalesAnuales.gastosOperativos, color: "#ef4444" },
-    { label: "IVA Honorarios", value: totalesAnuales.ivaHonorarios, color: "#f59e0b" },
+    { label: "IVA Retenido (Terapeuta)", value: totalesAnuales.ivaHonorarios, color: "#f59e0b" },
+    { label: "IVA Facturado (CREN)", value: totalesAnuales.ivaCren, color: "#8b5cf6" },
     { label: "Utilidad CREN", value: Math.max(0, totalesAnuales.utilidadCren), color: "#10b981" }
   ].filter(d => d.value > 0);
 
@@ -216,7 +222,8 @@ export default function ReportesPage() {
                     <th className="py-4 px-4 text-center border-r border-slate-700/50">TOTAL ASISTENCIAS</th>
                     <th className="py-4 px-4 text-right border-r border-slate-700/50">INGRESO BRUTO TOTAL</th>
                     <th className="py-4 px-4 text-right border-r border-slate-700/50">HONORARIOS TERAPEUTAS</th>
-                    <th className="py-4 px-4 text-right border-r border-slate-700/50">IVA HONORARIOS</th>
+                    <th className="py-4 px-4 text-right border-r border-slate-700/50">IVA TERAPEUTA</th>
+                    <th className="py-4 px-4 text-right border-r border-slate-700/50">IVA CREN</th>
                     <th className="py-4 px-4 text-right border-r border-slate-700/50">GASTOS OPERATIVOS</th>
                     <th className="py-4 px-4 text-right">UTILIDAD CREN</th>
                   </tr>
@@ -238,6 +245,9 @@ export default function ReportesPage() {
                       </td>
                       <td className="py-3 px-4 text-right text-amber-600">
                         ${row.ivaHonorarios.toLocaleString('es-MX', {minimumFractionDigits: 2})}
+                      </td>
+                      <td className="py-3 px-4 text-right text-purple-600">
+                        ${row.ivaCren.toLocaleString('es-MX', {minimumFractionDigits: 2})}
                       </td>
                       <td className="py-3 px-4 text-right text-red-600">
                         ${row.gastosOperativos.toLocaleString('es-MX', {minimumFractionDigits: 2})}
@@ -262,6 +272,9 @@ export default function ReportesPage() {
                     </td>
                     <td className="py-4 px-4 text-right text-amber-300">
                       ${totalesAnuales.ivaHonorarios.toLocaleString('es-MX', {minimumFractionDigits: 2})}
+                    </td>
+                    <td className="py-4 px-4 text-right text-purple-300">
+                      ${totalesAnuales.ivaCren.toLocaleString('es-MX', {minimumFractionDigits: 2})}
                     </td>
                     <td className="py-4 px-4 text-right text-red-300">
                       ${totalesAnuales.gastosOperativos.toLocaleString('es-MX', {minimumFractionDigits: 2})}

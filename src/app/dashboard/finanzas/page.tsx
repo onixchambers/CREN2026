@@ -24,6 +24,7 @@ export default function FinanzasPage() {
     gastosOperativos: 0,
     gastosList: [] as any[],
     ivaHonorarios: 0,
+    totalIvaFacturas: 0,
     utilidadNeta: 0,
     terapeutas: [] as any[]
   });
@@ -120,10 +121,13 @@ export default function FinanzasPage() {
               <div>
                 <span className="text-xs font-bold text-slate-400 uppercase tracking-wider">IVA Recaudado / Retenido</span>
                 <p className="text-3xl font-extrabold text-amber-600 mt-2">
-                  ${(datos.ivaHonorarios || 0).toLocaleString('es-MX', {minimumFractionDigits: 2})}
+                  ${((datos.ivaHonorarios || 0) + (datos.totalIvaFacturas || 0)).toLocaleString('es-MX', {minimumFractionDigits: 2})}
                 </p>
               </div>
-              <p className="text-xs text-amber-700/80 mt-3 font-medium">IVA proveniente de facturas emitidas</p>
+              <div className="text-xs text-amber-700/80 mt-3 font-medium space-y-0.5">
+                <div>• IVA Paciente (CREN): <strong>${(datos.totalIvaFacturas || 0).toLocaleString('es-MX', {minimumFractionDigits: 2})}</strong></div>
+                <div>• IVA Retenido Terapeuta: <strong>${(datos.ivaHonorarios || 0).toLocaleString('es-MX', {minimumFractionDigits: 2})}</strong></div>
+              </div>
             </div>
 
             {/* GASTOS TOTALES */}

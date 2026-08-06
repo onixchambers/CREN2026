@@ -196,7 +196,8 @@ export default function SalarioPage() {
                   deudaTotal: deudaVal,
                   subtotalValor: precioSession,
                   terapeutaPago: pagoSesionTerapeuta,
-                  ivaRetenido: ivaSesionRetenido
+                  ivaRetenido: ivaSesionRetenido,
+                  ivaPaciente: ivaCrenSesion
                 });
               } else {
                 const item = pacienteMap.get(pName)!;
@@ -205,6 +206,7 @@ export default function SalarioPage() {
                 item.subtotalValor += precioSession;
                 item.terapeutaPago += pagoSesionTerapeuta;
                 item.ivaRetenido += ivaSesionRetenido;
+                item.ivaPaciente += ivaCrenSesion;
               }
             });
 
@@ -363,23 +365,24 @@ export default function SalarioPage() {
                   </div>
                 </div>
 
-                {/* 3. SECCIÓN: DETALLE POR PACIENTE (TABLA CON CABECERA AZUL OSCURA DE LA IMAGEN) */}
-                <div className="p-6">
-                  <h4 className="text-xs font-extrabold text-[#1a5276] uppercase tracking-wider mb-4 flex items-center gap-2">
+                {/* 3. SECCIÓN: DETALLE POR PACIENTE (OCULTO POR DEFECTO CON SUMMARY) */}
+                <details className="p-6 group">
+                  <summary className="text-xs font-extrabold text-[#1a5276] uppercase tracking-wider mb-4 flex items-center gap-2 cursor-pointer select-none outline-none">
+                    <svg className="w-4 h-4 text-slate-500 group-open:rotate-90 transition-transform" fill="currentColor" viewBox="0 0 24 24"><path d="M8.59 16.59L13.17 12 8.59 7.41 10 6l6 6-6 6-1.41-1.41z"/></svg>
                     <svg className="w-4 h-4 text-slate-500" fill="currentColor" viewBox="0 0 24 24"><path d="M12 12c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm0 2c-2.67 0-8 1.34-8 4v2h16v-2c0-2.66-5.33-4-8-4z"/></svg>
-                    Detalle por Paciente
-                  </h4>
+                    Ver Detalle por Paciente
+                  </summary>
 
-                  <div className="overflow-x-auto rounded-xl border border-slate-200 shadow-sm">
+                  <div className="overflow-x-auto rounded-xl border border-slate-200 shadow-sm mt-2">
                     <table className="w-full text-xs text-left">
-                      {/* CABECERA AZUL OSCURA EXACTA DE LA IMAGEN DE REFERENCIA */}
                       <thead className="bg-[#0e2f44] text-white font-black uppercase text-[11px]">
                         <tr>
                           <th className="py-3 px-4">PACIENTE</th>
                           <th className="py-3 px-4 text-center">ASISTENCIAS</th>
                           <th className="py-3 px-4 text-right">DEUDA</th>
-                          <th className="py-3 px-4 text-right">SUBTOTAL SESIÓN</th>
+                          <th className="py-3 px-4 text-right">TOTAL SESIÓN</th>
                           <th className="py-3 px-4 text-center">ESQUEMA / %</th>
+                          <th className="py-3 px-4 text-right">IVA PACIENTE</th>
                           <th className="py-3 px-4 text-right">RETENCIÓN IVA</th>
                           <th className="py-3 px-4 text-right">A PAGAR A TERAPEUTA</th>
                         </tr>
@@ -408,6 +411,9 @@ export default function SalarioPage() {
                                 {t.tipoPago === "Porcentaje" ? `Comisión (${t.porcentaje}%)` : `Salario Base`}
                               </span>
                             </td>
+                            <td className="py-3 px-4 text-right text-blue-600 font-semibold">
+                              ${p.ivaPaciente.toLocaleString('es-MX', {minimumFractionDigits: 2})}
+                            </td>
                             <td className="py-3 px-4 text-right text-amber-600 font-semibold">
                               ${p.ivaRetenido.toLocaleString('es-MX', {minimumFractionDigits: 2})}
                             </td>
@@ -418,7 +424,7 @@ export default function SalarioPage() {
                         ))}
                         {pacienteList.length === 0 && (
                           <tr>
-                            <td colSpan={7} className="py-8 text-center text-slate-400">
+                            <td colSpan={8} className="py-8 text-center text-slate-400">
                               Sin atenciones registradas para esta terapeuta en el periodo.
                             </td>
                           </tr>
@@ -426,7 +432,7 @@ export default function SalarioPage() {
                       </tbody>
                     </table>
                   </div>
-                </div>
+                </details>
               </div>
             );
           })}
