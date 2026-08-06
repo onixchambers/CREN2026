@@ -481,7 +481,7 @@ export async function savePatientDocument(patientId: string, docData: any) {
     const now = new Date();
     const docId = docData.id || "DOC-" + Math.floor(1000 + Math.random() * 9000);
     const docDate = docData.fecha || now.toISOString().split("T")[0];
-    const docTime = now.toLocaleTimeString("es-MX", { hour: "2-digit", minute: "2-digit", second: "2-digit" });
+    const docTime = docData.hora || now.toLocaleTimeString("es-MX", { hour: "2-digit", minute: "2-digit" });
     const docType = docData.tipo || "Registro de Evolución";
 
     // Generar el PDF oficial en base64 para subirlo a Google Drive
@@ -489,6 +489,7 @@ export async function savePatientDocument(patientId: string, docData: any) {
     try {
       const htmlBase64 = generateClinicalNotePdfBase64(patient.name, {
         fecha: docDate,
+        hora: docTime,
         tipo: docType,
         terapeuta: displayDocName,
         contenido: docData.contenido || {}

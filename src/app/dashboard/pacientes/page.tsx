@@ -696,7 +696,7 @@ export default function PacientesPage() {
                     </div>
                     <div>
                       <span className="text-slate-400 font-bold block text-[10px] uppercase">Email:</span>
-                      <span className="font-semibold text-slate-700">{viewingPatient.email || "glooriaa67@hotmail.com"}</span>
+                      <span className="font-semibold text-slate-700">{viewingPatient.correoPrincipal || viewingPatient.email || "Sin correo"}</span>
                     </div>
                     <div>
                       <span className="text-slate-400 font-bold block text-[10px] uppercase">Teléfono:</span>
@@ -783,7 +783,7 @@ export default function PacientesPage() {
                                   {paginatedDocs.map((doc, idx) => (
                                     <tr key={doc.id || idx} className="hover:bg-slate-50 transition-colors">
                                       <td className="px-3 py-2.5 font-semibold text-slate-800">{doc.fecha}</td>
-                                      <td className="px-3 py-2.5 text-slate-600">{doc.hora || "19:30:00"}</td>
+                                      <td className="px-3 py-2.5 text-slate-600">{doc.hora || "19:30"}</td>
                                       <td className="px-3 py-2.5 font-bold text-[#1a5276] uppercase">
                                         {doc.tipo}
                                       </td>
@@ -970,7 +970,7 @@ export default function PacientesPage() {
                         className="space-y-3"
                       >
                         {/* SELECCIÓN DE TERAPEUTA RESPONSABLE */}
-                        <div className="grid grid-cols-2 gap-2 bg-slate-50 p-2.5 rounded-xl border border-slate-200">
+                        <div className="grid grid-cols-3 gap-2 bg-slate-50 p-2.5 rounded-xl border border-slate-200">
                           <div>
                             <label className="block text-[10px] font-bold text-slate-500 uppercase mb-1">Fecha</label>
                             <input 
@@ -981,7 +981,16 @@ export default function PacientesPage() {
                             />
                           </div>
                           <div>
-                            <label className="block text-[10px] font-bold text-slate-500 uppercase mb-1">Terapeuta Responsable</label>
+                            <label className="block text-[10px] font-bold text-slate-500 uppercase mb-1">Hora</label>
+                            <input 
+                              type="time" 
+                              value={docFormData.hora || "12:00"} 
+                              onChange={(e) => setDocFormData({...docFormData, hora: e.target.value})}
+                              className="w-full text-xs p-2 border border-slate-300 rounded-lg bg-white outline-none font-medium"
+                            />
+                          </div>
+                          <div>
+                            <label className="block text-[10px] font-bold text-slate-500 uppercase mb-1">Terapeuta</label>
                             <input 
                               type="text" 
                               value={docFormData.terapeuta || userName || "LOURDES RINCÓN"} 
