@@ -322,6 +322,29 @@ export default function AsistenciaPage() {
              }
           }
           
+          const mapTipoSesion = (val: string) => {
+            if (!val) return "";
+            const low = val.toLowerCase();
+            if (low === "individual") return "Individual";
+            if (low === "valoracion") return "Valoracion";
+            if (low === "taller" || low === "taller grupal" || low === "terapia grupal") return "Terapia Grupal";
+            if (low === "escuela") return "Escuela";
+            if (low === "reposicion") return "Reposicion";
+            if (low === "orientacion padres") return "Orientacion Padres";
+            return "Otros";
+          };
+
+          const mapFrecuencia = (val: string) => {
+            if (!val) return "Única";
+            const low = val.toLowerCase();
+            if (low === "unica" || low === "única" || low.includes("ocasional")) return "Única";
+            if (low === "diario" || low === "diaria") return "Diaria";
+            if (low === "semanal") return "Semanal";
+            if (low === "quincenal") return "Quincenal";
+            if (low === "mensual") return "Mensual";
+            return "Única";
+          };
+
           setFormData(prev => ({
              ...prev,
              agendaId: pd.agendaId,
@@ -333,10 +356,10 @@ export default function AsistenciaPage() {
              fecha: pd.fecha,
              hora: pd.hora,
              terapeuta: pd.terapeuta,
-             tipoSesion: pd.tipoSesion,
+             tipoSesion: mapTipoSesion(pd.tipoSesion),
              estadoAsistencia: pd.estadoAsistencia,
              numeroSesiones: pd.numeroSesiones,
-             frecuencia: pd.frecuencia,
+             frecuencia: mapFrecuencia(pd.frecuencia),
              saldoDisponible: pMatch ? pMatch.saldoCalculado : "0.00",
              precioTerapia: pMatch && pMatch.precioTerapia ? pMatch.precioTerapia : prev.precioTerapia,
              metodoPago: pd.metodoPago || "",
@@ -776,6 +799,7 @@ export default function AsistenciaPage() {
 
       {/* CARD 1: NUEVA SESIÓN */}
       <AsistenciaForm 
+        initialData={formData}
         pacientes={pacientes.filter(p => userRole.toUpperCase() !== "TERAPEUTA" || (p.medicoTratante && p.medicoTratante.toLowerCase().includes(userName.toLowerCase())))}
         terapeutasFullData={terapeutasFullData}
         agendaCitas={agendaCitas}
