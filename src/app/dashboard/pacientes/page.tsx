@@ -40,6 +40,9 @@ export default function PacientesPage() {
   const [pacientes, setPacientes] = useState<any[]>([]);
   const [agendaCitas, setAgendaCitas] = useState<any[]>([]);
   const [searchTerm, setSearchTerm] = useState("");
+  const [filtroTerapeuta, setFiltroTerapeuta] = useState("Todos");
+  const [filtroMetodoPago, setFiltroMetodoPago] = useState("Todos");
+  const [filtroEstado, setFiltroEstado] = useState("Todos");
   const [bajaModalPatient, setBajaModalPatient] = useState<any | null>(null);
   const [bajaReason, setBajaReason] = useState("");
   const [isSubmittingBaja, setIsSubmittingBaja] = useState(false);
@@ -138,8 +141,9 @@ export default function PacientesPage() {
   const [currentPage, setCurrentPage] = useState(1);
   const ITEMS_PER_PAGE = 25;
 
-  // Filtro de Privacidad: Terapeutas ven pacientes asignados o con sesiones registradas
+  // Filtro de Privacidad y Búsqueda
   const pacientesFiltrados = pacientes.filter(p => {
+    // 1. Permisos de Terapeuta (solo ver sus pacientes)
     if (userRole.toUpperCase() === "TERAPEUTA") {
       const userLower = userName.trim().toLowerCase();
       const medLower = (p.medicoTratante || "").trim().toLowerCase();
@@ -156,8 +160,32 @@ export default function PacientesPage() {
         return false;
       }
     }
-    return p.name?.toLowerCase().includes(searchTerm.toLowerCase());
+
+    // 2. Filtro de Búsqueda por Nombre
+    if (searchTerm && !p.name?.toLowerCase().includes(searchTerm.toLowerCase())) return false;
+
+    // 3. Filtro por Estado (Activo, Inactivo, Alta, Baja, etc.)
+    const estatusPaciente = p.estatus || p.estado || "Activo";
+    if (filtroEstado !== "Todos" && estatusPaciente !== filtroEstado) return false;
+
+    // 4. Filtro por Método de Pago
+    if (filtroMetodoPago !== "Todos") {
+      const pagoPaciente = (p.metodo || "").trim();
+      if (!pagoPaciente.toLowerCase().includes(filtroMetodoPago.toLowerCase())) return false;
+    }
+
+    // 5. Filtro por Terapeuta
+    if (filtroTerapeuta !== "Todos") {
+      const ter1 = (p.medicoTratante || "").trim();
+      const ter2 = (p.terapeuta || "").trim();
+      if (ter1 !== filtroTerapeuta && ter2 !== filtroTerapeuta) return false;
+    }
+
+    return true;
   }).sort((a, b) => (a.name || "").localeCompare(b.name || ""));
+
+  // Obtener lista única de terapeutas para el filtro
+  const terapeutasDisponibles = Array.from(new Set(pacientes.flatMap(p => [p.medicoTratante, p.terapeuta]).filter(Boolean))).sort();
 
   const totalPages = Math.ceil(pacientesFiltrados.length / ITEMS_PER_PAGE);
   const paginatedPacientes = pacientesFiltrados.slice(
@@ -250,16 +278,54 @@ export default function PacientesPage() {
 
       <div className="bg-white rounded-xl shadow-sm border border-slate-200 overflow-hidden print:hidden">
         {/* BUSCADOR Y FILTROS */}
-        <div className="p-4 bg-slate-50 border-b border-slate-200 flex flex-wrap gap-4 items-center justify-between">
-          <div className="flex items-center gap-2">
-            <label className="text-xs font-bold text-slate-700 uppercase">Buscar Paciente:</label>
-            <input
-              type="text"
-              placeholder="Escribe un nombre..."
-              value={searchTerm}
-              onChange={(e) => setSearchTerm(e.target.value)}
-              className="border border-slate-300 rounded px-3 py-1.5 text-sm outline-none focus:border-[#2980b9] w-64 text-slate-900 bg-white"
-            />
+        <div className="p-4 bg-slate-50 border-b border-slate-200 flex flex-wrap gap-4 items-end justify-between">
+          <div className="flex flex-wrap items-center gap-4 w-full">
+            <div className="flex flex-col gap-1 w-full md:w-auto flex-1 max-w-sm">
+              <label className="text-xs font-bold text-slate-700 uppercase">Buscar Paciente:</label>
+              <input
+                type="text"
+                placeholder="Escribe un nombre..."
+                value={searchTerm}
+                onChange={(e) => setSearchTerm(e.target.value)}
+                className="border border-slate-300 rounded px-3 py-2 text-sm outline-none focus:border-[#2980b9] w-full text-slate-900 bg-white"
+              />
+            </div>
+            
+            <div className="flex flex-col gap-1 w-full md:w-auto">
+              <label className="text-xs font-bold text-slate-700 uppercase">Estado:</label>
+              <select value={filtroEstado} onChange={(e) => setFiltroEstado(e.target.value)} className="border border-slate-300 rounded px-3 py-2 text-sm outline-none focus:border-[#2980b9] bg-white text-slate-700 min-w-[120px]">
+                <option value="Todos">Todos</option>
+                <option value="Activo">Activo</option>
+                <option value="Inactivo">Inactivo</option>
+                <option value="Alta">Alta</option>
+                <option value="Baja">Baja</option>
+              </select>
+            </div>
+
+            <div className="flex flex-col gap-1 w-full md:w-auto">
+              <label className="text-xs font-bold text-slate-700 uppercase">Método Pago:</label>
+              <select value={filtroMetodoPago} onChange={(e) => setFiltroMetodoPago(e.target.value)} className="border border-slate-300 rounded px-3 py-2 text-sm outline-none focus:border-[#2980b9] bg-white text-slate-700 min-w-[120px]">
+                <option value="Todos">Todos</option>
+                <option value="Efectivo">Efectivo</option>
+                <option value="Transferencia">Transferencia</option>
+                <option value="Tarjeta">Tarjeta</option>
+                <option value="Mixto">Mixto</option>
+                <option value="Por definir">Por definir</option>
+                <option value="Beca">Beca</option>
+              </select>
+            </div>
+
+            {userRole.toUpperCase() !== "TERAPEUTA" && (
+              <div className="flex flex-col gap-1 w-full md:w-auto">
+                <label className="text-xs font-bold text-slate-700 uppercase">Terapeuta:</label>
+                <select value={filtroTerapeuta} onChange={(e) => setFiltroTerapeuta(e.target.value)} className="border border-slate-300 rounded px-3 py-2 text-sm outline-none focus:border-[#2980b9] bg-white text-slate-700 min-w-[150px]">
+                  <option value="Todos">Todos</option>
+                  {terapeutasDisponibles.map((t: any) => (
+                    <option key={t} value={t}>{t}</option>
+                  ))}
+                </select>
+              </div>
+            )}
           </div>
         </div>
 
