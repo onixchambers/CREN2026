@@ -431,11 +431,14 @@ export default function PacientesPage() {
                         }
                         return (
                           <div className="w-full max-w-[130px] mx-auto flex flex-col items-stretch justify-center gap-0.5 my-0.5">
-                            {lines.map((line, idx) => (
-                              <span key={idx} className={`w-full px-1.5 py-0.5 rounded text-[9.5px] font-bold block text-center whitespace-nowrap leading-tight shadow-xs ${line.toLowerCase() === 'por definir' ? 'bg-red-500/20 text-red-800 border border-red-300' : 'bg-blue-50 text-blue-800 border border-blue-200'}`}>
-                                {line}
-                              </span>
-                            ))}
+                            {lines.map((line, idx) => {
+                              const isPorDefinir = line.toLowerCase().includes("por definir");
+                              return (
+                                <span key={idx} className={`w-full px-1.5 py-0.5 rounded text-[9.5px] font-bold block text-center whitespace-nowrap leading-tight shadow-xs ${isPorDefinir ? 'bg-red-500/20 text-red-800 border border-red-300' : 'bg-blue-50 text-blue-800 border border-blue-200'}`}>
+                                  {line}
+                                </span>
+                              );
+                            })}
                           </div>
                         );
                       })()}

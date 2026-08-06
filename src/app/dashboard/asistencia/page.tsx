@@ -143,6 +143,9 @@ export default function AsistenciaPage() {
   const [filtroEstado, setFiltroEstado] = useState("Todos");
   const [filtroPaciente, setFiltroPaciente] = useState("");
   const [filtroTerapeuta, setFiltroTerapeuta] = useState("Todos");
+  const [filtroMetodoPago, setFiltroMetodoPago] = useState("Todos");
+  const [filtroTipoSesion, setFiltroTipoSesion] = useState("Todos");
+  const [filtroFrecuencia, setFiltroFrecuencia] = useState("Todos");
   const [availableAreas, setAvailableAreas] = useState<string[]>(["Psicología", "Lenguaje", "Fisioterapia"]);
   const [terapeutas, setTerapeutas] = useState<string[]>([]);
   const [terapeutasFullData, setTerapeutasFullData] = useState<any[]>([]);
@@ -774,6 +777,17 @@ export default function AsistenciaPage() {
       if (!patNorm.includes(searchNorm)) match = false;
     }
     
+    if (filtroMetodoPago !== "Todos") {
+      const pago = (a.metodoPago || "").trim();
+      if (!pago.toLowerCase().includes(filtroMetodoPago.toLowerCase())) match = false;
+    }
+    if (filtroTipoSesion !== "Todos") {
+      if ((a.tipoSesion || "") !== filtroTipoSesion) match = false;
+    }
+    if (filtroFrecuencia !== "Todos") {
+      if ((a.frecuencia || "") !== filtroFrecuencia) match = false;
+    }
+    
     if (filtroTerapeuta !== "Todos") {
       if ((a.terapeuta || "") !== filtroTerapeuta) match = false;
     }
@@ -898,11 +912,45 @@ export default function AsistenciaPage() {
             </div>
             <div className="flex items-center gap-2">
               <label className="text-[11px] font-semibold text-slate-500">Terapeuta:</label>
-              <select value={filtroTerapeuta} onChange={e => setFiltroTerapeuta(e.target.value)} className="w-32 text-xs p-1.5 border border-slate-300 rounded outline-none text-slate-700 bg-white font-medium">
+              <select value={filtroTerapeuta} onChange={e => setFiltroTerapeuta(e.target.value)} className="w-24 text-xs p-1.5 border border-slate-300 rounded outline-none text-slate-700 bg-white font-medium">
                 <option value="Todos">Todos</option>
                 {terapeutas.map(t => (
                   <option key={t} value={t}>{t}</option>
                 ))}
+              </select>
+            </div>
+            <div className="flex items-center gap-2">
+              <label className="text-[11px] font-semibold text-slate-500">Método Pago:</label>
+              <select value={filtroMetodoPago} onChange={e => setFiltroMetodoPago(e.target.value)} className="w-24 text-xs p-1.5 border border-slate-300 rounded outline-none text-slate-700 bg-white font-medium">
+                <option value="Todos">Todos</option>
+                <option value="Efectivo">Efectivo</option>
+                <option value="Transferencia">Transferencia</option>
+                <option value="Tarjeta">Tarjeta</option>
+                <option value="Mixto">Mixto</option>
+                <option value="Por definir">Por definir</option>
+                <option value="Beca">Beca</option>
+              </select>
+            </div>
+            <div className="flex items-center gap-2">
+              <label className="text-[11px] font-semibold text-slate-500">Tipo Sesión:</label>
+              <select value={filtroTipoSesion} onChange={e => setFiltroTipoSesion(e.target.value)} className="w-24 text-xs p-1.5 border border-slate-300 rounded outline-none text-slate-700 bg-white font-medium">
+                <option value="Todos">Todos</option>
+                <option value="Individual">Individual</option>
+                <option value="Escuela">Escuela</option>
+                <option value="Reposicion">Reposición</option>
+                <option value="Terapia Grupal">Terapia grupal</option>
+                <option value="Orientacion Padres">Orientación padres</option>
+                <option value="Otros">Otros</option>
+              </select>
+            </div>
+            <div className="flex items-center gap-2">
+              <label className="text-[11px] font-semibold text-slate-500">Frecuencia:</label>
+              <select value={filtroFrecuencia} onChange={e => setFiltroFrecuencia(e.target.value)} className="w-24 text-xs p-1.5 border border-slate-300 rounded outline-none text-slate-700 bg-white font-medium">
+                <option value="Todos">Todos</option>
+                <option value="Única">Única</option>
+                <option value="Semanal">Semanal</option>
+                <option value="Quincenal">Quincenal</option>
+                <option value="Mensual">Mensual</option>
               </select>
             </div>
             <div className="flex items-center gap-2">
@@ -912,7 +960,7 @@ export default function AsistenciaPage() {
           </div>
 
           <div className="flex flex-wrap items-center gap-2">
-            <button type="button" onClick={() => { setFiltroDesde(""); setFiltroHasta(""); setFiltroEstado("Todos"); setFiltroPaciente(""); setFiltroTerapeuta("Todos"); }} className="bg-[#1a5276] text-white hover:bg-[#0e2f44] px-3 py-1 rounded text-xs font-semibold transition-colors cursor-pointer" title="Ver registros pasados, presentes y futuros">
+            <button type="button" onClick={() => { setFiltroDesde(""); setFiltroHasta(""); setFiltroEstado("Todos"); setFiltroPaciente(""); setFiltroTerapeuta("Todos"); setFiltroMetodoPago("Todos"); setFiltroTipoSesion("Todos"); setFiltroFrecuencia("Todos"); }} className="bg-[#1a5276] text-white hover:bg-[#0e2f44] px-3 py-1 rounded text-xs font-semibold transition-colors cursor-pointer" title="Ver registros pasados, presentes y futuros">
               Ver Todos (Permanente)
             </button>
           </div>
@@ -995,7 +1043,7 @@ export default function AsistenciaPage() {
                           {lines.map((line, idx) => {
                             const isPorDefinir = line.toLowerCase().includes("por definir");
                             return (
-                              <span key={idx} className={`w-full border px-1.5 py-0.5 rounded text-[9.5px] font-bold block text-center whitespace-nowrap leading-tight shadow-xs ${isPorDefinir ? 'bg-red-50 text-red-800 border-red-200' : 'bg-blue-50 text-blue-800 border-blue-200'}`}>
+                              <span key={idx} className={`w-full border px-1.5 py-0.5 rounded text-[9.5px] font-bold block text-center whitespace-nowrap leading-tight shadow-xs ${isPorDefinir ? 'bg-red-500/20 text-red-800 border-red-300' : 'bg-blue-50 text-blue-800 border-blue-200'}`}>
                                 {line}
                               </span>
                             );
