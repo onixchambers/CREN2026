@@ -447,8 +447,8 @@ export async function addTherapyPrice(price: number) {
   try {
     const session = await getServerSession(authOptions);
     const userRole = ((session?.user as any)?.role || "").toUpperCase();
-    if (userRole !== "ADMIN" && userRole !== "ADMINISTRADOR") {
-      return { success: false, error: "Únicamente el usuario con rol Administrador puede agregar o modificar precios de terapia." };
+    if (userRole !== "ADMIN" && userRole !== "ADMINISTRADOR" && userRole !== "INVITADO") {
+      return { success: false, error: "Únicamente el usuario con rol Administrador o Invitado puede agregar o modificar precios de terapia." };
     }
 
     if (!price || isNaN(price) || price <= 0) {
@@ -481,8 +481,8 @@ export async function removeTherapyPrice(price: number) {
   try {
     const session = await getServerSession(authOptions);
     const userRole = ((session?.user as any)?.role || "").toUpperCase();
-    if (userRole !== "ADMIN" && userRole !== "ADMINISTRADOR") {
-      return { success: false, error: "Únicamente el usuario con rol Administrador puede eliminar precios de terapia." };
+    if (userRole !== "ADMIN" && userRole !== "ADMINISTRADOR" && userRole !== "INVITADO") {
+      return { success: false, error: "Únicamente el usuario con rol Administrador o Invitado puede eliminar precios de terapia." };
     }
 
     const currentRes = await getTherapyPrices();

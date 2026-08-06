@@ -483,7 +483,7 @@ export function AsistenciaForm({
             <div className="md:col-span-3">
               <div className="flex items-center justify-between mb-1">
                 <label className="block text-[10px] font-bold text-slate-400 uppercase">PRECIO DE TERAPIA</label>
-                {onAddPrice && (userRole.toUpperCase() === "ADMIN" || userRole.toUpperCase() === "ADMINISTRADOR") && (
+                {onAddPrice && (userRole.toUpperCase() === "ADMIN" || userRole.toUpperCase() === "ADMINISTRADOR" || userRole.toUpperCase() === "INVITADO") && (
                   <button
                     type="button"
                     onClick={onAddPrice}
