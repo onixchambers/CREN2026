@@ -1107,7 +1107,7 @@ export default function AsistenciaPage() {
                 </div>
                 <div>
                   <label className="block text-[10px] font-bold text-slate-500 uppercase mb-1">Fecha</label>
-                  <DateInput name="fecha" value={editForm.fecha} onChange={handleEditChange} className="w-full text-sm p-2 border border-slate-300 rounded focus:border-[#2980b9] outline-none text-slate-900" />
+                  <DateInput name="fecha" value={editForm.fecha} onChange={(val) => setEditForm((prev: any) => ({ ...prev, fecha: val }))} className="w-full text-sm p-2 border border-slate-300 rounded focus:border-[#2980b9] outline-none text-slate-900" />
                 </div>
                 <div>
                   <label className="block text-[10px] font-bold text-slate-500 uppercase mb-1">Área</label>
