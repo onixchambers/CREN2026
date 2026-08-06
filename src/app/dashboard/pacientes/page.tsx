@@ -1158,9 +1158,28 @@ export default function PacientesPage() {
                         size: letter;
                         margin: 1cm;
                       }
-                      body {
+                      html, body {
+                        height: auto !important;
+                        overflow: visible !important;
+                        position: static !important;
                         -webkit-print-color-adjust: exact !important;
                         print-color-adjust: exact !important;
+                        background: white !important;
+                      }
+                      /* Hide everything else and only show the modal */
+                      body * {
+                        visibility: hidden !important;
+                      }
+                      .print-section, .print-section * {
+                        visibility: visible !important;
+                      }
+                      .print-section {
+                        position: absolute !important;
+                        left: 0 !important;
+                        top: 0 !important;
+                        width: 100% !important;
+                        margin: 0 !important;
+                        padding: 0 !important;
                       }
                       /* Esconder navegación del layout principal si existe */
                       aside, nav, header { display: none !important; }
@@ -1180,7 +1199,7 @@ export default function PacientesPage() {
                     const emailAMostrar = viewingPatient?.correoPrincipal || viewingPatient?.email || "Sin correo";
                     
                     return (
-                      <div className="bg-white border border-slate-300 rounded-xl shadow-sm overflow-hidden text-slate-900 font-serif print:border-none print:shadow-none print:p-0 max-w-4xl mx-auto w-full text-xs">
+                      <div className="print-section bg-white border border-slate-300 rounded-xl shadow-sm text-slate-900 font-serif print:border-none print:shadow-none print:p-0 max-w-4xl mx-auto w-full text-xs overflow-visible">
                         {/* CABECERA (LOGO INVISIBLE PERO ESPACIO PARA ÉL, TEXTOS CENTRADOS COMO LA IMAGEN 3) */}
                         <div className="text-center py-6 px-10 border-b border-slate-200">
                           <h1 className="text-lg font-bold text-[#1c4d6f] uppercase tracking-wide">
@@ -1207,7 +1226,13 @@ export default function PacientesPage() {
                                     <span className="font-extrabold">PACIENTE:</span> {viewingPatient.name}
                                   </td>
                                   <td className="border border-slate-300 p-2 w-1/3">
-                                    <span className="font-extrabold">FECHA:</span> {activeDocToView.fecha} a las {horaAgendada}
+                                    <span className="font-extrabold">FECHA:</span> a las {horaAgendada} del día {activeDocToView.fecha ? (() => {
+                                      const parts = activeDocToView.fecha.split('-');
+                                      if (parts.length === 3) {
+                                        return new Date(parseInt(parts[0]), parseInt(parts[1]) - 1, parseInt(parts[2])).toLocaleDateString('es-MX', { day: 'numeric', month: 'long', year: 'numeric' });
+                                      }
+                                      return activeDocToView.fecha;
+                                    })() : ""}
                                   </td>
                                   <td className="border border-slate-300 p-2 w-1/3">
                                     <span className="font-extrabold">TERAPEUTA:</span> Lic. {activeDocToView.terapeuta || "Lourdes"}
