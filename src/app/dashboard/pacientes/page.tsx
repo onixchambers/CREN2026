@@ -1269,7 +1269,7 @@ export default function PacientesPage() {
                     );
                   })()}
                 </div>
-
+              )}
             </div>
 
             {/* BOTÓN INFERIOR DE CERRAR EXPEDIENTE */}
