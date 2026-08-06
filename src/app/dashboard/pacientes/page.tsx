@@ -97,13 +97,13 @@ export default function PacientesPage() {
     async function loadData() {
       const { getPatients } = await import('@/app/actions/pacientes');
       const { getAllowTherapistEdit, getTherapyPrices } = await import('@/app/actions/configuracion');
-      const { getAgendaDB } = await import('@/app/actions/agenda');
+      const { getAgenda } = await import('@/app/actions/agenda');
       
       const [result, allowed, pricesRes, agendaRes] = await Promise.all([
         getPatients(),
         getAllowTherapistEdit(),
         getTherapyPrices(),
-        getAgendaDB()
+        getAgenda()
       ]);
       if (result.success && result.data) {
         setPacientes(result.data);
