@@ -107,10 +107,9 @@ export default function PacientesPage() {
       ]);
       if (result.success && result.data) {
         setPacientes(result.data);
-      }
-      if (agendaRes.success && agendaRes.data) {
-        setAgendaCitas(agendaRes.data);
-      }
+        if (agendaRes.success && agendaRes.data) {
+          setAgendaCitas(agendaRes.data);
+        }
         
         // Auto-open clinical note if requested via URL
         if (typeof window !== "undefined") {
