@@ -45,7 +45,13 @@ export async function saveAsistenciaDB(data: any) {
     });
 
     let targetSession = null;
-    if (data.agendaId) {
+
+    // Si viene un ID directo de la sesión (ej. desde el modal de edición)
+    if (data.id && data.id.length > 15) {
+      targetSession = existingSessions.find(s => s.id === data.id) || null;
+    }
+
+    if (!targetSession && data.agendaId) {
       for (const s of existingSessions) {
         if (s.notes) {
           try {

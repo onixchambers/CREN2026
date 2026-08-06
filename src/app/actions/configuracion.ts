@@ -101,7 +101,7 @@ export async function updateTerapeutaConfig(id: string, data: any) {
   try {
     const session = await getServerSession(authOptions);
     const userRole = ((session?.user as any)?.role || "").toUpperCase();
-    if (userRole === "TERAPEUTA" || userRole === "INVITADO") {
+    if (userRole === "TERAPEUTA") {
       const s = await prisma.systemSettings.findUnique({ where: { id: 1 } });
       const allow = s?.allowTherapistEdit ?? true;
       if (!allow) {

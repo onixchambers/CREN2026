@@ -129,20 +129,34 @@ export default function DashboardPage() {
   })).filter((t: any) => t.value > 0);
 
   // Datos para Gráfica Circular de Estado de Asistencia
+  const canceloAnticipadoCount = asistFiltradas.filter(a => a.estado === "Cancelo anticipadamente").length;
+  const canceloCentroCount = asistFiltradas.filter(a => a.estado === "Cancelo el centro").length;
+  const canceloSinAnticipacionCount = asistFiltradas.filter(a => a.estado === "Cancelo sin anticipacion").length;
   const estadoAsistenciaData = [
     { label: "Asistió", value: asistidasCount, color: "#10b981" },
-    { label: "Canceló", value: canceladasCount, color: "#ef4444" },
-    { label: "Otros / Pendientes", value: asistFiltradas.length - (asistidasCount + canceladasCount), color: "#3b82f6" }
+    { label: "Canceló S/A", value: canceloSinAnticipacionCount, color: "#f97316" },
+    { label: "Canceló C/A", value: canceloAnticipadoCount, color: "#ef4444" },
+    { label: "Canceló Centro", value: canceloCentroCount, color: "#8b5cf6" },
+    { label: "Otros", value: asistFiltradas.length - (asistidasCount + canceloAnticipadoCount + canceloCentroCount + canceloSinAnticipacionCount), color: "#3b82f6" }
   ].filter(d => d.value > 0);
 
-  // Ingresos por Método de Pago
+  // Ingresos y Personas por Método de Pago
   const pagoMetodosMap: { [metodo: string]: number } = {};
+  const pagoMetodosPersonasMap: { [metodo: string]: Set<string> } = {};
   asistFiltradas.forEach(a => {
-    let m = a.pago || "Sin especificar";
+    let m = a.metodoPago || a.pago || "Efectivo";
     if (m.includes("Mixto")) m = "Mixto";
+    else if (m.toLowerCase().includes("transferencia")) m = "Transferencia";
+    else if (m.toLowerCase().includes("tarjeta")) m = "Tarjeta";
+    else if (m.toLowerCase().includes("efectivo")) m = "Efectivo";
+    else if (m.toLowerCase().replace(/\s+/g, "").includes("pordefinir")) m = "Por definir";
+    else m = "Otros";
     const sub = typeof a.saldo === "number" ? (parseFloat(a.total ? a.total.replace("$","") : "0")) : parseFloat(a.subtotal ? a.subtotal.replace("$","") : "0");
     const amount = isNaN(sub) ? 0 : sub;
     pagoMetodosMap[m] = (pagoMetodosMap[m] || 0) + amount;
+    
+    if (!pagoMetodosPersonasMap[m]) pagoMetodosPersonasMap[m] = new Set();
+    pagoMetodosPersonasMap[m].add(a.pacienteId || a.paciente);
   });
 
   // Distribución por Áreas
@@ -151,6 +165,65 @@ export default function DashboardPage() {
     const area = a.area || "Sin Área";
     areasMap[area] = (areasMap[area] || 0) + 1;
   });
+
+  // Unique patients in period para demografía
+  const uniquePatientsInPeriod = new Set();
+  const pacientesAtendidos: any[] = [];
+  asistFiltradas.forEach(a => {
+    if (a.pacienteId && !uniquePatientsInPeriod.has(a.pacienteId)) {
+      uniquePatientsInPeriod.add(a.pacienteId);
+      pacientesAtendidos.push(a);
+    } else if (!a.pacienteId && !uniquePatientsInPeriod.has(a.paciente)) {
+      uniquePatientsInPeriod.add(a.paciente);
+      pacientesAtendidos.push(a);
+    }
+  });
+
+  // Distribución por Sexo
+  const sexoMap: { [sexo: string]: number } = {};
+  pacientesAtendidos.forEach(p => {
+    const s = p.sexo || "Sin especificar";
+    const key = s.startsWith("M") ? "Masculino" : s.startsWith("F") ? "Femenino" : "Sin especificar";
+    sexoMap[key] = (sexoMap[key] || 0) + 1;
+  });
+  const sexoData = Object.entries(sexoMap).map(([label, value]) => ({
+    label,
+    value,
+    color: label === "Masculino" ? "#3b82f6" : label === "Femenino" ? "#ec4899" : "#94a3b8"
+  }));
+
+  // Distribución por Edad
+  const edadMap: { [rango: string]: number } = { "0-5 años": 0, "6-12 años": 0, "13-17 años": 0, "18+ años": 0, "No esp.": 0 };
+  pacientesAtendidos.forEach(p => {
+    const edad = parseInt(p.edad);
+    if (isNaN(edad)) { edadMap["No esp."] += 1; }
+    else if (edad <= 5) { edadMap["0-5 años"] += 1; }
+    else if (edad <= 12) { edadMap["6-12 años"] += 1; }
+    else if (edad <= 17) { edadMap["13-17 años"] += 1; }
+    else { edadMap["18+ años"] += 1; }
+  });
+
+  // Distribución por Frecuencia
+  const frecuenciaMap: { [freq: string]: number } = {};
+  asistFiltradas.forEach(a => {
+    const f = a.frecuencia || "Única";
+    frecuenciaMap[f] = (frecuenciaMap[f] || 0) + 1;
+  });
+
+  // IVA / Facturación (Montos)
+  let facturadoSum = 0;
+  let noFacturadoSum = 0;
+  asistFiltradas.forEach(a => {
+    const isFact = a.fact === "Sí" || a.fact === true;
+    const sub = typeof a.saldo === "number" ? (parseFloat(a.total ? a.total.replace("$","") : "0")) : parseFloat(a.subtotal ? a.subtotal.replace("$","") : "0");
+    const amount = isNaN(sub) ? 0 : sub;
+    if (isFact) facturadoSum += amount;
+    else noFacturadoSum += amount;
+  });
+  const facturacionData = [
+    { label: "Con Factura", value: facturadoSum, color: "#f59e0b" },
+    { label: "Sin Factura", value: noFacturadoSum, color: "#94a3b8" },
+  ].filter(d => d.value > 0);
 
   // Componente Reutilizable Donut Chart (Gráfica Circular)
   const DonutChart = ({ data }: { data: { label: string; value: number; color: string }[] }) => {
@@ -353,45 +426,47 @@ export default function DashboardPage() {
           {/* COMBINACIÓN DE GRÁFICAS (BARRAS Y CIRCULARES) */}
           <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
             
-            {/* GRÁFICA CIRCULAR 1: PARTICIPACIÓN DE TERAPEUTAS EN INGRESOS (CON COLOR UNICO) */}
-            <div className="lg:col-span-6 bg-white p-6 rounded-xl border border-slate-200 shadow-sm">
-              <h3 className="font-bold text-[#1a5276] text-base mb-1 flex items-center gap-2">
-                <svg className="w-5 h-5 text-purple-600" fill="currentColor" viewBox="0 0 24 24"><path d="M11 2v20c-5.07-.5-9-4.79-9-10s3.93-9.5 9-10zm2 0v8.99h9c-.47-4.74-4.26-8.52-9-8.99zm0 11.01V22c4.74-.47 8.53-4.25 9-8.99h-9z"/></svg>
-                Gráfica Circular: Ingresos por Terapeuta (Color Único)
-              </h3>
-              <p className="text-xs text-slate-400 mb-5">Aporte contable de cada especialista en el periodo</p>
-
-              <DonutChart data={terapeutaIngresosData} />
-            </div>
-
-            {/* GRÁFICA CIRCULAR 2: ESTADO DE ASISTENCIA */}
+            {/* GRÁFICA CIRCULAR 1: ESTADO DE ASISTENCIA */}
             <div className="lg:col-span-6 bg-white p-6 rounded-xl border border-slate-200 shadow-sm">
               <h3 className="font-bold text-[#1a5276] text-base mb-1 flex items-center gap-2">
                 <svg className="w-5 h-5 text-green-600" fill="currentColor" viewBox="0 0 24 24"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-2 15l-5-5 1.41-1.41L10 14.17l7.59-7.59L19 8l-9 9z"/></svg>
-                Gráfica Circular: Estado de Asistencia
+                Asistencia
               </h3>
-              <p className="text-xs text-slate-400 mb-5">Proporción de citas asistidas vs canceladas</p>
-
+              <p className="text-xs text-slate-400 mb-5">Desglose de estados de las sesiones</p>
               <DonutChart data={estadoAsistenciaData} />
             </div>
 
-            {/* GRÁFICA DE BARRAS 1: INGRESOS POR MÉTODO DE PAGO */}
+            {/* GRÁFICA CIRCULAR 2: FACTURACIÓN */}
+            <div className="lg:col-span-6 bg-white p-6 rounded-xl border border-slate-200 shadow-sm">
+              <h3 className="font-bold text-[#1a5276] text-base mb-1 flex items-center gap-2">
+                <svg className="w-5 h-5 text-amber-600" fill="currentColor" viewBox="0 0 24 24"><path d="M19 3H5c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h14c1.1 0 2-.9 2-2V5c0-1.1-.9-2-2-2zm-2 10h-4v4h-2v-4H7v-2h4V7h2v4h4v2z"/></svg>
+                Facturación vs Efectivo
+              </h3>
+              <p className="text-xs text-slate-400 mb-5">Ingresos según solicitud de factura (IVA)</p>
+              <DonutChart data={facturacionData} />
+            </div>
+
+            {/* GRÁFICA DE BARRAS 1: INGRESOS Y PERSONAS POR MÉTODO DE PAGO */}
             <div className="lg:col-span-6 bg-white p-6 rounded-xl border border-slate-200 shadow-sm">
               <h3 className="font-bold text-[#1a5276] text-base mb-1 flex items-center gap-2">
                 <svg className="w-5 h-5 text-emerald-600" fill="currentColor" viewBox="0 0 24 24"><path d="M21 18v1c0 1.1-.9 2-2 2H5c-1.11 0-2-.9-2-2V5c0-1.1.89-2 2-2h14c1.1 0 2 .9 2 2v1h-9c-1.11 0-2 .9-2 2v8c0 1.1.89 2 2 2h9zm-9-2h10V8H12v8zm4-2.5c-.83 0-1.5-.67-1.5-1.5s.67-1.5 1.5-1.5 1.5.67 1.5 1.5-.67 1.5-1.5 1.5z"/></svg>
-                Gráfica de Barras: Métodos de Pago
+                Métodos de Pago
               </h3>
-              <p className="text-xs text-slate-400 mb-5">Recaudación monetaria agrupada por forma de pago</p>
+              <p className="text-xs text-slate-400 mb-5">Montos y cantidad de personas utilizando cada método</p>
 
               <div className="space-y-4">
                 {Object.keys(pagoMetodosMap).length > 0 ? (
-                  Object.entries(pagoMetodosMap).map(([metodo, monto], idx) => {
+                  Object.entries(pagoMetodosMap).sort((a, b) => b[1] - a[1]).map(([metodo, monto], idx) => {
                     const pct = finanzas.ingresosBrutos > 0 ? (monto / finanzas.ingresosBrutos) * 100 : 0;
-                    const barColors = ["bg-emerald-500", "bg-blue-500", "bg-indigo-500", "bg-purple-500", "bg-amber-500"];
+                    const personas = pagoMetodosPersonasMap[metodo]?.size || 0;
+                    const barColors = ["bg-emerald-500", "bg-blue-500", "bg-indigo-500", "bg-purple-500", "bg-amber-500", "bg-slate-400"];
                     return (
                       <div key={metodo} className="space-y-1">
                         <div className="flex justify-between text-xs font-semibold">
-                          <span className="text-slate-700">{metodo}</span>
+                          <span className="text-slate-700 flex flex-col">
+                            {metodo}
+                            <span className="text-[9px] font-normal text-slate-500">{personas} persona(s)</span>
+                          </span>
                           <span className="text-slate-900">${monto.toLocaleString('es-MX', {minimumFractionDigits: 2})} ({pct.toFixed(1)}%)</span>
                         </div>
                         <div className="w-full bg-slate-100 rounded-full h-3.5 overflow-hidden">
@@ -406,24 +481,105 @@ export default function DashboardPage() {
               </div>
             </div>
 
-            {/* GRÁFICA DE BARRAS 2: SESIONES POR ÁREA */}
+            {/* GRÁFICA DE BARRAS 2: SESIONES POR FRECUENCIA */}
+            <div className="lg:col-span-6 bg-white p-6 rounded-xl border border-slate-200 shadow-sm">
+              <h3 className="font-bold text-[#1a5276] text-base mb-1 flex items-center gap-2">
+                <svg className="w-5 h-5 text-orange-500" fill="currentColor" viewBox="0 0 24 24"><path d="M19 4h-1V2h-2v2H8V2H6v2H5c-1.11 0-1.99.9-1.99 2L3 20c0 1.1.89 2 2 2h14c1.1 0 2-.9 2-2V6c0-1.1-.9-2-2-2zm0 16H5V10h14v10zm0-12H5V6h14v2z"/></svg>
+                Frecuencia de Sesiones
+              </h3>
+              <p className="text-xs text-slate-400 mb-5">Cantidad de citas por periodicidad</p>
+
+              <div className="space-y-4">
+                {Object.keys(frecuenciaMap).length > 0 ? (
+                  Object.entries(frecuenciaMap).sort((a, b) => b[1] - a[1]).map(([freq, cant], idx) => {
+                    const pct = asistFiltradas.length > 0 ? (cant / asistFiltradas.length) * 100 : 0;
+                    const barColors = ["bg-orange-500", "bg-rose-500", "bg-sky-500", "bg-teal-500"];
+                    return (
+                      <div key={freq} className="space-y-1">
+                        <div className="flex justify-between text-xs font-semibold">
+                          <span className="text-slate-700">{freq}</span>
+                          <span className="text-slate-900">{cant} cita(s) ({pct.toFixed(1)}%)</span>
+                        </div>
+                        <div className="w-full bg-slate-100 rounded-full h-3.5 overflow-hidden">
+                          <div className={`h-full ${barColors[idx % barColors.length]} rounded-full transition-all duration-500`} style={{ width: `${Math.min(100, Math.max(5, pct))}%` }}></div>
+                        </div>
+                      </div>
+                    );
+                  })
+                ) : (
+                  <p className="text-xs text-slate-400 py-6 text-center">Sin citas en este periodo.</p>
+                )}
+              </div>
+            </div>
+
+            {/* GRÁFICAS DEMOGRÁFICAS (SEXO Y EDAD) */}
+            <div className="lg:col-span-12 grid grid-cols-1 md:grid-cols-2 gap-6 bg-white p-6 rounded-xl border border-slate-200 shadow-sm">
+              <div>
+                <h3 className="font-bold text-[#1a5276] text-base mb-1 flex items-center gap-2">
+                  <svg className="w-5 h-5 text-pink-500" fill="currentColor" viewBox="0 0 24 24"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-1 14H9v-2h2v-2h2v2h2v2h-2v2h-2v-2zm3.03-7.53l-3.5 3.5c-.39.39-1.02.39-1.41 0L7.46 10.3c-.39-.39-.39-1.02 0-1.41l3.5-3.5c.39-.39 1.02-.39 1.41 0l1.66 1.66c.39.39.39 1.02 0 1.41z"/></svg>
+                  Distribución por Sexo
+                </h3>
+                <p className="text-xs text-slate-400 mb-5">Pacientes únicos atendidos</p>
+                <DonutChart data={sexoData} />
+              </div>
+              <div className="border-t md:border-t-0 md:border-l border-slate-100 md:pl-6 pt-6 md:pt-0">
+                <h3 className="font-bold text-[#1a5276] text-base mb-1 flex items-center gap-2">
+                  <svg className="w-5 h-5 text-indigo-500" fill="currentColor" viewBox="0 0 24 24"><path d="M16 11c1.66 0 2.99-1.34 2.99-3S17.66 5 16 5c-1.66 0-3 1.34-3 3s1.34 3 3 3zm-8 0c1.66 0 2.99-1.34 2.99-3S9.66 5 8 5C6.34 5 5 6.34 5 8s1.34 3 3 3zm0 2c-2.33 0-7 1.17-7 3.5V19h14v-2.5c0-2.33-4.67-3.5-7-3.5z"/></svg>
+                  Distribución por Edades
+                </h3>
+                <p className="text-xs text-slate-400 mb-5">Rangos de edad de pacientes únicos atendidos</p>
+                <div className="space-y-4">
+                  {Object.entries(edadMap).filter(([_, cant]) => cant > 0).length > 0 ? (
+                    Object.entries(edadMap).filter(([_, cant]) => cant > 0).map(([rango, cant], idx) => {
+                      const pct = pacientesAtendidos.length > 0 ? (cant / pacientesAtendidos.length) * 100 : 0;
+                      const barColors = ["bg-indigo-400", "bg-indigo-500", "bg-indigo-600", "bg-indigo-700", "bg-slate-400"];
+                      return (
+                        <div key={rango} className="space-y-1">
+                          <div className="flex justify-between text-xs font-semibold">
+                            <span className="text-slate-700">{rango}</span>
+                            <span className="text-slate-900">{cant} p. ({pct.toFixed(1)}%)</span>
+                          </div>
+                          <div className="w-full bg-slate-100 rounded-full h-3.5 overflow-hidden">
+                            <div className={`h-full ${barColors[idx % barColors.length]} rounded-full transition-all duration-500`} style={{ width: `${Math.min(100, Math.max(5, pct))}%` }}></div>
+                          </div>
+                        </div>
+                      );
+                    })
+                  ) : (
+                    <p className="text-xs text-slate-400 py-6 text-center">Sin pacientes en este periodo.</p>
+                  )}
+                </div>
+              </div>
+            </div>
+
+            {/* GRÁFICA CIRCULAR 3: PARTICIPACIÓN DE TERAPEUTAS EN INGRESOS */}
+            <div className="lg:col-span-6 bg-white p-6 rounded-xl border border-slate-200 shadow-sm">
+              <h3 className="font-bold text-[#1a5276] text-base mb-1 flex items-center gap-2">
+                <svg className="w-5 h-5 text-purple-600" fill="currentColor" viewBox="0 0 24 24"><path d="M11 2v20c-5.07-.5-9-4.79-9-10s3.93-9.5 9-10zm2 0v8.99h9c-.47-4.74-4.26-8.52-9-8.99zm0 11.01V22c4.74-.47 8.53-4.25 9-8.99h-9z"/></svg>
+                Ingresos por Terapeuta
+              </h3>
+              <p className="text-xs text-slate-400 mb-5">Aporte contable de cada especialista</p>
+              <DonutChart data={terapeutaIngresosData} />
+            </div>
+
+            {/* GRÁFICA DE BARRAS 3: SESIONES POR ÁREA */}
             <div className="lg:col-span-6 bg-white p-6 rounded-xl border border-slate-200 shadow-sm">
               <h3 className="font-bold text-[#1a5276] text-base mb-1 flex items-center gap-2">
                 <svg className="w-5 h-5 text-blue-600" fill="currentColor" viewBox="0 0 24 24"><path d="M19 3H5c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h14c1.1 0 2-.9 2-2V5c0-1.1-.9-2-2-2zm-5 14H7v-2h7v2zm3-4H7v-2h10v2zm0-4H7V7h10v2z"/></svg>
-                Gráfica de Barras: Sesiones por Área
+                Sesiones por Área
               </h3>
               <p className="text-xs text-slate-400 mb-5">Citas brindadas por especialidad médica</p>
 
               <div className="space-y-4">
                 {Object.keys(areasMap).length > 0 ? (
-                  Object.entries(areasMap).map(([area, cant], idx) => {
+                  Object.entries(areasMap).sort((a, b) => b[1] - a[1]).map(([area, cant], idx) => {
                     const pct = asistFiltradas.length > 0 ? (cant / asistFiltradas.length) * 100 : 0;
                     const barColors = ["bg-sky-500", "bg-indigo-500", "bg-violet-500", "bg-teal-500", "bg-rose-500"];
                     return (
                       <div key={area} className="space-y-1">
                         <div className="flex justify-between text-xs font-semibold">
                           <span className="text-slate-700">{area}</span>
-                          <span className="text-slate-900">{cant} sesión(es) ({pct.toFixed(1)}%)</span>
+                          <span className="text-slate-900">{cant} cita(s) ({pct.toFixed(1)}%)</span>
                         </div>
                         <div className="w-full bg-slate-100 rounded-full h-3.5 overflow-hidden">
                           <div className={`h-full ${barColors[idx % barColors.length]} rounded-full transition-all duration-500`} style={{ width: `${Math.min(100, Math.max(5, pct))}%` }}></div>

@@ -1041,7 +1041,7 @@ export default function AsistenciaPage() {
                       return (
                         <div className="w-full max-w-[130px] mx-auto flex flex-col items-stretch justify-center gap-0.5 my-0.5">
                           {lines.map((line, idx) => {
-                            const isPorDefinir = line.toLowerCase().includes("por definir");
+                            const isPorDefinir = line.toLowerCase().replace(/\s+/g, "").includes("pordefinir");
                             return (
                               <span key={idx} className={`w-full border px-1.5 py-0.5 rounded text-[9.5px] font-bold block text-center whitespace-nowrap leading-tight shadow-xs ${isPorDefinir ? 'bg-red-500/20 text-red-800 border-red-300' : 'bg-blue-50 text-blue-800 border-blue-200'}`}>
                                 {line}
@@ -1251,11 +1251,12 @@ export default function AsistenciaPage() {
                   <textarea 
                     name="obs" 
                     value={editForm.obs} 
-                    onChange={(e) => {
-                      handleEditChange(e);
-                      e.target.style.height = 'auto';
-                      e.target.style.height = `${e.target.scrollHeight}px`;
-                    }} 
+                    onChange={handleEditChange} 
+                    onInput={(e) => {
+                      const target = e.target as HTMLTextAreaElement;
+                      target.style.height = 'auto';
+                      target.style.height = `${target.scrollHeight}px`;
+                    }}
                     rows={2}
                     className="w-full text-sm p-2 border border-slate-300 rounded focus:border-[#2980b9] outline-none text-slate-900 resize-none overflow-hidden" 
                   />
