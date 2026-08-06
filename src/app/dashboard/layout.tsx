@@ -101,7 +101,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
               className="h-16 w-auto flex-shrink-0 object-contain drop-shadow-md" 
             />
             <div>
-              <h1 className="text-sm md:text-base font-black text-white uppercase tracking-widest">SISTEMA FINANCIERO</h1>
+              <h1 className="text-xs md:text-sm font-semibold text-white tracking-wide">Sistema Financiero</h1>
             </div>
           </div>
           <div className="flex items-center gap-4">
