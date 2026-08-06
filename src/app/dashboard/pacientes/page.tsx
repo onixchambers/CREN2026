@@ -44,6 +44,7 @@ export default function PacientesPage() {
   const [bajaReason, setBajaReason] = useState("");
   const [isSubmittingBaja, setIsSubmittingBaja] = useState(false);
   const [viewingPatient, setViewingPatient] = useState<any>(null);
+  const [verTodosLosPacientes, setVerTodosLosPacientes] = useState(false);
 
   // Estados para Documentos y Notas Clínicas (PDF Structure)
   const [modalTab, setModalTab] = useState<"expediente" | "documentos" | "nuevo_documento" | "ver_documento">("expediente");
@@ -140,7 +141,7 @@ export default function PacientesPage() {
 
   // Filtro de Privacidad: Terapeutas ven pacientes asignados o con sesiones registradas
   const pacientesFiltrados = pacientes.filter(p => {
-    if (userRole.toUpperCase() === "TERAPEUTA") {
+    if (userRole.toUpperCase() === "TERAPEUTA" && !verTodosLosPacientes) {
       const userLower = userName.trim().toLowerCase();
       const medLower = (p.medicoTratante || "").trim().toLowerCase();
       const terLower = (p.terapeuta || "").trim().toLowerCase();
@@ -260,6 +261,12 @@ export default function PacientesPage() {
               onChange={(e) => setSearchTerm(e.target.value)}
               className="border border-slate-300 rounded px-3 py-1.5 text-sm outline-none focus:border-[#2980b9] w-64 text-slate-900 bg-white"
             />
+            {userRole.toUpperCase() === "TERAPEUTA" && (
+              <label className="flex items-center gap-1 text-[11px] font-bold text-slate-600 cursor-pointer ml-4">
+                <input type="checkbox" checked={verTodosLosPacientes} onChange={e => setVerTodosLosPacientes(e.target.checked)} className="cursor-pointer" />
+                Ver todos los pacientes
+              </label>
+            )}
           </div>
         </div>
 

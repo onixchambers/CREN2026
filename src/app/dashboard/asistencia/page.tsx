@@ -143,7 +143,6 @@ export default function AsistenciaPage() {
   const [filtroEstado, setFiltroEstado] = useState("Todos");
   const [filtroPaciente, setFiltroPaciente] = useState("");
   const [filtroTerapeuta, setFiltroTerapeuta] = useState("Todos");
-  const [verTodosLosPacientes, setVerTodosLosPacientes] = useState(false);
   const [availableAreas, setAvailableAreas] = useState<string[]>(["Psicología", "Lenguaje", "Fisioterapia"]);
   const [terapeutas, setTerapeutas] = useState<string[]>([]);
   const [terapeutasFullData, setTerapeutasFullData] = useState<any[]>([]);
@@ -707,7 +706,7 @@ export default function AsistenciaPage() {
       if ((a.terapeuta || "") !== filtroTerapeuta) match = false;
     }
 
-    if (userRole.toUpperCase() === "TERAPEUTA" && !verTodosLosPacientes) {
+    if (userRole.toUpperCase() === "TERAPEUTA") {
       if ((a.terapeuta || "") !== userName && !(a.creadoPor || "").includes(userName)) {
         match = false;
       }
@@ -730,7 +729,7 @@ export default function AsistenciaPage() {
 
       {/* CARD 1: NUEVA SESIÓN */}
       <AsistenciaForm 
-        pacientes={pacientes.filter(p => userRole.toUpperCase() !== "TERAPEUTA" || verTodosLosPacientes || (p.medicoTratante && p.medicoTratante.toLowerCase().includes(userName.toLowerCase())))}
+        pacientes={pacientes.filter(p => userRole.toUpperCase() !== "TERAPEUTA" || (p.medicoTratante && p.medicoTratante.toLowerCase().includes(userName.toLowerCase())))}
         terapeutasFullData={terapeutasFullData}
         agendaCitas={agendaCitas}
         availableAreasInput={availableAreas}
@@ -837,14 +836,6 @@ export default function AsistenciaPage() {
               <label className="text-[11px] font-semibold text-slate-500">Paciente:</label>
               <input type="text" value={filtroPaciente} onChange={e => setFiltroPaciente(e.target.value)} placeholder="Buscar..." className="w-32 text-xs p-1.5 border border-slate-300 rounded outline-none text-slate-700 bg-white font-medium" />
             </div>
-            {userRole.toUpperCase() === "TERAPEUTA" && (
-              <div className="flex items-center gap-2 ml-2">
-                <label className="flex items-center gap-1 text-[11px] font-bold text-slate-600 cursor-pointer">
-                  <input type="checkbox" checked={verTodosLosPacientes} onChange={e => setVerTodosLosPacientes(e.target.checked)} className="cursor-pointer" />
-                  Ver todos los registros
-                </label>
-              </div>
-            )}
           </div>
 
           <div className="flex flex-wrap items-center gap-2">
