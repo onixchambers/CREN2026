@@ -1070,8 +1070,34 @@ export default function AgendaPage() {
                 };
                 
                 await updateCita(selectedCita.id, citaActualizada);
+
+                // También guardar en el registro de Asistencias real
+                const asistenciaData = {
+                  agendaId: selectedCita.id,
+                  fecha: formData.fecha,
+                  hora: formData.hora,
+                  area: formData.area,
+                  pacienteNombre: formData.pacienteNombre,
+                  terapeuta: formData.terapeuta,
+                  tipoSesion: formData.tipoSesion,
+                  estadoAsistencia: formData.estadoAsistencia,
+                  estado: formData.estadoAsistencia,
+                  numeroSesiones: formData.numeroSesiones || "1",
+                  frecuencia: formData.frecuencia || "Única",
+                  metodoPagoFinal: metodoPagoFinal,
+                  montoPago: totVal.toString(),
+                  precioTerapia: formData.precioTerapia,
+                  costoSesion: formData.precioTerapia,
+                  solicitaFactura: formData.solicitaFactura,
+                  subtotal: subVal,
+                  total: totVal,
+                  obs: formData.observaciones || "—",
+                  creadoPor: userName
+                };
+
+                await saveAsistenciaDB(asistenciaData);
                 
-                alert("Información precargada y guardada exitosamente.");
+                alert("Asistencia guardada y agenda actualizada exitosamente.");
                 
                 setCitas(citas.map(c => c.id === selectedCita.id ? citaActualizada : c));
                 setIsEditModalOpen(false);
