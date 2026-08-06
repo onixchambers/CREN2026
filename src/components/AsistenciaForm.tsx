@@ -388,16 +388,23 @@ export function AsistenciaForm({
                           let horaAgenda = formData.hora;
                           let terapeutaAgenda = p.medicoTratante || formData.terapeuta;
                           let tipoSesionAgenda = formData.tipoSesion;
+                          let fechaAgenda = formData.fecha;
 
-                          const citaHoy = agendaCitas.find((c: any) => c.paciente === p.paciente && c.fecha === formData.fecha);
-                          if (citaHoy) {
-                            horaAgenda = citaHoy.hora || horaAgenda;
-                            terapeutaAgenda = citaHoy.terapeuta || terapeutaAgenda;
-                            tipoSesionAgenda = citaHoy.tipoServicio || tipoSesionAgenda;
+                          let citaMatch = agendaCitas.find((c: any) => c.paciente === p.paciente && c.fecha === formData.fecha);
+                          if (!citaMatch) {
+                            citaMatch = agendaCitas.find((c: any) => c.paciente === p.paciente && (c.estado === "Agendado" || c.estado === "Asistió"));
+                          }
+
+                          if (citaMatch) {
+                            horaAgenda = citaMatch.hora || horaAgenda;
+                            terapeutaAgenda = citaMatch.terapeuta || terapeutaAgenda;
+                            tipoSesionAgenda = citaMatch.tipoServicio || tipoSesionAgenda;
+                            fechaAgenda = citaMatch.fecha || fechaAgenda;
                           }
 
                           setFormData({
                             ...formData,
+                            fecha: fechaAgenda,
                             pacienteId: p.id,
                             pacienteNombre: p.paciente,
                             pacienteNac: p.nac !== "—" ? p.nac : "",
