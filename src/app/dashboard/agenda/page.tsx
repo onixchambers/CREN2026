@@ -1156,7 +1156,7 @@ export default function AgendaPage() {
                     setCitas(citas.filter(c => c.id !== selectedCitaForStatus.id));
                     setIsStatusModalOpen(false);
                   } else {
-                    alert("No se pudo liberar el horario");
+                    alert(res.error || "No se pudo liberar el horario");
                   }
                 }} className="w-full py-2 bg-emerald-600 text-white font-semibold rounded-lg hover:bg-emerald-700 transition-colors">
                   ✅ Liberar Horario (Disponible)

@@ -249,7 +249,10 @@ export async function deleteCita(id: string) {
 
     const userRole = ((session.user as any)?.role || "").toUpperCase();
     if (userRole === "TERAPEUTA") {
-      return { success: false, error: "No tienes permisos para eliminar citas. Solo el administrador puede hacerlo." };
+      const cita = await prisma.session.findUnique({ where: { id } });
+      if (cita?.status !== "Ocupado") {
+        return { success: false, error: "No tienes permisos para eliminar citas. Solo el administrador puede hacerlo." };
+      }
     }
 
     await prisma.session.delete({ where: { id } });

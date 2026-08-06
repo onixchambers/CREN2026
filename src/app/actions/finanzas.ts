@@ -90,10 +90,13 @@ export async function getFinanzasMensuales(month: string, fechaDesde?: string, f
 
         // Calcular pago
         if (tData.tipoPago === "Porcentaje") {
-          let comisionBruta = precioTotal * ((tData.porcentaje || 0) / 100);
-          tData.pago += comisionBruta;
-          if (tData.retieneIVA && !hasFactura && sessionIva === 0) {
-            tData.ivaRetenido += (comisionBruta * ivaDec);
+          let comisionBase = precioTotal * ((tData.porcentaje || 0) / 100); // 75
+          if (tData.retieneIVA) {
+            const ivaDelTerapeuta = comisionBase * ivaDec; // 12
+            tData.pago += (comisionBase + ivaDelTerapeuta); // 87
+            tData.ivaRetenido += ivaDelTerapeuta; // 12
+          } else {
+            tData.pago += comisionBase; // 75
           }
         }
       }
@@ -184,9 +187,25 @@ export async function getFinanzasMensuales(month: string, fechaDesde?: string, f
         if (s.notes) extra = JSON.parse(s.notes);
       } catch (e) {}
       const hasFactura = extra.solicitaFactura === true || extra.solicitaFactura === "Sí" || extra.solicitaFactura === "SI" || extra.factura === "Sí" || extra.fact === "Sí";
+      
+      const tId = s.therapistId;
+      const tData = tId ? terapeutasMap.get(tId) : null;
+      const tRetieneIVA = tData ? tData.retieneIVA : false;
+      const tPorcentaje = tData?.tipoPago === "Porcentaje" ? (tData.porcentaje || 0) / 100 : 0;
+      
+      const precioTotal = extra.total ? (typeof extra.total === 'string' ? parseFloat(extra.total.replace("$", "").replace(",", "")) : Number(extra.total)) : 0;
+
       if (hasFactura || (extra.iva && parseFloat(extra.iva) > 0)) {
-        const sIva = extra.iva ? (typeof extra.iva === 'string' ? parseFloat(extra.iva.replace("$", "").replace(",", "")) : Number(extra.iva)) : (parseFloat(extra.total || "0") * ivaDec);
-        totalIvaFacturas += sIva;
+        // If retieneIVA is true, the therapist took their cut (87) and we only pay IVA on CREN's remaining cut (63)
+        if (tRetieneIVA && tData?.tipoPago === "Porcentaje") {
+           const comisionBase = precioTotal * tPorcentaje;
+           const comisionGross = comisionBase * (1 + ivaDec);
+           const crenCut = precioTotal - comisionGross;
+           totalIvaFacturas += (crenCut * ivaDec);
+        } else {
+           const sIva = extra.iva ? (typeof extra.iva === 'string' ? parseFloat(extra.iva.replace("$", "").replace(",", "")) : Number(extra.iva)) : (precioTotal * ivaDec);
+           totalIvaFacturas += sIva;
+        }
       }
     });
 
