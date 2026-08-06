@@ -1166,7 +1166,6 @@ export default function PacientesPage() {
                       aside, nav, header { display: none !important; }
                     }
                   `}</style>
-                  `}</style>
                   
                   {(() => {
                     let citaAgendada = null;
