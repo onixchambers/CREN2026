@@ -652,12 +652,25 @@ export default function AsistenciaPage() {
       }
     }
 
+    const agendaIdVal = formData.agendaId || "";
+    const fechaVal = formData.fecha || "";
+    const horaVal = formData.hora || "";
+    const terapeutaVal = formData.terapeuta || "";
+
     if (targetId) {
       sessionStorage.setItem("autoOpenNotePatientId", targetId);
-      window.location.href = `/dashboard/pacientes?action=nota&patientId=${targetId}`;
+      sessionStorage.setItem("autoOpenNoteAgendaId", agendaIdVal);
+      sessionStorage.setItem("autoOpenNoteFecha", fechaVal);
+      sessionStorage.setItem("autoOpenNoteHora", horaVal);
+      sessionStorage.setItem("autoOpenNoteTerapeuta", terapeutaVal);
+      window.location.href = `/dashboard/pacientes?action=nota&patientId=${targetId}&agendaId=${agendaIdVal}&fecha=${fechaVal}&hora=${horaVal}`;
     } else if (formData.pacienteNombre) {
       sessionStorage.setItem("autoOpenNotePatientName", formData.pacienteNombre);
-      window.location.href = `/dashboard/pacientes?action=nota&patientName=${encodeURIComponent(formData.pacienteNombre)}`;
+      sessionStorage.setItem("autoOpenNoteAgendaId", agendaIdVal);
+      sessionStorage.setItem("autoOpenNoteFecha", fechaVal);
+      sessionStorage.setItem("autoOpenNoteHora", horaVal);
+      sessionStorage.setItem("autoOpenNoteTerapeuta", terapeutaVal);
+      window.location.href = `/dashboard/pacientes?action=nota&patientName=${encodeURIComponent(formData.pacienteNombre)}&agendaId=${agendaIdVal}&fecha=${fechaVal}&hora=${horaVal}`;
     }
   };
 
