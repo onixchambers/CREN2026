@@ -62,7 +62,12 @@ export default function PreregistrosPage() {
     if (res.success && res.data) {
       if (userRole.toUpperCase() === "TERAPEUTA") {
         // La terapeuta solo puede ver los registros de sus propios pacientes
-        const therapistRegs = res.data.filter((r: any) => r.medicoTratante === userName);
+        const therapistRegs = res.data.filter((r: any) => {
+          if (!r.medicoTratante) return false;
+          const rMed = r.medicoTratante.trim().toLowerCase();
+          const uName = (userName || "").trim().toLowerCase();
+          return rMed.includes(uName) || uName.includes(rMed);
+        });
         setPendingPreRegs(therapistRegs);
       } else {
         // Los Administradores ven todos los registros recibidos
