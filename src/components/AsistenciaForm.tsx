@@ -123,7 +123,11 @@ export function AsistenciaForm({
       
       let matched = null;
       if (activeTerapeuta) {
-        matched = terapeutasFullData.find(t => t.name === activeTerapeuta || t.name.toLowerCase().includes(activeTerapeuta.toLowerCase()) || activeTerapeuta.toLowerCase().includes(t.name.toLowerCase()));
+        const activeName = activeTerapeuta.toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "");
+        matched = terapeutasFullData.find(t => {
+          const tName = (t.name || "").toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "");
+          return tName.includes(activeName) || activeName.includes(tName);
+        });
       }
 
       let parts: string[] = [];
@@ -142,14 +146,16 @@ export function AsistenciaForm({
         setAvailableAreas(parts);
       }
 
-      if (userRole.toUpperCase() === "TERAPEUTA" && !formData.terapeuta) {
+      if (matched && matched.especialidad && (!formData.area || !parts.includes(formData.area))) {
+        setFormData(prev => ({ ...prev, area: parts[0] || matched.especialidad }));
+      } else if (userRole.toUpperCase() === "TERAPEUTA" && !formData.terapeuta) {
         const miTerapeuta = matched ? matched.name : (userName || terapeutasFullData[0]?.name);
         setFormData(prev => ({
           ...prev,
           terapeuta: miTerapeuta,
           area: formData.area || parts[0] || ""
         }));
-      } else if (formData.terapeuta && parts.length > 0 && !parts.includes(formData.area)) {
+      } else if (formData.terapeuta && parts.length > 0 && (!formData.area || !parts.includes(formData.area))) {
         setFormData(prev => ({ ...prev, area: parts[0] || "" }));
       }
     }

@@ -337,6 +337,19 @@ export default function AsistenciaPage() {
             return "Otros";
           };
 
+          const mapEstadoAsistencia = (val: string) => {
+            if (!val) return "Asistio";
+            const low = val.toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "");
+            if (low.includes("asistio")) return "Asistio";
+            if (low.includes("anticipadamente") || low.includes("con anticipacion")) return "Cancelo anticipadamente";
+            if (low.includes("sin anticipacion")) return "Cancelo sin anticipacion";
+            if (low.includes("centro")) return "Cancelo el centro";
+            if (low.includes("agendado")) return "Agendado";
+            if (low.includes("alta")) return "Alta";
+            if (low.includes("baja")) return "Baja";
+            return val;
+          };
+
           const mapFrecuencia = (val: string) => {
             if (!val) return "Única";
             const low = val.toLowerCase();
@@ -347,6 +360,14 @@ export default function AsistenciaPage() {
             if (low === "mensual") return "Mensual";
             return "Única";
           };
+
+          let areaVal = pd.area || "";
+          if (!areaVal && pd.terapeuta && tRes.success && tRes.data) {
+            const tMatch = tRes.data.find((x: any) => (x.name || "").trim().toLowerCase() === (pd.terapeuta || "").trim().toLowerCase());
+            if (tMatch?.especialidad) {
+              areaVal = tMatch.especialidad;
+            }
+          }
 
           setFormData(prev => ({
              ...prev,
@@ -359,8 +380,9 @@ export default function AsistenciaPage() {
              fecha: pd.fecha,
              hora: pd.hora,
              terapeuta: pd.terapeuta,
+             area: areaVal || prev.area,
              tipoSesion: mapTipoSesion(pd.tipoSesion),
-             estadoAsistencia: pd.estadoAsistencia,
+             estadoAsistencia: mapEstadoAsistencia(pd.estadoAsistencia),
              numeroSesiones: pd.numeroSesiones,
              frecuencia: mapFrecuencia(pd.frecuencia),
              saldoDisponible: pMatch ? pMatch.saldoCalculado : "0.00",
@@ -620,9 +642,20 @@ export default function AsistenciaPage() {
     handleLimpiarForm();
     await recargarAsistencias();
     
-    // Redirigir a Pacientes y abrir la Nota Clínica Nueva
-    if (formData.pacienteId) {
-      router.push(`/dashboard/pacientes?action=nota&patientId=${formData.pacienteId}`);
+    // Redirigir a Pacientes y abrir la Nota Clínica Nueva (Registro de Evolución)
+    let targetId = formData.pacienteId;
+    if (!targetId && formData.pacienteNombre) {
+      const pacRes = await getPatients();
+      if (pacRes.success && pacRes.data) {
+        const pMatch = pacRes.data.find((x: any) => x.name.trim().toLowerCase() === formData.pacienteNombre.trim().toLowerCase());
+        if (pMatch) targetId = pMatch.id;
+      }
+    }
+
+    if (targetId) {
+      router.push(`/dashboard/pacientes?action=nota&patientId=${targetId}`);
+    } else if (formData.pacienteNombre) {
+      router.push(`/dashboard/pacientes?action=nota&patientName=${encodeURIComponent(formData.pacienteNombre)}`);
     }
   };
 

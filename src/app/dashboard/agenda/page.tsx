@@ -301,12 +301,16 @@ export default function AgendaPage() {
       setCitas(citas.map(c => c.id === selectedCitaForStatus.id ? updatedData : c));
       
       if (isAttendanceStatus) {
+         const tMatch = terapeutasFullData.find((t: any) => (t.name || "").trim().toLowerCase() === (selectedCitaForStatus.terapeuta || "").trim().toLowerCase());
+         const areaFinal = selectedCitaForStatus.area || selectedCitaForStatus.especialidad || tMatch?.especialidad || "";
+
          const prefillData = {
            agendaId: selectedCitaForStatus.id,
            pacienteNombre: selectedCitaForStatus.paciente,
            fecha: selectedCitaForStatus.fecha,
            hora: selectedCitaForStatus.hora,
            terapeuta: selectedCitaForStatus.terapeuta,
+           area: areaFinal,
            tipoSesion: selectedCitaForStatus.tipoServicio,
            estadoAsistencia: estado,
            numeroSesiones: selectedCitaForStatus.numeroSesiones?.toString() || "1",
