@@ -239,6 +239,7 @@ export async function saveSettings(data: {
           googleDrivePrivateKey: (data as any).googleDrivePrivateKey || "",
           googleDriveFolderId: (data as any).googleDriveFolderId || "",
           timezone: (data as any).timezone || "America/Mexico_City",
+          auditLogEnabled: (data as any).auditLogEnabled !== undefined ? Boolean((data as any).auditLogEnabled) : true,
         },
         create: {
           id: 1,
@@ -258,6 +259,7 @@ export async function saveSettings(data: {
           googleDrivePrivateKey: (data as any).googleDrivePrivateKey || "",
           googleDriveFolderId: (data as any).googleDriveFolderId || "",
           timezone: (data as any).timezone || "America/Mexico_City",
+          auditLogEnabled: (data as any).auditLogEnabled !== undefined ? Boolean((data as any).auditLogEnabled) : true,
         }
       });
 
