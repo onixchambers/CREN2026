@@ -93,12 +93,39 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
     loadPermission();
   }, [session, userRole, userName]);
 
+  const refreshBroadcast = async () => {
+    try {
+      const { getTherapistBroadcastMessage } = await import("@/app/actions/configuracion");
+      const bRes = await getTherapistBroadcastMessage();
+      if (bRes.success && bRes.broadcast) {
+        setBroadcastMessage(bRes.broadcast);
+      }
+    } catch (e) {}
+  };
+
+  useEffect(() => {
+    if (showAdminBroadcastModal) {
+      const interval = setInterval(() => {
+        refreshBroadcast();
+      }, 4000);
+      return () => clearInterval(interval);
+    }
+  }, [showAdminBroadcastModal]);
+
+  const handleOpenAdminBroadcastModal = async () => {
+    setShowAdminBroadcastModal(true);
+    await refreshBroadcast();
+  };
+
   const handleCloseTherapistPopup = async () => {
     if (broadcastMessage?.id) {
       localStorage.setItem("seen_therapist_bcast_id", broadcastMessage.id);
       try {
         const { markTherapistBroadcastAsRead } = await import("@/app/actions/configuracion");
-        await markTherapistBroadcastAsRead(broadcastMessage.id);
+        const res = await markTherapistBroadcastAsRead(broadcastMessage.id, userName);
+        if (res.success && res.readBy) {
+          setBroadcastMessage((prev: any) => prev ? { ...prev, readBy: res.readBy } : prev);
+        }
       } catch (e) {}
     }
     setShowTherapistPopup(false);
@@ -243,7 +270,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
             </div>
             {(userRole.toUpperCase() === "ADMIN" || userRole.toUpperCase() === "ADMINISTRADOR" || userRole.toUpperCase() === "INVITADO") && (
               <button
-                onClick={() => setShowAdminBroadcastModal(true)}
+                onClick={handleOpenAdminBroadcastModal}
                 className="px-3 py-1.5 bg-amber-500/90 hover:bg-amber-500 text-white rounded-full text-xs font-bold transition-all cursor-pointer flex items-center gap-1.5 shadow-sm border border-amber-300/30"
                 title="Enviar mensaje flotante a las terapeutas"
               >

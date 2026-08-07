@@ -1,7 +1,7 @@
 "use server";
 
 import { prisma } from "@/lib/prisma";
-import { revalidatePath } from "next/cache";
+import { revalidatePath, unstable_noStore as noStore } from "next/cache";
 import bcrypt from "bcrypt";
 import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth";
@@ -525,6 +525,7 @@ export async function getTherapistsList() {
 }
 
 export async function getTherapistBroadcastMessage() {
+  noStore();
   try {
     const s = await prisma.systemSettings.findUnique({ where: { id: 1 } });
     if (!s || !s.referenceKeys) return { success: true, broadcast: null };
@@ -625,12 +626,12 @@ export async function clearTherapistBroadcastMessage() {
   }
 }
 
-export async function markTherapistBroadcastAsRead(broadcastId: string) {
+export async function markTherapistBroadcastAsRead(broadcastId: string, customName?: string) {
   try {
     const session = await getServerSession(authOptions);
-    if (!session?.user) return { success: false, error: "No autenticado." };
+    const userName = (customName || session?.user?.name || "Terapeuta").trim();
+    if (!userName) return { success: false, error: "Nombre no válido." };
 
-    const userName = session.user.name || "Terapeuta";
     const s = await prisma.systemSettings.findUnique({ where: { id: 1 } });
     if (!s || !s.referenceKeys) return { success: false };
 
@@ -656,7 +657,8 @@ export async function markTherapistBroadcastAsRead(broadcastId: string) {
       }
     }
 
-    return { success: true };
+    revalidatePath("/dashboard", "layout");
+    return { success: true, readBy: bcast?.readBy || [] };
   } catch (error: any) {
     console.error("Error marking broadcast read:", error);
     return { success: false, error: error?.message };
