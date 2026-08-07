@@ -274,11 +274,12 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
       <header className="bg-gradient-to-r from-[#0e2f44] via-[#1a5276] to-[#2980b9] text-white shadow-lg sticky top-0 z-50">
         <div className="flex items-center justify-between px-6 py-2">
           <div className="flex items-center gap-2.5">
-            <div className="w-12 h-12 md:w-[52px] md:h-[52px] rounded-full bg-white flex items-center justify-center p-2 shadow-md shrink-0 border border-white/40">
+            <div className="w-12 h-12 md:w-[52px] md:h-[52px] rounded-full bg-white flex items-center justify-center p-2.5 shadow-md shrink-0 border border-white/40 relative">
+              <div className="absolute inset-[3px] rounded-full border border-[#1a5276]/40 pointer-events-none" />
               <img 
                 src="/logo.png" 
                 alt="CREN Logo" 
-                className="w-full h-full object-contain" 
+                className="w-full h-full object-contain relative z-10" 
                 style={{ filter: "brightness(0) saturate(100%) invert(16%) sepia(35%) saturate(2200%) hue-rotate(178deg) brightness(96%) contrast(92%)" }}
               />
             </div>
