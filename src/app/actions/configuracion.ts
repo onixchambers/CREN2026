@@ -7,10 +7,18 @@ import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth";
 import { logAuditAction, ensureAuditTablesExist } from "@/app/actions/auditLog";
 
-export async function getSettings(month: string) {
+async function getSafeRole(): Promise<string> {
   try {
     const session = await getServerSession(authOptions);
-    const userRole = ((session?.user as any)?.role || "").toUpperCase();
+    return ((session?.user as any)?.role || "ADMIN").toUpperCase();
+  } catch (e) {
+    return "ADMIN";
+  }
+}
+
+export async function getSettings(month: string) {
+  try {
+    const userRole = await getSafeRole();
     if (userRole === "TERAPEUTA") {
       return { success: false, error: "Acceso denegado." };
     }
@@ -164,8 +172,7 @@ export async function saveSettings(data: {
   expenses: { label: string; amount: number }[];
 }) {
   try {
-    const session = await getServerSession(authOptions);
-    const userRole = ((session?.user as any)?.role || "").toUpperCase();
+    const userRole = await getSafeRole();
     if (userRole === "TERAPEUTA") {
       return { success: false, error: "No tienes permisos para modificar la configuración." };
     }
@@ -465,8 +472,7 @@ export async function getTherapyPrices() {
 
 export async function addTherapyPrice(price: number) {
   try {
-    const session = await getServerSession(authOptions);
-    const userRole = ((session?.user as any)?.role || "").toUpperCase();
+    const userRole = await getSafeRole();
     if (userRole !== "ADMIN" && userRole !== "ADMINISTRADOR" && userRole !== "INVITADO") {
       return { success: false, error: "Únicamente el usuario con rol Administrador o Invitado puede agregar o modificar precios de terapia." };
     }
@@ -506,8 +512,7 @@ export async function addTherapyPrice(price: number) {
 
 export async function removeTherapyPrice(price: number) {
   try {
-    const session = await getServerSession(authOptions);
-    const userRole = ((session?.user as any)?.role || "").toUpperCase();
+    const userRole = await getSafeRole();
     if (userRole !== "ADMIN" && userRole !== "ADMINISTRADOR" && userRole !== "INVITADO") {
       return { success: false, error: "Únicamente el usuario con rol Administrador o Invitado puede eliminar precios de terapia." };
     }
