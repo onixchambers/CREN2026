@@ -197,15 +197,25 @@ export async function getFinanzasMensuales(month: string, fechaDesde?: string, f
       
       const precioTotal = extra.total ? (typeof extra.total === 'string' ? parseFloat(extra.total.replace("$", "").replace(",", "")) : Number(extra.total)) : 0;
 
-      if (hasFactura || (extra.iva && parseFloat(extra.iva) > 0)) {
-        // If retieneIVA is true, the therapist took their cut (87) and we only pay IVA on CREN's remaining cut (63)
+      let sIva = 0;
+      if (extra.iva !== undefined && extra.iva !== null && extra.iva !== "" && extra.iva !== 0) {
+        sIva = typeof extra.iva === 'string' ? parseFloat(extra.iva.replace("$", "").replace(",", "")) : Number(extra.iva);
+      } else if (hasFactura) {
+        const sub = typeof extra.subtotal === 'string' ? parseFloat(extra.subtotal.replace("$", "").replace(",", "")) : Number(extra.subtotal || 0);
+        const tot = typeof extra.total === 'string' ? parseFloat(extra.total.replace("$", "").replace(",", "")) : Number(extra.total || 0);
+        if (tot > sub && sub > 0) {
+          sIva = tot - sub;
+        } else {
+          sIva = precioTotal * ivaDec;
+        }
+      }
+
+      if (hasFactura || sIva > 0) {
         if (tRetieneIVA && tData?.tipoPago === "Porcentaje") {
            const comisionBase = precioTotal * tPorcentaje;
-           const comisionGross = comisionBase * (1 + ivaDec);
-           const crenCut = precioTotal - comisionGross;
-           totalIvaFacturas += (crenCut * ivaDec);
+           const ivaRet = comisionBase * ivaDec;
+           totalIvaFacturas += Math.max(0, sIva - ivaRet);
         } else {
-           const sIva = extra.iva ? (typeof extra.iva === 'string' ? parseFloat(extra.iva.replace("$", "").replace(",", "")) : Number(extra.iva)) : (precioTotal * ivaDec);
            totalIvaFacturas += sIva;
         }
       }

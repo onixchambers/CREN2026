@@ -156,18 +156,30 @@ export default function SalarioPage() {
               let ivaCrenSesion = 0;
               const hasFactura = a.fact === "Sí" || a.fact === "SI" || a.solicitaFactura === true || a.solicitaFactura === "Sí";
 
+              // Calcular IVA total cobrado en la sesión
+              let sessionIva = 0;
+              if (a.iva !== undefined && a.iva !== null && a.iva !== "" && a.iva !== 0) {
+                sessionIva = typeof a.iva === 'string' ? parseFloat(a.iva.replace("$", "").replace(",", "")) : Number(a.iva);
+              } else if (hasFactura) {
+                const sub = parseFloat((a.subtotal || "0").toString().replace(/[^0-9.-]+/g,"")) || 0;
+                const tot = parseFloat((a.total || "0").toString().replace(/[^0-9.-]+/g,"")) || 0;
+                if (tot > sub && sub > 0) {
+                  sessionIva = tot - sub;
+                } else {
+                  sessionIva = precioSession * 0.16;
+                }
+              }
+
               if (t.tipoPago === "Porcentaje") {
                 pagoSesionTerapeuta = precioSession * ((t.porcentaje || 50) / 100);
                 if (t.retieneIVA) {
                   ivaSesionRetenido = pagoSesionTerapeuta * 0.16;
                 }
-                
-                const crenGross = precioSession - (pagoSesionTerapeuta + ivaSesionRetenido);
-                if (hasFactura) {
-                  ivaCrenSesion = crenGross * 0.16;
+                if (hasFactura || sessionIva > 0) {
+                  ivaCrenSesion = Math.max(0, sessionIva - ivaSesionRetenido);
                 }
-              } else if (hasFactura) {
-                ivaCrenSesion = precioSession * 0.16;
+              } else if (hasFactura || sessionIva > 0) {
+                ivaCrenSesion = sessionIva;
               }
 
               honorariosTotalGen += pagoSesionTerapeuta;
