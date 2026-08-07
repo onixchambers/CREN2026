@@ -129,6 +129,7 @@ export default function ConfiguracionPage() {
         setGoogleDrivePrivateKey(res.settings?.googleDrivePrivateKey || "");
         setGoogleDriveFolderId(res.settings?.googleDriveFolderId || "");
         setTimezone(res.settings?.timezone || "America/Mexico_City");
+        setAuditLogEnabled(res.settings?.auditLogEnabled ?? true);
         
         const exps = res.expenses || [];
         let items: any[] = [];

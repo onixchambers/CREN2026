@@ -87,6 +87,7 @@ export async function getSettings(month: string) {
         googleDrivePrivateKey: "",
         googleDriveFolderId: "",
         timezone: "America/Mexico_City",
+        auditLogEnabled: true,
       },
       expenses: expenses,
     };
