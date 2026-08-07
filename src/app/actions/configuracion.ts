@@ -5,7 +5,7 @@ import { revalidatePath, unstable_noStore as noStore } from "next/cache";
 import bcrypt from "bcrypt";
 import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth";
-import { logAuditAction } from "@/app/actions/auditLog";
+import { logAuditAction, ensureAuditTablesExist } from "@/app/actions/auditLog";
 
 export async function getSettings(month: string) {
   try {
@@ -15,12 +15,28 @@ export async function getSettings(month: string) {
       return { success: false, error: "Acceso denegado." };
     }
 
-    const [users, settings, expenses] = await Promise.all([
+    await ensureAuditTablesExist();
+
+    let settings: any = null;
+    try {
+      settings = await prisma.systemSettings.findUnique({
+        where: { id: 1 },
+      });
+    } catch (eSettings) {
+      console.error("Error fetching SystemSettings, running migration retry:", eSettings);
+      await ensureAuditTablesExist();
+      try {
+        settings = await prisma.systemSettings.findUnique({
+          where: { id: 1 },
+        });
+      } catch (retryErr) {
+        console.error("Failed SystemSettings fallback:", retryErr);
+      }
+    }
+
+    const [users, expenses] = await Promise.all([
       prisma.user.findMany({
         orderBy: { createdAt: 'asc' },
-      }),
-      prisma.systemSettings.findUnique({
-        where: { id: 1 },
       }),
       prisma.operationalExpense.findMany({
         where: { month },
