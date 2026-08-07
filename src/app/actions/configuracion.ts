@@ -507,6 +507,23 @@ export async function removeTherapyPrice(price: number) {
   }
 }
 
+export async function getTherapistsList() {
+  try {
+    const users = await prisma.user.findMany({
+      select: { id: true, name: true, role: true },
+      orderBy: { name: "asc" }
+    });
+    const therapists = users
+      .filter(u => (u.role || "").toUpperCase() === "TERAPEUTA")
+      .map(u => u.name)
+      .filter(Boolean) as string[];
+    return { success: true, therapists };
+  } catch (error: any) {
+    console.error("Error fetching therapists list:", error);
+    return { success: false, therapists: [] };
+  }
+}
+
 export async function getTherapistBroadcastMessage() {
   try {
     const s = await prisma.systemSettings.findUnique({ where: { id: 1 } });
@@ -526,7 +543,7 @@ export async function getTherapistBroadcastMessage() {
   }
 }
 
-export async function saveTherapistBroadcastMessage(title: string, message: string) {
+export async function saveTherapistBroadcastMessage(title: string, message: string, targets: string[] = ["TODOS"]) {
   try {
     const session = await getServerSession(authOptions);
     const userRole = ((session?.user as any)?.role || "").toUpperCase();
@@ -551,6 +568,7 @@ export async function saveTherapistBroadcastMessage(title: string, message: stri
       title: title.trim(),
       message: message.trim(),
       sender: senderName,
+      targets: Array.isArray(targets) && targets.length > 0 ? targets : ["TODOS"],
       date: new Date().toISOString(),
       active: true,
     };

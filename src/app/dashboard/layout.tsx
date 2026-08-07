@@ -30,6 +30,11 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
   const [broadcastMessageInput, setBroadcastMessageInput] = useState("");
   const [isSendingBroadcast, setIsSendingBroadcast] = useState(false);
 
+  // Selección de Destinatarios (Todos o Seleccionados)
+  const [therapistsList, setTherapistsList] = useState<string[]>([]);
+  const [targetType, setTargetType] = useState<"ALL" | "SELECT">("ALL");
+  const [selectedTherapists, setSelectedTherapists] = useState<string[]>([]);
+
   useEffect(() => {
     async function loadPermission() {
       const allowed = await getAllowTherapistEdit();
@@ -45,24 +50,48 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
         setProfileData({ email: res.user.email, image: res.user.image, phone: res.user.phone });
       }
 
-      const { getTherapistBroadcastMessage } = await import("@/app/actions/configuracion");
-      const bRes = await getTherapistBroadcastMessage();
+      const { getTherapistsList, getTherapistBroadcastMessage } = await import("@/app/actions/configuracion");
+      const [tRes, bRes] = await Promise.all([
+        getTherapistsList(),
+        getTherapistBroadcastMessage()
+      ]);
+
+      if (tRes.success && tRes.therapists) {
+        setTherapistsList(tRes.therapists);
+      }
+
       if (bRes.success && bRes.broadcast) {
         setBroadcastMessage(bRes.broadcast);
         setBroadcastTitleInput(bRes.broadcast.title || "");
         setBroadcastMessageInput(bRes.broadcast.message || "");
+        const targets = bRes.broadcast.targets || ["TODOS"];
+        if (targets.includes("TODOS")) {
+          setTargetType("ALL");
+          setSelectedTherapists([]);
+        } else {
+          setTargetType("SELECT");
+          setSelectedTherapists(targets);
+        }
 
         const roleUpper = (userRole || "").toUpperCase();
         if (roleUpper === "TERAPEUTA") {
-          const seenId = localStorage.getItem("seen_therapist_bcast_id");
-          if (seenId !== bRes.broadcast.id) {
-            setShowTherapistPopup(true);
+          const isTargeted = targets.includes("TODOS") || targets.some((t: string) => {
+            const normT = t.toLowerCase().trim();
+            const normUser = (userName || "").toLowerCase().trim();
+            return normT.includes(normUser) || normUser.includes(normT);
+          });
+
+          if (isTargeted) {
+            const seenId = localStorage.getItem("seen_therapist_bcast_id");
+            if (seenId !== bRes.broadcast.id) {
+              setShowTherapistPopup(true);
+            }
           }
         }
       }
     }
     loadPermission();
-  }, [session, userRole]);
+  }, [session, userRole, userName]);
 
   const handleCloseTherapistPopup = () => {
     if (broadcastMessage?.id) {
@@ -77,10 +106,16 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
       alert("Por favor ingresa un título y un mensaje.");
       return;
     }
+    if (targetType === "SELECT" && selectedTherapists.length === 0) {
+      alert("Por favor selecciona al menos una terapeuta o elige 'Todos los Terapeutas'.");
+      return;
+    }
+
+    const finalTargets = targetType === "ALL" ? ["TODOS"] : selectedTherapists;
     setIsSendingBroadcast(true);
     try {
       const { saveTherapistBroadcastMessage } = await import("@/app/actions/configuracion");
-      const res = await saveTherapistBroadcastMessage(broadcastTitleInput, broadcastMessageInput);
+      const res = await saveTherapistBroadcastMessage(broadcastTitleInput, broadcastMessageInput, finalTargets);
       if (res.success) {
         alert("¡Mensaje enviado correctamente a las terapeutas! Aparecerá en ventana flotante cuando inicien sesión.");
         setBroadcastMessage(res.broadcast);
@@ -488,8 +523,63 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
 
             <form onSubmit={handleSendBroadcast} className="p-6 space-y-4">
               <p className="text-xs text-slate-600 bg-amber-50 p-3 rounded-lg border border-amber-200">
-                💡 Este mensaje aparecerá en una <strong>ventana emergente flotante</strong> para todas las terapeutas en cuanto ingresen a la aplicación.
+                💡 Este mensaje aparecerá en una <strong>ventana emergente flotante</strong> para las terapeutas seleccionadas en cuanto ingresen a la aplicación.
               </p>
+
+              <div>
+                <label className="block text-xs font-bold text-slate-700 uppercase mb-1">Destinatarios</label>
+                <div className="flex gap-4 mb-2">
+                  <label className="flex items-center gap-1.5 text-xs font-bold text-slate-800 cursor-pointer">
+                    <input
+                      type="radio"
+                      name="targetType"
+                      checked={targetType === "ALL"}
+                      onChange={() => setTargetType("ALL")}
+                      className="w-4 h-4 text-amber-600 focus:ring-amber-500"
+                    />
+                    🌐 Todos los Terapeutas
+                  </label>
+                  <label className="flex items-center gap-1.5 text-xs font-bold text-slate-800 cursor-pointer">
+                    <input
+                      type="radio"
+                      name="targetType"
+                      checked={targetType === "SELECT"}
+                      onChange={() => setTargetType("SELECT")}
+                      className="w-4 h-4 text-amber-600 focus:ring-amber-500"
+                    />
+                    👤 Seleccionar Específicos
+                  </label>
+                </div>
+
+                {targetType === "SELECT" && (
+                  <div className="p-3 bg-slate-50 border border-slate-200 rounded-lg max-h-36 overflow-y-auto space-y-1.5">
+                    {therapistsList.length === 0 ? (
+                      <p className="text-xs text-slate-500 italic">Cargando terapeutas...</p>
+                    ) : (
+                      therapistsList.map((tName) => {
+                        const isChecked = selectedTherapists.includes(tName);
+                        return (
+                          <label key={tName} className="flex items-center gap-2 text-xs font-medium text-slate-800 cursor-pointer hover:bg-slate-100 p-1 rounded">
+                            <input
+                              type="checkbox"
+                              checked={isChecked}
+                              onChange={(e) => {
+                                if (e.target.checked) {
+                                  setSelectedTherapists(prev => [...prev, tName]);
+                                } else {
+                                  setSelectedTherapists(prev => prev.filter(item => item !== tName));
+                                }
+                              }}
+                              className="w-4 h-4 text-amber-600 rounded focus:ring-amber-500"
+                            />
+                            {tName}
+                          </label>
+                        );
+                      })
+                    )}
+                  </div>
+                )}
+              </div>
 
               <div>
                 <label className="block text-xs font-bold text-slate-700 uppercase mb-1">Título del Mensaje</label>
@@ -507,7 +597,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
                 <label className="block text-xs font-bold text-slate-700 uppercase mb-1">Contenido del Mensaje</label>
                 <textarea
                   required
-                  rows={5}
+                  rows={4}
                   value={broadcastMessageInput}
                   onChange={(e) => setBroadcastMessageInput(e.target.value)}
                   placeholder="Escribe aquí las instrucciones o avisos para las terapeutas..."
