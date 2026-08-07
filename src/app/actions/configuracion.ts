@@ -629,8 +629,17 @@ export async function clearTherapistBroadcastMessage() {
 export async function markTherapistBroadcastAsRead(broadcastId: string, customName?: string) {
   try {
     const session = await getServerSession(authOptions);
-    const userName = (customName || session?.user?.name || "Terapeuta").trim();
-    if (!userName) return { success: false, error: "Nombre no válido." };
+    let userName = (customName || session?.user?.name || "").trim();
+
+    if (!userName || userName.toLowerCase() === "administrador" || userName.toLowerCase() === "terapeuta") {
+      const userId = (session?.user as any)?.id;
+      if (userId) {
+        const u = await prisma.user.findUnique({ where: { id: userId } });
+        if (u && u.name) userName = u.name.trim();
+      }
+    }
+
+    if (!userName) userName = "Terapeuta";
 
     const s = await prisma.systemSettings.findUnique({ where: { id: 1 } });
     if (!s || !s.referenceKeys) return { success: false };
