@@ -1,7 +1,8 @@
 "use client";
 import React, { useState, useEffect } from "react";
 import { CountrySelector } from "@/components/CountrySelector";
-import { updatePatient } from "@/app/actions/pacientes";
+import { updatePatient, createPatient, checkDuplicatePatient } from "@/app/actions/pacientes";
+import { DuplicateWarningModal } from "@/components/DuplicateWarningModal";
 
 // Utilities from preregistros logic
 function getDefaultCountryCode(phoneStr: string | null | undefined): string {
@@ -88,6 +89,11 @@ export function EditPatientModal({
   const [otrosCountryCode, setOtrosCountryCode] = useState("+52");
 
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [duplicateWarning, setDuplicateWarning] = useState<{
+    isOpen: boolean;
+    duplicates: any[];
+    pendingData: any;
+  }>({ isOpen: false, duplicates: [], pendingData: null });
 
   useEffect(() => {
     if (patient) {
@@ -121,10 +127,9 @@ export function EditPatientModal({
     }));
   };
 
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
+  const handleSubmit = async (e?: React.FormEvent, forceSave = false) => {
+    if (e) e.preventDefault();
     if (!canEdit) return;
-    setIsSubmitting(true);
 
     const submissionData = {
       ...formData,
@@ -134,10 +139,38 @@ export function EditPatientModal({
       otrosContacto: formData.otrosContacto ? `${otrosCountryCode} ${formData.otrosContacto}`.trim() : null,
     };
 
+    setIsSubmitting(true);
+
     try {
-      const res = await updatePatient(patient.id, submissionData);
+      if (!forceSave) {
+        const dupCheck = await checkDuplicatePatient({
+          nombre: submissionData.nombre,
+          phone: submissionData.pacienteContacto || submissionData.madreContacto || submissionData.padreContacto,
+          fechaNacimiento: submissionData.fechaNacimiento,
+          excludeId: patient?.id
+        });
+
+        if (dupCheck.success && dupCheck.hasDuplicates && dupCheck.duplicates.length > 0) {
+          setDuplicateWarning({
+            isOpen: true,
+            duplicates: dupCheck.duplicates,
+            pendingData: submissionData
+          });
+          setIsSubmitting(false);
+          return;
+        }
+      }
+
+      let res;
+      if (patient?.id) {
+        res = await updatePatient(patient.id, submissionData);
+      } else {
+        res = await createPatient(submissionData);
+      }
+
       if (res.success) {
-        alert("Paciente actualizado correctamente.");
+        alert(patient?.id ? "Paciente actualizado correctamente." : "Paciente creado correctamente.");
+        setDuplicateWarning({ isOpen: false, duplicates: [], pendingData: null });
         onSaved(res.data);
       } else {
         alert("Error: " + res.error);
@@ -608,6 +641,15 @@ export function EditPatientModal({
             </button>
           </div>
         </form>
+
+        <DuplicateWarningModal
+          isOpen={duplicateWarning.isOpen}
+          duplicates={duplicateWarning.duplicates}
+          newPatientName={formData.nombre}
+          onCancel={() => setDuplicateWarning({ isOpen: false, duplicates: [], pendingData: null })}
+          onConfirmSaveAnyway={() => handleSubmit(undefined, true)}
+          isSubmitting={isSubmitting}
+        />
       </div>
     </div>
   );

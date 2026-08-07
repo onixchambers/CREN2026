@@ -566,28 +566,196 @@ export async function deletePatientDocument(patientId: string, docId: string) {
   }
 }
 
-export async function checkDuplicatePatient(data: { name?: string; phone?: string }) {
+function levenshteinDistance(a: string, b: string): number {
+  const m = a.length;
+  const n = b.length;
+  if (m === 0) return n;
+  if (n === 0) return m;
+
+  const dp: number[][] = Array.from({ length: m + 1 }, () => new Array(n + 1).fill(0));
+  for (let i = 0; i <= m; i++) dp[i][0] = i;
+  for (let j = 0; j <= n; j++) dp[0][j] = j;
+
+  for (let i = 1; i <= m; i++) {
+    for (let j = 1; j <= n; j++) {
+      const cost = a[i - 1] === b[j - 1] ? 0 : 1;
+      dp[i][j] = Math.min(
+        dp[i - 1][j] + 1,
+        dp[i][j - 1] + 1,
+        dp[i - 1][j - 1] + cost
+      );
+    }
+  }
+  return dp[m][n];
+}
+
+function normalizeText(text?: string | null): string {
+  if (!text) return "";
+  return text
+    .toLowerCase()
+    .normalize("NFD")
+    .replace(/[\u0300-\u036f]/g, "")
+    .replace(/[^a-z0-9\s]/g, "")
+    .replace(/\s+/g, " ")
+    .trim();
+}
+
+function calculateNameSimilarity(name1: string, name2: string): number {
+  const n1 = normalizeText(name1);
+  const n2 = normalizeText(name2);
+
+  if (!n1 || !n2) return 0;
+  if (n1 === n2) return 1.0;
+
+  // Substring match if name is long enough
+  if (n1.includes(n2) || n2.includes(n1)) {
+    const minLen = Math.min(n1.length, n2.length);
+    if (minLen >= 5) return 0.92;
+  }
+
+  // Token matching (handles inverted names or extra middle names)
+  const tokens1 = n1.split(" ").filter(Boolean);
+  const tokens2 = n2.split(" ").filter(Boolean);
+
+  let tokenMatches = 0;
+  for (const t1 of tokens1) {
+    if (tokens2.some(t2 => t2 === t1 || (t1.length >= 4 && t2.length >= 4 && levenshteinDistance(t1, t2) <= 1))) {
+      tokenMatches++;
+    }
+  }
+  const maxTokens = Math.max(tokens1.length, tokens2.length);
+  const tokenRatio = tokenMatches / maxTokens;
+  if (tokenRatio >= 0.75 && maxTokens >= 2) {
+    return Math.max(0.85, tokenRatio);
+  }
+
+  // Overall Levenshtein distance
+  const maxLen = Math.max(n1.length, n2.length);
+  const dist = levenshteinDistance(n1, n2);
+  const levSim = 1.0 - (dist / maxLen);
+
+  return levSim;
+}
+
+export async function checkDuplicatePatient(data: {
+  nombre?: string;
+  name?: string;
+  phone?: string;
+  pacienteContacto?: string;
+  madreContacto?: string;
+  padreContacto?: string;
+  fechaNacimiento?: string;
+  excludeId?: string;
+}) {
   try {
-    const name = (data.name || "").trim().toLowerCase();
-    const phone = (data.phone || "").trim().replace(/\D/g, "");
-    if (!name && !phone) return { success: true, duplicates: [] };
+    const targetName = (data.nombre || data.name || "").trim();
+    const cleanPhones = [
+      (data.phone || "").replace(/\D/g, ""),
+      (data.pacienteContacto || "").replace(/\D/g, ""),
+      (data.madreContacto || "").replace(/\D/g, ""),
+      (data.padreContacto || "").replace(/\D/g, "")
+    ].filter(p => p.length >= 7);
+
+    if (!targetName && cleanPhones.length === 0) {
+      return { success: true, hasDuplicates: false, duplicates: [] };
+    }
 
     const allPatients = await prisma.patient.findMany({
-      select: { id: true, displayId: true, name: true, phone: true, estatus: true, fechaNacimiento: true }
+      select: {
+        id: true,
+        displayId: true,
+        name: true,
+        phone: true,
+        madreContacto: true,
+        padreContacto: true,
+        otrosContacto: true,
+        estatus: true,
+        fechaNacimiento: true,
+        medicoTratante: true,
+      }
     });
 
-    const duplicates = allPatients.filter(p => {
-      const pName = (p.name || "").trim().toLowerCase();
-      const pPhone = (p.phone || "").trim().replace(/\D/g, "");
-      const sameName = name && (pName === name || (name.length > 4 && pName.includes(name)));
-      const samePhone = phone && phone.length >= 7 && pPhone && pPhone.endsWith(phone.slice(-7));
-      return sameName || samePhone;
-    });
+    const duplicates: any[] = [];
 
-    return { success: true, duplicates };
+    for (const p of allPatients) {
+      if (data.excludeId && p.id === data.excludeId) continue;
+
+      let isMatch = false;
+      let matchReason = "";
+      let similarityScore = 0;
+
+      // 1. Name comparison with fuzzy matching
+      if (targetName && p.name) {
+        const sim = calculateNameSimilarity(targetName, p.name);
+        if (sim === 1.0) {
+          isMatch = true;
+          matchReason = "Nombre idéntico";
+          similarityScore = 1.0;
+        } else if (sim >= 0.80) {
+          isMatch = true;
+          matchReason = `Nombre similar (${Math.round(sim * 100)}% coincidencia / posible error tipográfico)`;
+          similarityScore = sim;
+        }
+      }
+
+      // 2. Phone comparison
+      if (!isMatch && cleanPhones.length > 0) {
+        const pPhones = [
+          (p.phone || "").replace(/\D/g, ""),
+          (p.madreContacto || "").replace(/\D/g, ""),
+          (p.padreContacto || "").replace(/\D/g, ""),
+          (p.otrosContacto || "").replace(/\D/g, "")
+        ].filter(pp => pp.length >= 7);
+
+        for (const inputPhone of cleanPhones) {
+          for (const dbPhone of pPhones) {
+            if (dbPhone.endsWith(inputPhone.slice(-7)) || inputPhone.endsWith(dbPhone.slice(-7))) {
+              isMatch = true;
+              matchReason = "Teléfono de contacto coincidente";
+              similarityScore = 0.95;
+              break;
+            }
+          }
+          if (isMatch) break;
+        }
+      }
+
+      // 3. Birthdate + similar name
+      if (!isMatch && data.fechaNacimiento && p.fechaNacimiento && data.fechaNacimiento === p.fechaNacimiento && targetName && p.name) {
+        const sim = calculateNameSimilarity(targetName, p.name);
+        if (sim >= 0.60) {
+          isMatch = true;
+          matchReason = "Misma fecha de nacimiento y nombre similar";
+          similarityScore = sim;
+        }
+      }
+
+      if (isMatch) {
+        duplicates.push({
+          id: p.id,
+          displayId: p.displayId,
+          name: p.name,
+          phone: p.phone || p.madreContacto || p.padreContacto,
+          fechaNacimiento: p.fechaNacimiento,
+          estatus: p.estatus,
+          medicoTratante: p.medicoTratante,
+          matchReason,
+          similarityScore
+        });
+      }
+    }
+
+    // Sort duplicates by highest similarity score first
+    duplicates.sort((a, b) => (b.similarityScore || 0) - (a.similarityScore || 0));
+
+    return {
+      success: true,
+      hasDuplicates: duplicates.length > 0,
+      duplicates
+    };
   } catch (error: any) {
     console.error("Error checking duplicate patient:", error);
-    return { success: false, error: error.message };
+    return { success: false, error: error.message, hasDuplicates: false, duplicates: [] };
   }
 }
 

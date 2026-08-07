@@ -14,6 +14,7 @@ import { uploadInformePDFToDrive, uploadConsentPDFAction } from "@/app/actions/i
 import { getPhonePlaceholder } from "@/lib/phonePlaceholder";
 import { generateConsentPdfBase64 } from "@/lib/pdfGenerator";
 import { getSystemTimezone, getTerapeutasFull } from "@/app/actions/configuracion";
+import { DuplicateWarningModal } from "@/components/DuplicateWarningModal";
 
 export default function PreregistrosPage() {
   const { data: session } = useSession();
@@ -29,6 +30,11 @@ export default function PreregistrosPage() {
   const [loadingQr, setLoadingQr] = useState(false);
   const [pendingPreRegs, setPendingPreRegs] = useState<any[]>([]);
   const [selectedPreReg, setSelectedPreReg] = useState<any>(null);
+  const [duplicateWarning, setDuplicateWarning] = useState<{
+    isOpen: boolean;
+    duplicates: any[];
+    pendingData: any;
+  }>({ isOpen: false, duplicates: [], pendingData: null });
 
   useEffect(() => {
     async function loadInitialData() {
@@ -448,26 +454,13 @@ export default function PreregistrosPage() {
     }
   };
 
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
+  const handleSubmit = async (e?: React.FormEvent, bypassDuplicates = false) => {
+    if (e) e.preventDefault();
     if (isSubmitting) return;
 
     if (!formData.nombre) {
       alert("El nombre del paciente es obligatorio.");
       return;
-    }
-
-    if (!editingId) {
-      const isSimilar = fichas.some(f => {
-        const n1 = (f.name || f.nombre || "").toLowerCase().replace(/\s+/g, " ").trim();
-        const n2 = formData.nombre.toLowerCase().replace(/\s+/g, " ").trim();
-        return n1 && n2 && (n1 === n2 || (n1.length > 5 && n2.length > 5 && (n1.includes(n2) || n2.includes(n1))));
-      });
-      if (isSimilar) {
-         if (!confirm("Ya existe un paciente con un nombre similar en el sistema. ¿Deseas continuar y crearlo de todos modos?")) {
-           return;
-         }
-      }
     }
 
     if (!formData.reglamentoFirmado || !formData.consentimientoFirmado) {
@@ -479,7 +472,7 @@ export default function PreregistrosPage() {
     setIsSubmitting(true);
 
     try {
-      const { createPatient, updatePatient, getPatients } = await import("@/app/actions/pacientes");
+      const { createPatient, updatePatient, getPatients, checkDuplicatePatient } = await import("@/app/actions/pacientes");
 
       const finalFormData = {
         ...formData,
@@ -490,6 +483,24 @@ export default function PreregistrosPage() {
         otrosNombre: formData.otrosVinculo ? `${formData.otrosVinculo}|${formData.otrosNombre}` : formData.otrosNombre,
       };
 
+      if (!editingId && !bypassDuplicates) {
+        const dupCheck = await checkDuplicatePatient({
+          nombre: finalFormData.nombre,
+          phone: finalFormData.pacienteContacto || finalFormData.madreContacto || finalFormData.padreContacto,
+          fechaNacimiento: finalFormData.fechaNacimiento
+        });
+
+        if (dupCheck.success && dupCheck.hasDuplicates && dupCheck.duplicates.length > 0) {
+          setDuplicateWarning({
+            isOpen: true,
+            duplicates: dupCheck.duplicates,
+            pendingData: finalFormData
+          });
+          setIsSubmitting(false);
+          return;
+        }
+      }
+
       let result;
       if (editingId) {
         result = await updatePatient(editingId, finalFormData);
@@ -498,6 +509,7 @@ export default function PreregistrosPage() {
       }
 
       if (result.success) {
+        setDuplicateWarning({ isOpen: false, duplicates: [], pendingData: null });
         // Subir a Google Drive cuando el paciente llenó el formulario con firma digital y la terapeuta guarda el registro
         if (selectedPreReg && selectedPreReg.signatureDataUrl) {
           try {
@@ -1188,6 +1200,15 @@ export default function PreregistrosPage() {
           </div>
         </div>
       )}
+
+      <DuplicateWarningModal
+        isOpen={duplicateWarning.isOpen}
+        duplicates={duplicateWarning.duplicates}
+        newPatientName={formData.nombre}
+        onCancel={() => setDuplicateWarning({ isOpen: false, duplicates: [], pendingData: null })}
+        onConfirmSaveAnyway={() => handleSubmit(undefined, true)}
+        isSubmitting={isSubmitting}
+      />
     </div>
   );
 }
