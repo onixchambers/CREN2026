@@ -2,6 +2,8 @@
 import { useState, useEffect } from "react";
 import { DateInput } from "@/components/DateInput";
 import { getSystemIvaRate } from "@/app/actions/configuracion";
+import { checkDuplicatePatient } from "@/app/actions/pacientes";
+import { DuplicateWarningModal } from "@/components/DuplicateWarningModal";
 
 export type AsistenciaFormData = {
   fecha: string;
@@ -100,6 +102,11 @@ export function AsistenciaForm({
   const [showDropdown, setShowDropdown] = useState(false);
   const [showSegundoPago, setShowSegundoPago] = useState(false);
   const [verTodosLosPacientes, setVerTodosLosPacientes] = useState(false);
+  const [duplicateWarning, setDuplicateWarning] = useState<{
+    isOpen: boolean;
+    duplicates: any[];
+    isDraft: boolean;
+  }>({ isOpen: false, duplicates: [], isDraft: false });
 
   useEffect(() => {
     if (initialData) {
@@ -212,10 +219,26 @@ export function AsistenciaForm({
     }
   };
 
-  const handleGuardar = async (isDraft: boolean = false) => {
+  const handleGuardar = async (isDraft: boolean = false, forceSave: boolean = false) => {
     if (!formData.pacienteNombre || !formData.area || !formData.estadoAsistencia || !formData.tipoSesion || !formData.terapeuta) {
       alert("Por favor completa los campos principales (Paciente, Terapeuta, Área, Tipo de Sesión, Estado).");
       return;
+    }
+
+    if (!formData.pacienteId && !forceSave) {
+      const dupCheck = await checkDuplicatePatient({
+        nombre: formData.pacienteNombre,
+        fechaNacimiento: formData.pacienteNac
+      });
+
+      if (dupCheck.success && dupCheck.hasDuplicates && dupCheck.duplicates.length > 0) {
+        setDuplicateWarning({
+          isOpen: true,
+          duplicates: dupCheck.duplicates,
+          isDraft
+        });
+        return;
+      }
     }
 
     const p1 = parseFloat(formData.montoPago || "0");
@@ -245,6 +268,7 @@ export function AsistenciaForm({
       metodoPagoFinal = `${formData.metodoPago} $${p1}`;
     }
 
+    setDuplicateWarning({ isOpen: false, duplicates: [], isDraft: false });
     onSave(formData, subVal, ivaVal, finalTotal, metodoPagoFinal, isDraft);
   };
 
@@ -384,11 +408,26 @@ export function AsistenciaForm({
               {showDropdown && (
                 <ul className="absolute z-10 w-full bg-white border border-slate-300 rounded-md mt-1 max-h-48 overflow-y-auto shadow-lg">
                   {pacientes
-                    .filter(p => p.paciente.toLowerCase().includes(formData.pacienteNombre.toLowerCase()) && (userRole.toUpperCase() !== "TERAPEUTA" || verTodosLosPacientes || (p.medicoTratante && p.medicoTratante.toLowerCase().includes(userName.toLowerCase()))))
+                    .filter(p => {
+                      if (userRole.toUpperCase() === "TERAPEUTA" && !verTodosLosPacientes) {
+                        const isDocMatch = p.medicoTratante && p.medicoTratante.toLowerCase().includes(userName.toLowerCase());
+                        if (!isDocMatch) return false;
+                      }
+
+                      const inputNorm = formData.pacienteNombre.toLowerCase().trim();
+                      if (!inputNorm) return true;
+
+                      const pNameNorm = p.paciente.toLowerCase().trim();
+                      if (pNameNorm.includes(inputNorm) || inputNorm.includes(pNameNorm)) return true;
+
+                      const inputTokens = inputNorm.split(/\s+/).filter(Boolean);
+                      const pTokens = pNameNorm.split(/\s+/).filter(Boolean);
+                      return inputTokens.every(tok => pTokens.some(pt => pt.includes(tok) || tok.includes(pt)));
+                    })
                     .map(p => (
                       <li 
                         key={p.id} 
-                        className="px-3 py-2 text-sm text-slate-700 hover:bg-[#2980b9] hover:text-white cursor-pointer"
+                        className="px-3 py-2 text-sm text-slate-700 hover:bg-[#2980b9] hover:text-white cursor-pointer flex justify-between items-center"
                         onClick={() => {
                           let horaAgenda = formData.hora;
                           let terapeutaAgenda = p.medicoTratante || formData.terapeuta;
@@ -429,11 +468,26 @@ export function AsistenciaForm({
                           setShowDropdown(false);
                         }}
                       >
-                        {p.paciente}
+                        <span>{p.paciente}</span>
+                        {p.nac && p.nac !== "—" && <span className="text-[10px] text-slate-400 font-mono">({p.nac})</span>}
                       </li>
                     ))}
-                  {pacientes.filter(p => p.paciente.toLowerCase().includes(formData.pacienteNombre.toLowerCase()) && (userRole.toUpperCase() !== "TERAPEUTA" || verTodosLosPacientes || (p.medicoTratante && p.medicoTratante.toLowerCase().includes(userName.toLowerCase())))).length === 0 && (
-                    <li className="px-3 py-2 text-sm text-slate-400">No se encontraron pacientes</li>
+                  {pacientes.filter(p => {
+                    if (userRole.toUpperCase() === "TERAPEUTA" && !verTodosLosPacientes) {
+                      const isDocMatch = p.medicoTratante && p.medicoTratante.toLowerCase().includes(userName.toLowerCase());
+                      if (!isDocMatch) return false;
+                    }
+                    const inputNorm = formData.pacienteNombre.toLowerCase().trim();
+                    if (!inputNorm) return true;
+
+                    const pNameNorm = p.paciente.toLowerCase().trim();
+                    if (pNameNorm.includes(inputNorm) || inputNorm.includes(pNameNorm)) return true;
+
+                    const inputTokens = inputNorm.split(/\s+/).filter(Boolean);
+                    const pTokens = pNameNorm.split(/\s+/).filter(Boolean);
+                    return inputTokens.every(tok => pTokens.some(pt => pt.includes(tok) || tok.includes(pt)));
+                  }).length === 0 && (
+                    <li className="px-3 py-2 text-sm text-slate-400 italic">No se encontraron pacientes coincidentes</li>
                   )}
                 </ul>
               )}
@@ -689,6 +743,14 @@ export function AsistenciaForm({
           </div>
         </div>
       </div>
+
+      <DuplicateWarningModal
+        isOpen={duplicateWarning.isOpen}
+        duplicates={duplicateWarning.duplicates}
+        newPatientName={formData.pacienteNombre}
+        onCancel={() => setDuplicateWarning({ isOpen: false, duplicates: [], isDraft: false })}
+        onConfirmSaveAnyway={() => handleGuardar(duplicateWarning.isDraft, true)}
+      />
     </div>
   );
 }
