@@ -180,17 +180,28 @@ export default function PacientesPage() {
           setAgendaCitas(agendaRes.data);
         }
         
-        // Auto-open clinical note if requested via URL
+        // Auto-open clinical note if requested via URL or sessionStorage
         if (typeof window !== "undefined") {
           const params = new URLSearchParams(window.location.search);
           const action = params.get("action");
-          const patientId = params.get("patientId");
-          if (action === "nota" && patientId) {
-            const p = result.data.find((x: any) => x.id === patientId);
+          const pId = params.get("patientId") || sessionStorage.getItem("autoOpenNotePatientId");
+          const pName = params.get("patientName") || sessionStorage.getItem("autoOpenNotePatientName");
+
+          if (action === "nota" || pId || pName) {
+            let p = null;
+            if (pId) {
+              p = result.data.find((x: any) => x.id === pId);
+            }
+            if (!p && pName) {
+              const targetName = decodeURIComponent(pName).trim().toLowerCase();
+              p = result.data.find((x: any) => (x.name || "").trim().toLowerCase() === targetName || targetName.includes((x.name || "").trim().toLowerCase()) || (x.name || "").trim().toLowerCase().includes(targetName));
+            }
             if (p) {
               setViewingPatient(p);
               setModalTab("nuevo_documento");
-              setSelectedNoteType("Nota Clínica de Fisioterapia");
+              setSelectedNoteType("Registro de Evolución");
+              sessionStorage.removeItem("autoOpenNotePatientId");
+              sessionStorage.removeItem("autoOpenNotePatientName");
               window.history.replaceState(null, '', '/dashboard/pacientes');
             }
           }

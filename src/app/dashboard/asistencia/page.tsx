@@ -653,9 +653,11 @@ export default function AsistenciaPage() {
     }
 
     if (targetId) {
-      router.push(`/dashboard/pacientes?action=nota&patientId=${targetId}`);
+      sessionStorage.setItem("autoOpenNotePatientId", targetId);
+      window.location.href = `/dashboard/pacientes?action=nota&patientId=${targetId}`;
     } else if (formData.pacienteNombre) {
-      router.push(`/dashboard/pacientes?action=nota&patientName=${encodeURIComponent(formData.pacienteNombre)}`);
+      sessionStorage.setItem("autoOpenNotePatientName", formData.pacienteNombre);
+      window.location.href = `/dashboard/pacientes?action=nota&patientName=${encodeURIComponent(formData.pacienteNombre)}`;
     }
   };
 
