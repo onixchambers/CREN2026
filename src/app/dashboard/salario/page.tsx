@@ -171,15 +171,21 @@ export default function SalarioPage() {
               }
 
               if (t.tipoPago === "Porcentaje") {
-                pagoSesionTerapeuta = precioSession * ((t.porcentaje || 50) / 100);
+                const comisionBase = precioSession * ((t.porcentaje || 50) / 100);
                 if (t.retieneIVA) {
-                  ivaSesionRetenido = pagoSesionTerapeuta * 0.16;
+                  ivaSesionRetenido = comisionBase * 0.16;
+                  pagoSesionTerapeuta = comisionBase + ivaSesionRetenido;
+                } else {
+                  pagoSesionTerapeuta = comisionBase;
                 }
                 if (hasFactura || sessionIva > 0) {
                   ivaCrenSesion = Math.max(0, sessionIva - ivaSesionRetenido);
                 }
               } else if (hasFactura || sessionIva > 0) {
                 ivaCrenSesion = sessionIva;
+                pagoSesionTerapeuta = precioSession;
+              } else {
+                pagoSesionTerapeuta = precioSession;
               }
 
               honorariosTotalGen += pagoSesionTerapeuta;
@@ -236,7 +242,7 @@ export default function SalarioPage() {
               sem5 = 0;
             }
 
-            const utilidadCrenFinal = ingresoBrutoTotalGen - totalAPagarFinal - ivaTotalRetenidoGen - ivaCrenTotalGen;
+            const utilidadCrenFinal = ingresoBrutoTotalGen - honorariosTotalGen - ivaCrenTotalGen;
             const pacienteList = Array.from(pacienteMap.values());
 
             return (
@@ -262,7 +268,7 @@ export default function SalarioPage() {
                     </div>
                   </div>
 
-                  {/* LÍNEAS DE RESUMEN Y MONTO DE TOTAL A PAGAR */}
+                  {/* LÍNEAS DE RESUMEN Y MONTO DE TOTAL A PAGAR (5 FILAS EXACTAS) */}
                   <div className="space-y-1.5 text-xs text-slate-600 border-t border-slate-100 pt-3">
                     <div className="flex justify-between max-w-xl">
                       <span className="font-semibold">TOTAL DE ASISTENCIAS:</span>
@@ -277,14 +283,12 @@ export default function SalarioPage() {
                       <span className="font-bold text-slate-800">${honorariosTotalGen.toLocaleString('es-MX', {minimumFractionDigits: 2})}</span>
                     </div>
                     <div className="flex justify-between max-w-xl">
-                      <span className="font-semibold text-amber-700">IVA RETENIDO / FACTURADO (16%):</span>
-                      <span className="font-bold text-amber-700">
-                        {ivaTotalRetenidoGen > 0 || ivaCrenTotalGen > 0 ? (
-                          <>Terapeuta: ${ivaTotalRetenidoGen.toLocaleString('es-MX', {minimumFractionDigits: 2})} | CREN: ${ivaCrenTotalGen.toLocaleString('es-MX', {minimumFractionDigits: 2})}</>
-                        ) : (
-                          `$0.00`
-                        )}
-                      </span>
+                      <span className="font-semibold text-amber-700">IVA 16% TERAPEUTA SAT FACTURA:</span>
+                      <span className="font-bold text-amber-700">${ivaTotalRetenidoGen.toLocaleString('es-MX', {minimumFractionDigits: 2})}</span>
+                    </div>
+                    <div className="flex justify-between max-w-xl">
+                      <span className="font-semibold text-blue-700">IVA 16% CREN PACIENTES:</span>
+                      <span className="font-bold text-blue-700">${ivaCrenTotalGen.toLocaleString('es-MX', {minimumFractionDigits: 2})}</span>
                     </div>
                   </div>
 
@@ -394,8 +398,8 @@ export default function SalarioPage() {
                           <th className="py-3 px-4 text-right">DEUDA</th>
                           <th className="py-3 px-4 text-right">TOTAL SESIÓN</th>
                           <th className="py-3 px-4 text-center">ESQUEMA / %</th>
-                          <th className="py-3 px-4 text-right">IVA PACIENTE</th>
-                          <th className="py-3 px-4 text-right">RETENCIÓN IVA</th>
+                          <th className="py-3 px-4 text-right">IVA 16% CREN PACIENTES</th>
+                          <th className="py-3 px-4 text-right">IVA 16% TERAPEUTA SAT FACTURA</th>
                           <th className="py-3 px-4 text-right">A PAGAR A TERAPEUTA</th>
                         </tr>
                       </thead>
