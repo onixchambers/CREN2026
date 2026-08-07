@@ -93,9 +93,13 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
     loadPermission();
   }, [session, userRole, userName]);
 
-  const handleCloseTherapistPopup = () => {
+  const handleCloseTherapistPopup = async () => {
     if (broadcastMessage?.id) {
       localStorage.setItem("seen_therapist_bcast_id", broadcastMessage.id);
+      try {
+        const { markTherapistBroadcastAsRead } = await import("@/app/actions/configuracion");
+        await markTherapistBroadcastAsRead(broadcastMessage.id);
+      } catch (e) {}
     }
     setShowTherapistPopup(false);
   };
@@ -604,6 +608,34 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
                   className="w-full text-slate-900 border border-slate-300 rounded-lg p-3 text-xs outline-none focus:border-amber-500 font-medium bg-white shadow-inner"
                 />
               </div>
+
+              {broadcastMessage && broadcastMessage.active && (
+                <div className="bg-emerald-50 border border-emerald-200 rounded-xl p-3.5 space-y-2">
+                  <div className="flex justify-between items-center">
+                    <span className="text-xs font-extrabold text-emerald-900 uppercase flex items-center gap-1.5">
+                      <span>👁️</span> Confirmación de Lectura ({Array.isArray(broadcastMessage.readBy) ? broadcastMessage.readBy.length : 0})
+                    </span>
+                    <span className="text-[10px] font-bold text-emerald-700">
+                      Destinatarios: {Array.isArray(broadcastMessage.targets) && broadcastMessage.targets.includes("TODOS") ? "Todos los Terapeutas" : `${broadcastMessage.targets?.length || 0} seleccionados`}
+                    </span>
+                  </div>
+
+                  {(!Array.isArray(broadcastMessage.readBy) || broadcastMessage.readBy.length === 0) ? (
+                    <p className="text-xs text-emerald-700/80 italic">Aún ninguna terapeuta ha leído/confirmado el aviso.</p>
+                  ) : (
+                    <div className="flex flex-wrap gap-1.5 pt-1">
+                      {broadcastMessage.readBy.map((r: any, idx: number) => {
+                        const formattedTime = r.readAt ? new Date(r.readAt).toLocaleTimeString("es-MX", { hour: "2-digit", minute: "2-digit" }) : "";
+                        return (
+                          <span key={idx} className="bg-white border border-emerald-300 text-emerald-900 text-[11px] font-bold px-2.5 py-1 rounded-lg flex items-center gap-1 shadow-2xs">
+                            <span className="text-emerald-600 font-extrabold">✓</span> {r.name} {formattedTime && <span className="text-[9px] text-slate-500 font-normal">({formattedTime})</span>}
+                          </span>
+                        );
+                      })}
+                    </div>
+                  )}
+                </div>
+              )}
 
               <div className="pt-2 flex items-center gap-2 justify-end">
                 {broadcastMessage && broadcastMessage.active && (

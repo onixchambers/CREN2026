@@ -571,6 +571,7 @@ export async function saveTherapistBroadcastMessage(title: string, message: stri
       targets: Array.isArray(targets) && targets.length > 0 ? targets : ["TODOS"],
       date: new Date().toISOString(),
       active: true,
+      readBy: [],
     };
 
     settingsObj.therapistBroadcast = broadcastPayload;
@@ -623,4 +624,43 @@ export async function clearTherapistBroadcastMessage() {
     return { success: false, error: error?.message };
   }
 }
+
+export async function markTherapistBroadcastAsRead(broadcastId: string) {
+  try {
+    const session = await getServerSession(authOptions);
+    if (!session?.user) return { success: false, error: "No autenticado." };
+
+    const userName = session.user.name || "Terapeuta";
+    const s = await prisma.systemSettings.findUnique({ where: { id: 1 } });
+    if (!s || !s.referenceKeys) return { success: false };
+
+    let settingsObj: any = {};
+    try { settingsObj = JSON.parse(s.referenceKeys); } catch (e) {}
+
+    const bcast = settingsObj.therapistBroadcast;
+    if (bcast && bcast.id === broadcastId) {
+      if (!Array.isArray(bcast.readBy)) {
+        bcast.readBy = [];
+      }
+      const alreadyRead = bcast.readBy.some((r: any) => r.name?.toLowerCase().trim() === userName.toLowerCase().trim());
+      if (!alreadyRead) {
+        bcast.readBy.push({
+          name: userName,
+          readAt: new Date().toISOString()
+        });
+        settingsObj.therapistBroadcast = bcast;
+        await prisma.systemSettings.update({
+          where: { id: 1 },
+          data: { referenceKeys: JSON.stringify(settingsObj) }
+        });
+      }
+    }
+
+    return { success: true };
+  } catch (error: any) {
+    console.error("Error marking broadcast read:", error);
+    return { success: false, error: error?.message };
+  }
+}
+
 
