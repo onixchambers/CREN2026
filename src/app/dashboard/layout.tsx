@@ -18,9 +18,28 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
   const userImage = profileData.image || session?.user?.image;
 
   const [allowTherapistEdit, setAllowTherapistEdit] = useState(true);
-  const [systemTimezone, setSystemTimezone] = useState("America/Panama");
+  const [systemTimezone, setSystemTimezone] = useState("America/Mexico_City");
   const [showProfileModal, setShowProfileModal] = useState(false);
   const [isSavingProfile, setIsSavingProfile] = useState(false);
+
+  const formatDateTimeInTimezone = (dateInput: any, tzStr: string = "America/Mexico_City") => {
+    if (!dateInput) return "";
+    try {
+      const d = new Date(dateInput);
+      const timeZone = tzStr || "America/Mexico_City";
+      return d.toLocaleString("es-MX", {
+        timeZone,
+        year: "numeric",
+        month: "short",
+        day: "numeric",
+        hour: "2-digit",
+        minute: "2-digit",
+        hour12: true
+      });
+    } catch (e) {
+      return new Date(dateInput).toLocaleString("es-MX");
+    }
+  };
 
   // Estados para Mensaje Flotante a Terapeutas
   const [broadcastMessage, setBroadcastMessage] = useState<any | null>(null);
@@ -535,8 +554,9 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
                 </p>
               </div>
 
-              <div className="text-[10px] text-slate-400 font-mono text-right">
-                Fecha: {new Date(broadcastMessage.date).toLocaleString("es-MX", { dateStyle: "medium", timeStyle: "short" })}
+              <div className="text-[11px] text-amber-900/80 font-medium flex items-center justify-between border-t border-amber-200/50 pt-2">
+                <span>📅 Fecha y Hora de Envío:</span>
+                <strong className="font-mono text-amber-950">{formatDateTimeInTimezone(broadcastMessage.date, systemTimezone || "America/Mexico_City")}</strong>
               </div>
             </div>
 
@@ -669,10 +689,10 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
                   ) : (
                     <div className="flex flex-wrap gap-1.5 pt-1">
                       {broadcastMessage.readBy.map((r: any, idx: number) => {
-                        const formattedTime = r.readAt ? new Date(r.readAt).toLocaleTimeString("es-MX", { hour: "2-digit", minute: "2-digit" }) : "";
+                        const formattedTime = r.readAt ? formatDateTimeInTimezone(r.readAt, systemTimezone || "America/Mexico_City") : "";
                         return (
                           <span key={idx} className="bg-white border border-emerald-300 text-emerald-900 text-[11px] font-bold px-2.5 py-1 rounded-lg flex items-center gap-1 shadow-2xs">
-                            <span className="text-emerald-600 font-extrabold">✓</span> {r.name} {formattedTime && <span className="text-[9px] text-slate-500 font-normal">({formattedTime})</span>}
+                            <span className="text-emerald-600 font-extrabold">✓</span> {r.name} {formattedTime && <span className="text-[10px] text-slate-600 font-semibold border-l border-emerald-200 pl-1.5 ml-0.5">({formattedTime})</span>}
                           </span>
                         );
                       })}
