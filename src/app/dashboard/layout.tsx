@@ -110,7 +110,24 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
       }, 4000);
       return () => clearInterval(interval);
     }
-  }, [showAdminBroadcastModal]);
+
+    const roleUpper = (userRole || "").toUpperCase();
+    if (roleUpper === "TERAPEUTA") {
+      const interval = setInterval(async () => {
+        try {
+          const { getTherapistBroadcastMessage } = await import("@/app/actions/configuracion");
+          const bRes = await getTherapistBroadcastMessage();
+          if (bRes.success && bRes.broadcast) {
+            setBroadcastMessage(bRes.broadcast);
+            if (bRes.broadcast.active === false) {
+              setShowTherapistPopup(false);
+            }
+          }
+        } catch (e) {}
+      }, 5000);
+      return () => clearInterval(interval);
+    }
+  }, [showAdminBroadcastModal, userRole]);
 
   const handleOpenAdminBroadcastModal = async () => {
     setShowAdminBroadcastModal(true);
@@ -168,8 +185,8 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
       const { clearTherapistBroadcastMessage } = await import("@/app/actions/configuracion");
       const res = await clearTherapistBroadcastMessage();
       if (res.success) {
-        alert("Mensaje retirado.");
-        setBroadcastMessage(null);
+        alert("Mensaje retirado correctamente.");
+        setBroadcastMessage((prev: any) => prev ? { ...prev, active: false } : null);
         setBroadcastTitleInput("");
         setBroadcastMessageInput("");
         setShowAdminBroadcastModal(false);
@@ -279,7 +296,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
               </button>
             )}
 
-            {userRole.toUpperCase() === "TERAPEUTA" && broadcastMessage && (
+            {userRole.toUpperCase() === "TERAPEUTA" && broadcastMessage && broadcastMessage.active === true && (
               <button
                 onClick={() => setShowTherapistPopup(true)}
                 className="px-3 py-1.5 bg-amber-500/90 hover:bg-amber-500 text-white rounded-full text-xs font-bold transition-all cursor-pointer flex items-center gap-1.5 shadow-sm border border-amber-300/30 animate-pulse"
