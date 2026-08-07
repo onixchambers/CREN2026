@@ -35,7 +35,9 @@ export async function ensureAuditTablesExist() {
 export async function isAuditLogEnabled(): Promise<boolean> {
   await ensureAuditTablesExist();
   try {
-    const settings = await prisma.systemSettings.findFirst();
+    const settings = await prisma.systemSettings.findFirst({
+      select: { auditLogEnabled: true }
+    });
     return settings?.auditLogEnabled ?? true;
   } catch (e) {
     return true;
@@ -51,17 +53,11 @@ export async function toggleAuditLogEnabled(enabled: boolean) {
       return { success: false, error: "Solo los administradores pueden cambiar esta configuración." };
     }
 
-    const settings = await prisma.systemSettings.findFirst();
-    if (settings) {
-      await prisma.systemSettings.update({
-        where: { id: settings.id },
-        data: { auditLogEnabled: enabled }
-      });
-    } else {
-      await prisma.systemSettings.create({
-        data: { auditLogEnabled: enabled }
-      });
-    }
+    await prisma.systemSettings.upsert({
+      where: { id: 1 },
+      update: { auditLogEnabled: enabled },
+      create: { id: 1, auditLogEnabled: enabled }
+    });
 
     await logAuditActionInternal({
       userName: session?.user?.name || "Administrador",
@@ -72,11 +68,14 @@ export async function toggleAuditLogEnabled(enabled: boolean) {
       target: "Sistema de Auditoría"
     });
 
-    revalidatePath("/dashboard/configuracion");
+    try {
+      revalidatePath("/dashboard/configuracion");
+    } catch (e) {}
+
     return { success: true, enabled };
-  } catch (error) {
+  } catch (error: any) {
     console.error("Error al cambiar estado de auditoría:", error);
-    return { success: false, error: "Error al actualizar la configuración de auditoría." };
+    return { success: false, error: error?.message || "Error al actualizar la configuración de auditoría." };
   }
 }
 
@@ -161,9 +160,9 @@ export async function getAuditLogs() {
         createdAt: l.createdAt.toISOString()
       }))
     };
-  } catch (error) {
+  } catch (error: any) {
     console.error("Error obteniendo registros de auditoría:", error);
-    return { success: false, error: "Error al cargar los registros de auditoría." };
+    return { success: false, error: error?.message || "Error al cargar los registros de auditoría." };
   }
 }
 
@@ -187,10 +186,13 @@ export async function clearAuditLogs() {
       target: "Historial de Auditoría"
     });
 
-    revalidatePath("/dashboard/configuracion");
+    try {
+      revalidatePath("/dashboard/configuracion");
+    } catch (e) {}
+
     return { success: true };
-  } catch (error) {
+  } catch (error: any) {
     console.error("Error borrando auditoría:", error);
-    return { success: false, error: "Error al borrar el historial de auditoría." };
+    return { success: false, error: error?.message || "Error al borrar el historial de auditoría." };
   }
 }
