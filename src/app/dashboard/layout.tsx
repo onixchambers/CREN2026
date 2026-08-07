@@ -277,9 +277,9 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
             <img 
               src="/logo.png" 
               alt="CREN Logo" 
-              className="h-16 w-auto max-h-[64px] flex-shrink-0 object-contain drop-shadow-md" 
+              className="h-12 w-auto flex-shrink-0 object-contain drop-shadow-md" 
             />
-            <span className="text-xs md:text-sm font-black text-white uppercase tracking-widest border-l border-white/25 pl-3 py-1 drop-shadow-xs">
+            <span className="text-[10px] md:text-[11px] font-bold text-white/90 uppercase tracking-wider border-l border-white/30 pl-3 py-0.5 leading-none">
               Sistema Financiero
             </span>
           </div>
