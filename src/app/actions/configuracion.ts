@@ -286,7 +286,7 @@ export async function saveSettings(data: {
         });
       }
 
-      revalidatePath("/dashboard", "layout");
+      revalidatePath("/dashboard/configuracion");
       return { success: true };
     })();
 
@@ -358,7 +358,7 @@ export async function changeUserPassword(userName: string, currentPassword: stri
       data: { password: hashedNewPassword }
     });
 
-    revalidatePath("/dashboard", "layout");
+    revalidatePath("/dashboard/configuracion");
     return { success: true };
   } catch (error: any) {
     console.error("Error cambiando contraseña:", error);
@@ -437,7 +437,7 @@ export async function updateOwnUserProfile(data: { email?: string; phone?: strin
       }
     });
 
-    revalidatePath("/dashboard", "layout");
+    revalidatePath("/dashboard/configuracion");
     return { success: true };
   } catch (error: any) {
     console.error("Error al actualizar perfil de usuario:", error);
@@ -488,7 +488,7 @@ export async function addTherapyPrice(price: number) {
       create: { id: 1, therapyPrices: joinedStr } as any,
     });
 
-    revalidatePath("/dashboard", "layout");
+    revalidatePath("/dashboard/configuracion");
     
     await logAuditAction({
       action: "AGREGAR_PRECIO_TERAPIA",
@@ -525,7 +525,7 @@ export async function removeTherapyPrice(price: number) {
       create: { id: 1, therapyPrices: joinedStr } as any,
     });
 
-    revalidatePath("/dashboard", "layout");
+    revalidatePath("/dashboard/configuracion");
 
     await logAuditAction({
       action: "ELIMINAR_PRECIO_TERAPIA",
@@ -621,7 +621,7 @@ export async function saveTherapistBroadcastMessage(title: string, message: stri
       create: { id: 1, referenceKeys: jsonString },
     });
 
-    revalidatePath("/dashboard", "layout");
+    revalidatePath("/dashboard/configuracion");
     return { success: true, broadcast: broadcastPayload };
   } catch (error: any) {
     console.error("Error saving therapist broadcast:", error);
@@ -655,7 +655,7 @@ export async function clearTherapistBroadcastMessage() {
       create: { id: 1, referenceKeys: jsonString },
     });
 
-    revalidatePath("/dashboard", "layout");
+    revalidatePath("/dashboard/configuracion");
     return { success: true };
   } catch (error: any) {
     console.error("Error clearing therapist broadcast:", error);
@@ -703,7 +703,7 @@ export async function markTherapistBroadcastAsRead(broadcastId: string, customNa
       }
     }
 
-    revalidatePath("/dashboard", "layout");
+    revalidatePath("/dashboard/configuracion");
     return { success: true, readBy: bcast?.readBy || [] };
   } catch (error: any) {
     console.error("Error marking broadcast read:", error);
