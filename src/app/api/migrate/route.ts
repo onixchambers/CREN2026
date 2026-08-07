@@ -17,8 +17,23 @@ export async function GET() {
     `);
     
     await prisma.$executeRawUnsafe(`
-      ALTER TABLE "Patient" ADD COLUMN IF NOT EXISTS "foto" TEXT;
+      ALTER TABLE "SystemSettings" ADD COLUMN IF NOT EXISTS "auditLogEnabled" BOOLEAN NOT NULL DEFAULT true;
     `);
+
+    await prisma.$executeRawUnsafe(`
+      CREATE TABLE IF NOT EXISTS "AuditLog" (
+        "id" TEXT NOT NULL,
+        "userName" TEXT NOT NULL,
+        "userRole" TEXT NOT NULL,
+        "userEmail" TEXT,
+        "action" TEXT NOT NULL,
+        "details" TEXT NOT NULL,
+        "target" TEXT,
+        "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
+        CONSTRAINT "AuditLog_pkey" PRIMARY KEY ("id")
+      );
+    `);
+
     return NextResponse.json({ success: true, message: "Migrations executed successfully" });
   } catch (error: any) {
     return NextResponse.json({ success: false, error: error.message });

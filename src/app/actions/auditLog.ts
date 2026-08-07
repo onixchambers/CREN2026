@@ -5,7 +5,35 @@ import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth";
 import { revalidatePath, unstable_noStore as noStore } from "next/cache";
 
+let autoMigrated = false;
+
+export async function ensureAuditTablesExist() {
+  if (autoMigrated) return;
+  try {
+    await prisma.$executeRawUnsafe(`
+      ALTER TABLE "SystemSettings" ADD COLUMN IF NOT EXISTS "auditLogEnabled" BOOLEAN NOT NULL DEFAULT true;
+    `);
+    await prisma.$executeRawUnsafe(`
+      CREATE TABLE IF NOT EXISTS "AuditLog" (
+        "id" TEXT NOT NULL,
+        "userName" TEXT NOT NULL,
+        "userRole" TEXT NOT NULL,
+        "userEmail" TEXT,
+        "action" TEXT NOT NULL,
+        "details" TEXT NOT NULL,
+        "target" TEXT,
+        "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
+        CONSTRAINT "AuditLog_pkey" PRIMARY KEY ("id")
+      );
+    `);
+    autoMigrated = true;
+  } catch (e) {
+    console.error("Auto-migration AuditLog error:", e);
+  }
+}
+
 export async function isAuditLogEnabled(): Promise<boolean> {
+  await ensureAuditTablesExist();
   try {
     const settings = await prisma.systemSettings.findFirst();
     return settings?.auditLogEnabled ?? true;
@@ -16,6 +44,7 @@ export async function isAuditLogEnabled(): Promise<boolean> {
 
 export async function toggleAuditLogEnabled(enabled: boolean) {
   try {
+    await ensureAuditTablesExist();
     const session = await getServerSession(authOptions);
     const userRole = (session?.user?.role || "").toUpperCase();
     if (userRole !== "ADMIN" && userRole !== "ADMINISTRADOR") {
@@ -110,6 +139,7 @@ export async function logAuditAction(params: {
 export async function getAuditLogs() {
   noStore();
   try {
+    await ensureAuditTablesExist();
     const session = await getServerSession(authOptions);
     const roleUpper = (session?.user?.role || "").toUpperCase();
 
