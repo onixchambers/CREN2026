@@ -609,7 +609,7 @@ export default function AsistenciaPage() {
       const citaExistente = agendaCitas.find((c: any) => 
         c.paciente === formData.pacienteNombre && 
         c.fecha === formData.fecha && 
-        (c.hora === formData.hora || !formData.hora)
+        c.hora === formData.hora
       );
 
       if (citaExistente) {

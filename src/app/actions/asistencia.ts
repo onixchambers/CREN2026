@@ -65,10 +65,46 @@ export async function saveAsistenciaDB(data: any) {
       }
     }
     
-    // Fallback por fecha si no hay agendaId
-    if (!targetSession) {
+    // 3. Fallback por fecha y hora exacta
+    if (!targetSession && data.hora) {
       for (const s of existingSessions) {
-        if (s.date.toISOString().split("T")[0] === data.fecha) {
+        const sFecha = s.date.toISOString().split("T")[0];
+        let sHora = "";
+        if (s.notes) {
+          try {
+            const extra = JSON.parse(s.notes);
+            if (extra.hora) sHora = extra.hora;
+          } catch(e) {}
+        }
+        if (!sHora) {
+          sHora = s.date.toISOString().split("T")[1]?.substring(0, 5) || "";
+        }
+
+        if (sFecha === data.fecha && sHora === data.hora) {
+          targetSession = s;
+          break;
+        }
+      }
+    }
+
+    // 4. Fallback por fecha y hora exacta buscando en todas las sesiones del paciente (si cambió de terapeuta)
+    if (!targetSession && data.hora) {
+      const allPatientSessions = await prisma.session.findMany({
+        where: { patientId: patient.id }
+      });
+      for (const s of allPatientSessions) {
+        const sFecha = s.date.toISOString().split("T")[0];
+        let sHora = "";
+        if (s.notes) {
+          try {
+            const extra = JSON.parse(s.notes);
+            if (extra.hora) sHora = extra.hora;
+          } catch(e) {}
+        }
+        if (!sHora) {
+          sHora = s.date.toISOString().split("T")[1]?.substring(0, 5) || "";
+        }
+        if (sFecha === data.fecha && sHora === data.hora) {
           targetSession = s;
           break;
         }
