@@ -22,6 +22,25 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
   const [showProfileModal, setShowProfileModal] = useState(false);
   const [isSavingProfile, setIsSavingProfile] = useState(false);
 
+  const formatDateTimeInTimezone = (dateInput: any, tzStr: string = "America/Mexico_City") => {
+    if (!dateInput) return "";
+    try {
+      const d = new Date(dateInput);
+      const timeZone = tzStr || "America/Mexico_City";
+      return d.toLocaleString("es-MX", {
+        timeZone,
+        year: "numeric",
+        month: "short",
+        day: "numeric",
+        hour: "2-digit",
+        minute: "2-digit",
+        hour12: true
+      });
+    } catch (e) {
+      return new Date(dateInput).toLocaleString("es-MX");
+    }
+  };
+
   // Estados para Mensaje Flotante a Terapeutas
   const [broadcastMessage, setBroadcastMessage] = useState<any | null>(null);
   const [showTherapistPopup, setShowTherapistPopup] = useState(false);
@@ -254,13 +273,19 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
       {/* Header */}
       <header className="bg-gradient-to-r from-[#0e2f44] via-[#1a5276] to-[#2980b9] text-white shadow-lg sticky top-0 z-50">
         <div className="flex items-center justify-between px-6 py-2">
-          <div className="flex flex-col items-start justify-center">
-            <img 
-              src="/logo.png" 
-              alt="CREN Logo" 
-              className="h-14 w-auto flex-shrink-0 object-contain drop-shadow-md" 
-            />
-            <span className="text-[7px] md:text-[8px] font-bold text-white/90 tracking-wide mt-1 pl-1">Sistema Financiero</span>
+          <div className="flex items-center gap-2.5">
+            <div className="w-12 h-12 md:w-[52px] md:h-[52px] rounded-full bg-white flex items-center justify-center p-2.5 shadow-md shrink-0 border border-white/40 relative">
+              <div className="absolute inset-[1.5px] rounded-full border-2 border-[#154360]/85 pointer-events-none" />
+              <img 
+                src="/logo.png" 
+                alt="CREN Logo" 
+                className="w-full h-full object-contain relative z-10" 
+                style={{ filter: "brightness(0) saturate(100%) invert(16%) sepia(35%) saturate(2200%) hue-rotate(178deg) brightness(96%) contrast(92%)" }}
+              />
+            </div>
+            <span className="text-[9px] md:text-[10px] font-medium text-white/90 uppercase tracking-tight border-l border-white/30 pl-2.5 py-0.5 leading-none whitespace-nowrap">
+              Sistema Financiero
+            </span>
           </div>
           <div className="flex items-center gap-4">
             <div 
@@ -535,8 +560,9 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
                 </p>
               </div>
 
-              <div className="text-[10px] text-slate-400 font-mono text-right">
-                Fecha: {new Date(broadcastMessage.date).toLocaleString("es-MX", { dateStyle: "medium", timeStyle: "short", timeZone: systemTimezone })}
+              <div className="text-[11px] text-amber-900/80 font-medium flex items-center justify-between border-t border-amber-200/50 pt-2">
+                <span>📅 Fecha y Hora de Envío:</span>
+                <strong className="font-mono text-amber-950">{formatDateTimeInTimezone(broadcastMessage.date, systemTimezone || "America/Mexico_City")}</strong>
               </div>
             </div>
 
@@ -669,32 +695,10 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
                   ) : (
                     <div className="flex flex-wrap gap-1.5 pt-1">
                       {broadcastMessage.readBy.map((r: any, idx: number) => {
-                        let formattedDateTime = "";
-                        if (r.readAt) {
-                          try {
-                            formattedDateTime = new Date(r.readAt).toLocaleString("es-MX", {
-                              day: "2-digit",
-                              month: "2-digit",
-                              year: "numeric",
-                              hour: "2-digit",
-                              minute: "2-digit",
-                              hour12: true,
-                              timeZone: systemTimezone
-                            });
-                          } catch (e) {
-                            formattedDateTime = new Date(r.readAt).toLocaleString("es-MX", {
-                              day: "2-digit",
-                              month: "2-digit",
-                              year: "numeric",
-                              hour: "2-digit",
-                              minute: "2-digit",
-                              hour12: true
-                            });
-                          }
-                        }
+                        const formattedTime = r.readAt ? formatDateTimeInTimezone(r.readAt, systemTimezone || "America/Mexico_City") : "";
                         return (
                           <span key={idx} className="bg-white border border-emerald-300 text-emerald-900 text-[11px] font-bold px-2.5 py-1 rounded-lg flex items-center gap-1 shadow-2xs">
-                            <span className="text-emerald-600 font-extrabold">✓</span> {r.name} {formattedDateTime && <span className="text-[9px] text-slate-500 font-normal">({formattedDateTime})</span>}
+                            <span className="text-emerald-600 font-extrabold">✓</span> {r.name} {formattedTime && <span className="text-[10px] text-slate-600 font-semibold border-l border-emerald-200 pl-1.5 ml-0.5">({formattedTime})</span>}
                           </span>
                         );
                       })}
