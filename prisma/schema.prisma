@@ -143,7 +143,22 @@ model SystemSettings {
   googleDriveWebhookUrl String   @default("")
   timezone              String   @default("America/Mexico_City")
   therapyPrices         String?  @default("")
+  auditLogEnabled       Boolean  @default(true)
   updatedAt             DateTime @updatedAt
+}
+
+model AuditLog {
+  id        String   @id @default(cuid())
+  userName  String
+  userRole  String
+  userEmail String?
+  action    String
+  details   String
+  target    String?
+  createdAt DateTime @default(now())
+
+  @@index([userRole])
+  @@index([createdAt])
 }
 
 model OperationalExpense {

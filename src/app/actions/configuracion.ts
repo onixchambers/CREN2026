@@ -5,6 +5,7 @@ import { revalidatePath, unstable_noStore as noStore } from "next/cache";
 import bcrypt from "bcrypt";
 import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth";
+import { logAuditAction } from "@/app/actions/auditLog";
 
 export async function getSettings(month: string) {
   try {
@@ -470,6 +471,13 @@ export async function addTherapyPrice(price: number) {
     });
 
     revalidatePath("/dashboard", "layout");
+    
+    await logAuditAction({
+      action: "AGREGAR_PRECIO_TERAPIA",
+      details: `Se agregó el nuevo precio de terapia $${price}.`,
+      target: `$${price}`
+    });
+
     return { success: true, prices: currentPrices };
   } catch (error: any) {
     console.error("Error adding therapy price:", error);
@@ -500,6 +508,13 @@ export async function removeTherapyPrice(price: number) {
     });
 
     revalidatePath("/dashboard", "layout");
+
+    await logAuditAction({
+      action: "ELIMINAR_PRECIO_TERAPIA",
+      details: `Se eliminó el precio de terapia $${price}.`,
+      target: `$${price}`
+    });
+
     return { success: true, prices: currentPrices };
   } catch (error: any) {
     console.error("Error removing therapy price:", error);

@@ -2,6 +2,7 @@
 import { useState, useEffect } from "react";
 import { useSession } from "next-auth/react";
 import { getSettings, saveSettings } from "@/app/actions/configuracion";
+import { getAuditLogs, toggleAuditLogEnabled, clearAuditLogs } from "@/app/actions/auditLog";
 import { MultiSelect } from "@/components/MultiSelect";
 import { TimezoneSelector } from "@/components/TimezoneSelector";
 import { CountrySelector } from "@/components/CountrySelector";
@@ -50,6 +51,14 @@ export default function ConfiguracionPage() {
   
   const [isLoading, setIsLoading] = useState(true);
   const [isSaving, setIsSaving] = useState(false);
+
+  // Audit Log states
+  const [auditLogEnabled, setAuditLogEnabled] = useState(true);
+  const [isAuditAccordionOpen, setIsAuditAccordionOpen] = useState(false);
+  const [auditLogs, setAuditLogs] = useState<any[]>([]);
+  const [isLoadingAuditLogs, setIsLoadingAuditLogs] = useState(false);
+  const [auditSearchTerm, setAuditSearchTerm] = useState("");
+  const [auditRoleFilter, setAuditRoleFilter] = useState("TODOS");
 
   const compressProfileImage = (file: File, callback: (base64: string) => void) => {
     const reader = new FileReader();
@@ -130,6 +139,19 @@ export default function ConfiguracionPage() {
         }
         items.sort((a, b) => (a.label || "").localeCompare(b.label || "", 'es', { sensitivity: 'base' }));
         setGastos(items);
+
+        // Load audit logs for admin
+        const currentRole = ((session?.user as any)?.role || "").toUpperCase();
+        if (currentRole === "ADMIN" || currentRole === "ADMINISTRADOR") {
+          setIsLoadingAuditLogs(true);
+          getAuditLogs().then(auditRes => {
+            if (auditRes.success && auditRes.logs) {
+              setAuditLogs(auditRes.logs);
+              setAuditLogEnabled(auditRes.enabled ?? true);
+            }
+            setIsLoadingAuditLogs(false);
+          });
+        }
       } else {
         console.error("Failed to load settings from server", res.error);
         alert("Error al cargar configuración: " + (res.error || "Error desconocido"));
@@ -794,6 +816,140 @@ export default function ConfiguracionPage() {
         </div>
 
       </div>
+
+      {/* REGISTRO Y AUDITORÍA DE MODIFICACIONES (SOLO PARA ADMINISTRADOR) */}
+      {(userRole.toUpperCase() === "ADMIN" || userRole.toUpperCase() === "ADMINISTRADOR") && (
+        <div className="bg-white rounded-xl shadow-sm border border-slate-200 overflow-hidden mt-6">
+          <div 
+            onClick={() => setIsAuditAccordionOpen(!isAuditAccordionOpen)}
+            className="p-5 bg-slate-900 text-white flex flex-col sm:flex-row sm:items-center justify-between gap-4 cursor-pointer hover:bg-slate-800 transition-colors select-none"
+          >
+            <div className="flex items-center gap-3">
+              <div className="p-2.5 bg-amber-500/20 text-amber-400 rounded-xl text-xl border border-amber-500/30">
+                📜
+              </div>
+              <div>
+                <h3 className="font-extrabold text-base tracking-wide flex items-center gap-2">
+                  Registro y Auditoría de Modificaciones
+                  <span className="text-[10px] bg-amber-500/30 text-amber-300 px-2 py-0.5 rounded-full border border-amber-500/40 uppercase font-mono">
+                    Solo Administrador
+                  </span>
+                </h3>
+                <p className="text-xs text-slate-300 font-normal">
+                  Historial detallado de cambios, ediciones y eliminaciones realizadas por perfiles de Administrador e Invitado.
+                </p>
+              </div>
+            </div>
+
+            <div className="flex items-center gap-4" onClick={(e) => e.stopPropagation()}>
+              {/* BOTÓN ACTIVAR / DESACTIVAR */}
+              <div className="flex items-center gap-2.5 bg-slate-800 px-3.5 py-1.5 rounded-xl border border-slate-700">
+                <span className="text-xs font-bold text-slate-300">
+                  {auditLogEnabled ? "🟢 Auditoría Activa" : "🔴 Auditoría Desactivada"}
+                </span>
+                <label className="relative inline-flex items-center cursor-pointer">
+                  <input 
+                    type="checkbox" 
+                    checked={auditLogEnabled} 
+                    onChange={async (e) => {
+                      const nextVal = e.target.checked;
+                      setAuditLogEnabled(nextVal);
+                      const res = await toggleAuditLogEnabled(nextVal);
+                      if (res.success) {
+                        setAuditLogEnabled(res.enabled);
+                      } else {
+                        alert(res.error);
+                      }
+                    }} 
+                    className="sr-only peer" 
+                  />
+                  <div className="w-9 h-5 bg-slate-600 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-slate-300 after:border after:rounded-full after:h-4 after:w-4 after:transition-all peer-checked:bg-amber-500"></div>
+                </label>
+              </div>
+
+              <button 
+                onClick={() => setIsAuditAccordionOpen(!isAuditAccordionOpen)}
+                className="p-2 hover:bg-slate-700 rounded-lg transition-colors text-slate-300"
+              >
+                <svg className={`w-5 h-5 transition-transform duration-200 ${isAuditAccordionOpen ? "rotate-180" : ""}`} fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+                </svg>
+              </button>
+            </div>
+          </div>
+
+          {isAuditAccordionOpen && (
+            <div className="p-6 space-y-4 bg-slate-50 border-t border-slate-200">
+              {/* BUSCADOR Y FILTROS */}
+              <div className="flex flex-wrap items-center justify-between gap-3 bg-white p-3.5 rounded-xl border border-slate-200 shadow-xs">
+                <div className="flex flex-wrap items-center gap-3 flex-1">
+                  <input
+                    type="text"
+                    placeholder="Buscar por usuario, acción o detalles..."
+                    value={auditSearchTerm}
+                    onChange={(e) => setAuditSearchTerm(e.target.value)}
+                    className="px-3.5 py-1.5 border border-slate-300 rounded-lg text-xs outline-none focus:border-amber-500 w-full sm:w-72 text-slate-900 bg-white font-medium"
+                  />
+                  <select
+                    value={auditRoleFilter}
+                    onChange={(e) => setAuditRoleFilter(e.target.value)}
+                    className="px-3 py-1.5 border border-slate-300 rounded-lg text-xs outline-none focus:border-amber-500 bg-white text-slate-700 font-bold"
+                  >
+                    <option value="TODOS">Todos los Roles (Admin + Invitado)</option>
+                    <option value="ADMIN">Administradores</option>
+                    <option value="INVITADO">Invitados</option>
+                  </select>
+                </div>
+
+                <button
+                  onClick={async () => {
+                    if (confirm("¿Estás seguro de que deseas borrar el historial de auditoría de modificaciones?")) {
+                      const res = await clearAuditLogs();
+                      if (res.success) {
+                        setAuditLogs([]);
+                      }
+                    }
+                  }}
+                  className="px-3.5 py-1.5 bg-rose-50 hover:bg-rose-100 text-rose-700 border border-rose-200 rounded-lg text-xs font-bold transition-colors cursor-pointer flex items-center gap-1.5"
+                >
+                  🗑️ Limpiar Historial
+                </button>
+              </div>
+
+              {/* LISTADO DE AUDITORÍA */}
+              <div className="bg-white rounded-xl border border-slate-200 overflow-hidden shadow-xs">
+                {isLoadingAuditLogs ? (
+                  <div className="p-8 text-center text-slate-400 text-xs font-medium">Cargando registros de auditoría...</div>
+                ) : filteredAuditLogs.length === 0 ? (
+                  <div className="p-8 text-center text-slate-400 text-xs font-medium">No hay modificaciones registradas en el sistema.</div>
+                ) : (
+                  <div className="divide-y divide-slate-100 max-h-96 overflow-y-auto">
+                    {filteredAuditLogs.map((log: any) => (
+                      <div key={log.id} className="p-3.5 hover:bg-slate-50 transition-colors flex flex-col sm:flex-row sm:items-center justify-between gap-2 text-xs">
+                        <div className="space-y-1">
+                          <div className="flex flex-wrap items-center gap-2">
+                            <span className="font-bold text-slate-900">{log.userName}</span>
+                            <span className={`px-2 py-0.5 rounded text-[10px] font-extrabold uppercase ${log.userRole?.toUpperCase().includes('ADMIN') ? 'bg-purple-100 text-purple-800 border border-purple-200' : 'bg-blue-100 text-blue-800 border border-blue-200'}`}>
+                              {log.userRole}
+                            </span>
+                            <span className="text-[10px] font-extrabold bg-amber-50 text-amber-800 px-2 py-0.5 rounded border border-amber-200">
+                              {log.action}
+                            </span>
+                          </div>
+                          <p className="text-slate-700 font-medium leading-relaxed">{log.details}</p>
+                        </div>
+                        <div className="text-[11px] text-slate-400 font-mono whitespace-nowrap sm:text-right">
+                          {formatDateTimeInTimezone(log.createdAt, timezone)}
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </div>
+            </div>
+          )}
+        </div>
+      )}
 
       {/* MODAL PERFIL ENGRANDECIDO (AL HACER CLIC EN LA FOTO DE CUALQUIER USUARIO) */}
       {viewingUserModal && (

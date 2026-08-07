@@ -8,6 +8,7 @@ import { authOptions } from "@/lib/auth";
 import { uploadFileToGoogleDrive } from "@/lib/googleDrive";
 import { generateClinicalNotePdfBase64 } from "@/lib/pdfGenerator";
 import { generateUniqueDisplayId } from "@/lib/displayId";
+import { logAuditAction } from "@/app/actions/auditLog";
 
 async function verifyTherapistPatientPermission() {
   const session = await getServerSession(authOptions);
@@ -92,6 +93,12 @@ export async function createPatient(data: any) {
     revalidatePath("/dashboard/ficha");
     revalidatePath("/dashboard/pacientes");
     
+    await logAuditAction({
+      action: "CREAR_PACIENTE",
+      details: `Se creó el expediente del paciente "${patient.name}" (ID: ${patient.displayId || patient.id}).`,
+      target: patient.name
+    });
+
     return { success: true, data: patient };
   } catch (error: any) {
     console.error("Error creating patient:", error);
@@ -384,11 +391,19 @@ export async function deletePatient(id: string) {
     const perm = await verifyTherapistPatientPermission();
     if (!perm.allowed) return { success: false, error: perm.error };
 
+    const targetPatient = await prisma.patient.findUnique({ where: { id } });
     await prisma.$transaction([
       prisma.session.deleteMany({ where: { patientId: id } }),
       prisma.payment.deleteMany({ where: { patientId: id } }),
       prisma.patient.delete({ where: { id } })
     ]);
+
+    await logAuditAction({
+      action: "ELIMINAR_PACIENTE",
+      details: `Se eliminó permanentemente el expediente del paciente "${targetPatient?.name || id}" (ID: ${targetPatient?.displayId || id}).`,
+      target: targetPatient?.name || id
+    });
+
     revalidatePath("/dashboard/pacientes");
     return { success: true };
   } catch (error: any) {
@@ -422,6 +437,13 @@ export async function updatePatientStatus(id: string, estatus: string, motivo?: 
 
     revalidatePath("/dashboard/pacientes");
     revalidatePath("/dashboard");
+
+    await logAuditAction({
+      action: "CAMBIAR_ESTADO_PACIENTE",
+      details: `Se cambió el estado del paciente "${updated.name}" a "${estatus}"${motivo ? ` (Motivo: ${motivo})` : ""}.`,
+      target: updated.name
+    });
+
     return { success: true, data: updated };
   } catch (error: any) {
     console.error("Error updating patient status:", error);

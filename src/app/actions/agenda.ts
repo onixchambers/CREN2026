@@ -6,6 +6,7 @@ import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth";
 import { generateUniqueDisplayId } from "@/lib/displayId";
 import { unstable_noStore as noStore } from "next/cache";
+import { logAuditAction } from "@/app/actions/auditLog";
 
 export async function getAgenda() {
   noStore();
@@ -202,6 +203,13 @@ export async function addCita(data: any) {
     }
 
     revalidatePath("/dashboard/agenda");
+    
+    await logAuditAction({
+      action: "AGENDAR_CITA",
+      details: `Se agendó cita para "${data.paciente}" en fecha ${data.fecha} a las ${data.hora} (Estado: ${data.estado || 'Agendado'}).`,
+      target: data.paciente
+    });
+
     return { success: true, citas: createdCitas, id: createdCitas[0]?.id };
   } catch (error: any) {
     console.error("Error addCita:", error);
@@ -233,6 +241,12 @@ export async function updateCita(id: string, data: any) {
       }
     });
 
+    await logAuditAction({
+      action: "EDITAR_CITA",
+      details: `Se actualizó la cita para "${data.paciente || (extra as any).paciente || id}" (Estado: ${data.estado || (extra as any).estado || dbStatus}).`,
+      target: data.paciente || (extra as any).paciente || id
+    });
+
     return { success: true };
   } catch (error) {
     console.error("Error actualizando cita:", error);
@@ -255,8 +269,17 @@ export async function deleteCita(id: string) {
       }
     }
 
+    const citaTarget = await prisma.session.findUnique({ where: { id }, include: { patient: true } });
+
     await prisma.session.delete({ where: { id } });
     revalidatePath("/dashboard/agenda");
+
+    await logAuditAction({
+      action: "ELIMINAR_CITA",
+      details: `Se eliminó la cita del paciente "${citaTarget?.patient?.name || id}".`,
+      target: citaTarget?.patient?.name || id
+    });
+
     return { success: true };
   } catch (error) {
     console.error("Error eliminando cita:", error);
