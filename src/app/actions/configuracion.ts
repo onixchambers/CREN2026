@@ -177,7 +177,7 @@ export async function saveSettings(data: {
       return { success: false, error: "No tienes permisos para modificar la configuración." };
     }
 
-    const timeoutPromise = new Promise((_, reject) => setTimeout(() => reject(new Error("La conexión a la base de datos tardó demasiado (Timeout). Revisa tu DATABASE_URL en Vercel.")), 15000));
+    const timeoutPromise = new Promise((_, reject) => setTimeout(() => reject(new Error("La conexión a la base de datos tardó demasiado (Timeout). Revisa tu DATABASE_URL en Vercel.")), 30000));
     
     const dbPromise = (async () => {
       // 1. Process Users
@@ -192,40 +192,40 @@ export async function saveSettings(data: {
         });
       }
 
-        const userPromises = data.users.map(async (user: any) => {
-          let finalPassword = user.contrasena || "";
-          if (finalPassword && !finalPassword.startsWith("$2b$") && !finalPassword.startsWith("$2a$")) {
-            finalPassword = await bcrypt.hash(finalPassword, 10);
-          }
+      const userPromises = data.users.map(async (user: any) => {
+        let finalPassword = user.contrasena || "";
+        if (finalPassword && !finalPassword.startsWith("$2b$") && !finalPassword.startsWith("$2a$")) {
+          finalPassword = await bcrypt.hash(finalPassword, 10);
+        }
 
-          if (typeof user.id === 'string' && user.id.startsWith('c')) { 
-            return prisma.user.update({
-              where: { id: user.id },
-              data: {
-                name: user.usuario,
-                role: user.rol,
-                password: finalPassword,
-                especialidad: user.especialidad || "",
-                email: user.email || null,
-                phone: user.phone || null,
-                image: user.image || null,
-              }
-            });
-          } else { 
-            return prisma.user.create({
-              data: {
-                name: user.usuario,
-                role: user.rol,
-                password: finalPassword,
-                especialidad: user.especialidad || "",
-                email: user.email || null,
-                phone: user.phone || null,
-                image: user.image || null,
-              }
-            });
-          }
-        });
-        await Promise.all(userPromises);
+        if (typeof user.id === 'string' && user.id.startsWith('c')) { 
+          return prisma.user.update({
+            where: { id: user.id },
+            data: {
+              name: user.usuario,
+              role: user.rol,
+              password: finalPassword,
+              especialidad: user.especialidad || "",
+              email: user.email || null,
+              phone: user.phone || null,
+              image: user.image || null,
+            }
+          });
+        } else { 
+          return prisma.user.create({
+            data: {
+              name: user.usuario,
+              role: user.rol,
+              password: finalPassword,
+              especialidad: user.especialidad || "",
+              email: user.email || null,
+              phone: user.phone || null,
+              image: user.image || null,
+            }
+          });
+        }
+      });
+      await Promise.all(userPromises);
 
       // 2. Save SystemSettings
       await prisma.systemSettings.upsert({
@@ -271,7 +271,7 @@ export async function saveSettings(data: {
         }
       });
 
-      // 3. Save Expenses
+      // 3. Save Expenses in parallel
       const incomingExpenseLabels = data.expenses.map(e => e.label);
       await prisma.operationalExpense.deleteMany({
         where: {
@@ -280,19 +280,22 @@ export async function saveSettings(data: {
         }
       });
 
-      for (const exp of data.expenses) {
-        if (!exp.label.trim()) continue; 
-        await prisma.operationalExpense.upsert({
-          where: {
-            month_label: {
-              month: data.month,
-              label: exp.label,
-            }
-          },
-          update: { amount: exp.amount },
-          create: { month: data.month, label: exp.label, amount: exp.amount }
-        });
-      }
+      const expensePromises = data.expenses
+        .filter(exp => exp.label && exp.label.trim().length > 0)
+        .map(exp => 
+          prisma.operationalExpense.upsert({
+            where: {
+              month_label: {
+                month: data.month,
+                label: exp.label,
+              }
+            },
+            update: { amount: exp.amount },
+            create: { month: data.month, label: exp.label, amount: exp.amount }
+          })
+        );
+      
+      await Promise.all(expensePromises);
 
       try { revalidatePath("/dashboard/configuracion"); } catch (e) {}
       return { success: true };
