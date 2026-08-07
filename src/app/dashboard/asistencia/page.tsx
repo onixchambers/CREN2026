@@ -657,6 +657,7 @@ export default function AsistenciaPage() {
     const horaVal = formData.hora || "";
     const terapeutaVal = formData.terapeuta || "";
 
+    sessionStorage.setItem("triggerAutoOpenNote", "true");
     if (targetId) {
       sessionStorage.setItem("autoOpenNotePatientId", targetId);
       sessionStorage.setItem("autoOpenNoteAgendaId", agendaIdVal);

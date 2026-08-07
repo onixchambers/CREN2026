@@ -182,56 +182,62 @@ export default function PacientesPage() {
           setAgendaCitas(agendaRes.data);
         }
         
-        // Auto-open clinical note if requested via URL or sessionStorage
+        // Auto-open clinical note ONLY ONCE if explicitly triggered by finalizing a session
         if (typeof window !== "undefined") {
           const params = new URLSearchParams(window.location.search);
           const action = params.get("action");
-          const pId = params.get("patientId") || sessionStorage.getItem("autoOpenNotePatientId");
-          const pName = params.get("patientName") || sessionStorage.getItem("autoOpenNotePatientName");
-          const aId = params.get("agendaId") || sessionStorage.getItem("autoOpenNoteAgendaId");
-          const pFecha = params.get("fecha") || sessionStorage.getItem("autoOpenNoteFecha");
-          const pHora = params.get("hora") || sessionStorage.getItem("autoOpenNoteHora");
-          const pTerapeuta = params.get("terapeuta") || sessionStorage.getItem("autoOpenNoteTerapeuta");
+          const isTriggered = sessionStorage.getItem("triggerAutoOpenNote") === "true" || action === "nota";
 
-          if (action === "nota" || pId || pName) {
-            let p = null;
-            if (pId) {
-              p = result.data.find((x: any) => x.id === pId);
-            }
-            if (!p && pName) {
-              const targetName = decodeURIComponent(pName).trim().toLowerCase();
-              p = result.data.find((x: any) => (x.name || "").trim().toLowerCase() === targetName || targetName.includes((x.name || "").trim().toLowerCase()) || (x.name || "").trim().toLowerCase().includes(targetName));
-            }
-            if (p) {
-              let matchedCita = null;
-              const citasForP = (agendaRes.data || []).filter((c: any) => c.paciente === p.name || c.pacienteId === p.id);
-              if (aId) {
-                matchedCita = citasForP.find((c: any) => c.id === aId);
-              }
-              if (!matchedCita && pFecha) {
-                matchedCita = citasForP.find((c: any) => c.fecha === pFecha && (!pHora || c.hora === pHora));
-              }
-              if (!matchedCita && citasForP.length > 0) {
-                matchedCita = citasForP[0];
-              }
+          if (isTriggered) {
+            const pId = params.get("patientId") || sessionStorage.getItem("autoOpenNotePatientId");
+            const pName = params.get("patientName") || sessionStorage.getItem("autoOpenNotePatientName");
+            const aId = params.get("agendaId") || sessionStorage.getItem("autoOpenNoteAgendaId");
+            const pFecha = params.get("fecha") || sessionStorage.getItem("autoOpenNoteFecha");
+            const pHora = params.get("hora") || sessionStorage.getItem("autoOpenNoteHora");
+            const pTerapeuta = params.get("terapeuta") || sessionStorage.getItem("autoOpenNoteTerapeuta");
 
-              setViewingPatient(p);
-              setModalTab("nuevo_documento");
-              setSelectedNoteType("Registro de Evolución");
-              setDocFormData({
-                linkedCitaId: matchedCita ? matchedCita.id : (aId || ""),
-                fecha: matchedCita ? matchedCita.fecha : (pFecha || new Date().toISOString().split("T")[0]),
-                hora: matchedCita ? matchedCita.hora : (pHora || "12:00"),
-                terapeuta: matchedCita ? matchedCita.terapeuta : (pTerapeuta || userName || "")
-              });
+            // Clean up trigger and all keys IMMEDIATELY so regular tab switching never triggers this popup again!
+            sessionStorage.removeItem("triggerAutoOpenNote");
+            sessionStorage.removeItem("autoOpenNotePatientId");
+            sessionStorage.removeItem("autoOpenNotePatientName");
+            sessionStorage.removeItem("autoOpenNoteAgendaId");
+            sessionStorage.removeItem("autoOpenNoteFecha");
+            sessionStorage.removeItem("autoOpenNoteHora");
+            sessionStorage.removeItem("autoOpenNoteTerapeuta");
+            window.history.replaceState(null, '', '/dashboard/pacientes');
 
-              sessionStorage.removeItem("autoOpenNotePatientId");
-              sessionStorage.removeItem("autoOpenNotePatientName");
-              sessionStorage.removeItem("autoOpenNoteAgendaId");
-              sessionStorage.removeItem("autoOpenNoteFecha");
-              sessionStorage.removeItem("autoOpenNoteHora");
-              sessionStorage.removeItem("autoOpenNoteTerapeuta");
-              window.history.replaceState(null, '', '/dashboard/pacientes');
+            if (pId || pName) {
+              let p = null;
+              if (pId) {
+                p = result.data.find((x: any) => x.id === pId);
+              }
+              if (!p && pName) {
+                const targetName = decodeURIComponent(pName).trim().toLowerCase();
+                p = result.data.find((x: any) => (x.name || "").trim().toLowerCase() === targetName || targetName.includes((x.name || "").trim().toLowerCase()) || (x.name || "").trim().toLowerCase().includes(targetName));
+              }
+              if (p) {
+                let matchedCita = null;
+                const citasForP = (agendaRes.data || []).filter((c: any) => c.paciente === p.name || c.pacienteId === p.id);
+                if (aId) {
+                  matchedCita = citasForP.find((c: any) => c.id === aId);
+                }
+                if (!matchedCita && pFecha) {
+                  matchedCita = citasForP.find((c: any) => c.fecha === pFecha && (!pHora || c.hora === pHora));
+                }
+                if (!matchedCita && citasForP.length > 0) {
+                  matchedCita = citasForP[0];
+                }
+
+                setViewingPatient(p);
+                setModalTab("nuevo_documento");
+                setSelectedNoteType("Registro de Evolución");
+                setDocFormData({
+                  linkedCitaId: matchedCita ? matchedCita.id : (aId || ""),
+                  fecha: matchedCita ? matchedCita.fecha : (pFecha || new Date().toISOString().split("T")[0]),
+                  hora: matchedCita ? matchedCita.hora : (pHora || "12:00"),
+                  terapeuta: matchedCita ? matchedCita.terapeuta : (pTerapeuta || userName || "")
+                });
+              }
             }
           }
         }
