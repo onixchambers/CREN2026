@@ -532,7 +532,7 @@ export async function getTherapistBroadcastMessage() {
 
     try {
       const parsed = JSON.parse(s.referenceKeys);
-      if (parsed.therapistBroadcast && parsed.therapistBroadcast.active) {
+      if (parsed.therapistBroadcast) {
         return { success: true, broadcast: parsed.therapistBroadcast };
       }
     } catch (e) {}
@@ -564,15 +564,19 @@ export async function saveTherapistBroadcastMessage(title: string, message: stri
       try { settingsObj = JSON.parse(s.referenceKeys); } catch (e) {}
     }
 
+    const previousBroadcast = settingsObj.therapistBroadcast;
+    const isSameMessage = previousBroadcast && previousBroadcast.title === title.trim() && previousBroadcast.message === message.trim();
+    const existingReadBy = isSameMessage && Array.isArray(previousBroadcast.readBy) ? previousBroadcast.readBy : [];
+
     const broadcastPayload = {
-      id: "bcast_" + Date.now(),
+      id: isSameMessage ? previousBroadcast.id : "bcast_" + Date.now(),
       title: title.trim(),
       message: message.trim(),
       sender: senderName,
       targets: Array.isArray(targets) && targets.length > 0 ? targets : ["TODOS"],
       date: new Date().toISOString(),
       active: true,
-      readBy: [],
+      readBy: existingReadBy,
     };
 
     settingsObj.therapistBroadcast = broadcastPayload;

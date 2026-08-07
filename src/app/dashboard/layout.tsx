@@ -74,7 +74,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
         }
 
         const roleUpper = (userRole || "").toUpperCase();
-        if (roleUpper === "TERAPEUTA") {
+        if (roleUpper === "TERAPEUTA" && bRes.broadcast.active === true) {
           const isTargeted = targets.includes("TODOS") || targets.some((t: string) => {
             const normT = t.toLowerCase().trim();
             const normUser = (userName || "").toLowerCase().trim();
@@ -636,7 +636,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
                 />
               </div>
 
-              {broadcastMessage && broadcastMessage.active && (
+              {broadcastMessage && (
                 <div className="bg-emerald-50 border border-emerald-200 rounded-xl p-3.5 space-y-2">
                   <div className="flex justify-between items-center">
                     <span className="text-xs font-extrabold text-emerald-900 uppercase flex items-center gap-1.5">
