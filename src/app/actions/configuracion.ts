@@ -359,9 +359,9 @@ export async function getAllowTherapistEdit() {
 export async function getSystemTimezone() {
   try {
     const s = await prisma.systemSettings.findUnique({ where: { id: 1 } });
-    return s?.timezone || "America/Panama";
+    return s?.timezone || "America/Mexico_City";
   } catch (e) {
-    return "America/Panama";
+    return "America/Mexico_City";
   }
 }
 

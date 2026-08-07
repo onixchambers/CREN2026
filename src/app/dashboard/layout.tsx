@@ -18,7 +18,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
   const userImage = profileData.image || session?.user?.image;
 
   const [allowTherapistEdit, setAllowTherapistEdit] = useState(true);
-  const [systemTimezone, setSystemTimezone] = useState("America/Panama");
+  const [systemTimezone, setSystemTimezone] = useState("America/Mexico_City");
   const [showProfileModal, setShowProfileModal] = useState(false);
   const [isSavingProfile, setIsSavingProfile] = useState(false);
 
@@ -536,7 +536,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
               </div>
 
               <div className="text-[10px] text-slate-400 font-mono text-right">
-                Fecha: {new Date(broadcastMessage.date).toLocaleString("es-MX", { dateStyle: "medium", timeStyle: "short" })}
+                Fecha: {new Date(broadcastMessage.date).toLocaleString("es-MX", { dateStyle: "medium", timeStyle: "short", timeZone: systemTimezone })}
               </div>
             </div>
 
@@ -669,10 +669,32 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
                   ) : (
                     <div className="flex flex-wrap gap-1.5 pt-1">
                       {broadcastMessage.readBy.map((r: any, idx: number) => {
-                        const formattedTime = r.readAt ? new Date(r.readAt).toLocaleTimeString("es-MX", { hour: "2-digit", minute: "2-digit" }) : "";
+                        let formattedDateTime = "";
+                        if (r.readAt) {
+                          try {
+                            formattedDateTime = new Date(r.readAt).toLocaleString("es-MX", {
+                              day: "2-digit",
+                              month: "2-digit",
+                              year: "numeric",
+                              hour: "2-digit",
+                              minute: "2-digit",
+                              hour12: true,
+                              timeZone: systemTimezone
+                            });
+                          } catch (e) {
+                            formattedDateTime = new Date(r.readAt).toLocaleString("es-MX", {
+                              day: "2-digit",
+                              month: "2-digit",
+                              year: "numeric",
+                              hour: "2-digit",
+                              minute: "2-digit",
+                              hour12: true
+                            });
+                          }
+                        }
                         return (
                           <span key={idx} className="bg-white border border-emerald-300 text-emerald-900 text-[11px] font-bold px-2.5 py-1 rounded-lg flex items-center gap-1 shadow-2xs">
-                            <span className="text-emerald-600 font-extrabold">✓</span> {r.name} {formattedTime && <span className="text-[9px] text-slate-500 font-normal">({formattedTime})</span>}
+                            <span className="text-emerald-600 font-extrabold">✓</span> {r.name} {formattedDateTime && <span className="text-[9px] text-slate-500 font-normal">({formattedDateTime})</span>}
                           </span>
                         );
                       })}
