@@ -69,7 +69,7 @@ export default function AgendaPage() {
   const [isEditModalOpen, setIsEditModalOpen] = useState(false);
   const [selectedCita, setSelectedCita] = useState<Cita | null>(null);
   const [formData, setFormData] = useState({
-    paciente: "", fecha: hoy, hora: "09:00", terapeuta: "", tipoServicio: "individual", frecuencia: "semanal", numeroSesiones: 1, estado: "Agendado" as Cita["estado"], pagado: false, metodoPago: ""
+    paciente: "", fecha: hoy, hora: "09:00", terapeuta: "", tipoServicio: "individual", frecuencia: "unica", numeroSesiones: 1, estado: "Agendado" as Cita["estado"], pagado: false, metodoPago: ""
   });
 
   const [editingPatient, setEditingPatient] = useState<any>(null);
@@ -259,7 +259,7 @@ export default function AgendaPage() {
           setCitas([...citas, { id: res.id, ...nuevaCitaObj } as Cita]); 
         }
         setIsModalOpen(false);
-        setFormData({ paciente: "", fecha: fechaSeleccionada, hora: "09:00", terapeuta: terapeutas[0] || "", tipoServicio: "individual", frecuencia: "semanal", numeroSesiones: 1, estado: "Agendado", pagado: false, metodoPago: "" });
+        setFormData({ paciente: "", fecha: fechaSeleccionada, hora: "09:00", terapeuta: terapeutas[0] || "", tipoServicio: "individual", frecuencia: "unica", numeroSesiones: 1, estado: "Agendado", pagado: false, metodoPago: "" });
       } else {
         alert("Error: " + res.error);
       }
@@ -506,7 +506,7 @@ export default function AgendaPage() {
       hora: hStr || "09:00",
       terapeuta: tName || terapeutas[0] || "",
       tipoServicio: "individual",
-      frecuencia: "semanal",
+      frecuencia: "unica",
       numeroSesiones: 1,
       estado: "Agendado",
       pagado: false,
@@ -969,11 +969,11 @@ export default function AgendaPage() {
                   <div>
                     <label className="block text-xs font-semibold text-slate-600 uppercase mb-1">Frecuencia</label>
                     <select disabled={formData.estado === "Ocupado" || formData.estado === "Disponible"} name="frecuencia" value={(formData.estado === "Ocupado" || formData.estado === "Disponible") ? "unica" : formData.frecuencia} onChange={handleInputChange} className={`w-full text-slate-900 font-medium border border-slate-300 rounded-lg px-3 py-2 outline-none focus:border-[#2980b9] ${(formData.estado === "Ocupado" || formData.estado === "Disponible") ? "bg-slate-100 text-slate-400 cursor-not-allowed" : ""}`}>
-                      <option value="diario">Diario</option>
+                      <option value="unica">Única / Ocasional</option>
                       <option value="semanal">Semanal</option>
                       <option value="quincenal">Quincenal</option>
                       <option value="mensual">Mensual</option>
-                      <option value="unica">Única / Ocasional</option>
+                      <option value="diario">Diario</option>
                     </select>
                   </div>
                   <div>
