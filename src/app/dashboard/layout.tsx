@@ -273,13 +273,13 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
       {/* Header */}
       <header className="bg-gradient-to-r from-[#0e2f44] via-[#1a5276] to-[#2980b9] text-white shadow-lg sticky top-0 z-50">
         <div className="flex items-center justify-between px-6 py-2">
-          <div className="flex items-center gap-3">
+          <div className="flex items-center gap-2">
             <img 
               src="/logo.png" 
               alt="CREN Logo" 
-              className="h-12 w-auto flex-shrink-0 object-contain drop-shadow-md" 
+              className="h-14 md:h-[58px] max-h-[58px] w-auto flex-shrink-0 object-contain drop-shadow-md py-0.5" 
             />
-            <span className="text-[10px] md:text-[11px] font-bold text-white/90 uppercase tracking-wider border-l border-white/30 pl-3 py-0.5 leading-none">
+            <span className="text-[8.5px] md:text-[9.5px] font-bold text-white/85 uppercase tracking-tighter border-l border-white/30 pl-2 py-0 leading-none whitespace-nowrap">
               Sistema Financiero
             </span>
           </div>
