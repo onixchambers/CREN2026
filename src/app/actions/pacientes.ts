@@ -230,7 +230,7 @@ export async function getPatients() {
         : valoracionesCount;
 
       // Calcular denominador total de sesiones (ej. 3 para 1/3, 2/3, 3/3): máximo entre asistencias, total agendado y paquete guardado
-      const dbSavedSesiones = parseInt(p.totalSesiones || p.sesiones || "0") || 0;
+      const dbSavedSesiones = parseInt((p as any).totalSesiones || (p as any).sesiones || "0") || 0;
       const calcTotalSesiones = Math.max(
         asistenciasCount,
         p.sessions.length,
@@ -565,3 +565,149 @@ export async function deletePatientDocument(patientId: string, docId: string) {
     return { success: false, error: error.message };
   }
 }
+
+export async function checkDuplicatePatient(data: { name?: string; phone?: string }) {
+  try {
+    const name = (data.name || "").trim().toLowerCase();
+    const phone = (data.phone || "").trim().replace(/\D/g, "");
+    if (!name && !phone) return { success: true, duplicates: [] };
+
+    const allPatients = await prisma.patient.findMany({
+      select: { id: true, displayId: true, name: true, phone: true, estatus: true, fechaNacimiento: true }
+    });
+
+    const duplicates = allPatients.filter(p => {
+      const pName = (p.name || "").trim().toLowerCase();
+      const pPhone = (p.phone || "").trim().replace(/\D/g, "");
+      const sameName = name && (pName === name || (name.length > 4 && pName.includes(name)));
+      const samePhone = phone && phone.length >= 7 && pPhone && pPhone.endsWith(phone.slice(-7));
+      return sameName || samePhone;
+    });
+
+    return { success: true, duplicates };
+  } catch (error: any) {
+    console.error("Error checking duplicate patient:", error);
+    return { success: false, error: error.message };
+  }
+}
+
+export async function findPotentialDuplicates() {
+  try {
+    const all = await prisma.patient.findMany({
+      include: {
+        sessions: true,
+        payments: true
+      },
+      orderBy: { createdAt: "desc" }
+    });
+
+    const groupsMap = new Map<string, any[]>();
+
+    for (const p of all) {
+      const normName = (p.name || "")
+        .toLowerCase()
+        .normalize("NFD")
+        .replace(/[\u0300-\u036f]/g, "")
+        .replace(/[^a-z0-9]/g, "");
+
+      const cleanPhone = (p.phone || "").replace(/\D/g, "");
+
+      let foundKey = "";
+      for (const [key, list] of groupsMap.entries()) {
+        const ref = list[0];
+        const refNorm = (ref.name || "")
+          .toLowerCase()
+          .normalize("NFD")
+          .replace(/[\u0300-\u036f]/g, "")
+          .replace(/[^a-z0-9]/g, "");
+        const refPhone = (ref.phone || "").replace(/\D/g, "");
+
+        if (normName && refNorm && normName === refNorm) {
+          foundKey = key;
+          break;
+        }
+        if (cleanPhone && cleanPhone.length >= 7 && refPhone && refPhone.endsWith(cleanPhone.slice(-7))) {
+          foundKey = key;
+          break;
+        }
+      }
+
+      if (foundKey) {
+        groupsMap.get(foundKey)!.push(p);
+      } else {
+        const newKey = normName || cleanPhone || p.id;
+        groupsMap.set(newKey, [p]);
+      }
+    }
+
+    const duplicateGroups = Array.from(groupsMap.values()).filter(group => group.length > 1);
+
+    return { success: true, data: duplicateGroups };
+  } catch (error: any) {
+    console.error("Error finding potential duplicates:", error);
+    return { success: false, error: error.message };
+  }
+}
+
+export async function mergeDuplicatePatients(primaryId: string, secondaryIds: string[]) {
+  try {
+    if (!primaryId || !secondaryIds || secondaryIds.length === 0) {
+      return { success: false, error: "Selecciona el paciente principal y al menos un duplicado a fusionar." };
+    }
+
+    const primary = await prisma.patient.findUnique({ where: { id: primaryId } });
+    if (!primary) return { success: false, error: "Paciente principal no encontrado." };
+
+    await prisma.session.updateMany({
+      where: { patientId: { in: secondaryIds } },
+      data: { patientId: primaryId }
+    });
+
+    await prisma.payment.updateMany({
+      where: { patientId: { in: secondaryIds } },
+      data: { patientId: primaryId }
+    });
+
+    const secondaries = await prisma.patient.findMany({
+      where: { id: { in: secondaryIds } }
+    });
+
+    let primaryNotesObj: any = {};
+    if (primary.notes) {
+      try { primaryNotesObj = JSON.parse(primary.notes); } catch (e) {}
+    }
+    let primaryDocs = Array.isArray(primaryNotesObj.documents) ? primaryNotesObj.documents : [];
+
+    for (const sec of secondaries) {
+      if (sec.notes) {
+        try {
+          const secObj = JSON.parse(sec.notes);
+          if (Array.isArray(secObj.documents)) {
+            primaryDocs = [...primaryDocs, ...secObj.documents];
+          }
+        } catch (e) {}
+      }
+    }
+
+    primaryNotesObj.documents = primaryDocs;
+    await prisma.patient.update({
+      where: { id: primaryId },
+      data: { notes: JSON.stringify(primaryNotesObj) }
+    });
+
+    await prisma.patient.deleteMany({
+      where: { id: { in: secondaryIds } }
+    });
+
+    revalidatePath("/dashboard/pacientes");
+    revalidatePath("/dashboard/agenda");
+    revalidatePath("/dashboard/asistencia");
+    revalidatePath("/dashboard/finanzas");
+
+    return { success: true, message: `Se fusionaron ${secondaryIds.length} registro(s) duplicados exitosamente en el paciente principal.` };
+  } catch (error: any) {
+    console.error("Error merging patients:", error);
+    return { success: false, error: "Error al fusionar pacientes: " + (error?.message || String(error)) };
+  }
+}
+

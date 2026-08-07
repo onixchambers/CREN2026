@@ -11,7 +11,9 @@ import {
   savePatientDocument, 
   deletePatientDocument,
   updatePatient,
-  deletePatient
+  deletePatient,
+  findPotentialDuplicates,
+  mergeDuplicatePatients
 } from "@/app/actions/pacientes";
 
 type Paciente = {
@@ -58,6 +60,70 @@ export default function PacientesPage() {
   const [docSearchQuery, setDocSearchQuery] = useState("");
   const [isSavingDoc, setIsSavingDoc] = useState(false);
   const [docsCurrentPage, setDocsCurrentPage] = useState(1);
+
+  // Estados para Duplicados
+  const [isDuplicatesModalOpen, setIsDuplicatesModalOpen] = useState(false);
+  const [duplicateGroups, setDuplicateGroups] = useState<any[]>([]);
+  const [isSearchingDuplicates, setIsSearchingDuplicates] = useState(false);
+  const [isMerging, setIsMerging] = useState(false);
+  const [selectedMasterIds, setSelectedMasterIds] = useState<Record<number, string>>({});
+
+  const handleOpenDuplicatesModal = async () => {
+    setIsSearchingDuplicates(true);
+    setIsDuplicatesModalOpen(true);
+    try {
+      const res = await findPotentialDuplicates();
+      if (res.success && res.data) {
+        setDuplicateGroups(res.data);
+        const initialMasters: Record<number, string> = {};
+        res.data.forEach((group: any[], idx: number) => {
+          if (group.length > 0) initialMasters[idx] = group[0].id;
+        });
+        setSelectedMasterIds(initialMasters);
+      } else {
+        setDuplicateGroups([]);
+      }
+    } catch (err) {
+      console.error("Error searching duplicates:", err);
+    } finally {
+      setIsSearchingDuplicates(false);
+    }
+  };
+
+  const handleMergeGroup = async (groupIdx: number, group: any[]) => {
+    const masterId = selectedMasterIds[groupIdx];
+    if (!masterId) {
+      alert("Por favor selecciona el paciente principal que deseas conservar.");
+      return;
+    }
+    const secondaries = group.filter(p => p.id !== masterId).map(p => p.id);
+    if (secondaries.length === 0) {
+      alert("No hay registros duplicados seleccionados para fusionar.");
+      return;
+    }
+
+    const masterPatient = group.find(p => p.id === masterId);
+    if (!confirm(`¿Confirmas que deseas fusionar ${secondaries.length} registro(s) en '${masterPatient?.name}'?\n\nTodas las sesiones y pagos se transferirán al paciente principal y los duplicados serán eliminados.`)) {
+      return;
+    }
+
+    setIsMerging(true);
+    try {
+      const res = await mergeDuplicatePatients(masterId, secondaries);
+      if (res.success) {
+        alert(res.message);
+        const ref = await getPatients();
+        if (ref.success && ref.data) setPacientes(ref.data);
+        handleOpenDuplicatesModal();
+      } else {
+        alert("Error al fusionar: " + res.error);
+      }
+    } catch (err: any) {
+      alert("Error inesperado: " + err.message);
+    } finally {
+      setIsMerging(false);
+    }
+  };
 
   useEffect(() => {
     if (viewingPatient?.id) {
@@ -275,6 +341,14 @@ export default function PacientesPage() {
           </svg>
           <h2 className="text-xl font-bold text-[#0e2f44]">Directorio de Pacientes</h2>
         </div>
+
+        <button
+          onClick={handleOpenDuplicatesModal}
+          className="px-3.5 py-2 bg-amber-500 hover:bg-amber-600 text-white rounded-lg text-xs font-bold flex items-center gap-1.5 shadow-sm transition-all cursor-pointer"
+        >
+          <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z" /></svg>
+          🔍 Detectar y Fusionar Duplicados
+        </button>
       </div>
 
       <div className="bg-white rounded-xl shadow-sm border border-slate-200 overflow-hidden print:hidden">
@@ -420,13 +494,13 @@ export default function PacientesPage() {
                         let lines: string[] = [];
                         if (val.includes("Mixto (")) {
                           const content = val.replace(/^Mixto\s*\(/i, "").replace(/\)$/, "");
-                          lines = content.split(",").map(item => item.trim().replace(":", ""));
+                          lines = content.split(",").map((item: string) => item.trim().replace(":", ""));
                         } else if (val.includes("\n")) {
-                          lines = val.split("\n").map(item => item.trim());
+                          lines = val.split("\n").map((item: string) => item.trim());
                         } else if (val.includes(" / ")) {
-                          lines = val.split(" / ").map(item => item.trim());
+                          lines = val.split(" / ").map((item: string) => item.trim());
                         } else if (val.includes(" + ")) {
-                          lines = val.split(" + ").map(item => item.trim());
+                          lines = val.split(" + ").map((item: string) => item.trim());
                         } else {
                           lines = [val];
                         }
@@ -1484,6 +1558,114 @@ export default function PacientesPage() {
                 </button>
               </div>
             </form>
+          </div>
+        </div>
+      )}
+      {/* MODAL DE DETECCIÓN Y FUSIÓN DE PACIENTES DUPLICADOS */}
+      {isDuplicatesModalOpen && (
+        <div className="fixed inset-0 bg-slate-900/60 backdrop-blur-xs z-50 flex items-center justify-center p-4 animate-in fade-in">
+          <div className="bg-white rounded-xl shadow-2xl w-full max-w-3xl overflow-hidden border border-slate-200 max-h-[85vh] flex flex-col">
+            <div className="px-6 py-4 border-b border-amber-100 flex justify-between items-center bg-amber-50">
+              <h3 className="font-bold text-base text-amber-900 flex items-center gap-2">
+                <svg className="w-5 h-5 text-amber-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z" /></svg>
+                Detección y Limpieza de Pacientes Duplicados
+              </h3>
+              <button onClick={() => setIsDuplicatesModalOpen(false)} className="text-slate-400 hover:text-slate-600 text-xl font-bold">&times;</button>
+            </div>
+
+            <div className="p-6 overflow-y-auto flex-1 space-y-6">
+              {isSearchingDuplicates ? (
+                <div className="text-center py-12 text-slate-500 font-medium">
+                  <div className="animate-spin w-8 h-8 border-4 border-amber-500 border-t-transparent rounded-full mx-auto mb-3"></div>
+                  Escaneando la base de datos en busca de nombres o teléfonos duplicados...
+                </div>
+              ) : duplicateGroups.length === 0 ? (
+                <div className="text-center py-12 bg-emerald-50 rounded-xl border border-emerald-200 text-emerald-800">
+                  <svg className="w-12 h-12 text-emerald-500 mx-auto mb-2" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>
+                  <p className="font-bold text-base">¡No se encontraron pacientes duplicados!</p>
+                  <p className="text-xs text-emerald-600 mt-1">Todos los registros en tu directorio son únicos.</p>
+                </div>
+              ) : (
+                <div className="space-y-6">
+                  <p className="text-xs text-slate-600">
+                    Se encontraron <strong className="text-amber-700 font-bold">{duplicateGroups.length} grupo(s)</strong> de registros que parecen pertenecer al mismo paciente. Selecciona cuál deseas mantener como <strong>Registro Principal</strong> y presiona <strong>Fusionar</strong>:
+                  </p>
+
+                  {duplicateGroups.map((group, gIdx) => (
+                    <div key={gIdx} className="bg-slate-50 border border-slate-200 rounded-xl p-4 space-y-3">
+                      <div className="flex justify-between items-center border-b border-slate-200 pb-2">
+                        <span className="text-xs font-bold text-slate-800 uppercase flex items-center gap-1.5">
+                          <span className="w-5 h-5 bg-amber-200 text-amber-900 rounded-full flex items-center justify-center text-[10px]">{gIdx + 1}</span>
+                          Coincidencia: {group[0].name} ({group.length} registros)
+                        </span>
+                        <button
+                          onClick={() => handleMergeGroup(gIdx, group)}
+                          disabled={isMerging}
+                          className="px-3 py-1.5 bg-amber-600 hover:bg-amber-700 text-white rounded text-xs font-bold shadow-xs transition-colors disabled:opacity-50 flex items-center gap-1"
+                        >
+                          {isMerging ? "Fusionando..." : "🔗 Fusionar Grupo"}
+                        </button>
+                      </div>
+
+                      <div className="space-y-2">
+                        {group.map((p: any) => {
+                          const isSelectedMaster = selectedMasterIds[gIdx] === p.id;
+                          return (
+                            <label
+                              key={p.id}
+                              className={`flex items-center justify-between p-3 rounded-lg border text-xs cursor-pointer transition-all ${
+                                isSelectedMaster
+                                  ? "bg-amber-50/80 border-amber-400 ring-2 ring-amber-200"
+                                  : "bg-white border-slate-200 hover:bg-slate-100/80"
+                              }`}
+                            >
+                              <div className="flex items-center gap-3">
+                                <input
+                                  type="radio"
+                                  name={`group_${gIdx}`}
+                                  checked={isSelectedMaster}
+                                  onChange={() => setSelectedMasterIds(prev => ({ ...prev, [gIdx]: p.id }))}
+                                  className="w-4 h-4 text-amber-600 focus:ring-amber-500"
+                                />
+                                <div>
+                                  <p className="font-bold text-slate-900 flex items-center gap-2">
+                                    {p.name}
+                                    {isSelectedMaster && (
+                                      <span className="bg-amber-200 text-amber-900 text-[10px] px-2 py-0.5 rounded font-extrabold">
+                                        PRINCIPAL (CONSERVAR)
+                                      </span>
+                                    )}
+                                  </p>
+                                  <p className="text-[11px] text-slate-500 mt-0.5">
+                                    ID: <span className="font-mono text-slate-700">{p.displayId || p.id}</span> | 
+                                    Teléfono: <span className="font-medium">{p.phone || p.madreContacto || "—"}</span> | 
+                                    Estatus: <span className="font-medium">{p.estatus || "Activo"}</span>
+                                  </p>
+                                </div>
+                              </div>
+
+                              <div className="text-right text-[11px] text-slate-600">
+                                <div>Sesiones: <strong className="text-slate-900">{p.sessions?.length || 0}</strong></div>
+                                <div>Pagos: <strong className="text-slate-900">{p.payments?.length || 0}</strong></div>
+                              </div>
+                            </label>
+                          );
+                        })}
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </div>
+
+            <div className="p-4 bg-slate-50 border-t border-slate-200 flex justify-end">
+              <button
+                onClick={() => setIsDuplicatesModalOpen(false)}
+                className="px-4 py-2 bg-slate-200 text-slate-700 font-bold text-xs rounded-lg hover:bg-slate-300 transition-colors"
+              >
+                Cerrar
+              </button>
+            </div>
           </div>
         </div>
       )}

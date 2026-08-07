@@ -22,6 +22,14 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
   const [showProfileModal, setShowProfileModal] = useState(false);
   const [isSavingProfile, setIsSavingProfile] = useState(false);
 
+  // Estados para Mensaje Flotante a Terapeutas
+  const [broadcastMessage, setBroadcastMessage] = useState<any | null>(null);
+  const [showTherapistPopup, setShowTherapistPopup] = useState(false);
+  const [showAdminBroadcastModal, setShowAdminBroadcastModal] = useState(false);
+  const [broadcastTitleInput, setBroadcastTitleInput] = useState("");
+  const [broadcastMessageInput, setBroadcastMessageInput] = useState("");
+  const [isSendingBroadcast, setIsSendingBroadcast] = useState(false);
+
   useEffect(() => {
     async function loadPermission() {
       const allowed = await getAllowTherapistEdit();
@@ -36,9 +44,78 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
       if (res.success && res.user) {
         setProfileData({ email: res.user.email, image: res.user.image, phone: res.user.phone });
       }
+
+      const { getTherapistBroadcastMessage } = await import("@/app/actions/configuracion");
+      const bRes = await getTherapistBroadcastMessage();
+      if (bRes.success && bRes.broadcast) {
+        setBroadcastMessage(bRes.broadcast);
+        setBroadcastTitleInput(bRes.broadcast.title || "");
+        setBroadcastMessageInput(bRes.broadcast.message || "");
+
+        const roleUpper = (userRole || "").toUpperCase();
+        if (roleUpper === "TERAPEUTA") {
+          const seenId = localStorage.getItem("seen_therapist_bcast_id");
+          if (seenId !== bRes.broadcast.id) {
+            setShowTherapistPopup(true);
+          }
+        }
+      }
     }
     loadPermission();
-  }, [session]);
+  }, [session, userRole]);
+
+  const handleCloseTherapistPopup = () => {
+    if (broadcastMessage?.id) {
+      localStorage.setItem("seen_therapist_bcast_id", broadcastMessage.id);
+    }
+    setShowTherapistPopup(false);
+  };
+
+  const handleSendBroadcast = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!broadcastTitleInput.trim() || !broadcastMessageInput.trim()) {
+      alert("Por favor ingresa un título y un mensaje.");
+      return;
+    }
+    setIsSendingBroadcast(true);
+    try {
+      const { saveTherapistBroadcastMessage } = await import("@/app/actions/configuracion");
+      const res = await saveTherapistBroadcastMessage(broadcastTitleInput, broadcastMessageInput);
+      if (res.success) {
+        alert("¡Mensaje enviado correctamente a las terapeutas! Aparecerá en ventana flotante cuando inicien sesión.");
+        setBroadcastMessage(res.broadcast);
+        setShowAdminBroadcastModal(false);
+      } else {
+        alert("Error: " + res.error);
+      }
+    } catch (err: any) {
+      alert("Error al enviar mensaje: " + err.message);
+    } finally {
+      setIsSendingBroadcast(false);
+    }
+  };
+
+  const handleClearBroadcast = async () => {
+    if (!confirm("¿Deseas retirar el mensaje actual enviado a las terapeutas?")) return;
+    setIsSendingBroadcast(true);
+    try {
+      const { clearTherapistBroadcastMessage } = await import("@/app/actions/configuracion");
+      const res = await clearTherapistBroadcastMessage();
+      if (res.success) {
+        alert("Mensaje retirado.");
+        setBroadcastMessage(null);
+        setBroadcastTitleInput("");
+        setBroadcastMessageInput("");
+        setShowAdminBroadcastModal(false);
+      } else {
+        alert("Error: " + res.error);
+      }
+    } catch (err: any) {
+      alert("Error: " + err.message);
+    } finally {
+      setIsSendingBroadcast(false);
+    }
+  };
 
   const allTabs = [
     { name: "Agenda", path: "/dashboard/agenda", adminOnly: false },
@@ -125,6 +202,28 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
                 </span>
               )}
             </div>
+            {(userRole.toUpperCase() === "ADMIN" || userRole.toUpperCase() === "ADMINISTRADOR" || userRole.toUpperCase() === "INVITADO") && (
+              <button
+                onClick={() => setShowAdminBroadcastModal(true)}
+                className="px-3 py-1.5 bg-amber-500/90 hover:bg-amber-500 text-white rounded-full text-xs font-bold transition-all cursor-pointer flex items-center gap-1.5 shadow-sm border border-amber-300/30"
+                title="Enviar mensaje flotante a las terapeutas"
+              >
+                <span>📢</span>
+                <span className="hidden sm:inline">Mensaje a Terapeutas</span>
+              </button>
+            )}
+
+            {userRole.toUpperCase() === "TERAPEUTA" && broadcastMessage && (
+              <button
+                onClick={() => setShowTherapistPopup(true)}
+                className="px-3 py-1.5 bg-amber-500/90 hover:bg-amber-500 text-white rounded-full text-xs font-bold transition-all cursor-pointer flex items-center gap-1.5 shadow-sm border border-amber-300/30 animate-pulse"
+                title="Ver aviso de la Administración"
+              >
+                <span>📢</span>
+                <span className="hidden sm:inline">Aviso de Dirección</span>
+              </button>
+            )}
+
             <button
               onClick={() => signOut({ callbackUrl: "/login" })}
               className="px-4 py-1.5 bg-slate-800/80 hover:bg-slate-900 text-white rounded-full text-xs font-semibold transition-colors cursor-pointer"
@@ -320,6 +419,130 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
                 {isSavingProfile ? "Guardando..." : "Guardar Perfil"}
               </button>
             </div>
+          </div>
+        </div>
+      )}
+      {/* VENTANA FLOTANTE PARA TERAPEUTAS (POP-UP AL INGRESAR) */}
+      {showTherapistPopup && broadcastMessage && (
+        <div className="fixed inset-0 z-50 bg-slate-900/70 backdrop-blur-md flex items-center justify-center p-4 animate-in fade-in duration-300">
+          <div className="bg-white rounded-2xl max-w-lg w-full overflow-hidden shadow-2xl border border-amber-200 animate-in zoom-in-95 duration-200">
+            <div className="bg-gradient-to-r from-amber-500 via-amber-600 to-orange-600 px-6 py-4 text-white flex justify-between items-center shadow-md">
+              <div className="flex items-center gap-2.5">
+                <span className="text-2xl bg-white/20 p-2 rounded-xl backdrop-blur-xs">📢</span>
+                <div>
+                  <h3 className="font-extrabold text-base leading-tight">Aviso Importante de la Dirección</h3>
+                  <p className="text-[11px] text-amber-100 font-medium">De: {broadcastMessage.sender || "Administración"}</p>
+                </div>
+              </div>
+              <button
+                onClick={handleCloseTherapistPopup}
+                className="text-white/80 hover:text-white font-extrabold text-xl p-1 rounded-lg transition-colors cursor-pointer"
+              >
+                &times;
+              </button>
+            </div>
+
+            <div className="p-6 space-y-4 bg-amber-50/30">
+              <div className="bg-white p-4 rounded-xl border border-amber-100 shadow-xs space-y-2">
+                <h4 className="font-bold text-slate-900 text-base border-b border-slate-100 pb-2">
+                  {broadcastMessage.title}
+                </h4>
+                <p className="text-slate-700 text-xs sm:text-sm leading-relaxed whitespace-pre-wrap font-medium">
+                  {broadcastMessage.message}
+                </p>
+              </div>
+
+              <div className="text-[10px] text-slate-400 font-mono text-right">
+                Fecha: {new Date(broadcastMessage.date).toLocaleString("es-MX", { dateStyle: "medium", timeStyle: "short" })}
+              </div>
+            </div>
+
+            <div className="bg-slate-50 px-6 py-3.5 border-t border-slate-200 flex justify-end">
+              <button
+                onClick={handleCloseTherapistPopup}
+                className="px-6 py-2.5 bg-gradient-to-r from-amber-600 to-orange-600 hover:from-amber-700 hover:to-orange-700 text-white font-bold text-xs rounded-xl shadow-md transition-all cursor-pointer transform active:scale-95"
+              >
+                Entendido, cerrar aviso
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* MODAL DE COMPOSICIÓN DE MENSAJE PARA ADMINISTRADOR / INVITADO */}
+      {showAdminBroadcastModal && (
+        <div className="fixed inset-0 z-50 bg-slate-900/60 backdrop-blur-xs flex items-center justify-center p-4 animate-in fade-in">
+          <div className="bg-white rounded-2xl max-w-lg w-full overflow-hidden shadow-2xl border border-slate-200 text-slate-900">
+            <div className="bg-[#0e2f44] px-6 py-4 text-white flex justify-between items-center">
+              <div className="flex items-center gap-2">
+                <span className="text-xl">📢</span>
+                <h3 className="font-bold text-base">Enviar Mensaje Flotante a Terapeutas</h3>
+              </div>
+              <button
+                onClick={() => setShowAdminBroadcastModal(false)}
+                className="text-slate-400 hover:text-white font-bold text-xl cursor-pointer"
+              >
+                &times;
+              </button>
+            </div>
+
+            <form onSubmit={handleSendBroadcast} className="p-6 space-y-4">
+              <p className="text-xs text-slate-600 bg-amber-50 p-3 rounded-lg border border-amber-200">
+                💡 Este mensaje aparecerá en una <strong>ventana emergente flotante</strong> para todas las terapeutas en cuanto ingresen a la aplicación.
+              </p>
+
+              <div>
+                <label className="block text-xs font-bold text-slate-700 uppercase mb-1">Título del Mensaje</label>
+                <input
+                  type="text"
+                  required
+                  value={broadcastTitleInput}
+                  onChange={(e) => setBroadcastTitleInput(e.target.value)}
+                  placeholder="Ej: Aviso de Reunión / Cambio de Horarios..."
+                  className="w-full text-slate-900 border border-slate-300 rounded-lg p-2.5 text-xs outline-none focus:border-amber-500 font-medium bg-white"
+                />
+              </div>
+
+              <div>
+                <label className="block text-xs font-bold text-slate-700 uppercase mb-1">Contenido del Mensaje</label>
+                <textarea
+                  required
+                  rows={5}
+                  value={broadcastMessageInput}
+                  onChange={(e) => setBroadcastMessageInput(e.target.value)}
+                  placeholder="Escribe aquí las instrucciones o avisos para las terapeutas..."
+                  className="w-full text-slate-900 border border-slate-300 rounded-lg p-3 text-xs outline-none focus:border-amber-500 font-medium bg-white shadow-inner"
+                />
+              </div>
+
+              <div className="pt-2 flex items-center gap-2 justify-end">
+                {broadcastMessage && broadcastMessage.active && (
+                  <button
+                    type="button"
+                    onClick={handleClearBroadcast}
+                    disabled={isSendingBroadcast}
+                    className="px-4 py-2 bg-red-100 text-red-700 font-bold rounded-lg hover:bg-red-200 text-xs transition-colors cursor-pointer mr-auto"
+                  >
+                    Retirar Aviso Actual
+                  </button>
+                )}
+
+                <button
+                  type="button"
+                  onClick={() => setShowAdminBroadcastModal(false)}
+                  className="px-4 py-2 bg-slate-100 text-slate-700 font-bold rounded-lg hover:bg-slate-200 text-xs transition-colors cursor-pointer"
+                >
+                  Cancelar
+                </button>
+                <button
+                  type="submit"
+                  disabled={isSendingBroadcast}
+                  className="px-5 py-2 bg-amber-600 hover:bg-amber-700 text-white font-bold rounded-lg text-xs transition-all shadow-md cursor-pointer disabled:opacity-50"
+                >
+                  {isSendingBroadcast ? "Guardando..." : "🚀 Publicar a Terapeutas"}
+                </button>
+              </div>
+            </form>
           </div>
         </div>
       )}

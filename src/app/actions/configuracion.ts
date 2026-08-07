@@ -506,3 +506,103 @@ export async function removeTherapyPrice(price: number) {
     return { success: false, error: error?.message || "Error al eliminar precio de terapia." };
   }
 }
+
+export async function getTherapistBroadcastMessage() {
+  try {
+    const s = await prisma.systemSettings.findUnique({ where: { id: 1 } });
+    if (!s || !s.referenceKeys) return { success: true, broadcast: null };
+
+    try {
+      const parsed = JSON.parse(s.referenceKeys);
+      if (parsed.therapistBroadcast && parsed.therapistBroadcast.active) {
+        return { success: true, broadcast: parsed.therapistBroadcast };
+      }
+    } catch (e) {}
+
+    return { success: true, broadcast: null };
+  } catch (error: any) {
+    console.error("Error fetching therapist broadcast:", error);
+    return { success: false, error: error?.message };
+  }
+}
+
+export async function saveTherapistBroadcastMessage(title: string, message: string) {
+  try {
+    const session = await getServerSession(authOptions);
+    const userRole = ((session?.user as any)?.role || "").toUpperCase();
+    const senderName = session?.user?.name || (userRole === "INVITADO" ? "Invitado" : "Administrador");
+
+    if (userRole !== "ADMIN" && userRole !== "ADMINISTRADOR" && userRole !== "INVITADO") {
+      return { success: false, error: "Únicamente el usuario con rol Administrador o Invitado puede enviar mensajes a los terapeutas." };
+    }
+
+    if (!title || !title.trim() || !message || !message.trim()) {
+      return { success: false, error: "El título y el mensaje son obligatorios." };
+    }
+
+    const s = await prisma.systemSettings.findUnique({ where: { id: 1 } });
+    let settingsObj: any = {};
+    if (s && s.referenceKeys) {
+      try { settingsObj = JSON.parse(s.referenceKeys); } catch (e) {}
+    }
+
+    const broadcastPayload = {
+      id: "bcast_" + Date.now(),
+      title: title.trim(),
+      message: message.trim(),
+      sender: senderName,
+      date: new Date().toISOString(),
+      active: true,
+    };
+
+    settingsObj.therapistBroadcast = broadcastPayload;
+    const jsonString = JSON.stringify(settingsObj);
+
+    await prisma.systemSettings.upsert({
+      where: { id: 1 },
+      update: { referenceKeys: jsonString },
+      create: { id: 1, referenceKeys: jsonString },
+    });
+
+    revalidatePath("/dashboard", "layout");
+    return { success: true, broadcast: broadcastPayload };
+  } catch (error: any) {
+    console.error("Error saving therapist broadcast:", error);
+    return { success: false, error: error?.message || "Error al enviar mensaje a terapeutas." };
+  }
+}
+
+export async function clearTherapistBroadcastMessage() {
+  try {
+    const session = await getServerSession(authOptions);
+    const userRole = ((session?.user as any)?.role || "").toUpperCase();
+
+    if (userRole !== "ADMIN" && userRole !== "ADMINISTRADOR" && userRole !== "INVITADO") {
+      return { success: false, error: "Permiso denegado." };
+    }
+
+    const s = await prisma.systemSettings.findUnique({ where: { id: 1 } });
+    let settingsObj: any = {};
+    if (s && s.referenceKeys) {
+      try { settingsObj = JSON.parse(s.referenceKeys); } catch (e) {}
+    }
+
+    if (settingsObj.therapistBroadcast) {
+      settingsObj.therapistBroadcast.active = false;
+    }
+
+    const jsonString = JSON.stringify(settingsObj);
+    await prisma.systemSettings.upsert({
+      where: { id: 1 },
+      update: { referenceKeys: jsonString },
+      create: { id: 1, referenceKeys: jsonString },
+    });
+
+    revalidatePath("/dashboard", "layout");
+    return { success: true };
+  } catch (error: any) {
+    console.error("Error clearing therapist broadcast:", error);
+    return { success: false, error: error?.message };
+  }
+}
+
