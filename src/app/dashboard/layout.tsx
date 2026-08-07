@@ -275,7 +275,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
         <div className="flex items-center justify-between px-6 py-2">
           <div className="flex items-center gap-2.5">
             <div className="w-12 h-12 md:w-[52px] md:h-[52px] rounded-full bg-white flex items-center justify-center p-2.5 shadow-md shrink-0 border border-white/40 relative">
-              <div className="absolute inset-[3px] rounded-full border border-[#1a5276]/40 pointer-events-none" />
+              <div className="absolute inset-[1.5px] rounded-full border-2 border-[#154360]/85 pointer-events-none" />
               <img 
                 src="/logo.png" 
                 alt="CREN Logo" 
