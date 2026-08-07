@@ -184,9 +184,7 @@ export default function PacientesPage() {
         
         // Auto-open clinical note ONLY ONCE if explicitly triggered by finalizing a session
         if (typeof window !== "undefined") {
-          const params = new URLSearchParams(window.location.search);
-          const action = params.get("action");
-          const isTriggered = sessionStorage.getItem("triggerAutoOpenNote") === "true" || action === "nota";
+          const isTriggered = sessionStorage.getItem("triggerAutoOpenNote") === "true";
 
           if (isTriggered) {
             const pId = params.get("patientId") || sessionStorage.getItem("autoOpenNotePatientId");

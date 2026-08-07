@@ -664,15 +664,14 @@ export default function AsistenciaPage() {
       sessionStorage.setItem("autoOpenNoteFecha", fechaVal);
       sessionStorage.setItem("autoOpenNoteHora", horaVal);
       sessionStorage.setItem("autoOpenNoteTerapeuta", terapeutaVal);
-      window.location.href = `/dashboard/pacientes?action=nota&patientId=${targetId}&agendaId=${agendaIdVal}&fecha=${fechaVal}&hora=${horaVal}`;
     } else if (formData.pacienteNombre) {
       sessionStorage.setItem("autoOpenNotePatientName", formData.pacienteNombre);
       sessionStorage.setItem("autoOpenNoteAgendaId", agendaIdVal);
       sessionStorage.setItem("autoOpenNoteFecha", fechaVal);
       sessionStorage.setItem("autoOpenNoteHora", horaVal);
       sessionStorage.setItem("autoOpenNoteTerapeuta", terapeutaVal);
-      window.location.href = `/dashboard/pacientes?action=nota&patientName=${encodeURIComponent(formData.pacienteNombre)}&agendaId=${agendaIdVal}&fecha=${fechaVal}&hora=${horaVal}`;
     }
+    window.location.href = "/dashboard/pacientes";
   };
 
   // --- Lógica de Edición ---
@@ -925,7 +924,13 @@ export default function AsistenciaPage() {
 
           alert("Sesión guardada exitosamente en la base de datos");
           
-          window.location.href = formData.pacienteId ? `/dashboard/pacientes?action=nota&patientId=${formData.pacienteId}` : `/dashboard/asistencia`;
+          if (formData.pacienteId) {
+            sessionStorage.setItem("triggerAutoOpenNote", "true");
+            sessionStorage.setItem("autoOpenNotePatientId", formData.pacienteId);
+            window.location.href = "/dashboard/pacientes";
+          } else {
+            window.location.href = "/dashboard/asistencia";
+          }
         }}
       />
       
