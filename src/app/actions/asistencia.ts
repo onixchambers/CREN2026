@@ -28,7 +28,8 @@ export async function saveAsistenciaDB(data: any) {
     if (match) {
       therapistId = match.id;
     } else if (patient.medicoTratante) {
-      const medMatch = allUsers.find(u => (u.name || "").trim().toLowerCase() === patient.medicoTratante.trim().toLowerCase());
+      const medName = (patient.medicoTratante || "").trim().toLowerCase();
+      const medMatch = allUsers.find(u => (u.name || "").trim().toLowerCase() === medName);
       if (medMatch) therapistId = medMatch.id;
       else if (allUsers.length > 0) therapistId = allUsers[0].id;
     } else if (allUsers.length > 0) {
