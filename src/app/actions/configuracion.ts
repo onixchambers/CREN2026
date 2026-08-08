@@ -823,7 +823,13 @@ export async function getAllPatientsListForHonorarios() {
       },
       orderBy: { name: 'asc' }
     });
-    return { success: true, patients };
+
+    const formatted = patients.map(p => ({
+      ...p,
+      displayId: p.displayId || (p.id ? p.id.slice(-6).toUpperCase() : "N/A")
+    }));
+
+    return { success: true, patients: formatted };
   } catch (error: any) {
     console.error("Error fetching patients list for honorarios:", error);
     return { success: false, patients: [] };

@@ -236,7 +236,7 @@ export function PatientFixedHonorariosConfig() {
                       </td>
                       <td className="py-3 px-4">
                         <div className="font-bold text-slate-900">{p.name}</div>
-                        {p.displayId && <div className="text-[10px] text-slate-400 font-mono">ID: {p.displayId}</div>}
+                        <div className="text-[10px] text-slate-400 font-mono">ID: {p.displayId || (p.id ? p.id.slice(-6).toUpperCase() : "N/A")}</div>
                       </td>
                       <td className="py-3 px-4">
                         <div className="flex items-center gap-1">
