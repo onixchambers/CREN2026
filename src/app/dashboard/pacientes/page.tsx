@@ -194,9 +194,21 @@ export default function PacientesPage() {
               setViewingPatient(p);
               setModalTab("nuevo_documento");
               setSelectedNoteType("Registro de Evolución");
+
+              let matchingCita = null;
+              if (agendaRes.success && agendaRes.data) {
+                matchingCita = agendaRes.data.find((c: any) => 
+                  (c.pacienteId === p.id || (c.paciente || "").trim().toLowerCase() === (p.name || "").trim().toLowerCase()) &&
+                  (c.fecha === urlFecha || !urlFecha) &&
+                  (c.hora === urlHora || !urlHora)
+                );
+              }
+
               setDocFormData({
-                fecha: urlFecha || new Date().toISOString().split("T")[0],
-                hora: urlHora || "12:00"
+                citaId: matchingCita?.id || "",
+                fecha: matchingCita?.fecha || urlFecha || new Date().toISOString().split("T")[0],
+                hora: matchingCita?.hora || urlHora || "12:00",
+                terapeuta: matchingCita?.terapeuta || p.medicoTratante || ""
               });
               window.history.replaceState(null, '', '/dashboard/pacientes');
             }
@@ -1179,22 +1191,38 @@ export default function PacientesPage() {
                           <div className="bg-blue-50/50 p-2.5 rounded-xl border border-blue-100 flex flex-col gap-1.5">
                             <label className="block text-[10px] font-bold text-blue-700 uppercase">Vincular con Cita (Autocompletar Fecha/Hora)</label>
                             <select 
-                              className="w-full text-xs p-2 border border-blue-200 rounded-lg bg-white outline-none font-medium text-slate-700"
+                              value={docFormData.citaId || ""}
+                              className="w-full text-xs p-2 border border-blue-200 rounded-lg bg-white outline-none font-medium text-slate-700 font-bold"
                               onChange={(e) => {
                                 const val = e.target.value;
-                                if (!val) return;
+                                if (!val) {
+                                  setDocFormData({ ...docFormData, citaId: "" });
+                                  return;
+                                }
                                 const cita = agendaCitas.find((c: any) => c.id === val);
                                 if (cita) {
-                                  setDocFormData({ ...docFormData, fecha: cita.fecha, hora: cita.hora });
+                                  setDocFormData({ 
+                                    ...docFormData, 
+                                    citaId: cita.id, 
+                                    fecha: cita.fecha, 
+                                    hora: cita.hora,
+                                    terapeuta: cita.terapeuta || docFormData.terapeuta || ""
+                                  });
                                 }
                               }}
                             >
                               <option value="">Seleccionar cita de la agenda...</option>
                               {agendaCitas
-                                .filter((c: any) => c.paciente === viewingPatient?.name || c.pacienteId === viewingPatient?.id)
+                                .filter((c: any) => {
+                                  if (!viewingPatient) return false;
+                                  if (c.pacienteId && c.pacienteId === viewingPatient.id) return true;
+                                  const p1 = (c.paciente || "").trim().toLowerCase();
+                                  const p2 = (viewingPatient.name || "").trim().toLowerCase();
+                                  return p1 === p2 || (p1 && p2 && (p1.includes(p2) || p2.includes(p1)));
+                                })
                                 .map((cita: any) => (
                                   <option key={cita.id} value={cita.id}>
-                                    {cita.fecha} a las {cita.hora} - {cita.tipoServicio || "Terapia"} ({cita.estado})
+                                    {cita.fecha} a las {cita.hora} - {cita.tipoServicio || "Terapia"} ({cita.estado}) [{cita.terapeuta}]
                                   </option>
                                 ))}
                             </select>
