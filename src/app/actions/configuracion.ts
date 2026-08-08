@@ -14,10 +14,34 @@ export async function getSettings(month: string) {
       return { success: false, error: "Acceso denegado." };
     }
 
-    const [users, settings, expenses] = await Promise.all([
-      prisma.user.findMany({
+    try {
+      await prisma.$executeRawUnsafe(`ALTER TABLE "User" ADD COLUMN IF NOT EXISTS "porcentajeValoracion" DOUBLE PRECISION DEFAULT 50;`);
+    } catch (e) {}
+
+    let users: any[] = [];
+    try {
+      users = await prisma.user.findMany({
         orderBy: { createdAt: 'asc' },
-      }),
+      });
+    } catch (err: any) {
+      users = await prisma.user.findMany({
+        select: {
+          id: true,
+          name: true,
+          email: true,
+          role: true,
+          password: true,
+          especialidad: true,
+          phone: true,
+          image: true,
+          createdAt: true,
+          updatedAt: true,
+        },
+        orderBy: { createdAt: 'asc' },
+      });
+    }
+
+    const [settings, expenses] = await Promise.all([
       prisma.systemSettings.findUnique({
         where: { id: 1 },
       }),
@@ -81,15 +105,49 @@ export async function getSettings(month: string) {
 
 export async function getTerapeutasFull() {
   try {
-    const terapeutas = await prisma.user.findMany({
-      where: {
-        role: {
-          equals: "Terapeuta",
-          mode: "insensitive"
-        }
-      },
-      orderBy: { name: 'asc' },
-    });
+    try {
+      await prisma.$executeRawUnsafe(`ALTER TABLE "User" ADD COLUMN IF NOT EXISTS "porcentajeValoracion" DOUBLE PRECISION DEFAULT 50;`);
+    } catch (e) {}
+
+    let terapeutas: any[] = [];
+    try {
+      terapeutas = await prisma.user.findMany({
+        where: {
+          role: {
+            equals: "Terapeuta",
+            mode: "insensitive"
+          }
+        },
+        orderBy: { name: 'asc' },
+      });
+    } catch (err: any) {
+      const fallbacks = await prisma.user.findMany({
+        where: {
+          role: {
+            equals: "Terapeuta",
+            mode: "insensitive"
+          }
+        },
+        select: {
+          id: true,
+          name: true,
+          email: true,
+          role: true,
+          especialidad: true,
+          phone: true,
+          tipoPago: true,
+          porcentaje: true,
+          salarioBase: true,
+          retieneIVA: true,
+        },
+        orderBy: { name: 'asc' },
+      });
+      terapeutas = fallbacks.map(t => ({
+        ...t,
+        porcentajeValoracion: t.porcentaje ?? 50
+      }));
+    }
+
     return { success: true, data: terapeutas };
   } catch (error: any) {
     console.error("Error fetching terapeutas:", error);
@@ -109,16 +167,33 @@ export async function updateTerapeutaConfig(id: string, data: any) {
       }
     }
 
-    await prisma.user.update({
-      where: { id },
-      data: {
-        tipoPago: data.tipoPago,
-        porcentaje: data.porcentaje,
-        porcentajeValoracion: data.porcentajeValoracion !== undefined ? parseFloat(data.porcentajeValoracion) : (data.porcentaje || 50),
-        salarioBase: data.salarioBase,
-        retieneIVA: data.retieneIVA,
-      } as any
-    });
+    try {
+      await prisma.$executeRawUnsafe(`ALTER TABLE "User" ADD COLUMN IF NOT EXISTS "porcentajeValoracion" DOUBLE PRECISION DEFAULT 50;`);
+    } catch (e) {}
+
+    try {
+      await prisma.user.update({
+        where: { id },
+        data: {
+          tipoPago: data.tipoPago,
+          porcentaje: data.porcentaje,
+          porcentajeValoracion: data.porcentajeValoracion !== undefined ? parseFloat(data.porcentajeValoracion) : (data.porcentaje || 50),
+          salarioBase: data.salarioBase,
+          retieneIVA: data.retieneIVA,
+        } as any
+      });
+    } catch (e: any) {
+      await prisma.user.update({
+        where: { id },
+        data: {
+          tipoPago: data.tipoPago,
+          porcentaje: data.porcentaje,
+          salarioBase: data.salarioBase,
+          retieneIVA: data.retieneIVA,
+        }
+      });
+    }
+
     return { success: true };
   } catch (error: any) {
     console.error("Error updating terapeuta config:", error);

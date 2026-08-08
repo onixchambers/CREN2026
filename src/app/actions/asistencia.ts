@@ -15,7 +15,12 @@ export async function saveAsistenciaDB(data: any) {
     if (!patient) return { success: false, error: "Paciente no encontrado." };
 
     // Buscar terapeuta asignado o especificado
-    const allUsers = await prisma.user.findMany();
+    let allUsers: any[] = [];
+    try {
+      allUsers = await prisma.user.findMany({ select: { id: true, name: true, role: true } });
+    } catch (e) {
+      allUsers = await prisma.user.findMany();
+    }
     let therapistId = "";
     const targetTherapist = (data.terapeuta || patient.medicoTratante || "").trim().toLowerCase();
 

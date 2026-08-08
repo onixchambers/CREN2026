@@ -4,13 +4,39 @@ import { prisma } from "@/lib/prisma";
 
 export async function getFinanzasMensuales(month: string, fechaDesde?: string, fechaHasta?: string) {
   try {
+    try {
+      await prisma.$executeRawUnsafe(`ALTER TABLE "User" ADD COLUMN IF NOT EXISTS "porcentajeValoracion" DOUBLE PRECISION DEFAULT 50;`);
+    } catch (e) {}
+
     // 1. Obtener todas las sesiones de la base de datos
-    const sessions = await prisma.session.findMany({
-      include: {
-        patient: true,
-        therapist: true
-      }
-    });
+    let sessions: any[] = [];
+    try {
+      sessions = await prisma.session.findMany({
+        include: {
+          patient: true,
+          therapist: true
+        }
+      });
+    } catch (err: any) {
+      sessions = await prisma.session.findMany({
+        include: {
+          patient: true,
+          therapist: {
+            select: {
+              id: true,
+              name: true,
+              email: true,
+              role: true,
+              especialidad: true,
+              tipoPago: true,
+              porcentaje: true,
+              salarioBase: true,
+              retieneIVA: true,
+            }
+          }
+        }
+      });
+    }
 
     // Filtrar sesiones por rango de fechas o mes de consulta
     const monthSessions = sessions.filter(s => {
