@@ -678,4 +678,80 @@ export async function markTherapistBroadcastAsRead(broadcastId: string, customNa
   }
 }
 
+export async function getPatientFixedHonorarios() {
+  noStore();
+  try {
+    const s = await prisma.systemSettings.findUnique({ where: { id: 1 } });
+    if (!s || !s.referenceKeys) return { success: true, data: { enabled: false, rates: {} } };
+
+    try {
+      const parsed = JSON.parse(s.referenceKeys);
+      return {
+        success: true,
+        data: parsed.patientFixedHonorarios || { enabled: false, rates: {} }
+      };
+    } catch (e) {}
+
+    return { success: true, data: { enabled: false, rates: {} } };
+  } catch (error: any) {
+    console.error("Error fetching patient fixed honorarios:", error);
+    return { success: false, error: error?.message };
+  }
+}
+
+export async function savePatientFixedHonorarios(payload: { enabled: boolean; rates: Record<string, any> }) {
+  try {
+    const session = await getServerSession(authOptions);
+    const userRole = ((session?.user as any)?.role || "").toUpperCase();
+    if (userRole === "TERAPEUTA") {
+      return { success: false, error: "Permiso denegado para modificar honorarios." };
+    }
+
+    const s = await prisma.systemSettings.findUnique({ where: { id: 1 } });
+    let settingsObj: any = {};
+    if (s && s.referenceKeys) {
+      try { settingsObj = JSON.parse(s.referenceKeys); } catch (e) {}
+    }
+
+    settingsObj.patientFixedHonorarios = payload;
+    const jsonString = JSON.stringify(settingsObj);
+
+    await prisma.systemSettings.upsert({
+      where: { id: 1 },
+      update: { referenceKeys: jsonString },
+      create: { id: 1, referenceKeys: jsonString },
+    });
+
+    revalidatePath("/dashboard/configuracion");
+    revalidatePath("/dashboard/honorarios");
+    revalidatePath("/dashboard/salario");
+    revalidatePath("/dashboard/asistencia");
+
+    return { success: true };
+  } catch (error: any) {
+    console.error("Error saving patient fixed honorarios:", error);
+    return { success: false, error: error?.message || "Error al guardar honorarios por paciente." };
+  }
+}
+
+export async function getAllPatientsListForHonorarios() {
+  noStore();
+  try {
+    const patients = await prisma.patient.findMany({
+      select: {
+        id: true,
+        displayId: true,
+        name: true,
+        medicoTratante: true,
+        estatus: true,
+      },
+      orderBy: { name: 'asc' }
+    });
+    return { success: true, patients };
+  } catch (error: any) {
+    console.error("Error fetching patients list for honorarios:", error);
+    return { success: false, patients: [] };
+  }
+}
+
 

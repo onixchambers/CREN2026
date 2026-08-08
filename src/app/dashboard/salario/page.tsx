@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { getTerapeutasFull } from "@/app/actions/configuracion";
+import { getTerapeutasFull, getPatientFixedHonorarios } from "@/app/actions/configuracion";
 import { getAsistenciasDB } from "@/app/actions/asistencia";
 import { DateInput } from "@/components/DateInput";
 
@@ -21,19 +21,22 @@ export default function SalarioPage() {
 
   const [terapeutas, setTerapeutas] = useState<any[]>([]);
   const [asistencias, setAsistencias] = useState<any[]>([]);
+  const [fixedHonorarios, setFixedHonorarios] = useState<any>({ enabled: false, rates: {} });
   const [selectedTerapeutaId, setSelectedTerapeutaId] = useState<string>("TODAS");
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
     async function loadData() {
       setLoading(true);
-      const [terRes, asistRes] = await Promise.all([
+      const [terRes, asistRes, honorRes] = await Promise.all([
         getTerapeutasFull(),
-        getAsistenciasDB()
+        getAsistenciasDB(),
+        getPatientFixedHonorarios()
       ]);
 
       if (terRes.success && terRes.data) setTerapeutas(terRes.data);
       if (asistRes.success && asistRes.data) setAsistencias(asistRes.data);
+      if (honorRes.success && honorRes.data) setFixedHonorarios(honorRes.data);
 
       setLoading(false);
     }
@@ -137,6 +140,10 @@ export default function SalarioPage() {
               subtotalValor: number;
               terapeutaPago: number;
               ivaRetenido: number;
+              ivaPaciente: number;
+              crenGanancia: number;
+              isFixedRate: boolean;
+              fixedRateVal: number;
             }>();
 
             let ingresoBrutoTotalGen = 0;
@@ -150,14 +157,32 @@ export default function SalarioPage() {
               
               ingresoBrutoTotalGen += precioSession;
 
+              const pName = (a.paciente || a.pacienteNombre || "Paciente Desconocido").trim();
+              const pNameLower = pName.toLowerCase();
+              const rateConfig = fixedHonorarios?.enabled ? fixedHonorarios?.rates?.[pNameLower] : null;
+              const isFixedActive = rateConfig && rateConfig.enabled !== false && typeof rateConfig.therapistPay === "number";
+
               // Honorario terapeuta por esta sesión
               let pagoSesionTerapeuta = 0;
               let ivaSesionRetenido = 0;
               let ivaCrenSesion = 0;
+              let crenGananciaSesion = 0;
               const hasFactura = a.fact === "Sí" || a.fact === "SI" || a.solicitaFactura === true || a.solicitaFactura === "Sí";
 
-              if (t.tipoPago === "Porcentaje") {
+              if (isFixedActive) {
+                pagoSesionTerapeuta = rateConfig.therapistPay;
+                crenGananciaSesion = Math.max(0, precioSession - pagoSesionTerapeuta);
+
+                if (hasFactura) {
+                  if (rateConfig.crenAssumesInvoice) {
+                    ivaCrenSesion = precioSession * 0.16;
+                  } else if (t.retieneIVA) {
+                    ivaSesionRetenido = pagoSesionTerapeuta * 0.16;
+                  }
+                }
+              } else if (t.tipoPago === "Porcentaje") {
                 pagoSesionTerapeuta = precioSession * ((t.porcentaje || 50) / 100);
+                crenGananciaSesion = Math.max(0, precioSession - pagoSesionTerapeuta);
                 if (t.retieneIVA) {
                   ivaSesionRetenido = pagoSesionTerapeuta * 0.16;
                 }
@@ -166,8 +191,11 @@ export default function SalarioPage() {
                 if (hasFactura) {
                   ivaCrenSesion = crenGross * 0.16;
                 }
-              } else if (hasFactura) {
-                ivaCrenSesion = precioSession * 0.16;
+              } else {
+                crenGananciaSesion = precioSession;
+                if (hasFactura) {
+                  ivaCrenSesion = precioSession * 0.16;
+                }
               }
 
               honorariosTotalGen += pagoSesionTerapeuta;
@@ -186,7 +214,6 @@ export default function SalarioPage() {
               else q2 += pagoSesionTerapeuta;
 
               // Map paciente
-              const pName = a.paciente || "Paciente Desconocido";
               const deudaVal = typeof a.saldo === "number" && a.saldo < 0 ? Math.abs(a.saldo) : 0;
 
               if (!pacienteMap.has(pName)) {
@@ -197,7 +224,10 @@ export default function SalarioPage() {
                   subtotalValor: precioSession,
                   terapeutaPago: pagoSesionTerapeuta,
                   ivaRetenido: ivaSesionRetenido,
-                  ivaPaciente: ivaCrenSesion
+                  ivaPaciente: ivaCrenSesion,
+                  crenGanancia: crenGananciaSesion,
+                  isFixedRate: isFixedActive,
+                  fixedRateVal: isFixedActive ? rateConfig.therapistPay : 0
                 });
               } else {
                 const item = pacienteMap.get(pName)!;
@@ -207,6 +237,7 @@ export default function SalarioPage() {
                 item.terapeutaPago += pagoSesionTerapeuta;
                 item.ivaRetenido += ivaSesionRetenido;
                 item.ivaPaciente += ivaCrenSesion;
+                item.crenGanancia += crenGananciaSesion;
               }
             });
 
@@ -385,6 +416,7 @@ export default function SalarioPage() {
                           <th className="py-3 px-4 text-right">IVA PACIENTE</th>
                           <th className="py-3 px-4 text-right">RETENCIÓN IVA</th>
                           <th className="py-3 px-4 text-right">A PAGAR A TERAPEUTA</th>
+                          <th className="py-3 px-4 text-right bg-blue-900 text-cyan-200 font-black">CREN</th>
                         </tr>
                       </thead>
                       <tbody className="divide-y divide-slate-100 font-medium">
@@ -407,9 +439,15 @@ export default function SalarioPage() {
                               ${p.subtotalValor.toLocaleString('es-MX', {minimumFractionDigits: 2})}
                             </td>
                             <td className="py-3 px-4 text-center">
-                              <span className="px-2 py-0.5 bg-slate-100 text-slate-700 rounded font-semibold text-[10px]">
-                                {t.tipoPago === "Porcentaje" ? `Comisión (${t.porcentaje}%)` : `Salario Base`}
-                              </span>
+                              {p.isFixedRate ? (
+                                <span className="px-2 py-0.5 bg-emerald-100 text-emerald-800 rounded font-bold text-[10px]" title="Honorario fijo íntegro configurado por paciente">
+                                  Honorario Fijo (${p.fixedRateVal.toFixed(2)})
+                                </span>
+                              ) : (
+                                <span className="px-2 py-0.5 bg-slate-100 text-slate-700 rounded font-semibold text-[10px]">
+                                  {t.tipoPago === "Porcentaje" ? `Comisión (${t.porcentaje}%)` : `Salario Base`}
+                                </span>
+                              )}
                             </td>
                             <td className="py-3 px-4 text-right text-blue-600 font-semibold">
                               ${p.ivaPaciente.toLocaleString('es-MX', {minimumFractionDigits: 2})}
@@ -420,11 +458,14 @@ export default function SalarioPage() {
                             <td className="py-3 px-4 text-right font-extrabold text-[#10b981]">
                               ${p.terapeutaPago.toLocaleString('es-MX', {minimumFractionDigits: 2})}
                             </td>
+                            <td className="py-3 px-4 text-right font-black text-[#1a5276] bg-blue-50/70">
+                              ${p.crenGanancia.toLocaleString('es-MX', {minimumFractionDigits: 2})}
+                            </td>
                           </tr>
                         ))}
                         {pacienteList.length === 0 && (
                           <tr>
-                            <td colSpan={8} className="py-8 text-center text-slate-400">
+                            <td colSpan={9} className="py-8 text-center text-slate-400">
                               Sin atenciones registradas para esta terapeuta en el periodo.
                             </td>
                           </tr>

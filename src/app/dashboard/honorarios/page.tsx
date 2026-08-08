@@ -5,6 +5,7 @@ import { useSession } from "next-auth/react";
 import { getTerapeutasFull, updateTerapeutaConfig, getAllowTherapistEdit } from "@/app/actions/configuracion";
 import { getFinanzasMensuales } from "@/app/actions/finanzas";
 import { DateInput } from "@/components/DateInput";
+import { PatientFixedHonorariosConfig } from "@/components/PatientFixedHonorariosConfig";
 
 export default function HonorariosPage() {
   const { data: session } = useSession();
@@ -137,6 +138,8 @@ export default function HonorariosPage() {
           </div>
         </div>
       </div>
+
+      <PatientFixedHonorariosConfig />
 
       {isLoading ? (
         <div className="flex justify-center p-12"><div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div></div>
