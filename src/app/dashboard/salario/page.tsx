@@ -177,7 +177,13 @@ export default function SalarioPage() {
                   ivaCrenSesion = precioSession * 0.16;
                 }
               } else if (t.tipoPago === "Porcentaje") {
-                pagoSesionTerapeuta = precioSession * ((t.porcentaje || 50) / 100);
+                const sessionTypeStr = `${a.tipoSesion || ""} ${a.tipoServicio || ""} ${a.servicio || ""} ${a.area || ""}`.toLowerCase();
+                const isValoracion = sessionTypeStr.includes("valoraci") || sessionTypeStr.includes("evaluaci");
+                const percentToUse = isValoracion && typeof t.porcentajeValoracion === "number"
+                  ? t.porcentajeValoracion
+                  : (t.porcentaje || 50);
+
+                pagoSesionTerapeuta = precioSession * (percentToUse / 100);
                 crenGananciaSesion = Math.max(0, precioSession - pagoSesionTerapeuta);
                 if (t.retieneIVA) {
                   ivaSesionRetenido = pagoSesionTerapeuta * 0.16;

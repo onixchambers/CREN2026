@@ -34,6 +34,7 @@ export default function HonorariosPage() {
   const [editForm, setEditForm] = useState({
     tipoPago: "Porcentaje",
     porcentaje: 50,
+    porcentajeValoracion: 50,
     salarioBase: 0,
     retieneIVA: false,
   });
@@ -63,6 +64,7 @@ export default function HonorariosPage() {
     setEditForm({
       tipoPago: t.tipoPago || "Porcentaje",
       porcentaje: t.porcentaje ?? 50,
+      porcentajeValoracion: t.porcentajeValoracion ?? (t.porcentaje ?? 50),
       salarioBase: t.salarioBase ?? 0,
       retieneIVA: t.retieneIVA ?? false,
     });
@@ -299,7 +301,7 @@ export default function HonorariosPage() {
               {editForm.tipoPago === "Porcentaje" && (
                 <>
                   <div>
-                    <label className="block text-xs font-semibold text-slate-500 uppercase mb-1">Porcentaje (%)</label>
+                    <label className="block text-xs font-semibold text-slate-500 uppercase mb-1">Porcentaje Sesión Normal (%)</label>
                     <input 
                       type="number" 
                       min="0"
@@ -308,6 +310,22 @@ export default function HonorariosPage() {
                       value={editForm.porcentaje}
                       onChange={(e) => setEditForm({ ...editForm, porcentaje: parseFloat(e.target.value) || 0 })}
                     />
+                  </div>
+
+                  <div>
+                    <label className="block text-xs font-extrabold text-[#1a5276] uppercase mb-1 flex items-center justify-between">
+                      <span>Porcentaje por Valoración (%)</span>
+                      <span className="text-[10px] text-blue-600 bg-blue-50 px-1.5 py-0.5 rounded border border-blue-100 font-bold">Valoraciones / Evaluaciones</span>
+                    </label>
+                    <input 
+                      type="number" 
+                      min="0"
+                      max="100"
+                      className="w-full p-2 border border-blue-200 rounded-lg text-sm outline-none focus:border-blue-600 font-bold bg-blue-50/50 text-[#1a5276]"
+                      value={editForm.porcentajeValoracion}
+                      onChange={(e) => setEditForm({ ...editForm, porcentajeValoracion: parseFloat(e.target.value) || 0 })}
+                    />
+                    <p className="text-[10px] text-slate-400 mt-1 font-medium">Porcentaje especial que cobrará la terapeuta en consultas clasificadas como Valoración o Evaluación.</p>
                   </div>
 
                   <div className="flex items-center gap-3 pt-2 bg-amber-50 p-3 rounded-lg border border-amber-200">

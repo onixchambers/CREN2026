@@ -8,7 +8,7 @@ export function PatientFixedHonorariosConfig() {
   const [patients, setPatients] = useState<any[]>([]);
   const [ratesMap, setRatesMap] = useState<Record<string, { therapistPay: number; crenAssumesInvoice: boolean; enabled: boolean }>>({});
   const [search, setSearch] = useState("");
-  const [statusFilter, setStatusFilter] = useState<"ALL" | "ACTIVE" | "INACTIVE">("ALL");
+  const [statusFilter, setStatusFilter] = useState<"ALL" | "ACTIVE" | "INACTIVE">("ACTIVE");
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [message, setMessage] = useState<{ type: "success" | "error"; text: string } | null>(null);

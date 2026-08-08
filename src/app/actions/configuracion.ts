@@ -114,9 +114,10 @@ export async function updateTerapeutaConfig(id: string, data: any) {
       data: {
         tipoPago: data.tipoPago,
         porcentaje: data.porcentaje,
+        porcentajeValoracion: data.porcentajeValoracion !== undefined ? parseFloat(data.porcentajeValoracion) : (data.porcentaje || 50),
         salarioBase: data.salarioBase,
         retieneIVA: data.retieneIVA,
-      }
+      } as any
     });
     return { success: true };
   } catch (error: any) {

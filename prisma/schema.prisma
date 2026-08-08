@@ -26,10 +26,11 @@ model User {
   payments      Payment[]
 
   // Compensación de terapeutas
-  tipoPago      String?   @default("Porcentaje")
-  porcentaje    Float?    @default(50)
-  salarioBase   Float?    @default(0)
-  retieneIVA    Boolean?  @default(false)
+  tipoPago             String?   @default("Porcentaje")
+  porcentaje           Float?    @default(50)
+  porcentajeValoracion Float?    @default(50)
+  salarioBase          Float?    @default(0)
+  retieneIVA           Boolean?  @default(false)
 }
 
 model Patient {
