@@ -54,12 +54,11 @@ export function PatientFixedHonorariosConfig() {
     }
   };
 
-  const updatePatientRate = (patientName: string, field: "therapistPay" | "crenAssumesInvoice" | "enabled", val: any) => {
+  const updatePatientRate = (patientName: string, field: "therapistPay" | "enabled", val: any) => {
     const key = (patientName || "").trim().toLowerCase();
     setRatesMap(prev => {
       const existing = prev[key] || {
         therapistPay: 360,
-        crenAssumesInvoice: true,
         enabled: false // Desactivado por defecto
       };
       return {
@@ -79,7 +78,6 @@ export function PatientFixedHonorariosConfig() {
         const key = (p.name || "").trim().toLowerCase();
         const existing = updated[key] || {
           therapistPay: 360,
-          crenAssumesInvoice: true,
           enabled: false
         };
         updated[key] = {
@@ -216,7 +214,6 @@ export function PatientFixedHonorariosConfig() {
                   <th className="py-3 px-4">GANCHO (ACTIVAR)</th>
                   <th className="py-3 px-4">PACIENTE</th>
                   <th className="py-3 px-4">GANANCIA ÍNTEGRA TERAPEUTA ($)</th>
-                  <th className="py-3 px-4 text-center">FACTURA ASUMIDA POR CREN</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-slate-100 font-medium">
@@ -224,7 +221,6 @@ export function PatientFixedHonorariosConfig() {
                   const key = (p.name || "").trim().toLowerCase();
                   const rateConfig = ratesMap[key] || {
                     therapistPay: 360,
-                    crenAssumesInvoice: true,
                     enabled: false // Desactivado por defecto
                   };
 
@@ -253,17 +249,6 @@ export function PatientFixedHonorariosConfig() {
                             className="w-28 border border-slate-300 rounded-lg px-2.5 py-1.5 font-bold text-emerald-700 outline-none focus:border-emerald-600 bg-white"
                           />
                         </div>
-                      </td>
-                      <td className="py-3 px-4 text-center">
-                        <label className="inline-flex items-center gap-1.5 text-[11px] font-semibold text-slate-700 cursor-pointer">
-                          <input
-                            type="checkbox"
-                            checked={rateConfig.crenAssumesInvoice}
-                            onChange={(e) => updatePatientRate(p.name, "crenAssumesInvoice", e.target.checked)}
-                            className="w-4 h-4 text-blue-600 rounded focus:ring-blue-500"
-                          />
-                          <span>Sí (CREN asume el IVA)</span>
-                        </label>
                       </td>
                     </tr>
                   );

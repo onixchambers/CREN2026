@@ -174,11 +174,7 @@ export default function SalarioPage() {
                 crenGananciaSesion = Math.max(0, precioSession - pagoSesionTerapeuta);
 
                 if (hasFactura) {
-                  if (rateConfig.crenAssumesInvoice) {
-                    ivaCrenSesion = precioSession * 0.16;
-                  } else if (t.retieneIVA) {
-                    ivaSesionRetenido = pagoSesionTerapeuta * 0.16;
-                  }
+                  ivaCrenSesion = precioSession * 0.16;
                 }
               } else if (t.tipoPago === "Porcentaje") {
                 pagoSesionTerapeuta = precioSession * ((t.porcentaje || 50) / 100);
