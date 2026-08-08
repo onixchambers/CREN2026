@@ -1191,8 +1191,8 @@ export default function PacientesPage() {
                           <div className="bg-blue-50/50 p-2.5 rounded-xl border border-blue-100 flex flex-col gap-1.5">
                             <label className="block text-[10px] font-bold text-blue-700 uppercase">Vincular con Cita (Autocompletar Fecha/Hora)</label>
                             <select 
-                              value={docFormData.citaId || ""}
-                              className="w-full text-xs p-2 border border-blue-200 rounded-lg bg-white outline-none font-medium text-slate-700 font-bold"
+                              value={docFormData.citaId || (docFormData.fecha ? "auto" : "")}
+                              className="w-full text-xs p-2 border border-blue-200 rounded-lg bg-white outline-none text-slate-800 font-bold shadow-2xs"
                               onChange={(e) => {
                                 const val = e.target.value;
                                 if (!val) {
@@ -1212,6 +1212,11 @@ export default function PacientesPage() {
                               }}
                             >
                               <option value="">Seleccionar cita de la agenda...</option>
+                              {docFormData.fecha && docFormData.hora && !agendaCitas.some((c: any) => c.id === docFormData.citaId) && (
+                                <option value="auto">
+                                  {docFormData.fecha} a las {docFormData.hora} - Cita Atendida ({docFormData.terapeuta || viewingPatient?.medicoTratante || 'Terapeuta'})
+                                </option>
+                              )}
                               {agendaCitas
                                 .filter((c: any) => {
                                   if (!viewingPatient) return false;
