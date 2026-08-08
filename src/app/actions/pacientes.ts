@@ -102,6 +102,10 @@ export async function createPatient(data: any) {
 export async function getPatients() {
   noStore();
   try {
+    try {
+      await autoAssignMissingDisplayIds();
+    } catch (e) {}
+
     const patients = await prisma.patient.findMany({
       include: {
         sessions: {
@@ -302,6 +306,7 @@ export async function updatePatient(id: string, data: any) {
     const updated = await prisma.patient.update({
       where: { id },
       data: {
+        displayId: data.displayId ? data.displayId.trim().toUpperCase() : undefined,
         name: data.nombre,
         fechaNacimiento: data.fechaNacimiento || null,
         sexo: data.sexo || null,
@@ -708,6 +713,44 @@ export async function mergeDuplicatePatients(primaryId: string, secondaryIds: st
   } catch (error: any) {
     console.error("Error merging patients:", error);
     return { success: false, error: "Error al fusionar pacientes: " + (error?.message || String(error)) };
+  }
+}
+
+export async function autoAssignMissingDisplayIds() {
+  try {
+    const patientsWithoutId = await prisma.patient.findMany({
+      where: {
+        OR: [
+          { displayId: null },
+          { displayId: "" }
+        ]
+      }
+    });
+
+    if (patientsWithoutId.length === 0) return { success: true, count: 0 };
+
+    let updatedCount = 0;
+    for (const p of patientsWithoutId) {
+      const chars = "ABCDEFGHJKLMNPQRSTUVWXYZ23456789";
+      let randomCode = "";
+      for (let i = 0; i < 6; i++) {
+        randomCode += chars.charAt(Math.floor(Math.random() * chars.length));
+      }
+
+      const newId = p.id ? p.id.slice(-6).toUpperCase() : randomCode;
+      try {
+        await prisma.patient.update({
+          where: { id: p.id },
+          data: { displayId: newId }
+        });
+        updatedCount++;
+      } catch (err) {}
+    }
+
+    return { success: true, count: updatedCount };
+  } catch (error: any) {
+    console.error("Error auto assigning displayIds:", error);
+    return { success: false, error: error?.message };
   }
 }
 

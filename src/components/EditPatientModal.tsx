@@ -44,6 +44,7 @@ export function EditPatientModal({
   const canEdit = isAdmin || allowTherapistEdit;
 
   const [formData, setFormData] = useState<any>({
+    displayId: patient?.displayId || (patient?.id ? patient.id.slice(-6).toUpperCase() : ""),
     nombre: patient?.name || "",
     fechaNacimiento: patient?.fechaNacimiento || "",
     sexo: patient?.sexo || "",
@@ -174,6 +175,22 @@ export function EditPatientModal({
             </h3>
 
             <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+              <div className="md:col-span-2">
+                <label className="block text-xs font-extrabold text-slate-800 mb-1 uppercase flex items-center justify-between">
+                  <span>Código / ID del Paciente</span>
+                  <span className="text-[10px] text-amber-800 bg-amber-100 px-1.5 py-0.5 rounded font-bold">Personalizable</span>
+                </label>
+                <input
+                  type="text"
+                  name="displayId"
+                  value={formData.displayId}
+                  onChange={handleInputChange}
+                  readOnly={!canEdit}
+                  placeholder="Ej: 4SAW9Y o CREN-001"
+                  className="w-full p-2 border border-amber-300 bg-amber-50/40 font-black text-amber-900 rounded text-sm focus:border-amber-600 outline-none uppercase tracking-wider"
+                />
+              </div>
+
               <div className="md:col-span-2">
                 <label className="block text-xs font-bold text-slate-700 mb-1 uppercase">Nombre Completo *</label>
                 <input
