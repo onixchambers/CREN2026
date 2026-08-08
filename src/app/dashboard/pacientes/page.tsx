@@ -185,12 +185,19 @@ export default function PacientesPage() {
           const params = new URLSearchParams(window.location.search);
           const action = params.get("action");
           const patientId = params.get("patientId");
+          const urlFecha = params.get("fecha");
+          const urlHora = params.get("hora");
+
           if (action === "nota" && patientId) {
             const p = result.data.find((x: any) => x.id === patientId);
             if (p) {
               setViewingPatient(p);
               setModalTab("nuevo_documento");
-              setSelectedNoteType("Nota Clínica de Fisioterapia");
+              setSelectedNoteType("Registro de Evolución");
+              setDocFormData({
+                fecha: urlFecha || new Date().toISOString().split("T")[0],
+                hora: urlHora || "12:00"
+              });
               window.history.replaceState(null, '', '/dashboard/pacientes');
             }
           }
@@ -243,16 +250,44 @@ export default function PacientesPage() {
 
     // 5. Filtro por Terapeuta
     if (filtroTerapeuta !== "Todos") {
-      const ter1 = (p.medicoTratante || "").trim();
-      const ter2 = (p.terapeuta || "").trim();
-      if (ter1 !== filtroTerapeuta && ter2 !== filtroTerapeuta) return false;
+      const targetKey = filtroTerapeuta.trim().toLowerCase();
+      const ter1Key = (p.medicoTratante || "").trim().toLowerCase();
+      const ter2Key = (p.terapeuta || "").trim().toLowerCase();
+      const sessionTerKeys = Array.isArray(p.sessionTherapists) ? p.sessionTherapists.map((st: string) => st.trim().toLowerCase()) : [];
+
+      const matches = ter1Key.includes(targetKey) || 
+                      ter2Key.includes(targetKey) || 
+                      sessionTerKeys.some((st: string) => st.includes(targetKey));
+
+      if (!matches) return false;
     }
 
     return true;
   }).sort((a, b) => (a.name || "").localeCompare(b.name || ""));
 
-  // Obtener lista única de terapeutas para el filtro
-  const terapeutasDisponibles = Array.from(new Set(pacientes.flatMap(p => [p.medicoTratante, p.terapeuta]).filter(Boolean))).sort();
+  // Obtener lista única y consolidada de terapeutas para el filtro (sin duplicados minúsculas/mayúsculas)
+  const rawTherapists = pacientes.flatMap(p => {
+    const list = [p.medicoTratante, p.terapeuta];
+    if (Array.isArray(p.sessionTherapists)) list.push(...p.sessionTherapists);
+    return list;
+  }).filter(Boolean);
+
+  const therapistMap = new Map<string, string>();
+  rawTherapists.forEach(raw => {
+    const clean = raw.trim();
+    if (!clean) return;
+    const key = clean.toLowerCase();
+    if (!therapistMap.has(key)) {
+      // Capitalizar Primera letra
+      const capitalized = clean.split(/\s+/).map(word => {
+        if (word.length <= 2) return word.toUpperCase();
+        return word.charAt(0).toUpperCase() + word.slice(1).toLowerCase();
+      }).join(" ");
+      therapistMap.set(key, capitalized);
+    }
+  });
+
+  const terapeutasDisponibles = Array.from(therapistMap.values()).sort((a, b) => a.localeCompare(b));
 
   const totalPages = Math.ceil(pacientesFiltrados.length / ITEMS_PER_PAGE);
   const paginatedPacientes = pacientesFiltrados.slice(
@@ -1501,17 +1536,6 @@ export default function PacientesPage() {
                   })()}
                 </div>
               )}
-            </div>
-
-            {/* BOTÓN INFERIOR DE CERRAR EXPEDIENTE */}
-            <div className="pt-2 border-t border-slate-200 print:hidden">
-              <button 
-                type="button" 
-                onClick={() => setViewingPatient(null)} 
-                className="w-full bg-[#1a5276] hover:bg-[#0e2f44] text-white font-bold py-2.5 rounded-xl text-sm transition-colors shadow-sm"
-              >
-                Cerrar Expediente
-              </button>
             </div>
           </div>
         </div>

@@ -620,9 +620,12 @@ export default function AsistenciaPage() {
     handleLimpiarForm();
     await recargarAsistencias();
     
-    // Redirigir a Pacientes y abrir la Nota Clínica Nueva
-    if (formData.pacienteId) {
-      router.push(`/dashboard/pacientes?action=nota&patientId=${formData.pacienteId}`);
+    // Redirigir a Pacientes y abrir la Nota Clínica SOLO si el paciente Asistió
+    const estNorm = (formData.estadoAsistencia || "").toLowerCase().trim();
+    const isAsistio = estNorm === "asistio" || estNorm === "asistió";
+
+    if (isAsistio && formData.pacienteId) {
+      router.push(`/dashboard/pacientes?action=nota&patientId=${formData.pacienteId}&fecha=${formData.fecha}&hora=${formData.hora}`);
     }
   };
 
@@ -738,12 +741,12 @@ export default function AsistenciaPage() {
       alert("La administración no tiene habilitado el permiso para eliminar registros de asistencia.");
       return;
     }
-    if (window.confirm("¿Estás seguro de que deseas eliminar este registro de asistencia?")) {
+    if (window.confirm("¿Estás seguro de que deseas eliminar este registro de asistencia de los recientes?")) {
       const res = await deleteCita(id);
       if (res.success) {
         const nuevas = asistencias.filter(a => a.id !== id);
         setAsistencias(nuevas);
-        alert("Registro eliminado de la base de datos.");
+        alert("Registro de asistencia eliminado de la base de datos.\n\n(La ficha ID y los datos del paciente permanecen intactos).");
       } else {
         alert("No se pudo eliminar el registro: " + (res as any).error);
       }

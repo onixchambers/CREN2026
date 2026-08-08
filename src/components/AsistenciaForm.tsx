@@ -166,10 +166,24 @@ export function AsistenciaForm({
       let terapeutaAgenda = p.medicoTratante || formData.terapeuta;
       let tipoSesionAgenda = formData.tipoSesion;
 
+      let estadoAsistenciaAgenda = formData.estadoAsistencia;
+
       if (citaHoy) {
          horaAgenda = citaHoy.hora || horaAgenda;
          terapeutaAgenda = citaHoy.terapeuta || terapeutaAgenda;
          tipoSesionAgenda = citaHoy.tipoServicio || tipoSesionAgenda;
+         if (citaHoy.estado) {
+           estadoAsistenciaAgenda = citaHoy.estado;
+         }
+      }
+
+      let areaAgenda = formData.area;
+      if (terapeutaAgenda && terapeutasFullData.length > 0) {
+        const matchedT = terapeutasFullData.find(t => t.name === terapeutaAgenda || t.name.toLowerCase().includes(terapeutaAgenda.toLowerCase()));
+        if (matchedT && matchedT.especialidad) {
+          const tParts = matchedT.especialidad.split(',').map((x: string) => x.trim()).filter(Boolean);
+          if (tParts.length > 0) areaAgenda = tParts[0];
+        }
       }
 
       setFormData({
@@ -180,8 +194,10 @@ export function AsistenciaForm({
         pacienteSexo: normalizeSexo(p.sexo),
         pacienteEdad: p.edad,
         terapeuta: terapeutaAgenda,
+        area: areaAgenda || formData.area || "Fisioterapia",
         hora: horaAgenda,
         tipoSesion: tipoSesionAgenda,
+        estadoAsistencia: estadoAsistenciaAgenda || "Asistió",
         saldoDisponible: p.saldoCalculado || "0.00",
         precioTerapia: p.precioTerapia || formData.precioTerapia,
         numeroSesiones: "1", 
