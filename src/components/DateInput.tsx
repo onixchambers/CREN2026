@@ -1,7 +1,7 @@
 import React from 'react';
 
-interface DateInputProps extends Omit<React.InputHTMLAttributes<HTMLInputElement>, 'type' | 'onChange'> {
-  onChange?: (val: any) => void;
+interface DateInputProps extends Omit<React.InputHTMLAttributes<HTMLInputElement>, 'type'> {
+  onChange?: (e: React.ChangeEvent<HTMLInputElement>) => void;
 }
 
 export function DateInput({ onChange, value, ...props }: DateInputProps) {
@@ -21,11 +21,7 @@ export function DateInput({ onChange, value, ...props }: DateInputProps) {
       type="date"
       {...props}
       value={formattedValue}
-      onChange={(e) => {
-        if (onChange) {
-          onChange(e.target.value);
-        }
-      }}
+      onChange={onChange}
       className={props.className || "w-full text-sm p-2 border border-slate-300 rounded focus:border-[#2980b9] outline-none text-slate-700 bg-white"}
     />
   );

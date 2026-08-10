@@ -144,6 +144,7 @@ export default function SalarioPage() {
               crenGanancia: number;
               isFixedRate: boolean;
               fixedRateVal: number;
+              tipoSesiones: string[];
             }>();
 
             let ingresoBrutoTotalGen = 0;
@@ -217,6 +218,7 @@ export default function SalarioPage() {
 
               // Map paciente
               const deudaVal = typeof a.saldo === "number" && a.saldo < 0 ? Math.abs(a.saldo) : 0;
+              const tipoSesionLabel = (a.tipoSesion || a.tipoServicio || a.servicio || "").trim();
 
               if (!pacienteMap.has(pName)) {
                 pacienteMap.set(pName, {
@@ -229,7 +231,8 @@ export default function SalarioPage() {
                   ivaPaciente: ivaCrenSesion,
                   crenGanancia: crenGananciaSesion,
                   isFixedRate: isFixedActive,
-                  fixedRateVal: isFixedActive ? rateConfig.therapistPay : 0
+                  fixedRateVal: isFixedActive ? rateConfig.therapistPay : 0,
+                  tipoSesiones: tipoSesionLabel ? [tipoSesionLabel] : []
                 });
               } else {
                 const item = pacienteMap.get(pName)!;
@@ -240,6 +243,9 @@ export default function SalarioPage() {
                 item.ivaRetenido += ivaSesionRetenido;
                 item.ivaPaciente += ivaCrenSesion;
                 item.crenGanancia += crenGananciaSesion;
+                if (tipoSesionLabel && !item.tipoSesiones.includes(tipoSesionLabel)) {
+                  item.tipoSesiones.push(tipoSesionLabel);
+                }
               }
             });
 
@@ -412,6 +418,7 @@ export default function SalarioPage() {
                         <tr>
                           <th className="py-3 px-4">PACIENTE</th>
                           <th className="py-3 px-4 text-center">ASISTENCIAS</th>
+                          <th className="py-3 px-4 text-center">TIPO SESIÓN</th>
                           <th className="py-3 px-4 text-right">DEUDA</th>
                           <th className="py-3 px-4 text-right">TOTAL SESIÓN</th>
                           <th className="py-3 px-4 text-center">ESQUEMA / %</th>
@@ -429,6 +436,19 @@ export default function SalarioPage() {
                               <span className="bg-blue-50 text-blue-700 px-2 py-0.5 rounded">
                                 {p.asistenciasCount}
                               </span>
+                            </td>
+                            <td className="py-3 px-4 text-center">
+                              {p.tipoSesiones && p.tipoSesiones.length > 0 ? (
+                                <div className="flex flex-col gap-0.5 items-center">
+                                  {p.tipoSesiones.map((ts, i) => (
+                                    <span key={i} className="px-1.5 py-0.5 bg-purple-50 text-purple-700 border border-purple-100 rounded text-[10px] font-semibold capitalize">
+                                      {ts}
+                                    </span>
+                                  ))}
+                                </div>
+                              ) : (
+                                <span className="text-slate-300 text-[10px]">—</span>
+                              )}
                             </td>
                             <td className="py-3 px-4 text-right">
                               {p.deudaTotal > 0 ? (
@@ -467,7 +487,7 @@ export default function SalarioPage() {
                         ))}
                         {pacienteList.length === 0 && (
                           <tr>
-                            <td colSpan={9} className="py-8 text-center text-slate-400">
+                            <td colSpan={10} className="py-8 text-center text-slate-400">
                               Sin atenciones registradas para esta terapeuta en el periodo.
                             </td>
                           </tr>

@@ -60,6 +60,8 @@ export default function PacientesPage() {
   const [docSearchQuery, setDocSearchQuery] = useState("");
   const [isSavingDoc, setIsSavingDoc] = useState(false);
   const [docsCurrentPage, setDocsCurrentPage] = useState(1);
+  const [uploadingPhotos, setUploadingPhotos] = useState(false);
+  const [docPhotos, setDocPhotos] = useState<{url: string; name: string}[]>([]);
 
   // Estados para Duplicados
   const [isDuplicatesModalOpen, setIsDuplicatesModalOpen] = useState(false);
@@ -1382,6 +1384,70 @@ export default function PacientesPage() {
                             <div><label className="block text-[11px] font-medium text-slate-600 mb-1">Comentarios</label><textarea rows={5} value={docFormData.comentarios || ""} onChange={(e) => setDocFormData({...docFormData, comentarios: e.target.value})} className="w-full p-2 border border-slate-300 rounded-lg outline-none text-xs" /></div>
                           </>
                         )}
+
+                        {/* ADJUNTAR FOTOS */}
+                        <div className="bg-blue-50/50 border border-blue-100 rounded-xl p-3 space-y-2">
+                          <label className="block text-[10px] font-extrabold text-blue-700 uppercase tracking-wide">📷 Adjuntar Fotos (Notas Clínicas)</label>
+                          <input
+                            type="file"
+                            accept="image/*"
+                            multiple
+                            className="block w-full text-xs text-slate-600 file:mr-3 file:py-1 file:px-3 file:rounded-lg file:border-0 file:text-xs file:font-bold file:bg-blue-600 file:text-white hover:file:bg-blue-700 file:cursor-pointer cursor-pointer"
+                            onChange={async (e) => {
+                              const files = Array.from(e.target.files || []);
+                              if (files.length === 0) return;
+                              setUploadingPhotos(true);
+                              try {
+                                const uploaded: {url: string; name: string}[] = [];
+                                for (const file of files) {
+                                  const fd = new FormData();
+                                  fd.append("file", file);
+                                  const res = await fetch("/api/upload", { method: "POST", body: fd });
+                                  if (res.ok) {
+                                    const data = await res.json();
+                                    if (data.url) uploaded.push({ url: data.url, name: file.name });
+                                  } else {
+                                    const err = await res.json();
+                                    alert("Error subiendo foto: " + (err.error || "Error desconocido"));
+                                  }
+                                }
+                                const combined = [...docPhotos, ...uploaded];
+                                setDocPhotos(combined);
+                                setDocFormData((prev: any) => ({ ...prev, fotos: combined.map(p => p.url) }));
+                              } catch (err: any) {
+                                alert("Error de conexión al subir fotos: " + err.message);
+                              } finally {
+                                setUploadingPhotos(false);
+                                e.target.value = "";
+                              }
+                            }}
+                          />
+                          {uploadingPhotos && (
+                            <div className="flex items-center gap-2 text-xs text-blue-600 font-semibold">
+                              <div className="animate-spin w-3 h-3 border-2 border-blue-400 border-t-transparent rounded-full" />
+                              Subiendo fotos...
+                            </div>
+                          )}
+                          {docPhotos.length > 0 && (
+                            <div className="flex flex-wrap gap-2 pt-1">
+                              {docPhotos.map((photo, idx) => (
+                                <div key={idx} className="relative group">
+                                  <img src={photo.url} alt={photo.name} className="w-20 h-20 object-cover rounded-lg border border-blue-200 shadow-xs" />
+                                  <button
+                                    type="button"
+                                    onClick={() => {
+                                      const next = docPhotos.filter((_, i) => i !== idx);
+                                      setDocPhotos(next);
+                                      setDocFormData((prev: any) => ({ ...prev, fotos: next.map(p => p.url) }));
+                                    }}
+                                    className="absolute -top-1.5 -right-1.5 w-4 h-4 bg-red-500 text-white rounded-full text-[10px] font-bold flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity cursor-pointer shadow"
+                                  >✕</button>
+                                  <span className="block text-[9px] text-slate-400 text-center max-w-[80px] truncate mt-0.5">{photo.name}</span>
+                                </div>
+                              ))}
+                            </div>
+                          )}
+                        </div>
 
                         {/* BOTÓN VERDE GUARDAR COMO EN EL PDF */}
                         <div className="pt-2">

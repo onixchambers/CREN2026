@@ -167,8 +167,8 @@ export default function HonorariosPage() {
                   const sesionesCount = finData.sesiones || 0;
                   const ingresoGenerado = finData.ingresoGenerado || 0;
                   const pagoNeto = finData.pago || (t.tipoPago === "Salario Base" ? (t.salarioBase || 0) : 0);
-                  const ivaRetenido = finData.ivaRetenido !== undefined ? finData.ivaRetenido : (t.retieneIVA ? (pagoNeto * 0.16) : 0);
-                  const tieneIVA = t.retieneIVA || finData.tieneFacturasEnPeriodo || ivaRetenido > 0;
+                  const ivaRetenido = t.retieneIVA ? (pagoNeto * 0.16) : 0;
+                  const tieneIVA = t.retieneIVA === true;
 
                   return (
                     <tr key={i} className="hover:bg-slate-50 transition-colors text-slate-800">
