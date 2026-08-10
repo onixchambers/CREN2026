@@ -492,13 +492,14 @@ export async function savePatientDocument(patientId: string, docData: any) {
     // Generar el PDF oficial en base64 para subirlo a Google Drive
     let driveLink = docData.driveLink || "";
     try {
+      const photosForPdf: {dataUrl: string; name: string}[] = Array.isArray(docData.photosBase64) ? docData.photosBase64 : [];
       const htmlBase64 = generateClinicalNotePdfBase64(patient.name, {
         fecha: docDate,
         hora: docTime,
         tipo: docType,
         terapeuta: displayDocName,
         contenido: docData.contenido || {}
-      });
+      }, photosForPdf);
       const fileBuffer = Buffer.from(htmlBase64, "base64");
       const cleanPatientName = (patient.name || "Paciente").replace(/\s+/g, "_");
       const cleanDocType = docType.replace(/\s+/g, "_");

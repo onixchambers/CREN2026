@@ -61,7 +61,7 @@ export default function PacientesPage() {
   const [isSavingDoc, setIsSavingDoc] = useState(false);
   const [docsCurrentPage, setDocsCurrentPage] = useState(1);
   const [uploadingPhotos, setUploadingPhotos] = useState(false);
-  const [docPhotos, setDocPhotos] = useState<{url: string; name: string}[]>([]);
+  const [docPhotos, setDocPhotos] = useState<{dataUrl: string; name: string}[]>([]);
 
   // Estados para Duplicados
   const [isDuplicatesModalOpen, setIsDuplicatesModalOpen] = useState(false);
@@ -1168,20 +1168,22 @@ export default function PacientesPage() {
                             const res = await savePatientDocument(viewingPatient.id, {
                               id: docFormData.id,
                               tipo: selectedNoteType,
-                              terapeuta: docFormData.terapeuta || userName || "LOURDES RINCÓN",
+                              terapeuta: docFormData.terapeuta || userName || "LOURDES RINC\u00d3N",
                               fecha: docFormData.fecha,
                               hora: docFormData.hora,
-                              contenido: docFormData
+                              contenido: docFormData,
+                              photosBase64: docPhotos
                             });
                             if (res.success && res.data) {
                               setPatientDocs(res.data);
-                              alert("¡Nota clínica guardada exitosamente y enviada a Google Drive!");
+                              setDocPhotos([]);
+                              alert("\u00a1Nota cl\u00ednica guardada exitosamente y enviada a Google Drive!");
                               setModalTab("documentos");
                             } else {
                               alert("Error al guardar: " + res.error);
                             }
                           } catch(err: any) {
-                            alert("Error de conexión: " + err.message);
+                            alert("Error de conexi\u00f3n: " + err.message);
                           } finally {
                             setIsSavingDoc(false);
                           }
@@ -1398,24 +1400,22 @@ export default function PacientesPage() {
                               if (files.length === 0) return;
                               setUploadingPhotos(true);
                               try {
-                                const uploaded: {url: string; name: string}[] = [];
+                                const converted: {dataUrl: string; name: string}[] = [];
                                 for (const file of files) {
-                                  const fd = new FormData();
-                                  fd.append("file", file);
-                                  const res = await fetch("/api/upload", { method: "POST", body: fd });
-                                  if (res.ok) {
-                                    const data = await res.json();
-                                    if (data.url) uploaded.push({ url: data.url, name: file.name });
-                                  } else {
-                                    const err = await res.json();
-                                    alert("Error subiendo foto: " + (err.error || "Error desconocido"));
-                                  }
+                                  await new Promise<void>((resolve) => {
+                                    const reader = new FileReader();
+                                    reader.onload = (ev) => {
+                                      const dataUrl = ev.target?.result as string;
+                                      if (dataUrl) converted.push({ dataUrl, name: file.name });
+                                      resolve();
+                                    };
+                                    reader.onerror = () => resolve();
+                                    reader.readAsDataURL(file);
+                                  });
                                 }
-                                const combined = [...docPhotos, ...uploaded];
-                                setDocPhotos(combined);
-                                setDocFormData((prev: any) => ({ ...prev, fotos: combined.map(p => p.url) }));
+                                setDocPhotos(prev => [...prev, ...converted]);
                               } catch (err: any) {
-                                alert("Error de conexión al subir fotos: " + err.message);
+                                alert("Error al procesar fotos: " + err.message);
                               } finally {
                                 setUploadingPhotos(false);
                                 e.target.value = "";
@@ -1425,20 +1425,18 @@ export default function PacientesPage() {
                           {uploadingPhotos && (
                             <div className="flex items-center gap-2 text-xs text-blue-600 font-semibold">
                               <div className="animate-spin w-3 h-3 border-2 border-blue-400 border-t-transparent rounded-full" />
-                              Subiendo fotos...
+                              Procesando fotos...
                             </div>
                           )}
                           {docPhotos.length > 0 && (
                             <div className="flex flex-wrap gap-2 pt-1">
                               {docPhotos.map((photo, idx) => (
                                 <div key={idx} className="relative group">
-                                  <img src={photo.url} alt={photo.name} className="w-20 h-20 object-cover rounded-lg border border-blue-200 shadow-xs" />
+                                  <img src={photo.dataUrl} alt={photo.name} className="w-20 h-20 object-cover rounded-lg border border-blue-200 shadow-xs" />
                                   <button
                                     type="button"
                                     onClick={() => {
-                                      const next = docPhotos.filter((_, i) => i !== idx);
-                                      setDocPhotos(next);
-                                      setDocFormData((prev: any) => ({ ...prev, fotos: next.map(p => p.url) }));
+                                      setDocPhotos(prev => prev.filter((_, i) => i !== idx));
                                     }}
                                     className="absolute -top-1.5 -right-1.5 w-4 h-4 bg-red-500 text-white rounded-full text-[10px] font-bold flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity cursor-pointer shadow"
                                   >✕</button>

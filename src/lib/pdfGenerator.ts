@@ -286,7 +286,7 @@ export function generateConsentPdfBase64(data: {
   return btoa(unescape(encodeURIComponent(htmlDoc)));
 }
 
-export function generateClinicalNotePdfBase64(patientName: string, docData: any): string {
+export function generateClinicalNotePdfBase64(patientName: string, docData: any, photosBase64?: {dataUrl: string; name: string}[]): string {
   const dateStr = docData.fecha || new Date().toISOString().split("T")[0];
   const typeStr = docData.tipo || "Nota Clínica";
   const therapistStr = docData.terapeuta || "Lic. Basilio";
@@ -295,7 +295,7 @@ export function generateClinicalNotePdfBase64(patientName: string, docData: any)
   // Formatear campos del contenido en una lista/tabla de datos
   let contentFieldsHtml = "";
   for (const [key, val] of Object.entries(content)) {
-    if (key === "fecha" || key === "terapeuta" || key === "tipo") continue;
+    if (key === "fecha" || key === "terapeuta" || key === "tipo" || key === "fotos") continue;
     if (typeof val === "object" && val !== null) continue;
     const cleanKey = key.replace(/([A-Z])/g, " $1").replace(/^./, str => str.toUpperCase());
     contentFieldsHtml += `
@@ -303,6 +303,27 @@ export function generateClinicalNotePdfBase64(patientName: string, docData: any)
         <td style="width: 30%; font-weight: 700; background: #f8fafc; color: #1e293b;">${cleanKey}:</td>
         <td style="width: 70%; color: #334155; white-space: pre-wrap;">${val || "—"}</td>
       </tr>
+    `;
+  }
+
+  // Generar HTML de fotos si las hay (embebidas como base64)
+  let photosHtml = "";
+  const photos = photosBase64 || [];
+  if (photos.length > 0) {
+    photosHtml = `
+      <div style="margin-top:20px;">
+        <div style="background:#0e2f44;color:#fff;font-size:12px;font-weight:700;padding:6px 12px;border-radius:4px;margin-bottom:12px;text-transform:uppercase;">
+          Evidencia Fotográfica (${photos.length} foto${photos.length !== 1 ? "s" : ""})
+        </div>
+        <div style="display:flex;flex-wrap:wrap;gap:12px;">
+          ${photos.map((p, idx) => `
+            <div style="border:1px solid #cbd5e1;border-radius:8px;overflow:hidden;max-width:200px;">
+              <img src="${p.dataUrl}" alt="Foto ${idx + 1}" style="width:100%;max-width:200px;height:auto;display:block;" />
+              <div style="font-size:10px;color:#475569;padding:4px 6px;background:#f8fafc;">${p.name || "Foto " + (idx + 1)}</div>
+            </div>
+          `).join("")}
+        </div>
+      </div>
     `;
   }
 
@@ -395,6 +416,7 @@ export function generateClinicalNotePdfBase64(patientName: string, docData: any)
           ${contentFieldsHtml || `<tr><td colspan="2" style="text-align:center; color:#94a3b8; font-style:italic;">No hay campos registrados en esta nota.</td></tr>`}
         </tbody>
       </table>
+      ${photosHtml}
     </body>
     </html>
   `;
@@ -404,4 +426,3 @@ export function generateClinicalNotePdfBase64(patientName: string, docData: any)
   }
   return btoa(unescape(encodeURIComponent(htmlDoc)));
 }
-

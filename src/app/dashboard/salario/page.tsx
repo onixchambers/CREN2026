@@ -440,11 +440,21 @@ export default function SalarioPage() {
                             <td className="py-3 px-4 text-center">
                               {p.tipoSesiones && p.tipoSesiones.length > 0 ? (
                                 <div className="flex flex-col gap-0.5 items-center">
-                                  {p.tipoSesiones.map((ts, i) => (
-                                    <span key={i} className="px-1.5 py-0.5 bg-purple-50 text-purple-700 border border-purple-100 rounded text-[10px] font-semibold capitalize">
-                                      {ts}
-                                    </span>
-                                  ))}
+                                  {p.tipoSesiones.map((ts, i) => {
+                                    const isValoracion = ts.toLowerCase().includes("valoraci");
+                                    return (
+                                      <span
+                                        key={i}
+                                        className={`px-1.5 py-0.5 rounded text-[10px] font-bold capitalize border ${
+                                          isValoracion
+                                            ? "bg-amber-100 text-amber-700 border-amber-300"
+                                            : "bg-purple-50 text-purple-700 border-purple-100"
+                                        }`}
+                                      >
+                                        {ts}
+                                      </span>
+                                    );
+                                  })}
                                 </div>
                               ) : (
                                 <span className="text-slate-300 text-[10px]">—</span>
