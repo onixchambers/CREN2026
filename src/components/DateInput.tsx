@@ -19,7 +19,10 @@ export function DateInput({ onChange, value, ...props }: DateInputProps) {
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     if (onChange) {
       const val = e.target.value;
-      onChange(val, e);
+      const valWrapper: any = new String(val);
+      valWrapper.target = e.target;
+      valWrapper.currentTarget = e.currentTarget;
+      onChange(valWrapper, e);
     }
   };
 

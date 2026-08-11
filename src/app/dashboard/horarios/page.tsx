@@ -238,11 +238,12 @@ export default function HorariosPage() {
               <label className="text-sm font-semibold text-slate-500">Fecha:</label>
               <DateInput 
                 value={fechaFiltro}
-                onChange={(e) => {
-                  setFechaFiltro(e.target.value);
-                  fetchHorarios(e.target.value);
+                onChange={(val) => {
+                  const next = typeof val === "string" ? val : (val?.target?.value || val);
+                  setFechaFiltro(next);
+                  fetchHorarios(next);
                 }}
-                className="border border-slate-300 rounded px-3 py-1.5 text-sm outline-none focus:border-indigo-500 text-slate-700"
+                className="border border-slate-300 rounded px-3 py-1.5 text-sm outline-none focus:border-indigo-500 text-slate-700 cursor-pointer"
               />
               {fechaFiltro !== hoy && (
                 <button 

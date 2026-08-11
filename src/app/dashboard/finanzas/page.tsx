@@ -83,16 +83,22 @@ export default function FinanzasPage() {
             <label className="text-xs font-bold text-slate-500 uppercase">Desde:</label>
             <DateInput 
               value={fechaDesde} 
-              onChange={(e) => setFechaDesde(e.target.value)}
-              className="border border-slate-300 rounded px-2 py-1 text-xs font-semibold outline-none focus:border-[#2980b9] text-[#1a5276]"
+              onChange={(val) => {
+                const next = typeof val === "string" ? val : (val?.target?.value || val);
+                setFechaDesde(next);
+              }}
+              className="border border-slate-300 rounded px-2 py-1 text-xs font-semibold outline-none focus:border-[#2980b9] text-[#1a5276] cursor-pointer"
             />
           </div>
           <div className="flex items-center gap-1.5">
             <label className="text-xs font-bold text-slate-500 uppercase">Hasta:</label>
             <DateInput 
               value={fechaHasta} 
-              onChange={(e) => setFechaHasta(e.target.value)}
-              className="border border-slate-300 rounded px-2 py-1 text-xs font-semibold outline-none focus:border-[#2980b9] text-[#1a5276]"
+              onChange={(val) => {
+                const next = typeof val === "string" ? val : (val?.target?.value || val);
+                setFechaHasta(next);
+              }}
+              className="border border-slate-300 rounded px-2 py-1 text-xs font-semibold outline-none focus:border-[#2980b9] text-[#1a5276] cursor-pointer"
             />
           </div>
         </div>

@@ -102,8 +102,11 @@ export default function SalarioPage() {
             <label className="text-xs font-bold text-slate-500 uppercase">Desde:</label>
             <DateInput 
               value={fechaDesde} 
-              onChange={(e) => setFechaDesde(e.target.value)}
-              className="border border-slate-300 rounded px-2 py-1 text-xs font-semibold text-[#1a5276] outline-none"
+              onChange={(val) => {
+                const next = typeof val === "string" ? val : (val?.target?.value || val);
+                setFechaDesde(next);
+              }}
+              className="border border-slate-300 rounded px-2 py-1 text-xs font-semibold text-[#1a5276] outline-none cursor-pointer"
             />
           </div>
 
@@ -111,8 +114,11 @@ export default function SalarioPage() {
             <label className="text-xs font-bold text-slate-500 uppercase">Hasta:</label>
             <DateInput 
               value={fechaHasta} 
-              onChange={(e) => setFechaHasta(e.target.value)}
-              className="border border-slate-300 rounded px-2 py-1 text-xs font-semibold text-[#1a5276] outline-none"
+              onChange={(val) => {
+                const next = typeof val === "string" ? val : (val?.target?.value || val);
+                setFechaHasta(next);
+              }}
+              className="border border-slate-300 rounded px-2 py-1 text-xs font-semibold text-[#1a5276] outline-none cursor-pointer"
             />
           </div>
         </div>
