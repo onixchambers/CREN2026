@@ -1302,17 +1302,17 @@ export default function AsistenciaPage() {
                     })()}
                   </select>
                 </div>
-                {/* ESTADO DE PAGO & MÉTODOS DE PAGO */}
-                <div className="grid grid-cols-2 gap-2">
-                  <div>
-                    <label className="block text-[10px] font-bold text-slate-500 uppercase mb-1">
-                      Estado de Pago (Pago)
+                {/* FILA ÚNICA EN MISMO RENGLÓN: ESTADO DE PAGO, MÉTODO DE PAGO, MONTO PAGADO Y PAGO MIX */}
+                <div className="grid grid-cols-12 gap-1.5 items-end">
+                  <div className="col-span-3">
+                    <label className="block text-[10px] font-bold text-slate-500 uppercase h-[28px] flex items-end mb-1 leading-tight">
+                      Estado de Pago
                     </label>
                     <select
                       name="pago"
                       value={editForm.pago || "SÍ"}
                       onChange={handleEditChange}
-                      className="w-full text-sm p-2 border border-slate-300 rounded-lg focus:border-[#2980b9] outline-none text-slate-900 font-bold bg-white cursor-pointer"
+                      className="w-full text-xs p-2 border border-slate-300 rounded-lg focus:border-[#2980b9] outline-none text-slate-900 font-bold bg-white cursor-pointer"
                     >
                       <option value="SÍ">SÍ (Pagado)</option>
                       <option value="NO">NO (Pendiente)</option>
@@ -1321,8 +1321,8 @@ export default function AsistenciaPage() {
                     </select>
                   </div>
 
-                  <div>
-                    <label className="block text-[10px] font-bold text-slate-500 uppercase mb-1">
+                  <div className="col-span-3">
+                    <label className="block text-[10px] font-bold text-slate-500 uppercase h-[28px] flex items-end mb-1 leading-tight">
                       Método de Pago
                     </label>
                     <select
@@ -1332,7 +1332,7 @@ export default function AsistenciaPage() {
                         handleEditChange(e);
                         if (e.target.value === "Mixto") setShowEditSegundoPago(true);
                       }}
-                      className="w-full text-sm p-2 border border-slate-300 rounded-lg focus:border-[#2980b9] outline-none text-slate-900 bg-white font-medium cursor-pointer"
+                      className="w-full text-xs p-2 border border-slate-300 rounded-lg focus:border-[#2980b9] outline-none text-slate-900 bg-white font-medium cursor-pointer"
                     >
                       <option value="Efectivo">Efectivo</option>
                       <option value="Transferencia">Transferencia</option>
@@ -1342,31 +1342,30 @@ export default function AsistenciaPage() {
                       <option value="Beca">Beca</option>
                     </select>
                   </div>
-                </div>
 
-                <div className="grid grid-cols-2 gap-2 items-end">
-                  <div>
-                    <label className="block text-[10px] font-bold text-slate-500 uppercase mb-1">
+                  <div className="col-span-3">
+                    <label className="block text-[10px] font-bold text-slate-500 uppercase h-[28px] flex items-end mb-1 leading-tight">
                       Monto Pagado
                     </label>
                     <div className="relative w-full">
-                      <span className="absolute left-2.5 top-2 text-slate-500 text-sm font-bold">$</span>
+                      <span className="absolute left-2 top-2 text-slate-500 text-xs font-bold">$</span>
                       <input
                         type="number"
                         name="montoPago"
                         value={editForm.montoPago || ""}
                         onChange={handleEditChange}
                         placeholder="0"
-                        className="w-full text-sm p-2 pl-6 border border-slate-300 rounded-lg focus:border-[#2980b9] outline-none text-slate-900 bg-white font-bold"
+                        className="w-full text-xs p-2 pl-5 border border-slate-300 rounded-lg focus:border-[#2980b9] outline-none text-slate-900 bg-white font-bold"
                       />
                     </div>
                   </div>
 
-                  <div>
+                  <div className="col-span-3">
+                    <div className="h-[28px] mb-1"></div>
                     <button
                       type="button"
                       onClick={() => setShowEditSegundoPago(!showEditSegundoPago)}
-                      className="w-full text-sm p-2 bg-blue-50 text-blue-700 hover:bg-blue-100 rounded-lg font-bold border border-blue-200 transition-colors flex items-center justify-center gap-1 cursor-pointer shadow-xs"
+                      className="w-full text-xs p-2 bg-blue-50 text-blue-700 hover:bg-blue-100 rounded-lg font-bold border border-blue-200 transition-colors flex items-center justify-center gap-1 cursor-pointer shadow-xs whitespace-nowrap"
                     >
                       {showEditSegundoPago ? "❌ Quitar 2º Pago" : "➕ Pago Mix"}
                     </button>
