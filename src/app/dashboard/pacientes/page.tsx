@@ -215,29 +215,41 @@ export default function PacientesPage() {
                 const targetName = decodeURIComponent(pName).trim().toLowerCase();
                 p = result.data.find((x: any) => (x.name || "").trim().toLowerCase() === targetName || targetName.includes((x.name || "").trim().toLowerCase()) || (x.name || "").trim().toLowerCase().includes(targetName));
               }
-              if (p) {
                 let matchedCita = null;
-                const citasForP = (agendaRes.data || []).filter((c: any) => c.paciente === p.name || c.pacienteId === p.id);
+                const citasForP = (agendaRes.data || []).filter((c: any) => {
+                  if (c.pacienteId && c.pacienteId === p.id) return true;
+                  const p1 = (c.paciente || "").trim().toLowerCase();
+                  const p2 = (p.name || "").trim().toLowerCase();
+                  return p1 === p2 || (p1 && p2 && (p1.includes(p2) || p2.includes(p1)));
+                });
                 if (aId) {
                   matchedCita = citasForP.find((c: any) => c.id === aId);
                 }
                 if (!matchedCita && pFecha) {
                   matchedCita = citasForP.find((c: any) => c.fecha === pFecha && (!pHora || c.hora === pHora));
                 }
+                if (!matchedCita && pFecha) {
+                  matchedCita = citasForP.find((c: any) => c.fecha === pFecha);
+                }
                 if (!matchedCita && citasForP.length > 0) {
                   matchedCita = citasForP[0];
                 }
+
+                const selCitaId = matchedCita ? matchedCita.id : (aId || "auto");
+                const selFecha = matchedCita ? matchedCita.fecha : (pFecha || new Date().toISOString().split("T")[0]);
+                const selHora = matchedCita ? matchedCita.hora : (pHora || "12:00");
+                const selTerapeuta = matchedCita ? matchedCita.terapeuta : (pTerapeuta || userName || "");
 
                 setViewingPatient(p);
                 setModalTab("nuevo_documento");
                 setSelectedNoteType("Registro de Evolución");
                 setDocFormData({
-                  linkedCitaId: matchedCita ? matchedCita.id : (aId || ""),
-                  fecha: matchedCita ? matchedCita.fecha : (pFecha || new Date().toISOString().split("T")[0]),
-                  hora: matchedCita ? matchedCita.hora : (pHora || "12:00"),
-                  terapeuta: matchedCita ? matchedCita.terapeuta : (pTerapeuta || userName || "")
+                  linkedCitaId: selCitaId,
+                  citaId: selCitaId,
+                  fecha: selFecha,
+                  hora: selHora,
+                  terapeuta: selTerapeuta
                 });
-              }
             }
           }
         }
@@ -1227,20 +1239,22 @@ export default function PacientesPage() {
                             <label className="block text-[10px] font-bold text-blue-700 uppercase">Vincular con Cita (Autocompletar Fecha/Hora)</label>
                             <select 
                               value={docFormData.linkedCitaId || docFormData.citaId || ""}
-                              className="w-full text-xs p-2 border border-blue-200 rounded-lg bg-white outline-none font-medium text-slate-700"
+                              className="w-full text-xs p-2 border border-blue-200 rounded-lg bg-white outline-none font-bold text-blue-900 shadow-xs"
                               onChange={(e) => {
                                 const val = e.target.value;
                                 const cita = agendaCitas.find((c: any) => c.id === val);
                                 if (cita) {
                                   setDocFormData({ ...docFormData, linkedCitaId: val, citaId: val, fecha: cita.fecha, hora: cita.hora, terapeuta: cita.terapeuta || docFormData.terapeuta });
+                                } else if (val === "auto") {
+                                  setDocFormData({ ...docFormData, linkedCitaId: "auto", citaId: "auto" });
                                 } else {
                                   setDocFormData({ ...docFormData, linkedCitaId: "", citaId: "" });
                                 }
                               }}
                             >
                               <option value="">Seleccionar cita de la agenda...</option>
-                              {docFormData.fecha && docFormData.hora && !agendaCitas.some((c: any) => c.id === docFormData.citaId) && (
-                                <option value="auto">
+                              {((docFormData.linkedCitaId === "auto" || docFormData.citaId === "auto") || (docFormData.fecha && docFormData.hora && !agendaCitas.some((c: any) => c.id === (docFormData.linkedCitaId || docFormData.citaId)))) && (
+                                <option value={docFormData.linkedCitaId || docFormData.citaId || "auto"}>
                                   {docFormData.fecha} a las {docFormData.hora} - Cita Atendida ({docFormData.terapeuta || viewingPatient?.medicoTratante || 'Terapeuta'})
                                 </option>
                               )}

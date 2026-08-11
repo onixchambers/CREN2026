@@ -197,11 +197,13 @@ export async function getPatients() {
             }
           }
 
-          const est = (parsedNotes.estadoAsistencia || "").toLowerCase();
-          const isAttended = est === "asistio" || est === "cancelo sin anticipacion" || s.status === "COMPLETED";
+          const rawEst = (parsedNotes.estadoAsistencia || parsedNotes.estado || s.status || "").toString();
+          const est = rawEst.toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "");
+          const isAttended = est.includes("asistio") || est.includes("cancelo sin anticipacion") || s.status === "COMPLETED";
           if (isAttended) {
             asistenciasCount++;
             if (therapistName) {
+              if (!asistenciasDetailed[therapistName]) asistenciasDetailed[therapistName] = { asistencias: 0, total: 0 };
               asistenciasDetailed[therapistName].asistencias++;
             }
           }
@@ -219,7 +221,14 @@ export async function getPatients() {
             if (isAttended) totalCostoSum += costo;
           }
 
-          const monto = parseFloat(parsedNotes.montoPago || "0");
+          let monto = parseFloat(parsedNotes.montoPago || "0");
+          if ((isNaN(monto) || monto === 0) && parsedNotes.metodoPago) {
+            const dollarMatches = parsedNotes.metodoPago.match(/\$([\d.]+)/g);
+            if (dollarMatches) {
+              monto = dollarMatches.reduce((sum: number, val: string) => sum + (parseFloat(val.replace("$", "")) || 0), 0);
+            }
+          }
+
           if (!isNaN(monto) && monto > 0) {
             totalPagadoSum += monto;
             lastPaymentAmount = monto;
@@ -236,8 +245,11 @@ export async function getPatients() {
           }
         } else {
           // Citas agendadas desde la Agenda sin notas avanzadas todavía
-          if (s.status === "COMPLETED" || s.status === "SCHEDULED") {
+          if (s.status === "COMPLETED" || s.status === "SCHEDULED" || s.status === "Asistio" || s.status === "Asistió") {
             asistenciasCount++;
+            if (therapistName && asistenciasDetailed[therapistName]) {
+              asistenciasDetailed[therapistName].asistencias++;
+            }
           }
         }
       }
