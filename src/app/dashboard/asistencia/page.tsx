@@ -1348,14 +1348,14 @@ export default function AsistenciaPage() {
                       Monto Pagado
                     </label>
                     <div className="relative w-full">
-                      <span className="absolute left-2 top-1.5 text-slate-500 text-xs font-bold">$</span>
+                      <span className="absolute left-1.5 top-1.5 text-slate-500 text-[10px] font-extrabold">$</span>
                       <input
                         type="number"
                         name="montoPago"
                         value={editForm.montoPago || ""}
                         onChange={handleEditChange}
                         placeholder="0"
-                        className="w-full text-xs py-1.5 pl-6 pr-2 border border-slate-300 rounded-lg focus:border-[#2980b9] outline-none text-slate-900 bg-white font-bold"
+                        className="w-full text-[11px] font-extrabold py-1.5 pl-4 pr-1 border border-slate-300 rounded-lg focus:border-[#2980b9] outline-none text-slate-900 bg-white [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
                       />
                     </div>
                   </div>
@@ -1395,14 +1395,14 @@ export default function AsistenciaPage() {
                         Monto Pagado 2
                       </label>
                       <div className="relative w-full">
-                        <span className="absolute left-2 top-1.5 text-blue-700 text-xs font-bold">$</span>
+                        <span className="absolute left-1.5 top-1.5 text-blue-700 text-[10px] font-extrabold">$</span>
                         <input
                           type="number"
                           name="montoPago2"
                           value={editForm.montoPago2 || ""}
                           onChange={handleEditChange}
                           placeholder="0"
-                          className="w-full text-xs py-1.5 pl-6 pr-2 border border-blue-300 rounded-lg focus:border-[#2980b9] outline-none text-slate-900 bg-white font-bold"
+                          className="w-full text-[11px] font-extrabold py-1.5 pl-4 pr-1 border border-blue-300 rounded-lg focus:border-[#2980b9] outline-none text-slate-900 bg-white [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
                         />
                       </div>
                     </div>
