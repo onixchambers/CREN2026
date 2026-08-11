@@ -1228,8 +1228,8 @@ export default function AsistenciaPage() {
               <div className="grid grid-cols-2 gap-4">
                 <div>
                   <label className="block text-[10px] font-bold text-slate-500 uppercase mb-1">Terapeuta</label>
-                  <select name="terapeuta" value={editForm.terapeuta} onChange={handleEditChange} className="w-full text-sm p-2 border border-slate-300 rounded focus:border-[#2980b9] outline-none text-slate-900" disabled={userRole.toUpperCase() === "TERAPEUTA"}>
-                    {userRole.toUpperCase() !== "TERAPEUTA" && <option value="">Seleccionar...</option>}
+                  <select name="terapeuta" value={editForm.terapeuta} onChange={handleEditChange} className="w-full text-sm p-2 border border-slate-300 rounded focus:border-[#2980b9] outline-none text-slate-900" disabled={userRole.toUpperCase() === "TERAPEUTA" && !allowTherapistEdit}>
+                    <option value="">Seleccionar...</option>
                     {terapeutas.map(t => (
                       <option key={t} value={t}>{t}</option>
                     ))}

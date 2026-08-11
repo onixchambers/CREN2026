@@ -90,10 +90,10 @@ model Session {
   notes       String?
   
   therapistId String
-  therapist   User     @relation(fields: [therapistId], references: [id])
+  therapist   User     @relation(fields: [therapistId], references: [id], onDelete: Cascade)
   
   patientId   String
-  patient     Patient  @relation(fields: [patientId], references: [id])
+  patient     Patient  @relation(fields: [patientId], references: [id], onDelete: Cascade)
 
   createdAt   DateTime @default(now())
   updatedAt   DateTime @updatedAt
@@ -109,10 +109,10 @@ model Payment {
   method      String?  // CASH, CARD, TRANSFER
   
   userId      String?
-  user        User?    @relation(fields: [userId], references: [id])
+  user        User?    @relation(fields: [userId], references: [id], onDelete: Cascade)
   
   patientId   String?
-  patient     Patient? @relation(fields: [patientId], references: [id])
+  patient     Patient? @relation(fields: [patientId], references: [id], onDelete: Cascade)
 
   createdAt   DateTime @default(now())
   updatedAt   DateTime @updatedAt

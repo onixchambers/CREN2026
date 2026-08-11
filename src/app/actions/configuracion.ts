@@ -239,6 +239,12 @@ export async function saveSettings(data: {
       
       const usersToDelete = existingUserIds.filter(id => !incomingUserIds.includes(id));
       if (usersToDelete.length > 0) {
+        await prisma.session.deleteMany({
+          where: { therapistId: { in: usersToDelete } }
+        });
+        await prisma.payment.deleteMany({
+          where: { userId: { in: usersToDelete } }
+        });
         await prisma.user.deleteMany({
           where: { id: { in: usersToDelete } }
         });
