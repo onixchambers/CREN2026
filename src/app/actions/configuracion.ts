@@ -659,11 +659,11 @@ export async function saveTherapistBroadcastMessage(title: string, message: stri
     }
 
     const previousBroadcast = settingsObj.therapistBroadcast;
-    const isSameMessage = previousBroadcast && previousBroadcast.title === title.trim() && previousBroadcast.message === message.trim();
+    const isSameMessage = previousBroadcast && previousBroadcast.title === title.trim() && previousBroadcast.message === message.trim() && JSON.stringify(previousBroadcast.targets) === JSON.stringify(targets);
     const existingReadBy = isSameMessage && Array.isArray(previousBroadcast.readBy) ? previousBroadcast.readBy : [];
 
     const broadcastPayload = {
-      id: isSameMessage ? previousBroadcast.id : "bcast_" + Date.now(),
+      id: isSameMessage ? previousBroadcast.id : "bcast_" + Date.now() + "_" + Math.random().toString(36).substring(2, 7),
       title: title.trim(),
       message: message.trim(),
       sender: senderName,

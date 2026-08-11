@@ -1312,7 +1312,7 @@ export default function AsistenciaPage() {
                       name="pago"
                       value={editForm.pago || "SÍ"}
                       onChange={handleEditChange}
-                      className="w-full h-[38px] text-xs px-2.5 border border-slate-300 rounded-lg focus:border-[#2980b9] outline-none text-slate-900 font-bold bg-white cursor-pointer"
+                      className="w-full text-sm p-2 border border-slate-300 rounded-lg focus:border-[#2980b9] outline-none text-slate-900 font-bold bg-white cursor-pointer"
                     >
                       <option value="SÍ">SÍ (Pagado)</option>
                       <option value="NO">NO (Pendiente)</option>
@@ -1332,7 +1332,7 @@ export default function AsistenciaPage() {
                         handleEditChange(e);
                         if (e.target.value === "Mixto") setShowEditSegundoPago(true);
                       }}
-                      className="w-full h-[38px] text-xs px-2.5 border border-slate-300 rounded-lg focus:border-[#2980b9] outline-none text-slate-900 bg-white font-medium cursor-pointer"
+                      className="w-full text-sm p-2 border border-slate-300 rounded-lg focus:border-[#2980b9] outline-none text-slate-900 bg-white font-medium cursor-pointer"
                     >
                       <option value="Efectivo">Efectivo</option>
                       <option value="Transferencia">Transferencia</option>
@@ -1349,15 +1349,15 @@ export default function AsistenciaPage() {
                     <label className="block text-[10px] font-bold text-slate-500 uppercase mb-1">
                       Monto Pagado
                     </label>
-                    <div className="relative w-full h-[38px]">
-                      <span className="absolute left-2.5 top-2.5 text-slate-500 text-xs font-bold">$</span>
+                    <div className="relative w-full">
+                      <span className="absolute left-2.5 top-2 text-slate-500 text-sm font-bold">$</span>
                       <input
                         type="number"
                         name="montoPago"
                         value={editForm.montoPago || ""}
                         onChange={handleEditChange}
                         placeholder="0"
-                        className="w-full h-[38px] text-xs pl-6 pr-2 border border-slate-300 rounded-lg focus:border-[#2980b9] outline-none text-slate-900 bg-white font-bold"
+                        className="w-full text-sm p-2 pl-6 border border-slate-300 rounded-lg focus:border-[#2980b9] outline-none text-slate-900 bg-white font-bold"
                       />
                     </div>
                   </div>
@@ -1366,7 +1366,7 @@ export default function AsistenciaPage() {
                     <button
                       type="button"
                       onClick={() => setShowEditSegundoPago(!showEditSegundoPago)}
-                      className="w-full h-[38px] px-2 bg-blue-50 text-blue-700 hover:bg-blue-100 rounded-lg text-xs font-bold border border-blue-200 transition-colors flex items-center justify-center gap-1 cursor-pointer shadow-xs"
+                      className="w-full text-sm p-2 bg-blue-50 text-blue-700 hover:bg-blue-100 rounded-lg font-bold border border-blue-200 transition-colors flex items-center justify-center gap-1 cursor-pointer shadow-xs"
                     >
                       {showEditSegundoPago ? "❌ Quitar 2º Pago" : "➕ Pago Mix"}
                     </button>
@@ -1383,7 +1383,7 @@ export default function AsistenciaPage() {
                         name="metodoPago2"
                         value={editForm.metodoPago2 || "Transferencia"}
                         onChange={handleEditChange}
-                        className="w-full h-[38px] text-xs px-2 border border-blue-300 rounded-lg focus:border-[#2980b9] outline-none text-slate-900 bg-white font-medium cursor-pointer"
+                        className="w-full text-sm p-2 border border-blue-300 rounded-lg focus:border-[#2980b9] outline-none text-slate-900 bg-white font-medium cursor-pointer"
                       >
                         <option value="Transferencia">Transferencia</option>
                         <option value="Efectivo">Efectivo</option>
@@ -1395,15 +1395,15 @@ export default function AsistenciaPage() {
                       <label className="block text-[10px] font-bold text-blue-900 uppercase mb-1">
                         Monto Pagado 2
                       </label>
-                      <div className="relative w-full h-[38px]">
-                        <span className="absolute left-2.5 top-2.5 text-blue-700 text-xs font-bold">$</span>
+                      <div className="relative w-full">
+                        <span className="absolute left-2.5 top-2 text-blue-700 text-sm font-bold">$</span>
                         <input
                           type="number"
                           name="montoPago2"
                           value={editForm.montoPago2 || ""}
                           onChange={handleEditChange}
                           placeholder="0"
-                          className="w-full h-[38px] text-xs pl-6 pr-2 border border-blue-300 rounded-lg focus:border-[#2980b9] outline-none text-slate-900 bg-white font-bold"
+                          className="w-full text-sm p-2 pl-6 border border-blue-300 rounded-lg focus:border-[#2980b9] outline-none text-slate-900 bg-white font-bold"
                         />
                       </div>
                     </div>
