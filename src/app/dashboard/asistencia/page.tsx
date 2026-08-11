@@ -153,6 +153,7 @@ export default function AsistenciaPage() {
   // Predictivo
   const [showDropdown, setShowDropdown] = useState(false);
   const [showSegundoPago, setShowSegundoPago] = useState(false);
+  const [showEditSegundoPago, setShowEditSegundoPago] = useState(false);
   
   // Formulario
   const [formData, setFormData] = useState({
@@ -684,17 +685,37 @@ export default function AsistenciaPage() {
       return;
     }
     setEditingAsistencia(a);
-    // Extraer el método de pago base (sin montos) de valores compuestos como "Tarjeta $500"
+    
     let baseMetodo = a.metodoPago || "Efectivo";
     let baseMonto = "";
-    const validMethods = ["Efectivo", "Transferencia", "Tarjeta", "Mixto", "Por definir", "Beca"];
-    const foundMethod = validMethods.find(m => baseMetodo.startsWith(m));
-    if (foundMethod) {
-      baseMetodo = foundMethod;
-      // Extraer monto si existe (e.g. "Tarjeta $500" → "500")
-      const montoMatch = (a.metodoPago || "").match(/\$([\d.]+)/);
-      if (montoMatch) baseMonto = montoMatch[1];
+    let baseMetodo2 = "";
+    let baseMonto2 = "";
+    let isMixto = false;
+
+    if (a.metodoPago && a.metodoPago.includes("\n")) {
+      isMixto = true;
+      const lines = a.metodoPago.split("\n");
+      const m1 = lines[0].match(/^(.*?)\s*\$([\d.]+)/);
+      if (m1) {
+        baseMetodo = m1[1].trim();
+        baseMonto = m1[2];
+      }
+      const m2 = lines[1]?.match(/^(.*?)\s*\$([\d.]+)/);
+      if (m2) {
+        baseMetodo2 = m2[1].trim();
+        baseMonto2 = m2[2];
+      }
+    } else if (a.metodoPago) {
+      const validMethods = ["Efectivo", "Transferencia", "Tarjeta", "Mixto", "Por definir", "Beca"];
+      const foundMethod = validMethods.find(m => baseMetodo.startsWith(m));
+      if (foundMethod) {
+        baseMetodo = foundMethod;
+        const montoMatch = (a.metodoPago || "").match(/\$([\d.]+)/);
+        if (montoMatch) baseMonto = montoMatch[1];
+      }
     }
+
+    setShowEditSegundoPago(isMixto);
     setEditForm({
       fecha: a.fecha,
       hora: a.hora || "",
@@ -702,9 +723,11 @@ export default function AsistenciaPage() {
       tipoSesion: a.tipoSesion,
       estado: a.estado,
       sesiones: a.sesiones,
-      pago: a.pago,
+      pago: a.pago || "SÍ",
       metodoPago: baseMetodo,
       montoPago: baseMonto || (a.total || a.subtotal || "").replace(/[^0-9.]/g, ""),
+      metodoPago2: baseMetodo2 || "Transferencia",
+      montoPago2: baseMonto2 || "",
       fact: a.fact === "Sí",
       subtotal: (a.total || a.subtotal).replace('$', ''),
       obs: a.obs,
@@ -724,7 +747,9 @@ export default function AsistenciaPage() {
   const saveEdit = async () => {
     if (!editingAsistencia) return;
     
-    const totVal = editForm.subtotal ? parseFloat(editForm.subtotal) : 0;
+    const m1 = parseFloat(editForm.montoPago || "0");
+    const m2 = showEditSegundoPago ? parseFloat(editForm.montoPago2 || "0") : 0;
+    const totVal = editForm.subtotal ? parseFloat(editForm.subtotal) : (m1 + m2);
     const ivaPct = await getSystemIvaRate();
     const ivaDec = (ivaPct || 16) / 100;
     let subVal = totVal;
@@ -736,15 +761,16 @@ export default function AsistenciaPage() {
       subVal = totVal - ivaVal;
     }
 
+    let editMetodoPagoFinal = editForm.metodoPago || "Efectivo";
+    if (showEditSegundoPago && editForm.metodoPago2) {
+      editMetodoPagoFinal = `${editForm.metodoPago || 'Efectivo'} $${m1}\n${editForm.metodoPago2} $${m2}`;
+    } else if (m1 > 0 && editForm.metodoPago) {
+      editMetodoPagoFinal = `${editForm.metodoPago} $${m1}`;
+    }
+
     let asisActualizada: any = null;
     const nuevasAsistencias = asistencias.map(a => {
       if (a.id === editingAsistencia.id) {
-        // Construir metodoPago final con monto, igual que en handleGuardar
-        const editMonto = parseFloat(editForm.montoPago || "0");
-        let editMetodoPagoFinal = editForm.metodoPago || "Efectivo";
-        if (editMonto > 0 && editForm.metodoPago) {
-          editMetodoPagoFinal = `${editForm.metodoPago} $${editMonto}`;
-        }
         asisActualizada = {
           ...a,
           fecha: editForm.fecha,
@@ -753,7 +779,7 @@ export default function AsistenciaPage() {
           tipoSesion: editForm.tipoSesion,
           estado: editForm.estado,
           sesiones: editForm.sesiones,
-          pago: editMonto > 0 ? "SÍ" : editForm.pago,
+          pago: (m1 + m2) > 0 ? "SÍ" : editForm.pago,
           metodoPago: editMetodoPagoFinal,
           fact: editForm.fact ? "Sí" : "No",
           subtotal: `$${subVal.toFixed(2)}`,
@@ -1278,24 +1304,69 @@ export default function AsistenciaPage() {
                 </div>
                 <div className="grid grid-cols-2 gap-2">
                   <div>
-                    <label className="block text-[10px] font-bold text-slate-500 uppercase mb-1">Método de Pago</label>
-                    <select name="metodoPago" value={editForm.metodoPago || "Efectivo"} onChange={handleEditChange} className="w-full text-sm p-2 border border-slate-300 rounded focus:border-[#2980b9] outline-none text-slate-900">
-                      <option value="Efectivo">Efectivo</option>
-                      <option value="Transferencia">Transferencia</option>
-                      <option value="Tarjeta">Tarjeta</option>
-                      <option value="Mixto">Mixto</option>
+                    <label className="block text-[10px] font-bold text-slate-500 uppercase mb-1">Estado de Pago (Pago)</label>
+                    <select name="pago" value={editForm.pago || "SÍ"} onChange={handleEditChange} className="w-full text-sm p-2 border border-slate-300 rounded focus:border-[#2980b9] outline-none text-slate-900 font-semibold bg-white">
+                      <option value="SÍ">SÍ (Pagado)</option>
+                      <option value="NO">NO (Pendiente)</option>
                       <option value="Por definir">Por definir</option>
                       <option value="Beca">Beca</option>
                     </select>
                   </div>
                   <div>
-                    <label className="block text-[10px] font-bold text-slate-500 uppercase mb-1">Monto Pagado</label>
-                    <div className="relative">
-                      <span className="absolute left-2 top-1.5 text-slate-500">$</span>
-                      <input type="number" name="montoPago" value={editForm.montoPago || ""} onChange={handleEditChange} placeholder="0" className="w-full text-sm p-2 pl-6 border border-slate-300 rounded focus:border-[#2980b9] outline-none text-slate-900" />
-                    </div>
+                    <label className="block text-[10px] font-bold text-slate-500 uppercase mb-1">Método de Pago 1</label>
+                    <select name="metodoPago" value={editForm.metodoPago || "Efectivo"} onChange={(e) => {
+                      handleEditChange(e);
+                      if (e.target.value === "Mixto") setShowEditSegundoPago(true);
+                    }} className="w-full text-sm p-2 border border-slate-300 rounded focus:border-[#2980b9] outline-none text-slate-900 bg-white">
+                      <option value="Efectivo">Efectivo</option>
+                      <option value="Transferencia">Transferencia</option>
+                      <option value="Tarjeta">Tarjeta</option>
+                      <option value="Mixto">Mixto (Pagos Mixtos)</option>
+                      <option value="Por definir">Por definir</option>
+                      <option value="Beca">Beca</option>
+                    </select>
                   </div>
                 </div>
+
+                <div className="grid grid-cols-2 gap-2">
+                  <div>
+                    <label className="block text-[10px] font-bold text-slate-500 uppercase mb-1">Monto Pagado 1</label>
+                    <div className="relative">
+                      <span className="absolute left-2 top-1.5 text-slate-500">$</span>
+                      <input type="number" name="montoPago" value={editForm.montoPago || ""} onChange={handleEditChange} placeholder="0" className="w-full text-sm p-2 pl-6 border border-slate-300 rounded focus:border-[#2980b9] outline-none text-slate-900 bg-white" />
+                    </div>
+                  </div>
+                  <div className="flex items-end">
+                    <button
+                      type="button"
+                      onClick={() => setShowEditSegundoPago(!showEditSegundoPago)}
+                      className="w-full py-2 px-2 bg-blue-50 text-blue-700 hover:bg-blue-100 rounded text-xs font-bold border border-blue-200 transition-colors cursor-pointer"
+                    >
+                      {showEditSegundoPago ? "❌ Quitar 2º Pago" : "➕ Pagos Mixtos Disponibles"}
+                    </button>
+                  </div>
+                </div>
+
+                {showEditSegundoPago && (
+                  <div className="grid grid-cols-2 gap-2 p-2.5 bg-blue-50/60 rounded-lg border border-blue-200 animate-in fade-in">
+                    <div>
+                      <label className="block text-[10px] font-bold text-blue-900 uppercase mb-1">Método de Pago 2</label>
+                      <select name="metodoPago2" value={editForm.metodoPago2 || "Transferencia"} onChange={handleEditChange} className="w-full text-sm p-2 border border-blue-300 rounded focus:border-[#2980b9] outline-none text-slate-900 bg-white">
+                        <option value="Transferencia">Transferencia</option>
+                        <option value="Efectivo">Efectivo</option>
+                        <option value="Tarjeta">Tarjeta</option>
+                        <option value="Por definir">Por definir</option>
+                      </select>
+                    </div>
+                    <div>
+                      <label className="block text-[10px] font-bold text-blue-900 uppercase mb-1">Monto Pagado 2</label>
+                      <div className="relative">
+                        <span className="absolute left-2 top-1.5 text-blue-700 font-bold">$</span>
+                        <input type="number" name="montoPago2" value={editForm.montoPago2 || ""} onChange={handleEditChange} placeholder="0" className="w-full text-sm p-2 pl-6 border border-blue-300 rounded focus:border-[#2980b9] outline-none text-slate-900 bg-white" />
+                      </div>
+                    </div>
+                  </div>
+                )}
                 <div className="flex items-center gap-2 mt-6">
                   <input type="checkbox" name="fact" checked={editForm.fact} onChange={handleEditChange} className="w-4 h-4 rounded border-slate-300" />
                   <label className="text-sm font-medium text-[#1a5276]">¿Solicitó factura?</label>

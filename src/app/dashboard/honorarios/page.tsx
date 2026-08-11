@@ -156,7 +156,8 @@ export default function HonorariosPage() {
                   <th className="p-4 font-semibold">Retención IVA</th>
                   <th className="p-4 font-semibold text-center">Sesiones</th>
                   <th className="p-4 font-semibold text-right">Ingreso Bruto</th>
-                  <th className="p-4 font-semibold text-right text-amber-600">IVA Retenido (16%)</th>
+                  <th className="p-4 font-semibold text-right text-amber-600">IVA SAT Terapeuta (16%)</th>
+                  <th className="p-4 font-semibold text-right text-indigo-600">IVA 16% CREN Pacientes</th>
                   <th className="p-4 font-semibold text-right text-blue-700">Total a Pagar</th>
                   <th className="p-4 font-semibold text-center">Acciones</th>
                 </tr>
@@ -167,7 +168,8 @@ export default function HonorariosPage() {
                   const sesionesCount = finData.sesiones || 0;
                   const ingresoGenerado = finData.ingresoGenerado || 0;
                   const pagoNeto = finData.pago || (t.tipoPago === "Salario Base" ? (t.salarioBase || 0) : 0);
-                  const ivaRetenido = t.retieneIVA ? (pagoNeto * 0.16) : 0;
+                  const ivaRetenido = finData.ivaRetenido !== undefined ? finData.ivaRetenido : (t.retieneIVA ? (pagoNeto * 0.16) : 0);
+                  const ivaCren = finData.ivaPaciente || 0;
                   const tieneIVA = t.retieneIVA === true;
 
                   return (
@@ -211,6 +213,9 @@ export default function HonorariosPage() {
                       <td className="p-4 text-right font-semibold text-amber-600">
                         ${ivaRetenido.toLocaleString('es-MX', {minimumFractionDigits: 2})}
                       </td>
+                      <td className="p-4 text-right font-semibold text-indigo-600">
+                        ${ivaCren.toLocaleString('es-MX', {minimumFractionDigits: 2})}
+                      </td>
                       <td className="p-4 text-right font-black text-[#1a5276] text-base">
                         ${pagoNeto.toLocaleString('es-MX', {minimumFractionDigits: 2})}
                       </td>
@@ -231,7 +236,7 @@ export default function HonorariosPage() {
                 })}
                 {terapeutas.length === 0 && (
                   <tr>
-                    <td colSpan={8} className="p-6 text-center text-slate-500">No hay terapeutas registrados en Configuración</td>
+                    <td colSpan={9} className="p-6 text-center text-slate-500">No hay terapeutas registrados en Configuración</td>
                   </tr>
                 )}
               </tbody>
@@ -253,6 +258,12 @@ export default function HonorariosPage() {
                         const pagoNeto = finData.pago || (t.tipoPago === "Salario Base" ? (t.salarioBase || 0) : 0);
                         const ivaRet = finData.ivaRetenido !== undefined ? finData.ivaRetenido : (t.retieneIVA ? (pagoNeto * 0.16) : 0);
                         return acc + ivaRet;
+                      }, 0).toLocaleString('es-MX', {minimumFractionDigits: 2})}
+                    </td>
+                    <td className="p-4 text-right font-black text-base text-indigo-300">
+                      ${terapeutas.reduce((acc, t) => {
+                        const finData = finanzasMap.get(t.id) || {};
+                        return acc + (finData.ivaPaciente || 0);
                       }, 0).toLocaleString('es-MX', {minimumFractionDigits: 2})}
                     </td>
                     <td className="p-4 text-right font-black text-lg text-white">

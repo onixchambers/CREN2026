@@ -6,11 +6,12 @@ import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth";
 import { generateUniqueDisplayId } from "@/lib/displayId";
 import { unstable_noStore as noStore } from "next/cache";
-import { logAuditAction } from "@/app/actions/auditLog";
+import { getSystemTimezone } from "@/app/actions/configuracion";
 
 export async function getAgenda() {
   noStore();
   try {
+    const tz = await getSystemTimezone();
     const sessions = await prisma.session.findMany({
       include: {
         patient: true,
@@ -26,7 +27,14 @@ export async function getAgenda() {
         if (s.notes) extra = JSON.parse(s.notes);
       } catch (e) {}
 
-      const fecha = extra.fecha || s.date.toISOString().split("T")[0];
+      let fecha = extra.fecha;
+      if (!fecha) {
+        try {
+          fecha = s.date.toLocaleDateString("en-CA", { timeZone: tz });
+        } catch {
+          fecha = s.date.toISOString().split("T")[0];
+        }
+      }
       const hora = extra.hora || "09:00";
       const key = `${s.patientId}_${s.therapistId}_${fecha}_${hora}`;
 
