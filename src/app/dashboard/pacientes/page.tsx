@@ -494,23 +494,23 @@ export default function PacientesPage() {
         </div>
 
         {/* TABLA PRINCIPAL */}
-        <div className="overflow-x-auto">
-          <table className="w-full text-xs text-center border-collapse">
-            <thead className="bg-[#0e2f44] text-white text-[9px] font-extrabold uppercase leading-tight tracking-wider">
+        <div className="overflow-x-auto rounded-xl shadow-xs">
+          <table className="w-full text-xs text-center border-collapse table-auto">
+            <thead className="bg-[#0e2f44] text-white text-[8.5px] font-extrabold uppercase leading-tight tracking-wider">
               <tr>
-                <th className="px-3 py-2.5 text-left border-b border-[#0e2f44]">PACIENTE</th>
-                <th className="px-2 py-2.5 border-b border-[#0e2f44]">SEXO</th>
-                <th className="px-2 py-2.5 border-b border-[#0e2f44]">NAC.</th>
-                <th className="px-2 py-2.5 border-b border-[#0e2f44]">EDAD</th>
-                <th className="px-2 py-2.5 border-b border-[#0e2f44]">ASISTENCIA</th>
-                <th className="px-2 py-2.5 border-b border-[#0e2f44]">VALORACIONES</th>
-                <th className="px-2 py-2.5 border-b border-[#0e2f44]">TOTAL<br/>PAGADO</th>
-                <th className="px-2 py-2.5 border-b border-[#0e2f44]">SALDO</th>
-                <th className="px-2 py-2.5 border-b border-[#0e2f44]">PRECIO<br/>TERAPIA</th>
-                <th className="px-2 py-2.5 border-b border-[#0e2f44]">MÉTODO DE<br/>PAGO</th>
-                <th className="px-2 py-2.5 border-b border-[#0e2f44]">ÚLTIMO<br/>PAGO</th>
-                <th className="px-2 py-2.5 border-b border-[#0e2f44]">ESTADO</th>
-                <th className="px-2 py-2.5 border-b border-[#0e2f44]">ACCIONES</th>
+                <th className="px-2 py-2.5 text-left border-b border-[#0e2f44] whitespace-nowrap">PACIENTE</th>
+                <th className="px-1 py-2.5 border-b border-[#0e2f44]">SEXO</th>
+                <th className="px-1 py-2.5 border-b border-[#0e2f44]">NAC.</th>
+                <th className="px-1 py-2.5 border-b border-[#0e2f44]">EDAD</th>
+                <th className="px-1 py-2.5 border-b border-[#0e2f44]">ASISTENCIA</th>
+                <th className="px-1 py-2.5 border-b border-[#0e2f44]">VALORACIONES</th>
+                <th className="px-1.5 py-2.5 border-b border-[#0e2f44]">TOTAL<br/>PAGADO</th>
+                <th className="px-1.5 py-2.5 border-b border-[#0e2f44]">SALDO</th>
+                <th className="px-1 py-2.5 border-b border-[#0e2f44]">PRECIO<br/>TERAPIA</th>
+                <th className="px-1.5 py-2.5 border-b border-[#0e2f44]">MÉTODO DE<br/>PAGO</th>
+                <th className="px-1.5 py-2.5 border-b border-[#0e2f44]">ÚLTIMO<br/>PAGO</th>
+                <th className="px-1 py-2.5 border-b border-[#0e2f44]">ESTADO</th>
+                <th className="px-1 py-2.5 border-b border-[#0e2f44]">ACCIONES</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-slate-100">
@@ -521,63 +521,63 @@ export default function PacientesPage() {
 
                 return (
                   <tr key={p.id} className="hover:bg-slate-50 transition-colors cursor-pointer" onClick={() => setViewingPatient(p)}>
-                    <td className="px-4 py-3.5 text-left">
-                      <div className="flex items-center gap-2.5">
+                    <td className="px-2 py-2.5 text-left">
+                      <div className="flex items-center gap-2">
                         {p.foto ? (
-                          <img src={p.foto} alt="Foto" className="w-9 h-9 rounded-full object-cover shrink-0 border border-slate-200" />
+                          <img src={p.foto} alt="Foto" className="w-8 h-8 rounded-full object-cover shrink-0 border border-slate-200" />
                         ) : (
-                          <div className="w-9 h-9 rounded-full bg-slate-100 border border-slate-300 flex items-center justify-center font-bold text-slate-600 text-xs shrink-0">
+                          <div className="w-8 h-8 rounded-full bg-slate-100 border border-slate-300 flex items-center justify-center font-bold text-slate-600 text-xs shrink-0">
                             {p.name ? p.name.charAt(0).toUpperCase() : "P"}
                           </div>
                         )}
-                        <div className="max-w-[180px] leading-snug">
+                        <div className="max-w-[170px] leading-snug">
                           <div className="font-bold text-slate-900 text-xs truncate">{p.name}</div>
-                          <div className="text-[10px] font-medium text-[#1a5276] truncate flex items-center gap-1">
+                          <div className="text-[9.5px] font-medium text-[#1a5276] truncate flex items-center gap-1">
                             <span>🩺 {p.sessionTherapists && p.sessionTherapists.length > 0 ? p.sessionTherapists.join(", ") : (p.medicoTratante || "Sin asignar")}</span>
                           </div>
                         </div>
                       </div>
                     </td>
-                    <td className="px-2 py-4 text-slate-600 font-bold">
+                    <td className="px-1 py-2.5 text-slate-600 font-bold text-[9.5px]">
                       {p.sexo === 'M' || p.sexo === 'Masculino' ? '♂ M' : '♀ F'}
                     </td>
-                    <td className="px-2 py-4 text-slate-500 text-[10px] whitespace-nowrap">{p.fechaNacimiento || "—"}</td>
-                    <td className="px-2 py-4 text-slate-500">{p.age || "—"}</td>
-                    <td className="px-2 py-4">
+                    <td className="px-1 py-2.5 text-slate-500 text-[9px] whitespace-nowrap">{p.fechaNacimiento || "—"}</td>
+                    <td className="px-1 py-2.5 text-slate-500 text-[9.5px]">{p.age || "—"}</td>
+                    <td className="px-1 py-2.5">
                       {p.asistenciasDetailed && Object.keys(p.asistenciasDetailed).length > 0 ? (
-                        <div className="flex flex-col gap-1">
+                        <div className="flex flex-col gap-0.5">
                           {Object.entries(p.asistenciasDetailed).map(([terap, data]: [string, any]) => (
-                            <span key={terap} className="bg-[#e6f4ea] text-[#1e8e3e] px-2 py-0.5 rounded text-[10px] font-extrabold shadow-xs flex items-center justify-between gap-1">
+                            <span key={terap} className="bg-[#e6f4ea] text-[#1e8e3e] px-1.5 py-0.5 rounded text-[9.5px] font-extrabold shadow-xs flex items-center justify-between gap-1">
                               <span>{terap.split(' ')[0]}:</span>
                               <span>{data.asistencias}/{Math.max(data.total, data.asistencias, 1)}</span>
                             </span>
                           ))}
                         </div>
                       ) : (
-                        <span className="bg-[#e6f4ea] text-[#1e8e3e] px-2.5 py-1 rounded text-xs font-extrabold shadow-xs">
+                        <span className="bg-[#e6f4ea] text-[#1e8e3e] px-2 py-0.5 rounded text-[10px] font-extrabold shadow-xs">
                           {asistencias}/{totalSesiones}
                         </span>
                       )}
                     </td>
-                    <td className="px-2 py-4">
-                      <span className="bg-purple-50 text-purple-700 border border-purple-200 px-2.5 py-1 rounded text-xs font-bold">
+                    <td className="px-1 py-2.5">
+                      <span className="bg-purple-50 text-purple-700 border border-purple-200 px-2 py-0.5 rounded text-[10px] font-bold">
                         {p.valoraciones || 0}
                       </span>
                     </td>
-                    <td className="px-4 py-4 text-slate-800 font-extrabold">
+                    <td className="px-1.5 py-2.5 text-slate-800 font-extrabold text-[10px]">
                       {p.totalPagado ? `$${p.totalPagado}` : "$0.00"}
                     </td>
-                    <td className="px-4 py-4">
+                    <td className="px-1.5 py-2.5">
                       {renderSaldo(p)}
                     </td>
-                    <td className="px-2 py-4 font-bold text-[#1a5276] text-[10px] whitespace-nowrap">
+                    <td className="px-1 py-2.5 font-bold text-[#1a5276] text-[9.5px] whitespace-nowrap">
                       {precio === "—" || !precio
                         ? "—"
                         : (precio.includes("/")
                             ? precio.split(" / ").map((val: string) => `$${val.replace("$", "")}`).join(" / ")
                             : (precio.startsWith("$") ? precio : `$${precio}`))}
                     </td>
-                    <td className="px-4 py-4 max-w-[220px]">
+                    <td className="px-1.5 py-2.5 max-w-[120px]">
                       {(() => {
                         const val = p.metodoPago || "Efectivo";
                         let lines: string[] = [];
@@ -594,11 +594,11 @@ export default function PacientesPage() {
                           lines = [val];
                         }
                         return (
-                          <div className="w-full max-w-[130px] mx-auto flex flex-col items-stretch justify-center gap-0.5 my-0.5">
+                          <div className="w-full max-w-[110px] mx-auto flex flex-col items-stretch justify-center gap-0.5 my-0.5">
                             {lines.map((line, idx) => {
                               const isPorDefinir = line.toLowerCase().replace(/\s+/g, "").includes("pordefinir");
                               return (
-                                <span key={idx} className={`w-full px-1.5 py-0.5 rounded text-[9.5px] font-bold block text-center whitespace-nowrap leading-tight shadow-xs ${isPorDefinir ? 'bg-red-500/20 text-red-800 border border-red-300' : 'bg-blue-50 text-blue-800 border border-blue-200'}`}>
+                                <span key={idx} className={`w-full px-1 py-0.5 rounded text-[9px] font-bold block text-center whitespace-nowrap leading-tight shadow-xs ${isPorDefinir ? 'bg-red-500/20 text-red-800 border border-red-300' : 'bg-blue-50 text-blue-800 border border-blue-200'}`}>
                                   {line}
                                 </span>
                               );
@@ -607,10 +607,10 @@ export default function PacientesPage() {
                         );
                       })()}
                     </td>
-                    <td className="px-4 py-4 text-slate-700 font-bold text-[9.5px]">
+                    <td className="px-1.5 py-2.5 text-slate-700 font-bold text-[9px]">
                       {p.ultima || "$0.00"}
                     </td>
-                    <td className="px-4 py-4" onClick={(e) => e.stopPropagation()}>
+                    <td className="px-1 py-2.5" onClick={(e) => e.stopPropagation()}>
                       {(() => {
                         const isActivo = (p.estatus || 'Activo').toLowerCase() === 'activo';
                         return (
@@ -638,7 +638,7 @@ export default function PacientesPage() {
                               color: isActivo ? '#065f46' : '#ffffff',
                               borderColor: isActivo ? '#6ee7b7' : '#0f172a'
                             }}
-                            className={`text-[10px] font-extrabold px-2.5 py-1 rounded-md uppercase tracking-wider outline-none cursor-pointer transition-colors border ${
+                            className={`text-[9.5px] font-extrabold px-1.5 py-0.5 rounded-md uppercase tracking-wider outline-none cursor-pointer transition-colors border ${
                               isActivo ? 'text-emerald-800' : '!text-white text-white'
                             }`}
                           >
@@ -648,16 +648,16 @@ export default function PacientesPage() {
                         );
                       })()}
                     </td>
-                    <td className="px-4 py-4" onClick={(e) => e.stopPropagation()}>
-                      <div className="flex gap-1.5 justify-center">
+                    <td className="px-1 py-2.5" onClick={(e) => e.stopPropagation()}>
+                      <div className="flex gap-1 justify-center">
                         {((userRole.toUpperCase() !== "TERAPEUTA") || allowTherapistEdit) && (
-                          <button onClick={() => openEditModal(p)} title="Editar" className="p-1.5 border border-slate-200 rounded-lg hover:bg-amber-50 text-amber-600 transition-colors cursor-pointer">
-                            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z" /></svg>
+                          <button onClick={() => openEditModal(p)} title="Editar" className="p-1 border border-slate-200 rounded-lg hover:bg-amber-50 text-amber-600 transition-colors cursor-pointer">
+                            <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z" /></svg>
                           </button>
                         )}
                         {((userRole.toUpperCase() !== "TERAPEUTA") || allowTherapistEdit) && (
-                          <button onClick={() => handleDelete(p)} title="Borrar" className="p-1.5 border border-slate-200 rounded-lg hover:bg-rose-50 text-rose-600 transition-colors cursor-pointer">
-                            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" /></svg>
+                          <button onClick={() => handleDelete(p)} title="Borrar" className="p-1 border border-slate-200 rounded-lg hover:bg-rose-50 text-rose-600 transition-colors cursor-pointer">
+                            <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" /></svg>
                           </button>
                         )}
                       </div>
