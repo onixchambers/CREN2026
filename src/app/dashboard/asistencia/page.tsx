@@ -1312,7 +1312,7 @@ export default function AsistenciaPage() {
                       name="pago"
                       value={editForm.pago || "SÍ"}
                       onChange={handleEditChange}
-                      className="w-full text-[11px] px-1.5 py-1.5 border border-slate-300 rounded-lg focus:border-[#2980b9] outline-none text-slate-900 font-bold bg-white cursor-pointer"
+                      className="w-full text-xs px-1.5 py-1.5 border border-slate-300 rounded-lg focus:border-[#2980b9] outline-none text-slate-900 font-bold bg-white cursor-pointer"
                     >
                       <option value="SÍ">SÍ (Pagado)</option>
                       <option value="NO">NO (Pendiente)</option>
@@ -1321,7 +1321,7 @@ export default function AsistenciaPage() {
                     </select>
                   </div>
 
-                  <div className="col-span-4">
+                  <div className="col-span-3">
                     <label className="block text-[9px] font-extrabold text-slate-500 uppercase h-[24px] flex items-end mb-1 leading-tight">
                       Método de Pago
                     </label>
@@ -1332,7 +1332,7 @@ export default function AsistenciaPage() {
                         handleEditChange(e);
                         if (e.target.value === "Mixto") setShowEditSegundoPago(true);
                       }}
-                      className="w-full text-[11px] px-1.5 py-1.5 border border-slate-300 rounded-lg focus:border-[#2980b9] outline-none text-slate-900 bg-white font-medium cursor-pointer"
+                      className="w-full text-xs px-1.5 py-1.5 border border-slate-300 rounded-lg focus:border-[#2980b9] outline-none text-slate-900 bg-white font-medium cursor-pointer"
                     >
                       <option value="Efectivo">Efectivo</option>
                       <option value="Transferencia">Transferencia</option>
@@ -1343,19 +1343,19 @@ export default function AsistenciaPage() {
                     </select>
                   </div>
 
-                  <div className="col-span-2">
+                  <div className="col-span-3">
                     <label className="block text-[9px] font-extrabold text-slate-500 uppercase h-[24px] flex items-end mb-1 leading-tight">
-                      Monto
+                      Monto Pagado
                     </label>
                     <div className="relative w-full">
-                      <span className="absolute left-1.5 top-1.5 text-slate-500 text-[11px] font-bold">$</span>
+                      <span className="absolute left-2 top-1.5 text-slate-500 text-xs font-bold">$</span>
                       <input
                         type="number"
                         name="montoPago"
                         value={editForm.montoPago || ""}
                         onChange={handleEditChange}
                         placeholder="0"
-                        className="w-full text-[11px] p-1.5 pl-4 border border-slate-300 rounded-lg focus:border-[#2980b9] outline-none text-slate-900 bg-white font-bold"
+                        className="w-full text-xs py-1.5 pl-6 pr-2 border border-slate-300 rounded-lg focus:border-[#2980b9] outline-none text-slate-900 bg-white font-bold"
                       />
                     </div>
                   </div>
@@ -1365,7 +1365,7 @@ export default function AsistenciaPage() {
                     <button
                       type="button"
                       onClick={() => setShowEditSegundoPago(!showEditSegundoPago)}
-                      className="w-full text-[11px] p-1.5 bg-blue-50 text-blue-700 hover:bg-blue-100 rounded-lg font-bold border border-blue-200 transition-colors flex items-center justify-center gap-1 cursor-pointer shadow-xs whitespace-nowrap"
+                      className="w-full text-xs py-1.5 px-1 bg-blue-50 text-blue-700 hover:bg-blue-100 rounded-lg font-bold border border-blue-200 transition-colors flex items-center justify-center gap-1 cursor-pointer shadow-xs whitespace-nowrap"
                     >
                       {showEditSegundoPago ? "❌ Quitar 2º Pago" : "➕ Pago Mix"}
                     </button>
@@ -1374,15 +1374,15 @@ export default function AsistenciaPage() {
 
                 {showEditSegundoPago && (
                   <div className="grid grid-cols-12 gap-1.5 p-2 bg-blue-50/60 rounded-lg border border-blue-200 animate-in fade-in items-end">
-                    <div className="col-span-7">
-                      <label className="block text-[9px] font-bold text-blue-900 uppercase mb-1">
-                        Método de Pago 2
+                    <div className="col-span-4">
+                      <label className="block text-[9px] font-extrabold text-blue-900 uppercase mb-1 truncate">
+                        Método 2
                       </label>
                       <select
                         name="metodoPago2"
                         value={editForm.metodoPago2 || "Transferencia"}
                         onChange={handleEditChange}
-                        className="w-full text-[11px] p-1.5 border border-blue-300 rounded-lg focus:border-[#2980b9] outline-none text-slate-900 bg-white font-medium cursor-pointer"
+                        className="w-full text-xs py-1.5 px-1.5 border border-blue-300 rounded-lg focus:border-[#2980b9] outline-none text-slate-900 bg-white font-medium cursor-pointer"
                       >
                         <option value="Transferencia">Transferencia</option>
                         <option value="Efectivo">Efectivo</option>
@@ -1390,27 +1390,28 @@ export default function AsistenciaPage() {
                         <option value="Por definir">Por definir</option>
                       </select>
                     </div>
-                    <div className="col-span-5">
-                      <label className="block text-[9px] font-bold text-blue-900 uppercase mb-1">
-                        Monto 2
+                    <div className="col-span-8">
+                      <label className="block text-[9px] font-extrabold text-blue-900 uppercase mb-1 truncate">
+                        Monto Pagado 2
                       </label>
                       <div className="relative w-full">
-                        <span className="absolute left-1.5 top-1.5 text-blue-700 text-[11px] font-bold">$</span>
+                        <span className="absolute left-2 top-1.5 text-blue-700 text-xs font-bold">$</span>
                         <input
                           type="number"
                           name="montoPago2"
                           value={editForm.montoPago2 || ""}
                           onChange={handleEditChange}
                           placeholder="0"
-                          className="w-full text-[11px] p-1.5 pl-4 border border-blue-300 rounded-lg focus:border-[#2980b9] outline-none text-slate-900 bg-white font-bold"
+                          className="w-full text-xs py-1.5 pl-6 pr-2 border border-blue-300 rounded-lg focus:border-[#2980b9] outline-none text-slate-900 bg-white font-bold"
                         />
                       </div>
                     </div>
                   </div>
                 )}
-                <div className="flex items-center gap-1.5 mt-2">
+                {/* SOLICITAR FACTURA DESPLAZADO A LA DERECHA */}
+                <div className="flex justify-end items-center gap-1.5 mt-1.5 pr-1">
                   <input type="checkbox" name="fact" id="edit_fact_chk" checked={editForm.fact} onChange={handleEditChange} className="w-3.5 h-3.5 rounded border-slate-300 accent-[#1a5276] cursor-pointer" />
-                  <label htmlFor="edit_fact_chk" className="text-xs font-semibold text-[#1a5276] cursor-pointer select-none">¿Solicitó factura?</label>
+                  <label htmlFor="edit_fact_chk" className="text-xs font-bold text-[#1a5276] cursor-pointer select-none">¿Solicitó factura?</label>
                 </div>
                 <div className="col-span-2">
                   <label className="block text-[10px] font-bold text-slate-500 uppercase mb-1">Observaciones</label>
