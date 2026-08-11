@@ -45,6 +45,7 @@ export function EditPatientModal({
   const canEdit = isAdmin || allowTherapistEdit;
 
   const [formData, setFormData] = useState<any>({
+    displayId: patient?.displayId || (patient?.id ? patient.id.slice(-6).toUpperCase() : ""),
     nombre: patient?.name || "",
     fechaNacimiento: patient?.fechaNacimiento || "",
     sexo: patient?.sexo || "",
@@ -118,26 +119,38 @@ export function EditPatientModal({
   }, [patient]);
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement>) => {
-    if (!canEdit) return;
     const target = e.target as HTMLInputElement;
     const { name, type, value, checked } = target;
+    if (!canEdit && name !== "fechaNacimiento" && name !== "fechaIngreso") return;
     setFormData((prev: any) => ({
       ...prev,
       [name]: type === "checkbox" ? checked : value,
     }));
   };
 
+<<<<<<< HEAD
   const handleSubmit = async (e?: React.FormEvent, forceSave = false) => {
     if (e) e.preventDefault();
     if (!canEdit) return;
+=======
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setIsSubmitting(true);
+>>>>>>> 2c5cfbb4313174974a02e1ebcbcd836564a615de
 
-    const submissionData = {
-      ...formData,
-      pacienteContacto: formData.pacienteContacto ? `${pacienteCountryCode} ${formData.pacienteContacto}`.trim() : null,
-      madreContacto: formData.madreContacto ? `${madreCountryCode} ${formData.madreContacto}`.trim() : null,
-      padreContacto: formData.padreContacto ? `${padreCountryCode} ${formData.padreContacto}`.trim() : null,
-      otrosContacto: formData.otrosContacto ? `${otrosCountryCode} ${formData.otrosContacto}`.trim() : null,
-    };
+    // Si no tiene permiso de edición general, solo guarda las fechas
+    const submissionData = canEdit
+      ? {
+          ...formData,
+          pacienteContacto: formData.pacienteContacto ? `${pacienteCountryCode} ${formData.pacienteContacto}`.trim() : null,
+          madreContacto: formData.madreContacto ? `${madreCountryCode} ${formData.madreContacto}`.trim() : null,
+          padreContacto: formData.padreContacto ? `${padreCountryCode} ${formData.padreContacto}`.trim() : null,
+          otrosContacto: formData.otrosContacto ? `${otrosCountryCode} ${formData.otrosContacto}`.trim() : null,
+        }
+      : {
+          fechaNacimiento: formData.fechaNacimiento,
+          fechaIngreso: formData.fechaIngreso,
+        };
 
     setIsSubmitting(true);
 
@@ -208,6 +221,22 @@ export function EditPatientModal({
 
             <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
               <div className="md:col-span-2">
+                <label className="block text-xs font-extrabold text-slate-800 mb-1 uppercase flex items-center justify-between">
+                  <span>Código / ID del Paciente</span>
+                  <span className="text-[10px] text-amber-800 bg-amber-100 px-1.5 py-0.5 rounded font-bold">Personalizable</span>
+                </label>
+                <input
+                  type="text"
+                  name="displayId"
+                  value={formData.displayId}
+                  onChange={handleInputChange}
+                  readOnly={!canEdit}
+                  placeholder="Ej: 4SAW9Y o CREN-001"
+                  className="w-full p-2 border border-amber-300 bg-amber-50/40 font-black text-amber-900 rounded text-sm focus:border-amber-600 outline-none uppercase tracking-wider"
+                />
+              </div>
+
+              <div className="md:col-span-2">
                 <label className="block text-xs font-bold text-slate-700 mb-1 uppercase">Nombre Completo *</label>
                 <input
                   type="text"
@@ -226,10 +255,9 @@ export function EditPatientModal({
                 <input
                   type="date"
                   name="fechaNacimiento"
-                  value={formData.fechaNacimiento}
-                  onChange={handleInputChange}
-                  readOnly={!canEdit}
-                  className="w-full p-2 border border-slate-300 rounded text-sm text-slate-900 focus:border-[#2980b9] outline-none"
+                  value={formData.fechaNacimiento ? formData.fechaNacimiento.split("T")[0] : ""}
+                  onChange={(e) => setFormData((prev: any) => ({ ...prev, fechaNacimiento: e.target.value }))}
+                  className="w-full p-2 border border-slate-300 rounded text-sm text-slate-900 focus:border-[#2980b9] outline-none bg-white"
                 />
               </div>
 
@@ -247,6 +275,17 @@ export function EditPatientModal({
                   <option value="F">Femenino (F)</option>
                   <option value="—">—</option>
                 </select>
+              </div>
+
+              <div>
+                <label className="block text-xs font-bold text-slate-700 mb-1 uppercase">Fecha de Ingreso</label>
+                <input
+                  type="date"
+                  name="fechaIngreso"
+                  value={formData.fechaIngreso ? formData.fechaIngreso.split("T")[0] : ""}
+                  onChange={(e) => setFormData((prev: any) => ({ ...prev, fechaIngreso: e.target.value }))}
+                  className="w-full p-2 border border-slate-300 rounded text-sm text-slate-900 focus:border-[#2980b9] outline-none bg-white"
+                />
               </div>
 
               <div>

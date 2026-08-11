@@ -60,6 +60,8 @@ export default function PacientesPage() {
   const [docSearchQuery, setDocSearchQuery] = useState("");
   const [isSavingDoc, setIsSavingDoc] = useState(false);
   const [docsCurrentPage, setDocsCurrentPage] = useState(1);
+  const [uploadingPhotos, setUploadingPhotos] = useState(false);
+  const [docPhotos, setDocPhotos] = useState<{dataUrl: string; name: string}[]>([]);
 
   // Estados para Duplicados
   const [isDuplicatesModalOpen, setIsDuplicatesModalOpen] = useState(false);
@@ -184,6 +186,7 @@ export default function PacientesPage() {
         
         // Auto-open clinical note ONLY ONCE if explicitly triggered by finalizing a session
         if (typeof window !== "undefined") {
+<<<<<<< HEAD
           const isTriggered = sessionStorage.getItem("triggerAutoOpenNote") === "true";
 
           if (isTriggered) {
@@ -236,6 +239,37 @@ export default function PacientesPage() {
                   terapeuta: matchedCita ? matchedCita.terapeuta : (pTerapeuta || userName || "")
                 });
               }
+=======
+          const params = new URLSearchParams(window.location.search);
+          const action = params.get("action");
+          const patientId = params.get("patientId");
+          const urlFecha = params.get("fecha");
+          const urlHora = params.get("hora");
+
+          if (action === "nota" && patientId) {
+            const p = result.data.find((x: any) => x.id === patientId);
+            if (p) {
+              setViewingPatient(p);
+              setModalTab("nuevo_documento");
+              setSelectedNoteType("Registro de Evolución");
+
+              let matchingCita = null;
+              if (agendaRes.success && agendaRes.data) {
+                matchingCita = agendaRes.data.find((c: any) => 
+                  (c.pacienteId === p.id || (c.paciente || "").trim().toLowerCase() === (p.name || "").trim().toLowerCase()) &&
+                  (c.fecha === urlFecha || !urlFecha) &&
+                  (c.hora === urlHora || !urlHora)
+                );
+              }
+
+              setDocFormData({
+                citaId: matchingCita?.id || "",
+                fecha: matchingCita?.fecha || urlFecha || new Date().toISOString().split("T")[0],
+                hora: matchingCita?.hora || urlHora || "12:00",
+                terapeuta: matchingCita?.terapeuta || p.medicoTratante || ""
+              });
+              window.history.replaceState(null, '', '/dashboard/pacientes');
+>>>>>>> 2c5cfbb4313174974a02e1ebcbcd836564a615de
             }
           }
         }
@@ -287,16 +321,44 @@ export default function PacientesPage() {
 
     // 5. Filtro por Terapeuta
     if (filtroTerapeuta !== "Todos") {
-      const ter1 = (p.medicoTratante || "").trim();
-      const ter2 = (p.terapeuta || "").trim();
-      if (ter1 !== filtroTerapeuta && ter2 !== filtroTerapeuta) return false;
+      const targetKey = filtroTerapeuta.trim().toLowerCase();
+      const ter1Key = (p.medicoTratante || "").trim().toLowerCase();
+      const ter2Key = (p.terapeuta || "").trim().toLowerCase();
+      const sessionTerKeys = Array.isArray(p.sessionTherapists) ? p.sessionTherapists.map((st: string) => st.trim().toLowerCase()) : [];
+
+      const matches = ter1Key.includes(targetKey) || 
+                      ter2Key.includes(targetKey) || 
+                      sessionTerKeys.some((st: string) => st.includes(targetKey));
+
+      if (!matches) return false;
     }
 
     return true;
   }).sort((a, b) => (a.name || "").localeCompare(b.name || ""));
 
-  // Obtener lista única de terapeutas para el filtro
-  const terapeutasDisponibles = Array.from(new Set(pacientes.flatMap(p => [p.medicoTratante, p.terapeuta]).filter(Boolean))).sort();
+  // Obtener lista única y consolidada de terapeutas para el filtro (sin duplicados minúsculas/mayúsculas)
+  const rawTherapists = pacientes.flatMap(p => {
+    const list = [p.medicoTratante, p.terapeuta];
+    if (Array.isArray(p.sessionTherapists)) list.push(...p.sessionTherapists);
+    return list;
+  }).filter(Boolean);
+
+  const therapistMap = new Map<string, string>();
+  rawTherapists.forEach(raw => {
+    const clean = raw.trim();
+    if (!clean) return;
+    const key = clean.toLowerCase();
+    if (!therapistMap.has(key)) {
+      // Capitalizar Primera letra
+      const capitalized = clean.split(/\s+/).map(word => {
+        if (word.length <= 2) return word.toUpperCase();
+        return word.charAt(0).toUpperCase() + word.slice(1).toLowerCase();
+      }).join(" ");
+      therapistMap.set(key, capitalized);
+    }
+  });
+
+  const terapeutasDisponibles = Array.from(therapistMap.values()).sort((a, b) => a.localeCompare(b));
 
   const totalPages = Math.ceil(pacientesFiltrados.length / ITEMS_PER_PAGE);
   const paginatedPacientes = pacientesFiltrados.slice(
@@ -386,6 +448,7 @@ export default function PacientesPage() {
           <h2 className="text-xl font-bold text-[#0e2f44]">Directorio de Pacientes</h2>
         </div>
 
+<<<<<<< HEAD
         <div className="flex items-center gap-2">
           <button
             onClick={() => setEditingPatient({})}
@@ -394,6 +457,9 @@ export default function PacientesPage() {
             <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" /></svg>
             ➕ Registrar Nuevo Paciente
           </button>
+=======
+        <div className="flex flex-col items-end gap-1.5">
+>>>>>>> 2c5cfbb4313174974a02e1ebcbcd836564a615de
           <button
             onClick={handleOpenDuplicatesModal}
             className="px-3.5 py-2 bg-amber-500 hover:bg-amber-600 text-white rounded-lg text-xs font-bold flex items-center gap-1.5 shadow-sm transition-all cursor-pointer"
@@ -401,6 +467,16 @@ export default function PacientesPage() {
             <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z" /></svg>
             🔍 Detectar y Fusionar Duplicados
           </button>
+<<<<<<< HEAD
+=======
+
+          <div className="flex items-center gap-2 text-xs font-bold text-slate-700 bg-white px-3 py-1 rounded-full border border-slate-200 shadow-2xs">
+            <span>Pacientes Registrados:</span>
+            <span className="min-w-6 h-6 px-1.5 rounded-full bg-[#1a5276] text-white flex items-center justify-center text-xs font-black shadow-xs">
+              {pacientes.length}
+            </span>
+          </div>
+>>>>>>> 2c5cfbb4313174974a02e1ebcbcd836564a615de
         </div>
       </div>
 
@@ -1163,20 +1239,22 @@ export default function PacientesPage() {
                             const res = await savePatientDocument(viewingPatient.id, {
                               id: docFormData.id,
                               tipo: selectedNoteType,
-                              terapeuta: docFormData.terapeuta || userName || "LOURDES RINCÓN",
+                              terapeuta: docFormData.terapeuta || userName || "LOURDES RINC\u00d3N",
                               fecha: docFormData.fecha,
                               hora: docFormData.hora,
-                              contenido: docFormData
+                              contenido: docFormData,
+                              photosBase64: docPhotos
                             });
                             if (res.success && res.data) {
                               setPatientDocs(res.data);
-                              alert("¡Nota clínica guardada exitosamente y enviada a Google Drive!");
+                              setDocPhotos([]);
+                              alert("\u00a1Nota cl\u00ednica guardada exitosamente y enviada a Google Drive!");
                               setModalTab("documentos");
                             } else {
                               alert("Error al guardar: " + res.error);
                             }
                           } catch(err: any) {
-                            alert("Error de conexión: " + err.message);
+                            alert("Error de conexi\u00f3n: " + err.message);
                           } finally {
                             setIsSavingDoc(false);
                           }
@@ -1188,6 +1266,7 @@ export default function PacientesPage() {
                           <div className="bg-blue-50/50 p-2.5 rounded-xl border border-blue-100 flex flex-col gap-1.5">
                             <label className="block text-[10px] font-bold text-blue-700 uppercase">Vincular con Cita (Autocompletar Fecha/Hora)</label>
                             <select 
+<<<<<<< HEAD
                               value={docFormData.linkedCitaId || ""}
                               className="w-full text-xs p-2 border border-blue-200 rounded-lg bg-white outline-none font-medium text-slate-700"
                               onChange={(e) => {
@@ -1197,15 +1276,45 @@ export default function PacientesPage() {
                                   setDocFormData({ ...docFormData, linkedCitaId: val, fecha: cita.fecha, hora: cita.hora, terapeuta: cita.terapeuta || docFormData.terapeuta });
                                 } else {
                                   setDocFormData({ ...docFormData, linkedCitaId: "" });
+=======
+                              value={docFormData.citaId || (docFormData.fecha ? "auto" : "")}
+                              className="w-full text-xs p-2 border border-blue-200 rounded-lg bg-white outline-none text-slate-800 font-bold shadow-2xs"
+                              onChange={(e) => {
+                                const val = e.target.value;
+                                if (!val) {
+                                  setDocFormData({ ...docFormData, citaId: "" });
+                                  return;
+                                }
+                                const cita = agendaCitas.find((c: any) => c.id === val);
+                                if (cita) {
+                                  setDocFormData({ 
+                                    ...docFormData, 
+                                    citaId: cita.id, 
+                                    fecha: cita.fecha, 
+                                    hora: cita.hora,
+                                    terapeuta: cita.terapeuta || docFormData.terapeuta || ""
+                                  });
+>>>>>>> 2c5cfbb4313174974a02e1ebcbcd836564a615de
                                 }
                               }}
                             >
                               <option value="">Seleccionar cita de la agenda...</option>
+                              {docFormData.fecha && docFormData.hora && !agendaCitas.some((c: any) => c.id === docFormData.citaId) && (
+                                <option value="auto">
+                                  {docFormData.fecha} a las {docFormData.hora} - Cita Atendida ({docFormData.terapeuta || viewingPatient?.medicoTratante || 'Terapeuta'})
+                                </option>
+                              )}
                               {agendaCitas
-                                .filter((c: any) => c.paciente === viewingPatient?.name || c.pacienteId === viewingPatient?.id)
+                                .filter((c: any) => {
+                                  if (!viewingPatient) return false;
+                                  if (c.pacienteId && c.pacienteId === viewingPatient.id) return true;
+                                  const p1 = (c.paciente || "").trim().toLowerCase();
+                                  const p2 = (viewingPatient.name || "").trim().toLowerCase();
+                                  return p1 === p2 || (p1 && p2 && (p1.includes(p2) || p2.includes(p1)));
+                                })
                                 .map((cita: any) => (
                                   <option key={cita.id} value={cita.id}>
-                                    {cita.fecha} a las {cita.hora} - {cita.tipoServicio || "Terapia"} ({cita.estado})
+                                    {cita.fecha} a las {cita.hora} - {cita.tipoServicio || "Terapia"} ({cita.estado}) [{cita.terapeuta}]
                                   </option>
                                 ))}
                             </select>
@@ -1360,6 +1469,66 @@ export default function PacientesPage() {
                             <div><label className="block text-[11px] font-medium text-slate-600 mb-1">Comentarios</label><textarea rows={5} value={docFormData.comentarios || ""} onChange={(e) => setDocFormData({...docFormData, comentarios: e.target.value})} className="w-full p-2 border border-slate-300 rounded-lg outline-none text-xs" /></div>
                           </>
                         )}
+
+                        {/* ADJUNTAR FOTOS */}
+                        <div className="bg-blue-50/50 border border-blue-100 rounded-xl p-3 space-y-2">
+                          <label className="block text-[10px] font-extrabold text-blue-700 uppercase tracking-wide">📷 Adjuntar Fotos (Notas Clínicas)</label>
+                          <input
+                            type="file"
+                            accept="image/*"
+                            multiple
+                            className="block w-full text-xs text-slate-600 file:mr-3 file:py-1 file:px-3 file:rounded-lg file:border-0 file:text-xs file:font-bold file:bg-blue-600 file:text-white hover:file:bg-blue-700 file:cursor-pointer cursor-pointer"
+                            onChange={async (e) => {
+                              const files = Array.from(e.target.files || []);
+                              if (files.length === 0) return;
+                              setUploadingPhotos(true);
+                              try {
+                                const converted: {dataUrl: string; name: string}[] = [];
+                                for (const file of files) {
+                                  await new Promise<void>((resolve) => {
+                                    const reader = new FileReader();
+                                    reader.onload = (ev) => {
+                                      const dataUrl = ev.target?.result as string;
+                                      if (dataUrl) converted.push({ dataUrl, name: file.name });
+                                      resolve();
+                                    };
+                                    reader.onerror = () => resolve();
+                                    reader.readAsDataURL(file);
+                                  });
+                                }
+                                setDocPhotos(prev => [...prev, ...converted]);
+                              } catch (err: any) {
+                                alert("Error al procesar fotos: " + err.message);
+                              } finally {
+                                setUploadingPhotos(false);
+                                e.target.value = "";
+                              }
+                            }}
+                          />
+                          {uploadingPhotos && (
+                            <div className="flex items-center gap-2 text-xs text-blue-600 font-semibold">
+                              <div className="animate-spin w-3 h-3 border-2 border-blue-400 border-t-transparent rounded-full" />
+                              Procesando fotos...
+                            </div>
+                          )}
+                          {docPhotos.length > 0 && (
+                            <div className="flex flex-wrap gap-2 pt-1">
+                              {docPhotos.map((photo, idx) => (
+                                <div key={idx} className="relative group">
+                                  <img src={photo.dataUrl} alt={photo.name} className="w-20 h-20 object-cover rounded-lg border border-blue-200 shadow-xs" />
+                                  <button
+                                    type="button"
+                                    onClick={() => {
+                                      setDocPhotos(prev => prev.filter((_, i) => i !== idx));
+                                    }}
+                                    className="absolute -top-1.5 -right-1.5 w-4 h-4 bg-red-500 text-white rounded-full text-[10px] font-bold flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity cursor-pointer shadow"
+                                  >✕</button>
+                                  <span className="block text-[9px] text-slate-400 text-center max-w-[80px] truncate mt-0.5">{photo.name}</span>
+                                </div>
+                              ))}
+                            </div>
+                          )}
+                        </div>
 
                         {/* BOTÓN VERDE GUARDAR COMO EN EL PDF */}
                         <div className="pt-2">
@@ -1547,17 +1716,6 @@ export default function PacientesPage() {
                   })()}
                 </div>
               )}
-            </div>
-
-            {/* BOTÓN INFERIOR DE CERRAR EXPEDIENTE */}
-            <div className="pt-2 border-t border-slate-200 print:hidden">
-              <button 
-                type="button" 
-                onClick={() => setViewingPatient(null)} 
-                className="w-full bg-[#1a5276] hover:bg-[#0e2f44] text-white font-bold py-2.5 rounded-xl text-sm transition-colors shadow-sm"
-              >
-                Cerrar Expediente
-              </button>
             </div>
           </div>
         </div>

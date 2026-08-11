@@ -7,6 +7,7 @@ import { MultiSelect } from "@/components/MultiSelect";
 import { TimezoneSelector } from "@/components/TimezoneSelector";
 import { CountrySelector } from "@/components/CountrySelector";
 import { getPhonePlaceholder, parsePhone } from "@/lib/phonePlaceholder";
+import { PatientFixedHonorariosConfig } from "@/components/PatientFixedHonorariosConfig";
 
 export default function ConfiguracionPage() {
   const formatDateStr = (dateStr: string) => {
@@ -806,6 +807,10 @@ export default function ConfiguracionPage() {
             <label className="text-sm font-semibold text-slate-700 w-32">Claves de Referencia</label>
             <input type="text" value={referenceKeys} onChange={(e) => setReferenceKeys(e.target.value)} placeholder="Ej: CREN2026, CLINICA10" className="flex-1 p-2 border border-slate-300 rounded text-sm text-slate-900 focus:border-blue-500 outline-none text-slate-900 disabled:bg-slate-100 disabled:text-slate-500" />
           </div>
+        </div>
+
+        <div className="p-6 border-t border-slate-200">
+          <PatientFixedHonorariosConfig />
         </div>
 
         {/* BOTTOM ACTION BAR */}

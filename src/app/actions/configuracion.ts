@@ -23,6 +23,7 @@ export async function getSettings(month: string) {
       return { success: false, error: "Acceso denegado." };
     }
 
+<<<<<<< HEAD
     await ensureAuditTablesExist();
 
     let settings: any = null;
@@ -45,6 +46,38 @@ export async function getSettings(month: string) {
     const [users, expenses] = await Promise.all([
       prisma.user.findMany({
         orderBy: { createdAt: 'asc' },
+=======
+    try {
+      await prisma.$executeRawUnsafe(`ALTER TABLE "User" ADD COLUMN IF NOT EXISTS "porcentajeValoracion" DOUBLE PRECISION DEFAULT 50;`);
+    } catch (e) {}
+
+    let users: any[] = [];
+    try {
+      users = await prisma.user.findMany({
+        orderBy: { createdAt: 'asc' },
+      });
+    } catch (err: any) {
+      users = await prisma.user.findMany({
+        select: {
+          id: true,
+          name: true,
+          email: true,
+          role: true,
+          password: true,
+          especialidad: true,
+          phone: true,
+          image: true,
+          createdAt: true,
+          updatedAt: true,
+        },
+        orderBy: { createdAt: 'asc' },
+      });
+    }
+
+    const [settings, expenses] = await Promise.all([
+      prisma.systemSettings.findUnique({
+        where: { id: 1 },
+>>>>>>> 2c5cfbb4313174974a02e1ebcbcd836564a615de
       }),
       prisma.operationalExpense.findMany({
         where: { month },
@@ -107,15 +140,49 @@ export async function getSettings(month: string) {
 
 export async function getTerapeutasFull() {
   try {
-    const terapeutas = await prisma.user.findMany({
-      where: {
-        role: {
-          equals: "Terapeuta",
-          mode: "insensitive"
-        }
-      },
-      orderBy: { name: 'asc' },
-    });
+    try {
+      await prisma.$executeRawUnsafe(`ALTER TABLE "User" ADD COLUMN IF NOT EXISTS "porcentajeValoracion" DOUBLE PRECISION DEFAULT 50;`);
+    } catch (e) {}
+
+    let terapeutas: any[] = [];
+    try {
+      terapeutas = await prisma.user.findMany({
+        where: {
+          role: {
+            equals: "Terapeuta",
+            mode: "insensitive"
+          }
+        },
+        orderBy: { name: 'asc' },
+      });
+    } catch (err: any) {
+      const fallbacks = await prisma.user.findMany({
+        where: {
+          role: {
+            equals: "Terapeuta",
+            mode: "insensitive"
+          }
+        },
+        select: {
+          id: true,
+          name: true,
+          email: true,
+          role: true,
+          especialidad: true,
+          phone: true,
+          tipoPago: true,
+          porcentaje: true,
+          salarioBase: true,
+          retieneIVA: true,
+        },
+        orderBy: { name: 'asc' },
+      });
+      terapeutas = fallbacks.map(t => ({
+        ...t,
+        porcentajeValoracion: t.porcentaje ?? 50
+      }));
+    }
+
     return { success: true, data: terapeutas };
   } catch (error: any) {
     console.error("Error fetching terapeutas:", error);
@@ -135,15 +202,33 @@ export async function updateTerapeutaConfig(id: string, data: any) {
       }
     }
 
-    await prisma.user.update({
-      where: { id },
-      data: {
-        tipoPago: data.tipoPago,
-        porcentaje: data.porcentaje,
-        salarioBase: data.salarioBase,
-        retieneIVA: data.retieneIVA,
-      }
-    });
+    try {
+      await prisma.$executeRawUnsafe(`ALTER TABLE "User" ADD COLUMN IF NOT EXISTS "porcentajeValoracion" DOUBLE PRECISION DEFAULT 50;`);
+    } catch (e) {}
+
+    try {
+      await prisma.user.update({
+        where: { id },
+        data: {
+          tipoPago: data.tipoPago,
+          porcentaje: data.porcentaje,
+          porcentajeValoracion: data.porcentajeValoracion !== undefined ? parseFloat(data.porcentajeValoracion) : (data.porcentaje || 50),
+          salarioBase: data.salarioBase,
+          retieneIVA: data.retieneIVA,
+        } as any
+      });
+    } catch (e: any) {
+      await prisma.user.update({
+        where: { id },
+        data: {
+          tipoPago: data.tipoPago,
+          porcentaje: data.porcentaje,
+          salarioBase: data.salarioBase,
+          retieneIVA: data.retieneIVA,
+        }
+      });
+    }
+
     return { success: true };
   } catch (error: any) {
     console.error("Error updating terapeuta config:", error);
@@ -717,6 +802,88 @@ export async function markTherapistBroadcastAsRead(broadcastId: string, customNa
   } catch (error: any) {
     console.error("Error marking broadcast read:", error);
     return { success: false, error: error?.message };
+  }
+}
+
+export async function getPatientFixedHonorarios() {
+  noStore();
+  try {
+    const s = await prisma.systemSettings.findUnique({ where: { id: 1 } });
+    if (!s || !s.referenceKeys) return { success: true, data: { enabled: false, rates: {} } };
+
+    try {
+      const parsed = JSON.parse(s.referenceKeys);
+      return {
+        success: true,
+        data: parsed.patientFixedHonorarios || { enabled: false, rates: {} }
+      };
+    } catch (e) {}
+
+    return { success: true, data: { enabled: false, rates: {} } };
+  } catch (error: any) {
+    console.error("Error fetching patient fixed honorarios:", error);
+    return { success: false, error: error?.message };
+  }
+}
+
+export async function savePatientFixedHonorarios(payload: { enabled: boolean; rates: Record<string, any> }) {
+  try {
+    const session = await getServerSession(authOptions);
+    const userRole = ((session?.user as any)?.role || "").toUpperCase();
+    if (userRole === "TERAPEUTA") {
+      return { success: false, error: "Permiso denegado para modificar honorarios." };
+    }
+
+    const s = await prisma.systemSettings.findUnique({ where: { id: 1 } });
+    let settingsObj: any = {};
+    if (s && s.referenceKeys) {
+      try { settingsObj = JSON.parse(s.referenceKeys); } catch (e) {}
+    }
+
+    settingsObj.patientFixedHonorarios = payload;
+    const jsonString = JSON.stringify(settingsObj);
+
+    await prisma.systemSettings.upsert({
+      where: { id: 1 },
+      update: { referenceKeys: jsonString },
+      create: { id: 1, referenceKeys: jsonString },
+    });
+
+    revalidatePath("/dashboard/configuracion");
+    revalidatePath("/dashboard/honorarios");
+    revalidatePath("/dashboard/salario");
+    revalidatePath("/dashboard/asistencia");
+
+    return { success: true };
+  } catch (error: any) {
+    console.error("Error saving patient fixed honorarios:", error);
+    return { success: false, error: error?.message || "Error al guardar honorarios por paciente." };
+  }
+}
+
+export async function getAllPatientsListForHonorarios() {
+  noStore();
+  try {
+    const patients = await prisma.patient.findMany({
+      select: {
+        id: true,
+        displayId: true,
+        name: true,
+        medicoTratante: true,
+        estatus: true,
+      },
+      orderBy: { name: 'asc' }
+    });
+
+    const formatted = patients.map(p => ({
+      ...p,
+      displayId: p.displayId || (p.id ? p.id.slice(-6).toUpperCase() : "N/A")
+    }));
+
+    return { success: true, patients: formatted };
+  } catch (error: any) {
+    console.error("Error fetching patients list for honorarios:", error);
+    return { success: false, patients: [] };
   }
 }
 

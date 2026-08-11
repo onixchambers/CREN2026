@@ -642,6 +642,7 @@ export default function AsistenciaPage() {
     handleLimpiarForm();
     await recargarAsistencias();
     
+<<<<<<< HEAD
     // Redirigir a Pacientes y abrir la Nota Clínica Nueva (Registro de Evolución)
     let targetId = formData.pacienteId;
     if (!targetId && formData.pacienteNombre) {
@@ -650,6 +651,14 @@ export default function AsistenciaPage() {
         const pMatch = pacRes.data.find((x: any) => x.name.trim().toLowerCase() === formData.pacienteNombre.trim().toLowerCase());
         if (pMatch) targetId = pMatch.id;
       }
+=======
+    // Redirigir a Pacientes y abrir la Nota Clínica SOLO si el paciente Asistió
+    const estNorm = (formData.estadoAsistencia || "").toLowerCase().trim();
+    const isAsistio = estNorm === "asistio" || estNorm === "asistió";
+
+    if (isAsistio && formData.pacienteId) {
+      router.push(`/dashboard/pacientes?action=nota&patientId=${formData.pacienteId}&fecha=${formData.fecha}&hora=${formData.hora}`);
+>>>>>>> 2c5cfbb4313174974a02e1ebcbcd836564a615de
     }
 
     const agendaIdVal = formData.agendaId || "";
@@ -786,12 +795,12 @@ export default function AsistenciaPage() {
       alert("La administración no tiene habilitado el permiso para eliminar registros de asistencia.");
       return;
     }
-    if (window.confirm("¿Estás seguro de que deseas eliminar este registro de asistencia?")) {
+    if (window.confirm("¿Estás seguro de que deseas eliminar este registro de asistencia de los recientes?")) {
       const res = await deleteCita(id);
       if (res.success) {
         const nuevas = asistencias.filter(a => a.id !== id);
         setAsistencias(nuevas);
-        alert("Registro eliminado de la base de datos.");
+        alert("Registro de asistencia eliminado de la base de datos.\n\n(La ficha ID y los datos del paciente permanecen intactos).");
       } else {
         alert("No se pudo eliminar el registro: " + (res as any).error);
       }

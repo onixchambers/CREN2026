@@ -141,7 +141,7 @@ export async function addCita(data: any) {
       const finalDateStr = currentDate.toISOString().split('T')[0];
       const jsDate = new Date(`${finalDateStr}T${data.hora}:00`);
 
-      // Verificar si ya está ocupado en ese horario
+      // Verificar si ya está ocupado ese horario por la misma terapeuta
       const existingSession = await prisma.session.findFirst({
         where: {
           therapistId: therapistId,
@@ -150,7 +150,13 @@ export async function addCita(data: any) {
       });
 
       if (existingSession) {
-        return { success: false, error: `Ya hay una cita programada para la fecha ${finalDateStr} a las ${data.hora}.` };
+        // Allow if it's a different patient (same therapist+hour is a conflict, but same patient + same day = OK)
+        const existingExtra: any = existingSession.notes ? (() => { try { return JSON.parse(existingSession.notes); } catch { return {}; } })() : {};
+        const existingPatientId = existingSession.patientId;
+        // Only block if it's a different patient occupying the same therapist slot at same hour
+        if (existingPatientId !== patientId) {
+          return { success: false, error: `Ya hay una cita programada para la fecha ${finalDateStr} a las ${data.hora} con esta terapeuta. Intenta con otra hora.` };
+        }
       }
       
       const notesJson = JSON.stringify({

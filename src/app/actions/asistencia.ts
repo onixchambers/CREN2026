@@ -15,7 +15,12 @@ export async function saveAsistenciaDB(data: any) {
     if (!patient) return { success: false, error: "Paciente no encontrado." };
 
     // Buscar terapeuta asignado o especificado
-    const allUsers = await prisma.user.findMany();
+    let allUsers: any[] = [];
+    try {
+      allUsers = await prisma.user.findMany({ select: { id: true, name: true, role: true } });
+    } catch (e) {
+      allUsers = await prisma.user.findMany();
+    }
     let therapistId = "";
     const targetTherapist = (data.terapeuta || patient.medicoTratante || "").trim().toLowerCase();
 
@@ -23,7 +28,8 @@ export async function saveAsistenciaDB(data: any) {
     if (match) {
       therapistId = match.id;
     } else if (patient.medicoTratante) {
-      const medMatch = allUsers.find(u => (u.name || "").trim().toLowerCase() === patient.medicoTratante.trim().toLowerCase());
+      const medName = (patient.medicoTratante || "").trim().toLowerCase();
+      const medMatch = allUsers.find(u => (u.name || "").trim().toLowerCase() === medName);
       if (medMatch) therapistId = medMatch.id;
       else if (allUsers.length > 0) therapistId = allUsers[0].id;
     } else if (allUsers.length > 0) {

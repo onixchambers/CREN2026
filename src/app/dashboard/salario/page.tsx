@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { getTerapeutasFull } from "@/app/actions/configuracion";
+import { getTerapeutasFull, getPatientFixedHonorarios } from "@/app/actions/configuracion";
 import { getAsistenciasDB } from "@/app/actions/asistencia";
 import { DateInput } from "@/components/DateInput";
 
@@ -21,19 +21,22 @@ export default function SalarioPage() {
 
   const [terapeutas, setTerapeutas] = useState<any[]>([]);
   const [asistencias, setAsistencias] = useState<any[]>([]);
+  const [fixedHonorarios, setFixedHonorarios] = useState<any>({ enabled: false, rates: {} });
   const [selectedTerapeutaId, setSelectedTerapeutaId] = useState<string>("TODAS");
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
     async function loadData() {
       setLoading(true);
-      const [terRes, asistRes] = await Promise.all([
+      const [terRes, asistRes, honorRes] = await Promise.all([
         getTerapeutasFull(),
-        getAsistenciasDB()
+        getAsistenciasDB(),
+        getPatientFixedHonorarios()
       ]);
 
       if (terRes.success && terRes.data) setTerapeutas(terRes.data);
       if (asistRes.success && asistRes.data) setAsistencias(asistRes.data);
+      if (honorRes.success && honorRes.data) setFixedHonorarios(honorRes.data);
 
       setLoading(false);
     }
@@ -137,6 +140,11 @@ export default function SalarioPage() {
               subtotalValor: number;
               terapeutaPago: number;
               ivaRetenido: number;
+              ivaPaciente: number;
+              crenGanancia: number;
+              isFixedRate: boolean;
+              fixedRateVal: number;
+              tipoSesiones: string[];
             }>();
 
             let ingresoBrutoTotalGen = 0;
@@ -150,12 +158,19 @@ export default function SalarioPage() {
               
               ingresoBrutoTotalGen += precioSession;
 
+              const pName = (a.paciente || a.pacienteNombre || "Paciente Desconocido").trim();
+              const pNameLower = pName.toLowerCase();
+              const rateConfig = fixedHonorarios?.enabled ? fixedHonorarios?.rates?.[pNameLower] : null;
+              const isFixedActive = rateConfig && rateConfig.enabled !== false && typeof rateConfig.therapistPay === "number";
+
               // Honorario terapeuta por esta sesión
               let pagoSesionTerapeuta = 0;
               let ivaSesionRetenido = 0;
               let ivaCrenSesion = 0;
+              let crenGananciaSesion = 0;
               const hasFactura = a.fact === "Sí" || a.fact === "SI" || a.solicitaFactura === true || a.solicitaFactura === "Sí";
 
+<<<<<<< HEAD
               // Calcular IVA total cobrado en la sesión
               let sessionIva = 0;
               if (a.iva !== undefined && a.iva !== null && a.iva !== "" && a.iva !== 0) {
@@ -186,6 +201,37 @@ export default function SalarioPage() {
                 pagoSesionTerapeuta = precioSession;
               } else {
                 pagoSesionTerapeuta = precioSession;
+=======
+              if (isFixedActive) {
+                pagoSesionTerapeuta = rateConfig.therapistPay;
+                crenGananciaSesion = Math.max(0, precioSession - pagoSesionTerapeuta);
+
+                if (hasFactura) {
+                  ivaCrenSesion = precioSession * 0.16;
+                }
+              } else if (t.tipoPago === "Porcentaje") {
+                const sessionTypeStr = `${a.tipoSesion || ""} ${a.tipoServicio || ""} ${a.servicio || ""} ${a.area || ""}`.toLowerCase();
+                const isValoracion = sessionTypeStr.includes("valoraci") || sessionTypeStr.includes("evaluaci");
+                const percentToUse = isValoracion && typeof t.porcentajeValoracion === "number"
+                  ? t.porcentajeValoracion
+                  : (t.porcentaje || 50);
+
+                pagoSesionTerapeuta = precioSession * (percentToUse / 100);
+                crenGananciaSesion = Math.max(0, precioSession - pagoSesionTerapeuta);
+                if (t.retieneIVA) {
+                  ivaSesionRetenido = pagoSesionTerapeuta * 0.16;
+                }
+                
+                const crenGross = precioSession - (pagoSesionTerapeuta + ivaSesionRetenido);
+                if (hasFactura) {
+                  ivaCrenSesion = crenGross * 0.16;
+                }
+              } else {
+                crenGananciaSesion = precioSession;
+                if (hasFactura) {
+                  ivaCrenSesion = precioSession * 0.16;
+                }
+>>>>>>> 2c5cfbb4313174974a02e1ebcbcd836564a615de
               }
 
               honorariosTotalGen += pagoSesionTerapeuta;
@@ -204,8 +250,8 @@ export default function SalarioPage() {
               else q2 += pagoSesionTerapeuta;
 
               // Map paciente
-              const pName = a.paciente || "Paciente Desconocido";
               const deudaVal = typeof a.saldo === "number" && a.saldo < 0 ? Math.abs(a.saldo) : 0;
+              const tipoSesionLabel = (a.tipoSesion || a.tipoServicio || a.servicio || "").trim();
 
               if (!pacienteMap.has(pName)) {
                 pacienteMap.set(pName, {
@@ -215,7 +261,11 @@ export default function SalarioPage() {
                   subtotalValor: precioSession,
                   terapeutaPago: pagoSesionTerapeuta,
                   ivaRetenido: ivaSesionRetenido,
-                  ivaPaciente: ivaCrenSesion
+                  ivaPaciente: ivaCrenSesion,
+                  crenGanancia: crenGananciaSesion,
+                  isFixedRate: isFixedActive,
+                  fixedRateVal: isFixedActive ? rateConfig.therapistPay : 0,
+                  tipoSesiones: tipoSesionLabel ? [tipoSesionLabel] : []
                 });
               } else {
                 const item = pacienteMap.get(pName)!;
@@ -225,6 +275,10 @@ export default function SalarioPage() {
                 item.terapeutaPago += pagoSesionTerapeuta;
                 item.ivaRetenido += ivaSesionRetenido;
                 item.ivaPaciente += ivaCrenSesion;
+                item.crenGanancia += crenGananciaSesion;
+                if (tipoSesionLabel && !item.tipoSesiones.includes(tipoSesionLabel)) {
+                  item.tipoSesiones.push(tipoSesionLabel);
+                }
               }
             });
 
@@ -395,12 +449,14 @@ export default function SalarioPage() {
                         <tr>
                           <th className="py-3 px-4">PACIENTE</th>
                           <th className="py-3 px-4 text-center">ASISTENCIAS</th>
+                          <th className="py-3 px-4 text-center">TIPO SESIÓN</th>
                           <th className="py-3 px-4 text-right">DEUDA</th>
                           <th className="py-3 px-4 text-right">TOTAL SESIÓN</th>
                           <th className="py-3 px-4 text-center">ESQUEMA / %</th>
                           <th className="py-3 px-4 text-right">IVA 16% CREN PACIENTES</th>
                           <th className="py-3 px-4 text-right">IVA 16% TERAPEUTA SAT FACTURA</th>
                           <th className="py-3 px-4 text-right">A PAGAR A TERAPEUTA</th>
+                          <th className="py-3 px-4 text-right bg-blue-900 text-cyan-200 font-black">CREN</th>
                         </tr>
                       </thead>
                       <tbody className="divide-y divide-slate-100 font-medium">
@@ -411,6 +467,29 @@ export default function SalarioPage() {
                               <span className="bg-blue-50 text-blue-700 px-2 py-0.5 rounded">
                                 {p.asistenciasCount}
                               </span>
+                            </td>
+                            <td className="py-3 px-4 text-center">
+                              {p.tipoSesiones && p.tipoSesiones.length > 0 ? (
+                                <div className="flex flex-col gap-0.5 items-center">
+                                  {p.tipoSesiones.map((ts, i) => {
+                                    const isValoracion = ts.toLowerCase().includes("valoraci");
+                                    return (
+                                      <span
+                                        key={i}
+                                        className={`px-1.5 py-0.5 rounded text-[10px] font-bold capitalize border ${
+                                          isValoracion
+                                            ? "bg-amber-100 text-amber-700 border-amber-300"
+                                            : "bg-purple-50 text-purple-700 border-purple-100"
+                                        }`}
+                                      >
+                                        {ts}
+                                      </span>
+                                    );
+                                  })}
+                                </div>
+                              ) : (
+                                <span className="text-slate-300 text-[10px]">—</span>
+                              )}
                             </td>
                             <td className="py-3 px-4 text-right">
                               {p.deudaTotal > 0 ? (
@@ -423,9 +502,15 @@ export default function SalarioPage() {
                               ${p.subtotalValor.toLocaleString('es-MX', {minimumFractionDigits: 2})}
                             </td>
                             <td className="py-3 px-4 text-center">
-                              <span className="px-2 py-0.5 bg-slate-100 text-slate-700 rounded font-semibold text-[10px]">
-                                {t.tipoPago === "Porcentaje" ? `Comisión (${t.porcentaje}%)` : `Salario Base`}
-                              </span>
+                              {p.isFixedRate ? (
+                                <span className="px-2 py-0.5 bg-emerald-100 text-emerald-800 rounded font-bold text-[10px]" title="Honorario fijo íntegro configurado por paciente">
+                                  Honorario Fijo (${p.fixedRateVal.toFixed(2)})
+                                </span>
+                              ) : (
+                                <span className="px-2 py-0.5 bg-slate-100 text-slate-700 rounded font-semibold text-[10px]">
+                                  {t.tipoPago === "Porcentaje" ? `Comisión (${t.porcentaje}%)` : `Salario Base`}
+                                </span>
+                              )}
                             </td>
                             <td className="py-3 px-4 text-right text-blue-600 font-semibold">
                               ${p.ivaPaciente.toLocaleString('es-MX', {minimumFractionDigits: 2})}
@@ -436,11 +521,14 @@ export default function SalarioPage() {
                             <td className="py-3 px-4 text-right font-extrabold text-[#10b981]">
                               ${p.terapeutaPago.toLocaleString('es-MX', {minimumFractionDigits: 2})}
                             </td>
+                            <td className="py-3 px-4 text-right font-black text-[#1a5276] bg-blue-50/70">
+                              ${p.crenGanancia.toLocaleString('es-MX', {minimumFractionDigits: 2})}
+                            </td>
                           </tr>
                         ))}
                         {pacienteList.length === 0 && (
                           <tr>
-                            <td colSpan={8} className="py-8 text-center text-slate-400">
+                            <td colSpan={10} className="py-8 text-center text-slate-400">
                               Sin atenciones registradas para esta terapeuta en el periodo.
                             </td>
                           </tr>

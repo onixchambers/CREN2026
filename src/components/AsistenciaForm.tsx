@@ -48,6 +48,17 @@ interface AsistenciaFormProps {
   isPrellenado?: boolean;
 }
 
+export const normalizeEstadoAsistencia = (val: string) => {
+  if (!val) return "Asistio";
+  const s = val.trim().toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "");
+  if (s.includes("centro")) return "Cancelo el centro";
+  if (s.includes("sin anticipacion") || s.includes("sin anticipa")) return "Cancelo sin anticipacion";
+  if (s.includes("con anticipacion") || s.includes("anticipad") || s.includes("con anticipa")) return "Cancelo con anticipacion";
+  if (s.includes("asist") || s === "asistio" || s === "asistió") return "Asistio";
+  if (s.includes("agend") || s === "agendado") return "Agendado";
+  return "Asistio";
+};
+
 export function AsistenciaForm({
   initialData,
   pacientes,
@@ -87,7 +98,7 @@ export function AsistenciaForm({
     costoTotal: "",
     costoSesion: "Automático",
     saldoDisponible: "",
-    estadoAsistencia: "",
+    estadoAsistencia: "Asistio",
     metodoPago: "",
     montoPago: "",
     metodoPago2: "",
@@ -110,12 +121,30 @@ export function AsistenciaForm({
 
   useEffect(() => {
     if (initialData) {
-      setFormData(prev => ({ ...prev, ...initialData }));
+      const normEstado = initialData.estadoAsistencia ? normalizeEstadoAsistencia(initialData.estadoAsistencia) : "";
+      
+      let resolvedArea = initialData.area;
+      if (!resolvedArea && (initialData.terapeuta || userRole.toUpperCase() === "TERAPEUTA")) {
+        const tName = initialData.terapeuta || userName;
+        const matched = terapeutasFullData.find(t => t.name === tName || t.name.toLowerCase().includes(tName.toLowerCase()));
+        if (matched && matched.especialidad) {
+          const parts = matched.especialidad.split(',').map((x: string) => x.trim()).filter(Boolean);
+          if (parts.length > 0) resolvedArea = parts[0];
+        }
+      }
+
+      setFormData(prev => ({ 
+        ...prev, 
+        ...initialData,
+        estadoAsistencia: normEstado || prev.estadoAsistencia || "Asistio",
+        area: resolvedArea || prev.area || "Fisioterapia"
+      }));
+
       if (initialData.metodoPago2) {
         setShowSegundoPago(true);
       }
     }
-  }, [initialData]);
+  }, [initialData, terapeutasFullData, userRole, userName]);
 
   useEffect(() => {
     if (terapeutasFullData.length > 0) {
@@ -153,10 +182,15 @@ export function AsistenciaForm({
         setFormData(prev => ({
           ...prev,
           terapeuta: miTerapeuta,
-          area: formData.area || parts[0] || ""
+          area: formData.area || parts[0] || "Fisioterapia"
         }));
+<<<<<<< HEAD
       } else if (formData.terapeuta && parts.length > 0 && (!formData.area || !parts.includes(formData.area))) {
         setFormData(prev => ({ ...prev, area: parts[0] || "" }));
+=======
+      } else if (parts.length > 0 && (!formData.area || !parts.includes(formData.area))) {
+        setFormData(prev => ({ ...prev, area: parts[0] || "Fisioterapia" }));
+>>>>>>> 2c5cfbb4313174974a02e1ebcbcd836564a615de
       }
     }
   }, [formData.terapeuta, terapeutasFullData, userRole, userName]);
@@ -179,10 +213,24 @@ export function AsistenciaForm({
       let terapeutaAgenda = p.medicoTratante || formData.terapeuta;
       let tipoSesionAgenda = formData.tipoSesion;
 
+      let estadoAsistenciaAgenda = formData.estadoAsistencia;
+
       if (citaHoy) {
          horaAgenda = citaHoy.hora || horaAgenda;
          terapeutaAgenda = citaHoy.terapeuta || terapeutaAgenda;
          tipoSesionAgenda = citaHoy.tipoServicio || tipoSesionAgenda;
+         if (citaHoy.estado) {
+           estadoAsistenciaAgenda = normalizeEstadoAsistencia(citaHoy.estado);
+         }
+      }
+
+      let areaAgenda = formData.area;
+      if (terapeutaAgenda && terapeutasFullData.length > 0) {
+        const matchedT = terapeutasFullData.find(t => t.name === terapeutaAgenda || t.name.toLowerCase().includes(terapeutaAgenda.toLowerCase()));
+        if (matchedT && matchedT.especialidad) {
+          const tParts = matchedT.especialidad.split(',').map((x: string) => x.trim()).filter(Boolean);
+          if (tParts.length > 0) areaAgenda = tParts[0];
+        }
       }
 
       setFormData({
@@ -193,8 +241,10 @@ export function AsistenciaForm({
         pacienteSexo: normalizeSexo(p.sexo),
         pacienteEdad: p.edad,
         terapeuta: terapeutaAgenda,
+        area: areaAgenda || formData.area || "Fisioterapia",
         hora: horaAgenda,
         tipoSesion: tipoSesionAgenda,
+        estadoAsistencia: normalizeEstadoAsistencia(estadoAsistenciaAgenda),
         saldoDisponible: p.saldoCalculado || "0.00",
         precioTerapia: p.precioTerapia || formData.precioTerapia,
         numeroSesiones: "1", 
@@ -445,11 +495,18 @@ export function AsistenciaForm({
                             citaMatch = agendaCitas.find((c: any) => c.paciente === p.paciente && (c.estado === "Agendado" || c.estado === "Asistió"));
                           }
 
-                          if (citaMatch) {
-                            horaAgenda = citaMatch.hora || horaAgenda;
-                            terapeutaAgenda = citaMatch.terapeuta || terapeutaAgenda;
-                            tipoSesionAgenda = citaMatch.tipoServicio || tipoSesionAgenda;
-                            fechaAgenda = citaMatch.fecha || fechaAgenda;
+                          let estadoAgenda = formData.estadoAsistencia;
+                          if (citaMatch && citaMatch.estado) {
+                            estadoAgenda = normalizeEstadoAsistencia(citaMatch.estado);
+                          }
+
+                          let areaAgenda = formData.area;
+                          if (terapeutaAgenda && terapeutasFullData.length > 0) {
+                            const matchedT = terapeutasFullData.find(t => t.name === terapeutaAgenda || t.name.toLowerCase().includes(terapeutaAgenda.toLowerCase()));
+                            if (matchedT && matchedT.especialidad) {
+                              const tParts = matchedT.especialidad.split(',').map((x: string) => x.trim()).filter(Boolean);
+                              if (tParts.length > 0) areaAgenda = tParts[0];
+                            }
                           }
 
                           setFormData({
@@ -465,6 +522,8 @@ export function AsistenciaForm({
                             numeroSesiones: "1",
                             hora: horaAgenda,
                             terapeuta: terapeutaAgenda,
+                            area: areaAgenda || formData.area || "Fisioterapia",
+                            estadoAsistencia: normalizeEstadoAsistencia(estadoAgenda),
                             tipoSesion: tipoSesionAgenda,
                             frecuencia: agendaCitas.find((c: any) => c.paciente === p.paciente) ? (() => {
                               const f = (agendaCitas.find((c: any) => c.paciente === p.paciente).frecuencia || "").toLowerCase();
