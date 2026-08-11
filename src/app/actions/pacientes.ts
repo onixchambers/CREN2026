@@ -140,9 +140,34 @@ export async function getPatients() {
         if (!isNaN(baseP) && baseP > 0) pricesSet.add(baseP);
       }
 
-      // Procesar todas las sesiones registradas en Asistencia
-      let latestTotalSesiones = 0;
+      // Procesar todas las sesiones registradas en Asistencia (Deduplicadas por fecha, hora y terapeuta)
+      const uniqueSessionsMap = new Map<string, typeof p.sessions[0]>();
       for (const s of p.sessions) {
+        let f = s.date.toISOString().split("T")[0];
+        let h = "09:00";
+        let tName = s.therapist?.name || "";
+        if (s.notes) {
+          try {
+            const e = JSON.parse(s.notes);
+            if (e.fecha) f = e.fecha;
+            if (e.hora) h = e.hora;
+            if (e.terapeuta) tName = e.terapeuta;
+          } catch (err) {}
+        }
+        const sKey = `${tName}_${f}_${h}`;
+        if (!uniqueSessionsMap.has(sKey)) {
+          uniqueSessionsMap.set(sKey, s);
+        } else {
+          const currIsCompleted = s.status === "COMPLETED" || (s.notes && s.notes.includes("asistenciaGuardada"));
+          if (currIsCompleted) {
+            uniqueSessionsMap.set(sKey, s);
+          }
+        }
+      }
+      const uniqueSessions = Array.from(uniqueSessionsMap.values());
+
+      let latestTotalSesiones = 0;
+      for (const s of uniqueSessions) {
         let extraName = "";
         let parsedNotes: any = null;
         if (s.notes) {
