@@ -639,7 +639,12 @@ export function AsistenciaForm({
                 const p2 = showSegundoPago ? parseFloat(formData.montoPago2 || "0") : 0;
                 const montoF = p1 + p2;
                 const costoSesionF = parseFloat(formData.precioTerapia || "0");
-                const saldoF = saldoPrevioF + montoF - costoSesionF;
+                
+                const estNorm = normalizeEstadoAsistencia(formData.estadoAsistencia || "");
+                const isAttended = estNorm === "Asistio" || estNorm === "Asistió" || estNorm.includes("Cancelo sin anticipacion");
+                const costoAplica = isAttended ? costoSesionF : 0;
+
+                const saldoF = saldoPrevioF + montoF - costoAplica;
                 const isNeg = saldoF < 0;
                 return (
                   <div className="relative">

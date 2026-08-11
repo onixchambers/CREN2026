@@ -215,18 +215,22 @@ export async function getPatients() {
             valoracionesCount++;
           }
 
-          const costo = parseFloat(parsedNotes.costoSesion || parsedNotes.precioTerapia || "0");
-          if (!isNaN(costo) && costo > 0) {
-            pricesSet.add(costo);
-            if (isAttended) totalCostoSum += costo;
-          }
-
           let monto = parseFloat(parsedNotes.montoPago || "0");
           if ((isNaN(monto) || monto === 0) && parsedNotes.metodoPago) {
             const dollarMatches = parsedNotes.metodoPago.match(/\$([\d.]+)/g);
             if (dollarMatches) {
               monto = dollarMatches.reduce((sum: number, val: string) => sum + (parseFloat(val.replace("$", "")) || 0), 0);
             }
+          }
+
+          let costo = parseFloat(parsedNotes.costoSesion || parsedNotes.precioTerapia || "0");
+          if ((isNaN(costo) || costo === 0) && isAttended) {
+            costo = monto || parseFloat(p.precioTerapia || "0");
+          }
+
+          if (!isNaN(costo) && costo > 0) {
+            pricesSet.add(costo);
+            if (isAttended) totalCostoSum += costo;
           }
 
           if (!isNaN(monto) && monto > 0) {
