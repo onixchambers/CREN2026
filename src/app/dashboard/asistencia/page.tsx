@@ -1337,7 +1337,7 @@ export default function AsistenciaPage() {
                       <option value="Efectivo">Efectivo</option>
                       <option value="Transferencia">Transferencia</option>
                       <option value="Tarjeta">Tarjeta</option>
-                      <option value="Mixto">Mixto (Pago Mix)</option>
+                      <option value="Mixto">Mixto (MIX)</option>
                       <option value="Por definir">Por definir</option>
                       <option value="Beca">Beca</option>
                     </select>
@@ -1367,7 +1367,7 @@ export default function AsistenciaPage() {
                       onClick={() => setShowEditSegundoPago(!showEditSegundoPago)}
                       className="w-full text-xs py-1.5 px-1 bg-blue-50 text-blue-700 hover:bg-blue-100 rounded-lg font-bold border border-blue-200 transition-colors flex items-center justify-center gap-1 cursor-pointer shadow-xs whitespace-nowrap"
                     >
-                      {showEditSegundoPago ? "❌ Quitar 2º Pago" : "➕ Pago Mix"}
+                      {showEditSegundoPago ? "❌ ELM2ª" : "➕ MIX"}
                     </button>
                   </div>
                 </div>
