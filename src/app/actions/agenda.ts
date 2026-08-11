@@ -7,6 +7,7 @@ import { authOptions } from "@/lib/auth";
 import { generateUniqueDisplayId } from "@/lib/displayId";
 import { unstable_noStore as noStore } from "next/cache";
 import { getSystemTimezone } from "@/app/actions/configuracion";
+import { logAuditAction } from "@/app/actions/auditLog";
 
 export async function getAgenda() {
   noStore();
