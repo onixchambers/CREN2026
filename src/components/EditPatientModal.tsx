@@ -210,10 +210,10 @@ export function EditPatientModal({
                 <input
                   type="date"
                   name="fechaNacimiento"
-                  value={formData.fechaNacimiento}
+                  value={formData.fechaNacimiento ? formData.fechaNacimiento.split("T")[0] : ""}
                   onChange={handleInputChange}
-                  readOnly={!canEdit}
-                  className="w-full p-2 border border-slate-300 rounded text-sm text-slate-900 focus:border-[#2980b9] outline-none"
+                  disabled={!canEdit}
+                  className="w-full p-2 border border-slate-300 rounded text-sm text-slate-900 focus:border-[#2980b9] outline-none disabled:bg-slate-50 disabled:text-slate-400"
                 />
               </div>
 
@@ -231,6 +231,18 @@ export function EditPatientModal({
                   <option value="F">Femenino (F)</option>
                   <option value="—">—</option>
                 </select>
+              </div>
+
+              <div>
+                <label className="block text-xs font-bold text-slate-700 mb-1 uppercase">Fecha de Ingreso</label>
+                <input
+                  type="date"
+                  name="fechaIngreso"
+                  value={formData.fechaIngreso ? formData.fechaIngreso.split("T")[0] : ""}
+                  onChange={handleInputChange}
+                  disabled={!canEdit}
+                  className="w-full p-2 border border-slate-300 rounded text-sm text-slate-900 focus:border-[#2980b9] outline-none disabled:bg-slate-50 disabled:text-slate-400"
+                />
               </div>
 
               <div>
