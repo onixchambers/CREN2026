@@ -315,13 +315,21 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
       <header className="bg-gradient-to-r from-[#0e2f44] via-[#1a5276] to-[#2980b9] text-white shadow-lg sticky top-0 z-50">
         <div className="flex items-center justify-between px-6 py-2">
           <div className="flex items-center gap-2.5">
-            <div className="w-12 h-12 md:w-[52px] md:h-[52px] rounded-full bg-white flex items-center justify-center p-2.5 shadow-md shrink-0 border border-white/40 relative">
-              <div className="absolute inset-[1.5px] rounded-full border-2 border-[#154360]/85 pointer-events-none" />
+            <div className={`w-12 h-12 md:w-[52px] md:h-[52px] rounded-full flex items-center justify-center p-2.5 shadow-md shrink-0 relative transition-all ${
+              isDark ? "bg-[#0b1420] border border-cyan-500/40" : "bg-white border border-white/40"
+            }`}>
+              <div className={`absolute inset-[1.5px] rounded-full border-2 pointer-events-none transition-colors ${
+                isDark ? "border-cyan-400/80" : "border-[#154360]/85"
+              }`} />
               <img 
                 src="/logo.png" 
                 alt="CREN Logo" 
-                className="w-full h-full object-contain relative z-10" 
-                style={{ filter: "brightness(0) saturate(100%) invert(16%) sepia(35%) saturate(2200%) hue-rotate(178deg) brightness(96%) contrast(92%)" }}
+                className="w-full h-full object-contain relative z-10 transition-all" 
+                style={{ 
+                  filter: isDark 
+                    ? "brightness(0) invert(1) drop-shadow(0 0 4px rgba(255,255,255,0.6))" 
+                    : "brightness(0) saturate(100%) invert(16%) sepia(35%) saturate(2200%) hue-rotate(178deg) brightness(96%) contrast(92%)" 
+                }}
               />
             </div>
             <span className="text-[9px] md:text-[10px] font-medium text-white/90 uppercase tracking-tight border-l border-white/30 pl-2.5 py-0.5 leading-none whitespace-nowrap">
