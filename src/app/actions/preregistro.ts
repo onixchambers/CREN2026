@@ -97,7 +97,7 @@ export async function submitPreRegistration(formData: any, clientMetadata: { ip?
       otrosNombre: otrosNombre || null,
       otrosContacto: otrosContacto || null,
       principalOtros: !!principalOtros,
-      correoPrincipal: correoPrincipal || null,
+      correoPrincipal: correoPrincipal ? correoPrincipal.trim() : null,
       alergias: !!alergias,
       crisis: !!crisis,
       convulsiones: !!convulsiones,
@@ -105,9 +105,7 @@ export async function submitPreRegistration(formData: any, clientMetadata: { ip?
       riesgoFuga: !!riesgoFuga,
       noSepara: !!noSepara,
       otrasAlertas: !!otrasAlertas,
-      observacionesAdmin: pacienteContacto 
-        ? (observacionesAdmin ? `[Teléfono Paciente: ${pacienteContacto}]\n${observacionesAdmin}` : `[Teléfono Paciente: ${pacienteContacto}]`)
-        : (observacionesAdmin || null),
+      observacionesAdmin: observacionesAdmin ? observacionesAdmin.trim() : null,
       signatureDataUrl: signatureDataUrl,
       ipAddress: clientMetadata.ip || "127.0.0.1",
       userAgent: clientMetadata.userAgent || "Mobile Device",

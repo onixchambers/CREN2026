@@ -503,7 +503,10 @@ function RegistroConsentimientoContent() {
           <div>
             <label className="block text-xs font-bold text-slate-800 mb-1">Correo Electrónico Principal</label>
             <input
-              type="email"
+              type="text"
+              inputMode="email"
+              autoCapitalize="none"
+              autoCorrect="off"
               value={correoPrincipal}
               onChange={(e) => setCorreoPrincipal(e.target.value)}
               placeholder="ejemplo@correo.com"

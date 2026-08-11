@@ -259,6 +259,10 @@ export default function PreregistrosPage() {
     const pContact = parsePhone(preReg.padreContacto, setPadreCountryCode);
     const oContact = parsePhone(preReg.otrosContacto, setOtrosCountryCode);
 
+    const cleanObsAdmin = (preReg.observacionesAdmin || "")
+      .replace(/\[Teléfono Paciente:\s*[^\]]+\]\n?/gi, "")
+      .trim();
+
     setFormData({
       ...formData,
       nombres,
@@ -283,7 +287,7 @@ export default function PreregistrosPage() {
       principalMadre: preReg.principalMadre || false,
       principalPadre: preReg.principalPadre || false,
       principalOtros: preReg.principalOtros || false,
-      correoPrincipal: preReg.correoPrincipal || "",
+      correoPrincipal: preReg.correoPrincipal || preReg.correo || preReg.email || "",
 
       alergias: preReg.alergias || false,
       crisis: preReg.crisis || false,
@@ -296,7 +300,7 @@ export default function PreregistrosPage() {
       // Se mantienen DESMARCADOS para que la terapeuta los verifique manualmente
       reglamentoFirmado: false,
       consentimientoFirmado: false,
-      observacionesAdmin: preReg.observacionesAdmin || "",
+      observacionesAdmin: cleanObsAdmin,
       foto: "",
     });
 
