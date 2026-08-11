@@ -1302,16 +1302,17 @@ export default function AsistenciaPage() {
                     })()}
                   </select>
                 </div>
-                <div className="grid grid-cols-1 md:grid-cols-12 gap-2 items-end">
-                  <div className="md:col-span-3">
-                    <label className="block text-[10px] font-bold text-slate-500 uppercase mb-1 truncate" title="Estado de Pago (Pago)">
-                      Estado de Pago
+                {/* ESTADO DE PAGO & MÉTODOS DE PAGO */}
+                <div className="grid grid-cols-2 gap-2">
+                  <div>
+                    <label className="block text-[10px] font-bold text-slate-500 uppercase mb-1">
+                      Estado de Pago (Pago)
                     </label>
                     <select
                       name="pago"
                       value={editForm.pago || "SÍ"}
                       onChange={handleEditChange}
-                      className="w-full h-[38px] text-xs px-2.5 border border-slate-300 rounded-lg focus:border-[#2980b9] outline-none text-slate-900 font-bold bg-white"
+                      className="w-full h-[38px] text-xs px-2.5 border border-slate-300 rounded-lg focus:border-[#2980b9] outline-none text-slate-900 font-bold bg-white cursor-pointer"
                     >
                       <option value="SÍ">SÍ (Pagado)</option>
                       <option value="NO">NO (Pendiente)</option>
@@ -1320,9 +1321,9 @@ export default function AsistenciaPage() {
                     </select>
                   </div>
 
-                  <div className="md:col-span-3">
-                    <label className="block text-[10px] font-bold text-slate-500 uppercase mb-1 truncate" title="Método de Pago 1">
-                      Método de Pago 1
+                  <div>
+                    <label className="block text-[10px] font-bold text-slate-500 uppercase mb-1">
+                      Método de Pago
                     </label>
                     <select
                       name="metodoPago"
@@ -1331,20 +1332,22 @@ export default function AsistenciaPage() {
                         handleEditChange(e);
                         if (e.target.value === "Mixto") setShowEditSegundoPago(true);
                       }}
-                      className="w-full h-[38px] text-xs px-2.5 border border-slate-300 rounded-lg focus:border-[#2980b9] outline-none text-slate-900 bg-white font-medium"
+                      className="w-full h-[38px] text-xs px-2.5 border border-slate-300 rounded-lg focus:border-[#2980b9] outline-none text-slate-900 bg-white font-medium cursor-pointer"
                     >
                       <option value="Efectivo">Efectivo</option>
                       <option value="Transferencia">Transferencia</option>
                       <option value="Tarjeta">Tarjeta</option>
-                      <option value="Mixto">Mixto (Pagos Mixtos)</option>
+                      <option value="Mixto">Mixto (Pago Mix)</option>
                       <option value="Por definir">Por definir</option>
                       <option value="Beca">Beca</option>
                     </select>
                   </div>
+                </div>
 
-                  <div className="md:col-span-2">
-                    <label className="block text-[10px] font-bold text-slate-500 uppercase mb-1 truncate" title="Monto Pagado 1">
-                      Monto 1
+                <div className="grid grid-cols-5 gap-2 items-end">
+                  <div className="col-span-2">
+                    <label className="block text-[10px] font-bold text-slate-500 uppercase mb-1">
+                      Monto Pagado
                     </label>
                     <div className="relative w-full h-[38px]">
                       <span className="absolute left-2.5 top-2.5 text-slate-500 text-xs font-bold">$</span>
@@ -1359,28 +1362,28 @@ export default function AsistenciaPage() {
                     </div>
                   </div>
 
-                  <div className="md:col-span-4">
+                  <div className="col-span-3">
                     <button
                       type="button"
                       onClick={() => setShowEditSegundoPago(!showEditSegundoPago)}
-                      className="w-full h-[38px] px-2 bg-blue-50 text-blue-700 hover:bg-blue-100 rounded-lg text-xs font-bold border border-blue-200 transition-colors flex items-center justify-center gap-1 cursor-pointer truncate"
+                      className="w-full h-[38px] px-2 bg-blue-50 text-blue-700 hover:bg-blue-100 rounded-lg text-xs font-bold border border-blue-200 transition-colors flex items-center justify-center gap-1 cursor-pointer shadow-xs"
                     >
-                      {showEditSegundoPago ? "❌ Quitar 2º Pago" : "➕ Pagos Mixtos"}
+                      {showEditSegundoPago ? "❌ Quitar 2º Pago" : "➕ Pago Mix"}
                     </button>
                   </div>
                 </div>
 
                 {showEditSegundoPago && (
-                  <div className="grid grid-cols-1 md:grid-cols-12 gap-2 p-2.5 bg-blue-50/60 rounded-lg border border-blue-200 animate-in fade-in items-end">
-                    <div className="md:col-span-7">
-                      <label className="block text-[10px] font-bold text-blue-900 uppercase mb-1 truncate">
+                  <div className="grid grid-cols-2 gap-2 p-2.5 bg-blue-50/60 rounded-lg border border-blue-200 animate-in fade-in items-end">
+                    <div>
+                      <label className="block text-[10px] font-bold text-blue-900 uppercase mb-1">
                         Método de Pago 2
                       </label>
                       <select
                         name="metodoPago2"
                         value={editForm.metodoPago2 || "Transferencia"}
                         onChange={handleEditChange}
-                        className="w-full h-[38px] text-xs px-2.5 border border-blue-300 rounded-lg focus:border-[#2980b9] outline-none text-slate-900 bg-white font-medium"
+                        className="w-full h-[38px] text-xs px-2 border border-blue-300 rounded-lg focus:border-[#2980b9] outline-none text-slate-900 bg-white font-medium cursor-pointer"
                       >
                         <option value="Transferencia">Transferencia</option>
                         <option value="Efectivo">Efectivo</option>
@@ -1388,9 +1391,9 @@ export default function AsistenciaPage() {
                         <option value="Por definir">Por definir</option>
                       </select>
                     </div>
-                    <div className="md:col-span-5">
-                      <label className="block text-[10px] font-bold text-blue-900 uppercase mb-1 truncate">
-                        Monto 2
+                    <div>
+                      <label className="block text-[10px] font-bold text-blue-900 uppercase mb-1">
+                        Monto Pagado 2
                       </label>
                       <div className="relative w-full h-[38px]">
                         <span className="absolute left-2.5 top-2.5 text-blue-700 text-xs font-bold">$</span>
