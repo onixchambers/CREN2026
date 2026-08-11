@@ -186,7 +186,6 @@ export default function PacientesPage() {
         
         // Auto-open clinical note ONLY ONCE if explicitly triggered by finalizing a session
         if (typeof window !== "undefined") {
-<<<<<<< HEAD
           const isTriggered = sessionStorage.getItem("triggerAutoOpenNote") === "true";
 
           if (isTriggered) {
@@ -239,37 +238,6 @@ export default function PacientesPage() {
                   terapeuta: matchedCita ? matchedCita.terapeuta : (pTerapeuta || userName || "")
                 });
               }
-=======
-          const params = new URLSearchParams(window.location.search);
-          const action = params.get("action");
-          const patientId = params.get("patientId");
-          const urlFecha = params.get("fecha");
-          const urlHora = params.get("hora");
-
-          if (action === "nota" && patientId) {
-            const p = result.data.find((x: any) => x.id === patientId);
-            if (p) {
-              setViewingPatient(p);
-              setModalTab("nuevo_documento");
-              setSelectedNoteType("Registro de Evolución");
-
-              let matchingCita = null;
-              if (agendaRes.success && agendaRes.data) {
-                matchingCita = agendaRes.data.find((c: any) => 
-                  (c.pacienteId === p.id || (c.paciente || "").trim().toLowerCase() === (p.name || "").trim().toLowerCase()) &&
-                  (c.fecha === urlFecha || !urlFecha) &&
-                  (c.hora === urlHora || !urlHora)
-                );
-              }
-
-              setDocFormData({
-                citaId: matchingCita?.id || "",
-                fecha: matchingCita?.fecha || urlFecha || new Date().toISOString().split("T")[0],
-                hora: matchingCita?.hora || urlHora || "12:00",
-                terapeuta: matchingCita?.terapeuta || p.medicoTratante || ""
-              });
-              window.history.replaceState(null, '', '/dashboard/pacientes');
->>>>>>> 2c5cfbb4313174974a02e1ebcbcd836564a615de
             }
           }
         }
@@ -448,7 +416,6 @@ export default function PacientesPage() {
           <h2 className="text-xl font-bold text-[#0e2f44]">Directorio de Pacientes</h2>
         </div>
 
-<<<<<<< HEAD
         <div className="flex items-center gap-2">
           <button
             onClick={() => setEditingPatient({})}
@@ -457,9 +424,6 @@ export default function PacientesPage() {
             <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" /></svg>
             ➕ Registrar Nuevo Paciente
           </button>
-=======
-        <div className="flex flex-col items-end gap-1.5">
->>>>>>> 2c5cfbb4313174974a02e1ebcbcd836564a615de
           <button
             onClick={handleOpenDuplicatesModal}
             className="px-3.5 py-2 bg-amber-500 hover:bg-amber-600 text-white rounded-lg text-xs font-bold flex items-center gap-1.5 shadow-sm transition-all cursor-pointer"
@@ -467,16 +431,12 @@ export default function PacientesPage() {
             <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z" /></svg>
             🔍 Detectar y Fusionar Duplicados
           </button>
-<<<<<<< HEAD
-=======
-
           <div className="flex items-center gap-2 text-xs font-bold text-slate-700 bg-white px-3 py-1 rounded-full border border-slate-200 shadow-2xs">
             <span>Pacientes Registrados:</span>
             <span className="min-w-6 h-6 px-1.5 rounded-full bg-[#1a5276] text-white flex items-center justify-center text-xs font-black shadow-xs">
               {pacientes.length}
             </span>
           </div>
->>>>>>> 2c5cfbb4313174974a02e1ebcbcd836564a615de
         </div>
       </div>
 
@@ -1266,35 +1226,15 @@ export default function PacientesPage() {
                           <div className="bg-blue-50/50 p-2.5 rounded-xl border border-blue-100 flex flex-col gap-1.5">
                             <label className="block text-[10px] font-bold text-blue-700 uppercase">Vincular con Cita (Autocompletar Fecha/Hora)</label>
                             <select 
-<<<<<<< HEAD
-                              value={docFormData.linkedCitaId || ""}
+                              value={docFormData.linkedCitaId || docFormData.citaId || ""}
                               className="w-full text-xs p-2 border border-blue-200 rounded-lg bg-white outline-none font-medium text-slate-700"
                               onChange={(e) => {
                                 const val = e.target.value;
                                 const cita = agendaCitas.find((c: any) => c.id === val);
                                 if (cita) {
-                                  setDocFormData({ ...docFormData, linkedCitaId: val, fecha: cita.fecha, hora: cita.hora, terapeuta: cita.terapeuta || docFormData.terapeuta });
+                                  setDocFormData({ ...docFormData, linkedCitaId: val, citaId: val, fecha: cita.fecha, hora: cita.hora, terapeuta: cita.terapeuta || docFormData.terapeuta });
                                 } else {
-                                  setDocFormData({ ...docFormData, linkedCitaId: "" });
-=======
-                              value={docFormData.citaId || (docFormData.fecha ? "auto" : "")}
-                              className="w-full text-xs p-2 border border-blue-200 rounded-lg bg-white outline-none text-slate-800 font-bold shadow-2xs"
-                              onChange={(e) => {
-                                const val = e.target.value;
-                                if (!val) {
-                                  setDocFormData({ ...docFormData, citaId: "" });
-                                  return;
-                                }
-                                const cita = agendaCitas.find((c: any) => c.id === val);
-                                if (cita) {
-                                  setDocFormData({ 
-                                    ...docFormData, 
-                                    citaId: cita.id, 
-                                    fecha: cita.fecha, 
-                                    hora: cita.hora,
-                                    terapeuta: cita.terapeuta || docFormData.terapeuta || ""
-                                  });
->>>>>>> 2c5cfbb4313174974a02e1ebcbcd836564a615de
+                                  setDocFormData({ ...docFormData, linkedCitaId: "", citaId: "" });
                                 }
                               }}
                             >

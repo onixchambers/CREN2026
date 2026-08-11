@@ -642,7 +642,6 @@ export default function AsistenciaPage() {
     handleLimpiarForm();
     await recargarAsistencias();
     
-<<<<<<< HEAD
     // Redirigir a Pacientes y abrir la Nota Clínica Nueva (Registro de Evolución)
     let targetId = formData.pacienteId;
     if (!targetId && formData.pacienteNombre) {
@@ -651,14 +650,6 @@ export default function AsistenciaPage() {
         const pMatch = pacRes.data.find((x: any) => x.name.trim().toLowerCase() === formData.pacienteNombre.trim().toLowerCase());
         if (pMatch) targetId = pMatch.id;
       }
-=======
-    // Redirigir a Pacientes y abrir la Nota Clínica SOLO si el paciente Asistió
-    const estNorm = (formData.estadoAsistencia || "").toLowerCase().trim();
-    const isAsistio = estNorm === "asistio" || estNorm === "asistió";
-
-    if (isAsistio && formData.pacienteId) {
-      router.push(`/dashboard/pacientes?action=nota&patientId=${formData.pacienteId}&fecha=${formData.fecha}&hora=${formData.hora}`);
->>>>>>> 2c5cfbb4313174974a02e1ebcbcd836564a615de
     }
 
     const agendaIdVal = formData.agendaId || "";

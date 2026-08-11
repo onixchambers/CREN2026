@@ -128,15 +128,9 @@ export function EditPatientModal({
     }));
   };
 
-<<<<<<< HEAD
   const handleSubmit = async (e?: React.FormEvent, forceSave = false) => {
     if (e) e.preventDefault();
-    if (!canEdit) return;
-=======
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
     setIsSubmitting(true);
->>>>>>> 2c5cfbb4313174974a02e1ebcbcd836564a615de
 
     // Si no tiene permiso de edición general, solo guarda las fechas
     const submissionData = canEdit

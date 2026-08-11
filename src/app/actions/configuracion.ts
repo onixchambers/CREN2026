@@ -23,7 +23,6 @@ export async function getSettings(month: string) {
       return { success: false, error: "Acceso denegado." };
     }
 
-<<<<<<< HEAD
     await ensureAuditTablesExist();
 
     let settings: any = null;
@@ -46,38 +45,6 @@ export async function getSettings(month: string) {
     const [users, expenses] = await Promise.all([
       prisma.user.findMany({
         orderBy: { createdAt: 'asc' },
-=======
-    try {
-      await prisma.$executeRawUnsafe(`ALTER TABLE "User" ADD COLUMN IF NOT EXISTS "porcentajeValoracion" DOUBLE PRECISION DEFAULT 50;`);
-    } catch (e) {}
-
-    let users: any[] = [];
-    try {
-      users = await prisma.user.findMany({
-        orderBy: { createdAt: 'asc' },
-      });
-    } catch (err: any) {
-      users = await prisma.user.findMany({
-        select: {
-          id: true,
-          name: true,
-          email: true,
-          role: true,
-          password: true,
-          especialidad: true,
-          phone: true,
-          image: true,
-          createdAt: true,
-          updatedAt: true,
-        },
-        orderBy: { createdAt: 'asc' },
-      });
-    }
-
-    const [settings, expenses] = await Promise.all([
-      prisma.systemSettings.findUnique({
-        where: { id: 1 },
->>>>>>> 2c5cfbb4313174974a02e1ebcbcd836564a615de
       }),
       prisma.operationalExpense.findMany({
         where: { month },

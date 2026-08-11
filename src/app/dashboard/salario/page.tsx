@@ -170,7 +170,6 @@ export default function SalarioPage() {
               let crenGananciaSesion = 0;
               const hasFactura = a.fact === "Sí" || a.fact === "SI" || a.solicitaFactura === true || a.solicitaFactura === "Sí";
 
-<<<<<<< HEAD
               // Calcular IVA total cobrado en la sesión
               let sessionIva = 0;
               if (a.iva !== undefined && a.iva !== null && a.iva !== "" && a.iva !== 0) {
@@ -201,37 +200,6 @@ export default function SalarioPage() {
                 pagoSesionTerapeuta = precioSession;
               } else {
                 pagoSesionTerapeuta = precioSession;
-=======
-              if (isFixedActive) {
-                pagoSesionTerapeuta = rateConfig.therapistPay;
-                crenGananciaSesion = Math.max(0, precioSession - pagoSesionTerapeuta);
-
-                if (hasFactura) {
-                  ivaCrenSesion = precioSession * 0.16;
-                }
-              } else if (t.tipoPago === "Porcentaje") {
-                const sessionTypeStr = `${a.tipoSesion || ""} ${a.tipoServicio || ""} ${a.servicio || ""} ${a.area || ""}`.toLowerCase();
-                const isValoracion = sessionTypeStr.includes("valoraci") || sessionTypeStr.includes("evaluaci");
-                const percentToUse = isValoracion && typeof t.porcentajeValoracion === "number"
-                  ? t.porcentajeValoracion
-                  : (t.porcentaje || 50);
-
-                pagoSesionTerapeuta = precioSession * (percentToUse / 100);
-                crenGananciaSesion = Math.max(0, precioSession - pagoSesionTerapeuta);
-                if (t.retieneIVA) {
-                  ivaSesionRetenido = pagoSesionTerapeuta * 0.16;
-                }
-                
-                const crenGross = precioSession - (pagoSesionTerapeuta + ivaSesionRetenido);
-                if (hasFactura) {
-                  ivaCrenSesion = crenGross * 0.16;
-                }
-              } else {
-                crenGananciaSesion = precioSession;
-                if (hasFactura) {
-                  ivaCrenSesion = precioSession * 0.16;
-                }
->>>>>>> 2c5cfbb4313174974a02e1ebcbcd836564a615de
               }
 
               honorariosTotalGen += pagoSesionTerapeuta;

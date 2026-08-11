@@ -184,13 +184,8 @@ export function AsistenciaForm({
           terapeuta: miTerapeuta,
           area: formData.area || parts[0] || "Fisioterapia"
         }));
-<<<<<<< HEAD
       } else if (formData.terapeuta && parts.length > 0 && (!formData.area || !parts.includes(formData.area))) {
         setFormData(prev => ({ ...prev, area: parts[0] || "" }));
-=======
-      } else if (parts.length > 0 && (!formData.area || !parts.includes(formData.area))) {
-        setFormData(prev => ({ ...prev, area: parts[0] || "Fisioterapia" }));
->>>>>>> 2c5cfbb4313174974a02e1ebcbcd836564a615de
       }
     }
   }, [formData.terapeuta, terapeutasFullData, userRole, userName]);

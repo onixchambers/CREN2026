@@ -772,7 +772,10 @@ export default function PreregistrosPage() {
                   <label className="block text-xs font-bold text-slate-700 mb-1 uppercase">Fecha de Nacimiento</label>
                   <DateInput
                     value={formData.fechaNacimiento}
-                    onChange={(val) => setFormData({ ...formData, fechaNacimiento: val })}
+                    onChange={(val) => {
+                      const str = typeof val === "string" ? val : (val?.target?.value || "");
+                      setFormData(prev => ({ ...prev, fechaNacimiento: str }));
+                    }}
                   />
                 </div>
 
@@ -795,7 +798,10 @@ export default function PreregistrosPage() {
                   <label className="block text-xs font-bold text-slate-700 mb-1 uppercase">Fecha de Ingreso</label>
                   <DateInput
                     value={formData.fechaIngreso}
-                    onChange={(val) => setFormData({ ...formData, fechaIngreso: val })}
+                    onChange={(val) => {
+                      const str = typeof val === "string" ? val : (val?.target?.value || "");
+                      setFormData(prev => ({ ...prev, fechaIngreso: str }));
+                    }}
                   />
                 </div>
 
