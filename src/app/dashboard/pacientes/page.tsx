@@ -186,15 +186,16 @@ export default function PacientesPage() {
         
         // Auto-open clinical note ONLY ONCE if explicitly triggered by finalizing a session
         if (typeof window !== "undefined") {
-          const isTriggered = params.get("autoNote") === "true" || sessionStorage.getItem("triggerAutoOpenNote") === "true";
+          const urlParams = new URLSearchParams(window.location.search);
+          const isTriggered = urlParams.get("autoNote") === "true" || sessionStorage.getItem("triggerAutoOpenNote") === "true";
 
           if (isTriggered) {
-            const pId = params.get("patientId") || sessionStorage.getItem("autoOpenNotePatientId");
-            const pName = params.get("patientName") || sessionStorage.getItem("autoOpenNotePatientName");
-            const aId = params.get("agendaId") || sessionStorage.getItem("autoOpenNoteAgendaId");
-            const pFecha = params.get("fecha") || sessionStorage.getItem("autoOpenNoteFecha");
-            const pHora = params.get("hora") || sessionStorage.getItem("autoOpenNoteHora");
-            const pTerapeuta = params.get("terapeuta") || sessionStorage.getItem("autoOpenNoteTerapeuta");
+            const pId = urlParams.get("patientId") || sessionStorage.getItem("autoOpenNotePatientId");
+            const pName = urlParams.get("patientName") || sessionStorage.getItem("autoOpenNotePatientName");
+            const aId = urlParams.get("agendaId") || sessionStorage.getItem("autoOpenNoteAgendaId");
+            const pFecha = urlParams.get("fecha") || sessionStorage.getItem("autoOpenNoteFecha");
+            const pHora = urlParams.get("hora") || sessionStorage.getItem("autoOpenNoteHora");
+            const pTerapeuta = urlParams.get("terapeuta") || sessionStorage.getItem("autoOpenNoteTerapeuta");
 
             // Clean up trigger and all keys IMMEDIATELY so regular tab switching never triggers this popup again!
             sessionStorage.removeItem("triggerAutoOpenNote");
