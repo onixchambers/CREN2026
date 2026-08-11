@@ -186,7 +186,7 @@ export default function PacientesPage() {
         
         // Auto-open clinical note ONLY ONCE if explicitly triggered by finalizing a session
         if (typeof window !== "undefined") {
-          const isTriggered = sessionStorage.getItem("triggerAutoOpenNote") === "true";
+          const isTriggered = params.get("autoNote") === "true" || sessionStorage.getItem("triggerAutoOpenNote") === "true";
 
           if (isTriggered) {
             const pId = params.get("patientId") || sessionStorage.getItem("autoOpenNotePatientId");
@@ -207,21 +207,29 @@ export default function PacientesPage() {
             window.history.replaceState(null, '', '/dashboard/pacientes');
 
             if (pId || pName) {
+              const cleanStr = (s: string) => (s || "").toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "").replace(/\s+/g, " ").trim();
+              const targetClean = cleanStr(decodeURIComponent(pName || ""));
+
               let p = null;
               if (pId) {
                 p = result.data.find((x: any) => x.id === pId);
               }
-              if (!p && pName) {
-                const targetName = decodeURIComponent(pName).trim().toLowerCase();
-                p = result.data.find((x: any) => (x.name || "").trim().toLowerCase() === targetName || targetName.includes((x.name || "").trim().toLowerCase()) || (x.name || "").trim().toLowerCase().includes(targetName));
+              if (!p && targetClean) {
+                p = result.data.find((x: any) => {
+                  const xClean = cleanStr(x.name);
+                  return xClean === targetClean || xClean.includes(targetClean) || targetClean.includes(xClean);
+                });
               }
+
+              if (p) {
                 let matchedCita = null;
                 const citasForP = (agendaRes.data || []).filter((c: any) => {
                   if (c.pacienteId && c.pacienteId === p.id) return true;
-                  const p1 = (c.paciente || "").trim().toLowerCase();
-                  const p2 = (p.name || "").trim().toLowerCase();
+                  const p1 = cleanStr(c.paciente);
+                  const p2 = cleanStr(p.name);
                   return p1 === p2 || (p1 && p2 && (p1.includes(p2) || p2.includes(p1)));
                 });
+
                 const normH = (h: string) => (h || "").toLowerCase().replace(/[^0-9]/g, "");
                 if (aId) {
                   matchedCita = citasForP.find((c: any) => c.id === aId);
@@ -251,6 +259,7 @@ export default function PacientesPage() {
                   hora: selHora,
                   terapeuta: selTerapeuta
                 });
+              }
             }
           }
         }

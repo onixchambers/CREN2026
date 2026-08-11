@@ -948,17 +948,9 @@ export default function AsistenciaPage() {
             console.error("Error agendando cita al guardar asistencia", e);
           }
 
-          alert("Sesión guardada exitosamente en la base de datos");
-          
           if (formData.pacienteId || formData.pacienteNombre) {
-            sessionStorage.setItem("triggerAutoOpenNote", "true");
-            if (formData.pacienteId) sessionStorage.setItem("autoOpenNotePatientId", formData.pacienteId);
-            if (formData.pacienteNombre) sessionStorage.setItem("autoOpenNotePatientName", formData.pacienteNombre);
-            if (formData.agendaId) sessionStorage.setItem("autoOpenNoteAgendaId", formData.agendaId);
-            if (formData.fecha) sessionStorage.setItem("autoOpenNoteFecha", formData.fecha);
-            if (formData.hora) sessionStorage.setItem("autoOpenNoteHora", formData.hora);
-            if (formData.terapeuta) sessionStorage.setItem("autoOpenNoteTerapeuta", formData.terapeuta);
-            window.location.href = "/dashboard/pacientes";
+            const url = `/dashboard/pacientes?autoNote=true&patientId=${encodeURIComponent(formData.pacienteId || "")}&patientName=${encodeURIComponent(formData.pacienteNombre || "")}&agendaId=${encodeURIComponent(formData.agendaId || "")}&fecha=${encodeURIComponent(formData.fecha || "")}&hora=${encodeURIComponent(formData.hora || "")}&terapeuta=${encodeURIComponent(formData.terapeuta || "")}`;
+            window.location.href = url;
           } else {
             window.location.href = "/dashboard/asistencia";
           }
