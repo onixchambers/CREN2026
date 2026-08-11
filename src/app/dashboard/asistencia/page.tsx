@@ -1344,8 +1344,8 @@ export default function AsistenciaPage() {
                   </div>
                 </div>
 
-                <div className="grid grid-cols-5 gap-2 items-end">
-                  <div className="col-span-2">
+                <div className="grid grid-cols-2 gap-2 items-end">
+                  <div>
                     <label className="block text-[10px] font-bold text-slate-500 uppercase mb-1">
                       Monto Pagado
                     </label>
@@ -1362,7 +1362,7 @@ export default function AsistenciaPage() {
                     </div>
                   </div>
 
-                  <div className="col-span-3">
+                  <div>
                     <button
                       type="button"
                       onClick={() => setShowEditSegundoPago(!showEditSegundoPago)}
