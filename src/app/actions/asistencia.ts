@@ -311,15 +311,38 @@ export async function getAsistenciasDB(_ts?: string) {
         const totalCount = Math.max(totalFromNotes, patientSessions.length);
         const displaySesiones = totalCount > 1 ? `${sessionNum}/${totalCount}` : `${sessionNum}`;
 
-        const montoP = parseFloat(extra.montoPago || "0");
-        const costoS = parseFloat(extra.costoSesion || extra.precioTerapia || "0");
+        let metodoPagoStr = extra.metodoPago || extra.metodoPagoFinal || extra.metodoPago1 || "Efectivo";
+        if (extra.metodoPago2) {
+          metodoPagoStr = `Mixto (${extra.metodoPago || extra.metodoPago1 || 'P1'}: $${extra.montoPago || 0}, ${extra.metodoPago2}: $${extra.montoPago2 || 0})`;
+        }
+
+        let montoP = parseFloat(extra.montoPago || "0");
+        let totalVal = parseFloat(extra.total || extra.subtotal || "0");
+
+        // Si montoP o totalVal no se guardaron explícitamente, extraer montos numéricos de metodoPago
+        if ((isNaN(montoP) || montoP === 0) && metodoPagoStr) {
+          const dollarMatches = metodoPagoStr.match(/\$([\d.]+)/g);
+          if (dollarMatches) {
+            montoP = dollarMatches.reduce((sum: number, val: string) => sum + (parseFloat(val.replace("$", "")) || 0), 0);
+          }
+        }
+
+        if (isNaN(totalVal) || totalVal === 0) {
+          totalVal = montoP;
+        }
+
+        const costoS = parseFloat(extra.costoSesion || extra.precioTerapia || "0") || totalVal;
         
         // Sumar pago y restar costo de la sesión al saldo acumulado progresivo
         runningBalance = runningBalance + montoP - costoS;
 
-        let metodoPagoStr = extra.metodoPago || extra.metodoPagoFinal || extra.metodoPago1 || "Efectivo";
-        if (extra.metodoPago2) {
-          metodoPagoStr = `Mixto (${extra.metodoPago || extra.metodoPago1 || 'P1'}: $${extra.montoPago || 0}, ${extra.metodoPago2}: $${extra.montoPago2 || 0})`;
+        const solicitaFactura = Boolean(extra.solicitaFactura || (extra.fact === "Sí" || extra.fact === "Si" || extra.fact === true));
+        let subtotalVal = totalVal;
+        let ivaVal = 0;
+
+        if (solicitaFactura && totalVal > 0) {
+          subtotalVal = totalVal / 1.16;
+          ivaVal = totalVal - subtotalVal;
         }
 
         asistencias.push({
@@ -335,11 +358,12 @@ export async function getAsistenciasDB(_ts?: string) {
           estado: extra.estadoAsistencia || s.status,
           sesiones: displaySesiones,
           frecuencia: extra.frecuencia || "-",
-          pago: extra.pago || "SÍ",
+          pago: extra.pago || (montoP > 0 ? "SÍ" : "NO"),
           metodoPago: metodoPagoStr,
-          fact: (extra.solicitaFactura || (!extra.solicitaFactura && extra.total && extra.subtotal && extra.subtotal < extra.total)) ? "Sí" : "No",
-          subtotal: extra.subtotal != null ? "$" + Number(extra.subtotal).toFixed(2) : "$0.00",
-          total: extra.total != null ? "$" + Number(extra.total).toFixed(2) : "$0.00",
+          fact: solicitaFactura ? "Sí" : "No",
+          subtotal: "$" + Number(subtotalVal).toFixed(2),
+          iva: "$" + Number(ivaVal).toFixed(2),
+          total: "$" + Number(totalVal).toFixed(2),
           saldo: runningBalance,
           obs: extra.obs || "-",
           creadoPor: extra.creadoPor || "-",
