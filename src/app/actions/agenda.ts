@@ -167,21 +167,59 @@ export async function addCita(data: any) {
       const finalDateStr = currentDate.toISOString().split('T')[0];
       const jsDate = new Date(`${finalDateStr}T${data.hora}:00`);
 
-      // Verificar si ya está ocupado ese horario por la misma terapeuta
       const existingSession = await prisma.session.findFirst({
         where: {
           therapistId: therapistId,
           date: jsDate
         }
       });
-
       if (existingSession) {
-        // Allow if it's a different patient (same therapist+hour is a conflict, but same patient + same day = OK)
-        const existingExtra: any = existingSession.notes ? (() => { try { return JSON.parse(existingSession.notes); } catch { return {}; } })() : {};
         const existingPatientId = existingSession.patientId;
-        // Only block if it's a different patient occupying the same therapist slot at same hour
         if (existingPatientId !== patientId) {
           return { success: false, error: `Ya hay una cita programada para la fecha ${finalDateStr} a las ${data.hora} con esta terapeuta. Intenta con otra hora.` };
+        } else {
+          const notesJson = JSON.stringify({
+            fecha: finalDateStr,
+            hora: data.hora,
+            tipoServicio: data.tipoServicio,
+            frecuencia: data.frecuencia,
+            estado: data.estado,
+            pagado: data.pagado || false,
+            metodoPago: data.metodoPago || ""
+          });
+
+          const updatedSession = await prisma.session.update({
+            where: { id: existingSession.id },
+            data: {
+              status: data.estado,
+              notes: notesJson
+            }
+          });
+
+          createdCitas.push({
+            id: updatedSession.id,
+            paciente: data.paciente,
+            fecha: finalDateStr,
+            hora: data.hora,
+            terapeuta: data.terapeuta,
+            tipoServicio: data.tipoServicio,
+            frecuencia: data.frecuencia,
+            estado: data.estado,
+            pagado: data.pagado,
+            metodoPago: data.metodoPago
+          });
+
+          if (frecuencia === "diario") {
+            currentDate.setUTCDate(currentDate.getUTCDate() + 1);
+          } else if (frecuencia === "semanal") {
+            currentDate.setUTCDate(currentDate.getUTCDate() + 7);
+          } else if (frecuencia === "quincenal") {
+            currentDate.setUTCDate(currentDate.getUTCDate() + 14);
+          } else if (frecuencia === "mensual") {
+            currentDate.setUTCMonth(currentDate.getUTCMonth() + 1);
+          }
+          currentDateStr = currentDate.toISOString().split('T')[0];
+          continue;
         }
       }
       
@@ -218,7 +256,6 @@ export async function addCita(data: any) {
         metodoPago: data.metodoPago
       });
       
-      // Calcular siguiente fecha
       if (frecuencia === "diario") {
         currentDate.setUTCDate(currentDate.getUTCDate() + 1);
       } else if (frecuencia === "semanal") {
@@ -228,55 +265,61 @@ export async function addCita(data: any) {
       } else if (frecuencia === "mensual") {
         currentDate.setUTCMonth(currentDate.getUTCMonth() + 1);
       } else {
-        break; // unica
+        break;
       }
       
       currentDateStr = currentDate.toISOString().split('T')[0];
     }
 
     revalidatePath("/dashboard/agenda");
+    revalidatePath("/dashboard/asistencia");
     
     await logAuditAction({
       action: "AGENDAR_CITA",
-      details: `Se agendó cita para "${data.paciente}" en fecha ${data.fecha} a las ${data.hora} (Estado: ${data.estado || 'Agendado'}).`,
+      details: `Se agendó/actualizó cita para el paciente "${data.paciente}" con el terapeuta "${data.terapeuta}" (${numSesiones} sesión/es, ${frecuencia}).`,
       target: data.paciente
     });
 
     return { success: true, citas: createdCitas, id: createdCitas[0]?.id };
   } catch (error: any) {
-    console.error("Error addCita:", error);
-    return { success: false, error: error.message };
+    console.error("Error agregando cita:", error);
+    return { success: false, error: "Error al agendar la cita en la base de datos." };
   }
 }
 
 export async function updateCita(id: string, data: any) {
   try {
-    const session = await prisma.session.findUnique({ where: { id } });
-    if (!session) return { success: false, error: "Cita no encontrada." };
-
-    let extra = {};
-    try {
-      if (session.notes) extra = JSON.parse(session.notes);
-    } catch (e) {}
-
-    const updatedExtra = { ...extra, ...data };
+    const citaTarget = await prisma.session.findUnique({ where: { id }, include: { patient: true } });
+    const existingNotes = citaTarget?.notes ? (() => { try { return JSON.parse(citaTarget.notes); } catch { return {}; } })() : {};
     
-    // Si cambia estado
-    let dbStatus = session.status;
-    if (data.estado) dbStatus = data.estado;
+    const updatedNotes = JSON.stringify({
+      ...existingNotes,
+      ...data
+    });
+
+    let newDate = citaTarget?.date;
+    if (data.fecha || data.hora) {
+      const f = data.fecha || existingNotes.fecha || citaTarget?.date.toISOString().split("T")[0];
+      const h = data.hora || existingNotes.hora || "09:00";
+      newDate = new Date(`${f}T${h}:00`);
+    }
 
     await prisma.session.update({
       where: { id },
       data: {
-        status: dbStatus,
-        notes: JSON.stringify(updatedExtra)
+        status: data.estado || citaTarget?.status,
+        date: newDate,
+        notes: updatedNotes
       }
     });
 
+    revalidatePath("/dashboard/agenda");
+    revalidatePath("/dashboard/asistencia");
+
     await logAuditAction({
-      action: "EDITAR_CITA",
-      details: `Se actualizó la cita para "${data.paciente || (extra as any).paciente || id}" (Estado: ${data.estado || (extra as any).estado || dbStatus}).`,
-      target: data.paciente || (extra as any).paciente || id
+      action: "ACTUALIZAR_CITA",
+      details: `Se actualizó la cita del paciente "${citaTarget?.patient?.name || id}".`,
+      target: citaTarget?.patient?.name || id
     });
 
     return { success: true };
@@ -303,8 +346,49 @@ export async function deleteCita(id: string) {
 
     const citaTarget = await prisma.session.findUnique({ where: { id }, include: { patient: true } });
 
-    await prisma.session.delete({ where: { id } });
+    if (citaTarget) {
+      let fechaTarget = citaTarget.date.toISOString().split("T")[0];
+      let horaTarget = "09:00";
+      if (citaTarget.notes) {
+        try {
+          const parsed = JSON.parse(citaTarget.notes);
+          if (parsed.fecha) fechaTarget = parsed.fecha;
+          if (parsed.hora) horaTarget = parsed.hora;
+        } catch (e) {}
+      }
+
+      const matchingSessions = await prisma.session.findMany({
+        where: {
+          patientId: citaTarget.patientId,
+          therapistId: citaTarget.therapistId,
+        }
+      });
+
+      const idsToDelete = matchingSessions.filter(s => {
+        if (s.id === id) return true;
+        let f = s.date.toISOString().split("T")[0];
+        let h = "09:00";
+        if (s.notes) {
+          try {
+            const p = JSON.parse(s.notes);
+            if (p.fecha) f = p.fecha;
+            if (p.hora) h = p.hora;
+          } catch (e) {}
+        }
+        return f === fechaTarget && h.substring(0, 2) === horaTarget.substring(0, 2);
+      }).map(s => s.id);
+
+      if (idsToDelete.length > 0) {
+        await prisma.session.deleteMany({
+          where: { id: { in: idsToDelete } }
+        });
+      }
+    } else {
+      await prisma.session.delete({ where: { id } }).catch(() => {});
+    }
+
     revalidatePath("/dashboard/agenda");
+    revalidatePath("/dashboard/asistencia");
 
     await logAuditAction({
       action: "ELIMINAR_CITA",
