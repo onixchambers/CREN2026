@@ -357,7 +357,7 @@ export default function PacientesPage() {
       alert("La administración no tiene habilitado el permiso para eliminar pacientes.");
       return;
     }
-    if (!confirm(`¿Estás seguro de eliminar a ${p.name}?`)) return;
+    if (!confirm(`¿Estás seguro de eliminar a ${p.name}? Se eliminarán permanentemente el paciente y todas sus citas agendadas.`)) return;
     const { deletePatient, getPatients } = await import('@/app/actions/pacientes');
     const result = await deletePatient(p.id);
     if (result.success) {

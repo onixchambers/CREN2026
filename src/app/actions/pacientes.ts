@@ -422,19 +422,50 @@ export async function deletePatient(id: string) {
     if (!perm.allowed) return { success: false, error: perm.error };
 
     const targetPatient = await prisma.patient.findUnique({ where: { id } });
+    if (!targetPatient) return { success: false, error: "Paciente no encontrado." };
+
+    // 1. Eliminar permanentemente todas sus sesiones/citas (Agenda/Asistencia), pagos y el expediente
     await prisma.$transaction([
       prisma.session.deleteMany({ where: { patientId: id } }),
       prisma.payment.deleteMany({ where: { patientId: id } }),
       prisma.patient.delete({ where: { id } })
     ]);
 
+    // 2. Limpiar referencias adicionales en systemSettings si existían (ej. honorarios fijos)
+    try {
+      const settings = await prisma.systemSettings.findUnique({ where: { id: 1 } });
+      if (settings && settings.referenceKeys) {
+        const parsed = JSON.parse(settings.referenceKeys);
+        let modified = false;
+        if (parsed.patientFixedHonorarios) {
+          if (parsed.patientFixedHonorarios[id]) {
+            delete parsed.patientFixedHonorarios[id];
+            modified = true;
+          }
+          if (targetPatient.name && parsed.patientFixedHonorarios[targetPatient.name]) {
+            delete parsed.patientFixedHonorarios[targetPatient.name];
+            modified = true;
+          }
+        }
+        if (modified) {
+          await prisma.systemSettings.update({
+            where: { id: 1 },
+            data: { referenceKeys: JSON.stringify(parsed) }
+          });
+        }
+      }
+    } catch (e) {}
+
     await logAuditAction({
       action: "ELIMINAR_PACIENTE",
-      details: `Se eliminó permanentemente el expediente del paciente "${targetPatient?.name || id}" (ID: ${targetPatient?.displayId || id}).`,
+      details: `Se eliminó permanentemente el expediente del paciente "${targetPatient?.name || id}" (ID: ${targetPatient?.displayId || id}) junto con todas sus citas, asistencias y pagos registrados.`,
       target: targetPatient?.name || id
     });
 
     revalidatePath("/dashboard/pacientes");
+    revalidatePath("/dashboard/agenda");
+    revalidatePath("/dashboard/asistencia");
+    revalidatePath("/dashboard/honorarios");
     return { success: true };
   } catch (error: any) {
     console.error("Error deleting patient:", error);
