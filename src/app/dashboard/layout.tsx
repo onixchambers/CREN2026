@@ -119,27 +119,26 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
     loadPermission();
   }, [session, userRole, userName]);
 
-  const checkAndSetTherapistBroadcast = (broadcast: any, uName: string, uRole: string) => {
-    if (!broadcast || !broadcast.active) {
-      setShowTherapistPopup(false);
-      return;
-    }
+  const isTargetedForUser = (broadcast: any, uName: string) => {
+    if (!broadcast || !broadcast.active) return false;
+    const targets: string[] = broadcast.targets || ["TODOS"];
+    if (targets.includes("TODOS")) return true;
+    const normUser = (uName || "").toLowerCase().trim().replace(/^lic\.\s*/i, "");
+    if (!normUser) return false;
+    return targets.some((t: string) => {
+      const normT = t.toLowerCase().trim().replace(/^lic\.\s*/i, "");
+      return normT === normUser;
+    });
+  };
 
+  const checkAndSetTherapistBroadcast = (broadcast: any, uName: string, uRole: string) => {
     const roleUpper = (uRole || "").toUpperCase();
     if (roleUpper !== "TERAPEUTA") {
       setShowTherapistPopup(false);
       return;
     }
 
-    const targets: string[] = broadcast.targets || ["TODOS"];
-    const normUser = (uName || "").toLowerCase().trim().replace(/^lic\.\s*/i, "");
-
-    const isTargeted = targets.includes("TODOS") || targets.some((t: string) => {
-      const normT = t.toLowerCase().trim().replace(/^lic\.\s*/i, "");
-      return normT === normUser;
-    });
-
-    if (isTargeted && normUser.length > 0) {
+    if (isTargetedForUser(broadcast, uName)) {
       const seenId = localStorage.getItem("seen_therapist_bcast_id");
       if (seenId !== broadcast.id) {
         setShowTherapistPopup(true);
@@ -360,7 +359,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
               </button>
             )}
 
-            {userRole.toUpperCase() === "TERAPEUTA" && broadcastMessage && broadcastMessage.active === true && (
+            {userRole.toUpperCase() === "TERAPEUTA" && isTargetedForUser(broadcastMessage, userName) && (
               <button
                 onClick={() => setShowTherapistPopup(true)}
                 className="px-3 py-1.5 bg-amber-500/90 hover:bg-amber-500 text-white rounded-full text-xs font-bold transition-all cursor-pointer flex items-center gap-1.5 shadow-sm border border-amber-300/30 animate-pulse"
