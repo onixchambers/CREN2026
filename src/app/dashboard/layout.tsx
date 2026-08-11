@@ -113,31 +113,43 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
           setSelectedTherapists(targets);
         }
 
-        const roleUpper = (userRole || "").toUpperCase();
-        if (roleUpper === "TERAPEUTA" && bRes.broadcast.active === true) {
-          const normUser = (userName || "").toLowerCase().trim().replace(/^lic\.\s*/i, "");
-          const isTargeted = targets.includes("TODOS") || targets.some((t: string) => {
-            const normT = t.toLowerCase().trim().replace(/^lic\.\s*/i, "");
-            return normT === normUser;
-          });
-
-          if (isTargeted && normUser.length > 0) {
-            const seenId = localStorage.getItem("seen_therapist_bcast_id");
-            if (seenId !== bRes.broadcast.id) {
-              setShowTherapistPopup(true);
-            } else {
-              setShowTherapistPopup(false);
-            }
-          } else {
-            setShowTherapistPopup(false);
-          }
-        } else {
-          setShowTherapistPopup(false);
-        }
+        checkAndSetTherapistBroadcast(bRes.broadcast, userName, userRole);
       }
     }
     loadPermission();
   }, [session, userRole, userName]);
+
+  const checkAndSetTherapistBroadcast = (broadcast: any, uName: string, uRole: string) => {
+    if (!broadcast || !broadcast.active) {
+      setShowTherapistPopup(false);
+      return;
+    }
+
+    const roleUpper = (uRole || "").toUpperCase();
+    if (roleUpper !== "TERAPEUTA") {
+      setShowTherapistPopup(false);
+      return;
+    }
+
+    const targets: string[] = broadcast.targets || ["TODOS"];
+    const normUser = (uName || "").toLowerCase().trim().replace(/^lic\.\s*/i, "");
+
+    const isTargeted = targets.includes("TODOS") || targets.some((t: string) => {
+      const normT = t.toLowerCase().trim().replace(/^lic\.\s*/i, "");
+      return normT === normUser;
+    });
+
+    if (isTargeted && normUser.length > 0) {
+      const seenId = localStorage.getItem("seen_therapist_bcast_id");
+      if (seenId !== broadcast.id) {
+        setShowTherapistPopup(true);
+      } else {
+        setShowTherapistPopup(false);
+      }
+    } else {
+      setShowTherapistPopup(false);
+    }
+  };
 
   const refreshBroadcast = async () => {
     try {
@@ -165,9 +177,9 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
           const bRes = await getTherapistBroadcastMessage();
           if (bRes.success && bRes.broadcast) {
             setBroadcastMessage(bRes.broadcast);
-            if (bRes.broadcast.active === false) {
-              setShowTherapistPopup(false);
-            }
+            checkAndSetTherapistBroadcast(bRes.broadcast, userName, userRole);
+          } else {
+            setShowTherapistPopup(false);
           }
         } catch (e) {}
       }, 5000);
