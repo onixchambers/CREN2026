@@ -276,7 +276,18 @@ export async function getAsistenciasDB(_ts?: string) {
       if (!s.notes) continue;
       try {
         const extra = JSON.parse(s.notes);
-        if (extra.asistenciaGuardada) {
+        const estNorm = (extra.estadoAsistencia || extra.estado || s.status || "").trim().toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "");
+        const isRegistered = extra.asistenciaGuardada === true || 
+                             extra.pagado === "SÍ" || 
+                             extra.pagado === "SI" || 
+                             Boolean(extra.metodoPago && extra.metodoPago.trim() !== "") || 
+                             Boolean(extra.montoPago && extra.montoPago !== "0" && extra.montoPago !== "") || 
+                             estNorm.includes("asistio") || 
+                             estNorm.includes("cancelo") || 
+                             s.status === "COMPLETED" || 
+                             s.status === "CANCELLED";
+
+        if (isRegistered) {
           const patientKey = s.patientId || s.patient?.name || "unknown";
           if (!patientAttendanceMap[patientKey]) {
             patientAttendanceMap[patientKey] = [];

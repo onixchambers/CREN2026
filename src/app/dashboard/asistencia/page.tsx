@@ -831,7 +831,7 @@ export default function AsistenciaPage() {
     // Ocultar si el paciente tiene estatus 'Inactivo' en la pestaña de Pacientes
     const matchPatient = pacientes.find(p => 
       (a.pacienteId && p.id === a.pacienteId) || 
-      (p.paciente && p.paciente.trim().toLowerCase() === (a.paciente || "").trim().toLowerCase())
+      ((p.name || p.paciente) && (p.name || p.paciente).trim().toLowerCase() === (a.paciente || "").trim().toLowerCase())
     );
     if (matchPatient && (matchPatient.estatus || "Activo").trim().toLowerCase() === "inactivo") {
       return false;
