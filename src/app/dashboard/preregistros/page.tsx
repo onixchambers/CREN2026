@@ -481,6 +481,8 @@ export default function PreregistrosPage() {
 
       const finalFormData = {
         ...formData,
+        fechaNacimiento: typeof formData.fechaNacimiento === "string" ? formData.fechaNacimiento : (formData.fechaNacimiento?.target?.value || ""),
+        fechaIngreso: typeof formData.fechaIngreso === "string" ? formData.fechaIngreso : (formData.fechaIngreso?.target?.value || ""),
         pacienteContacto: formData.pacienteContacto ? (formData.pacienteContacto.startsWith("+") ? formData.pacienteContacto : `${pacienteCountryCode} ${formData.pacienteContacto}`) : "",
         madreContacto: formData.madreContacto ? (formData.madreContacto.startsWith("+") ? formData.madreContacto : `${madreCountryCode} ${formData.madreContacto}`) : "",
         padreContacto: formData.padreContacto ? (formData.padreContacto.startsWith("+") ? formData.padreContacto : `${padreCountryCode} ${formData.padreContacto}`) : "",
@@ -488,18 +490,20 @@ export default function PreregistrosPage() {
         otrosNombre: formData.otrosVinculo ? `${formData.otrosVinculo}|${formData.otrosNombre}` : formData.otrosNombre,
       };
 
+      const cleanPayload = JSON.parse(JSON.stringify(finalFormData));
+
       if (!editingId && !bypassDuplicates) {
         const dupCheck = await checkDuplicatePatient({
-          nombre: finalFormData.nombre,
-          phone: finalFormData.pacienteContacto || finalFormData.madreContacto || finalFormData.padreContacto,
-          fechaNacimiento: finalFormData.fechaNacimiento
+          nombre: String(cleanPayload.nombre || ""),
+          phone: String(cleanPayload.pacienteContacto || cleanPayload.madreContacto || cleanPayload.padreContacto || ""),
+          fechaNacimiento: String(cleanPayload.fechaNacimiento || "")
         });
 
         if (dupCheck.success && dupCheck.hasDuplicates && dupCheck.duplicates.length > 0) {
           setDuplicateWarning({
             isOpen: true,
             duplicates: dupCheck.duplicates,
-            pendingData: finalFormData
+            pendingData: cleanPayload
           });
           setIsSubmitting(false);
           return;
@@ -508,9 +512,9 @@ export default function PreregistrosPage() {
 
       let result;
       if (editingId) {
-        result = await updatePatient(editingId, finalFormData);
+        result = await updatePatient(editingId, cleanPayload);
       } else {
-        result = await createPatient(finalFormData);
+        result = await createPatient(cleanPayload);
       }
 
       if (result.success) {
