@@ -222,11 +222,12 @@ export default function PacientesPage() {
                   const p2 = (p.name || "").trim().toLowerCase();
                   return p1 === p2 || (p1 && p2 && (p1.includes(p2) || p2.includes(p1)));
                 });
+                const normH = (h: string) => (h || "").toLowerCase().replace(/[^0-9]/g, "");
                 if (aId) {
                   matchedCita = citasForP.find((c: any) => c.id === aId);
                 }
-                if (!matchedCita && pFecha) {
-                  matchedCita = citasForP.find((c: any) => c.fecha === pFecha && (!pHora || c.hora === pHora));
+                if (!matchedCita && pFecha && pHora) {
+                  matchedCita = citasForP.find((c: any) => c.fecha === pFecha && normH(c.hora) === normH(pHora));
                 }
                 if (!matchedCita && pFecha) {
                   matchedCita = citasForP.find((c: any) => c.fecha === pFecha);
