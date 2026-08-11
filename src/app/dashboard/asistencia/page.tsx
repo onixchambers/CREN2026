@@ -1043,29 +1043,29 @@ export default function AsistenciaPage() {
           </div>
         </div>
 
-        <div className="overflow-x-auto">
-          <table className="w-full text-xs text-center border-collapse">
-            <thead className="bg-[#0e2f44] text-white text-[9px] font-extrabold uppercase leading-tight tracking-wider">
+        <div className="overflow-x-auto w-full">
+          <table className="w-full text-xs text-center border-collapse table-auto">
+            <thead className="bg-[#0e2f44] text-white text-[8.5px] xl:text-[9.5px] font-extrabold uppercase leading-tight tracking-tight">
               <tr>
-                <th className="px-2 py-2.5 border-b border-[#0e2f44]">FECHA</th>
-                <th className="px-2 py-2.5 border-b border-[#0e2f44]">HORA</th>
-                <th className="px-2 py-2.5 border-b border-[#0e2f44]">TERAPEUTA</th>
-                <th className="px-2 py-2.5 border-b border-[#0e2f44]">ÁREA</th>
-                <th className="px-3 py-2.5 text-left border-b border-[#0e2f44]">PACIENTE</th>
-                <th className="px-2 py-2.5 border-b border-[#0e2f44]">SEXO</th>
-                <th className="px-2 py-2.5 border-b border-[#0e2f44]">EDAD</th>
-                <th className="px-2 py-2.5 border-b border-[#0e2f44]">TIPO DE<br/>SESIÓN</th>
-                <th className="px-2 py-2.5 border-b border-[#0e2f44]">ESTADO</th>
-                <th className="px-2 py-2.5 border-b border-[#0e2f44]">FRECUENCIA</th>
-                <th className="px-2 py-2.5 border-b border-[#0e2f44]">MÉTODO DE<br/>PAGO</th>
-                <th className="px-2 py-2.5 border-b border-[#0e2f44]">PAGO</th>
-                <th className="px-2 py-2.5 border-b border-[#0e2f44]">FACT.</th>
-                <th className="px-2 py-2.5 border-b border-[#0e2f44]">SALDO</th>
-                <th className="px-2 py-2.5 border-b border-[#0e2f44]">SUBTOTAL</th>
-                <th className="px-2 py-2.5 border-b border-[#0e2f44]">IVA</th>
-                <th className="px-2 py-2.5 border-b border-[#0e2f44]">TOTAL</th>
-                <th className="px-2 py-2.5 border-b border-[#0e2f44]">OBS</th>
-                <th className="px-2 py-2.5 border-b border-[#0e2f44]">ACCIONES</th>
+                <th className="px-1 py-2 border-b border-[#0e2f44] whitespace-nowrap">FECHA</th>
+                <th className="px-1 py-2 border-b border-[#0e2f44] whitespace-nowrap">HORA</th>
+                <th className="px-1 py-2 border-b border-[#0e2f44] whitespace-nowrap">TERAPEUTA</th>
+                <th className="px-1 py-2 border-b border-[#0e2f44] whitespace-nowrap">ÁREA</th>
+                <th className="px-1.5 py-2 text-left border-b border-[#0e2f44] whitespace-nowrap">PACIENTE</th>
+                <th className="px-1 py-2 border-b border-[#0e2f44] whitespace-nowrap">SEXO</th>
+                <th className="px-1 py-2 border-b border-[#0e2f44] whitespace-nowrap">EDAD</th>
+                <th className="px-1 py-2 border-b border-[#0e2f44] whitespace-nowrap">TIPO SESIÓN</th>
+                <th className="px-1 py-2 border-b border-[#0e2f44] whitespace-nowrap">ESTADO</th>
+                <th className="px-1 py-2 border-b border-[#0e2f44] whitespace-nowrap">FREC.</th>
+                <th className="px-1 py-2 border-b border-[#0e2f44] whitespace-nowrap">MÉTODO PAGO</th>
+                <th className="px-1 py-2 border-b border-[#0e2f44] whitespace-nowrap">PAGO</th>
+                <th className="px-1 py-2 border-b border-[#0e2f44] whitespace-nowrap">FACT.</th>
+                <th className="px-1 py-2 border-b border-[#0e2f44] whitespace-nowrap">SALDO</th>
+                <th className="px-1 py-2 border-b border-[#0e2f44] whitespace-nowrap">SUBTOTAL</th>
+                <th className="px-1 py-2 border-b border-[#0e2f44] whitespace-nowrap">IVA</th>
+                <th className="px-1 py-2 border-b border-[#0e2f44] whitespace-nowrap">TOTAL</th>
+                <th className="px-1 py-2 border-b border-[#0e2f44] whitespace-nowrap">OBS</th>
+                <th className="px-1 py-2 border-b border-[#0e2f44] whitespace-nowrap">ACCIONES</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-slate-100">
@@ -1085,21 +1085,21 @@ export default function AsistenciaPage() {
   const currentItems = asistenciasOrdenadas.slice(indexOfFirstItem, indexOfLastItem);
                 return currentItems.length > 0 ? currentItems.map(a => (
                 <tr key={a.id} className="hover:bg-slate-50 transition-colors">
-                  <td className="px-2 py-3 text-slate-500 font-medium">{formatDateStr(a.fecha)}</td>
-                  <td className="px-2 py-3 text-slate-500 font-medium">{a.horaRegistro || "-"}</td>
-                  <td className="px-2 py-3 text-slate-500 max-w-[100px] truncate" title={a.terapeuta}>{a.terapeuta}</td>
-                  <td className="px-2 py-3 text-slate-500">{a.area}</td>
-                  <td className="px-4 py-3 text-left font-bold text-[#1a5276] max-w-[150px] truncate" title={a.paciente}>{a.paciente}</td>
-                  <td className="px-2 py-3 text-slate-500">{a.sexo}</td>
-                  <td className="px-2 py-3 text-slate-500">{a.edad}</td>
-                  <td className="px-2 py-3 text-slate-500">{a.tipoSesion}</td>
-                  <td className="px-2 py-3">
-                    <span className={`px-2 py-1 rounded text-[10px] font-bold whitespace-nowrap ${a.estado === 'Asistio' ? 'bg-[#e6f4ea] text-[#1e8e3e]' : a.estado === 'Cancelo anticipadamente' || a.estado === 'Cancelo sin anticipacion' ? 'bg-orange-100 text-orange-700' : a.estado === 'Cancelo el centro' ? 'bg-red-100 text-red-700' : a.estado === 'Alta' ? 'bg-blue-100 text-blue-700' : 'bg-slate-100 text-slate-600'}`}>
+                  <td className="px-1 py-2 text-slate-500 font-medium text-[11px] whitespace-nowrap">{formatDateStr(a.fecha)}</td>
+                  <td className="px-1 py-2 text-slate-500 font-medium text-[11px] whitespace-nowrap">{a.horaRegistro || "-"}</td>
+                  <td className="px-1 py-2 text-slate-500 text-[11px] max-w-[85px] truncate" title={a.terapeuta}>{a.terapeuta}</td>
+                  <td className="px-1 py-2 text-slate-500 text-[11px] whitespace-nowrap">{a.area}</td>
+                  <td className="px-1.5 py-2 text-left font-bold text-[#1a5276] text-[11px] max-w-[130px] truncate" title={a.paciente}>{a.paciente}</td>
+                  <td className="px-1 py-2 text-slate-500 text-[11px]">{a.sexo}</td>
+                  <td className="px-1 py-2 text-slate-500 text-[11px]">{a.edad}</td>
+                  <td className="px-1 py-2 text-slate-500 text-[11px] whitespace-nowrap">{a.tipoSesion}</td>
+                  <td className="px-1 py-2 whitespace-nowrap">
+                    <span className={`px-1.5 py-0.5 rounded text-[9.5px] font-bold whitespace-nowrap ${a.estado === 'Asistio' ? 'bg-[#e6f4ea] text-[#1e8e3e]' : a.estado === 'Cancelo anticipadamente' || a.estado === 'Cancelo sin anticipacion' ? 'bg-orange-100 text-orange-700' : a.estado === 'Cancelo el centro' ? 'bg-red-100 text-red-700' : a.estado === 'Alta' ? 'bg-blue-100 text-blue-700' : 'bg-slate-100 text-slate-600'}`}>
                       {a.estado === 'Cancelo anticipadamente' ? 'Canceló C/A' : a.estado === 'Cancelo sin anticipacion' ? 'Canceló S/A' : a.estado === 'Cancelo el centro' ? 'Canceló C' : a.estado === 'Asistio' ? 'Asistió' : a.estado}
                     </span>
                   </td>
-                  <td className="px-2 py-3 text-slate-500">{a.frecuencia || "Única"}</td>
-                  <td className="px-2 py-3">
+                  <td className="px-1 py-2 text-slate-500 text-[11px] whitespace-nowrap">{a.frecuencia || "Única"}</td>
+                  <td className="px-1 py-2 whitespace-nowrap">
                     {(() => {
                       const val = a.metodoPago || "Efectivo";
                       let lines: string[] = [];
@@ -1116,11 +1116,11 @@ export default function AsistenciaPage() {
                         lines = [val];
                       }
                       return (
-                        <div className="w-full max-w-[130px] mx-auto flex flex-col items-stretch justify-center gap-0.5 my-0.5">
+                        <div className="w-full max-w-[110px] mx-auto flex flex-col items-stretch justify-center gap-0.5 my-0.5">
                           {lines.map((line, idx) => {
                             const isPorDefinir = line.toLowerCase().replace(/\s+/g, "").includes("pordefinir");
                             return (
-                              <span key={idx} className={`w-full border px-1.5 py-0.5 rounded text-[9.5px] font-bold block text-center whitespace-nowrap leading-tight shadow-xs ${isPorDefinir ? 'bg-red-500/20 text-red-800 border-red-300' : 'bg-blue-50 text-blue-800 border-blue-200'}`}>
+                              <span key={idx} className={`w-full border px-1 py-0.5 rounded text-[9px] font-bold block text-center whitespace-nowrap leading-tight shadow-xs ${isPorDefinir ? 'bg-red-500/20 text-red-800 border-red-300' : 'bg-blue-50 text-blue-800 border-blue-200'}`}>
                                 {line}
                               </span>
                             );
@@ -1129,21 +1129,21 @@ export default function AsistenciaPage() {
                       );
                     })()}
                   </td>
-                  <td className="px-2 py-3 text-slate-500">{a.pago || "SÍ"}</td>
-                  <td className="px-2 py-3">
-                    <div className="flex flex-col items-center gap-1">
-                      <span className="text-[10px] font-bold text-slate-600 uppercase">{a.fact || "SÍ"}</span>
+                  <td className="px-1 py-2 text-slate-500 text-[11px]">{a.pago || "SÍ"}</td>
+                  <td className="px-1 py-2 whitespace-nowrap">
+                    <div className="flex flex-col items-center gap-0.5">
+                      <span className="text-[9px] font-bold text-slate-600 uppercase">{a.fact || "SÍ"}</span>
                       <button
                         type="button"
                         onClick={() => setPrefacturaModalData(a)}
-                        className="bg-[#27ae60] hover:bg-[#219653] text-white font-black px-2 py-0.5 rounded text-[10px] shadow-2xs transition-colors cursor-pointer flex items-center gap-0.5 uppercase"
+                        className="bg-[#27ae60] hover:bg-[#219653] text-white font-black px-1.5 py-0.5 rounded text-[9px] shadow-2xs transition-colors cursor-pointer flex items-center gap-0.5 uppercase"
                         title="Generar Prefactura en formato PDF CREN"
                       >
                         <span>📄 PDF</span>
                       </button>
                     </div>
                   </td>
-                  <td className="px-2 py-3">
+                  <td className="px-1 py-2 text-[11px] whitespace-nowrap">
                     {(() => {
                       const sVal = typeof a.saldo === "number" ? a.saldo : parseFloat(a.saldo || "0");
                       if (isNaN(sVal) || Math.abs(sVal) < 0.01) {
@@ -1155,20 +1155,20 @@ export default function AsistenciaPage() {
                       }
                     })()}
                   </td>
-                  <td className="px-2 py-3 font-medium text-slate-600">{a.subtotal}</td>
-                  <td className="px-2 py-3 font-semibold text-amber-600">{a.iva || "$0.00"}</td>
-                  <td className="px-2 py-3 font-bold text-[#1a5276]">{a.total}</td>
-                  <td className="px-2 py-3 text-slate-500 max-w-[100px] truncate" title={a.obs}>{a.obs}</td>
-                  <td className="px-2 py-3">
-                    <div className="flex items-center justify-center gap-2">
+                  <td className="px-1 py-2 font-medium text-slate-600 text-[11px] whitespace-nowrap">{a.subtotal}</td>
+                  <td className="px-1 py-2 font-semibold text-amber-600 text-[11px] whitespace-nowrap">{a.iva || "$0.00"}</td>
+                  <td className="px-1 py-2 font-bold text-[#1a5276] text-[11px] whitespace-nowrap">{a.total}</td>
+                  <td className="px-1 py-2 text-slate-500 text-[11px] max-w-[80px] truncate" title={a.obs}>{a.obs}</td>
+                  <td className="px-1 py-2 whitespace-nowrap">
+                    <div className="flex items-center justify-center gap-1.5">
                       {((userRole.toUpperCase() !== "TERAPEUTA" && userRole.toUpperCase() !== "INVITADO") || allowTherapistEdit) && (
                         <button onClick={() => openEditModal(a)} className="text-slate-400 hover:text-[#1a5276]" title="Editar">
-                          <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 24 24"><path d="M3 17.25V21h3.75L17.81 9.94l-3.75-3.75L3 17.25zM20.71 7.04c.39-.39.39-1.02 0-1.41l-2.34-2.34c-.39-.39-1.02-.39-1.41 0l-1.83 1.83 3.75 3.75 1.83-1.83z"/></svg>
+                          <svg className="w-3.5 h-3.5" fill="currentColor" viewBox="0 0 24 24"><path d="M3 17.25V21h3.75L17.81 9.94l-3.75-3.75L3 17.25zM20.71 7.04c.39-.39.39-1.02 0-1.41l-2.34-2.34c-.39-.39-1.02-.39-1.41 0l-1.83 1.83 3.75 3.75 1.83-1.83z"/></svg>
                         </button>
                       )}
                       {((userRole.toUpperCase() !== "TERAPEUTA" && userRole.toUpperCase() !== "INVITADO") || allowTherapistEdit) && (
                         <button onClick={() => handleDeleteAsistencia(a.id)} className="text-slate-400 hover:text-red-600" title="Eliminar">
-                          <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 24 24"><path d="M6 19c0 1.1.9 2 2 2h8c1.1 0 2-.9 2-2V7H6v12zM19 4h-3.5l-1-1h-5l-1 1H5v2h14V4z"/></svg>
+                          <svg className="w-3.5 h-3.5" fill="currentColor" viewBox="0 0 24 24"><path d="M6 19c0 1.1.9 2 2 2h8c1.1 0 2-.9 2-2V7H6v12zM19 4h-3.5l-1-1h-5l-1 1H5v2h14V4z"/></svg>
                         </button>
                       )}
                     </div>
@@ -1176,7 +1176,7 @@ export default function AsistenciaPage() {
                 </tr>
               )) : (
                   <tr>
-                    <td colSpan={17} className="px-4 py-8 text-center text-slate-400 font-medium">
+                    <td colSpan={19} className="px-4 py-8 text-center text-slate-400 font-medium">
                       Sin registros.
                     </td>
                   </tr>
