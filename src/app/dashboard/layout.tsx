@@ -25,7 +25,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
 
   useEffect(() => {
     const saved = localStorage.getItem("cren_theme");
-    if (saved === "dark" || (!saved && window.matchMedia && window.matchMedia("(prefers-color-scheme: dark)").matches)) {
+    if (saved === "dark") {
       setIsDark(true);
       document.documentElement.classList.add("dark");
     } else {
