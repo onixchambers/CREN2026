@@ -115,13 +115,13 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
 
         const roleUpper = (userRole || "").toUpperCase();
         if (roleUpper === "TERAPEUTA" && bRes.broadcast.active === true) {
+          const normUser = (userName || "").toLowerCase().trim().replace(/^lic\.\s*/i, "");
           const isTargeted = targets.includes("TODOS") || targets.some((t: string) => {
             const normT = t.toLowerCase().trim().replace(/^lic\.\s*/i, "");
-            const normUser = (userName || "").toLowerCase().trim().replace(/^lic\.\s*/i, "");
-            return normT === normUser || (normT.length >= 3 && normUser.length >= 3 && (normT.includes(normUser) || normUser.includes(normT)));
+            return normT === normUser;
           });
 
-          if (isTargeted) {
+          if (isTargeted && normUser.length > 0) {
             const seenId = localStorage.getItem("seen_therapist_bcast_id");
             if (seenId !== bRes.broadcast.id) {
               setShowTherapistPopup(true);
