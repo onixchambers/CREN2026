@@ -113,9 +113,9 @@ export function EditPatientModal({
   }, [patient]);
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement>) => {
-    if (!canEdit) return;
     const target = e.target as HTMLInputElement;
     const { name, type, value, checked } = target;
+    if (!canEdit && name !== "fechaNacimiento" && name !== "fechaIngreso") return;
     setFormData((prev: any) => ({
       ...prev,
       [name]: type === "checkbox" ? checked : value,
@@ -212,8 +212,7 @@ export function EditPatientModal({
                   name="fechaNacimiento"
                   value={formData.fechaNacimiento ? formData.fechaNacimiento.split("T")[0] : ""}
                   onChange={handleInputChange}
-                  disabled={!canEdit}
-                  className="w-full p-2 border border-slate-300 rounded text-sm text-slate-900 focus:border-[#2980b9] outline-none disabled:bg-slate-50 disabled:text-slate-400"
+                  className="w-full p-2 border border-slate-300 rounded text-sm text-slate-900 focus:border-[#2980b9] outline-none"
                 />
               </div>
 
@@ -240,8 +239,7 @@ export function EditPatientModal({
                   name="fechaIngreso"
                   value={formData.fechaIngreso ? formData.fechaIngreso.split("T")[0] : ""}
                   onChange={handleInputChange}
-                  disabled={!canEdit}
-                  className="w-full p-2 border border-slate-300 rounded text-sm text-slate-900 focus:border-[#2980b9] outline-none disabled:bg-slate-50 disabled:text-slate-400"
+                  className="w-full p-2 border border-slate-300 rounded text-sm text-slate-900 focus:border-[#2980b9] outline-none"
                 />
               </div>
 
