@@ -124,16 +124,21 @@ export function EditPatientModal({
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!canEdit) return;
     setIsSubmitting(true);
 
-    const submissionData = {
-      ...formData,
-      pacienteContacto: formData.pacienteContacto ? `${pacienteCountryCode} ${formData.pacienteContacto}`.trim() : null,
-      madreContacto: formData.madreContacto ? `${madreCountryCode} ${formData.madreContacto}`.trim() : null,
-      padreContacto: formData.padreContacto ? `${padreCountryCode} ${formData.padreContacto}`.trim() : null,
-      otrosContacto: formData.otrosContacto ? `${otrosCountryCode} ${formData.otrosContacto}`.trim() : null,
-    };
+    // Si no tiene permiso de edición general, solo guarda las fechas
+    const submissionData = canEdit
+      ? {
+          ...formData,
+          pacienteContacto: formData.pacienteContacto ? `${pacienteCountryCode} ${formData.pacienteContacto}`.trim() : null,
+          madreContacto: formData.madreContacto ? `${madreCountryCode} ${formData.madreContacto}`.trim() : null,
+          padreContacto: formData.padreContacto ? `${padreCountryCode} ${formData.padreContacto}`.trim() : null,
+          otrosContacto: formData.otrosContacto ? `${otrosCountryCode} ${formData.otrosContacto}`.trim() : null,
+        }
+      : {
+          fechaNacimiento: formData.fechaNacimiento,
+          fechaIngreso: formData.fechaIngreso,
+        };
 
     try {
       const res = await updatePatient(patient.id, submissionData);
@@ -211,8 +216,8 @@ export function EditPatientModal({
                   type="date"
                   name="fechaNacimiento"
                   value={formData.fechaNacimiento ? formData.fechaNacimiento.split("T")[0] : ""}
-                  onChange={handleInputChange}
-                  className="w-full p-2 border border-slate-300 rounded text-sm text-slate-900 focus:border-[#2980b9] outline-none"
+                  onChange={(e) => setFormData((prev: any) => ({ ...prev, fechaNacimiento: e.target.value }))}
+                  className="w-full p-2 border border-slate-300 rounded text-sm text-slate-900 focus:border-[#2980b9] outline-none bg-white"
                 />
               </div>
 
@@ -238,8 +243,8 @@ export function EditPatientModal({
                   type="date"
                   name="fechaIngreso"
                   value={formData.fechaIngreso ? formData.fechaIngreso.split("T")[0] : ""}
-                  onChange={handleInputChange}
-                  className="w-full p-2 border border-slate-300 rounded text-sm text-slate-900 focus:border-[#2980b9] outline-none"
+                  onChange={(e) => setFormData((prev: any) => ({ ...prev, fechaIngreso: e.target.value }))}
+                  className="w-full p-2 border border-slate-300 rounded text-sm text-slate-900 focus:border-[#2980b9] outline-none bg-white"
                 />
               </div>
 
