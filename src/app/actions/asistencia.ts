@@ -74,13 +74,17 @@ export async function saveAsistenciaDB(data: any) {
     // 3. Fallback por fecha y hora exacta
     if (!targetSession && data.hora) {
       for (const s of existingSessions) {
-        const sFecha = s.date.toISOString().split("T")[0];
+        let sFecha = "";
         let sHora = "";
         if (s.notes) {
           try {
             const extra = JSON.parse(s.notes);
+            if (extra.fecha) sFecha = extra.fecha;
             if (extra.hora) sHora = extra.hora;
           } catch(e) {}
+        }
+        if (!sFecha) {
+          sFecha = s.date.toISOString().split("T")[0];
         }
         if (!sHora) {
           sHora = s.date.toISOString().split("T")[1]?.substring(0, 5) || "";
@@ -99,13 +103,17 @@ export async function saveAsistenciaDB(data: any) {
         where: { patientId: patient.id }
       });
       for (const s of allPatientSessions) {
-        const sFecha = s.date.toISOString().split("T")[0];
+        let sFecha = "";
         let sHora = "";
         if (s.notes) {
           try {
             const extra = JSON.parse(s.notes);
+            if (extra.fecha) sFecha = extra.fecha;
             if (extra.hora) sHora = extra.hora;
           } catch(e) {}
+        }
+        if (!sFecha) {
+          sFecha = s.date.toISOString().split("T")[0];
         }
         if (!sHora) {
           sHora = s.date.toISOString().split("T")[1]?.substring(0, 5) || "";

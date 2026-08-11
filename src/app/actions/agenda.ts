@@ -18,27 +18,44 @@ export async function getAgenda() {
       }
     });
 
-    const citas = sessions.map(s => {
-      let extra = {};
+    const seenMap = new Map<string, any>();
+
+    for (const s of sessions) {
+      let extra: any = {};
       try {
         if (s.notes) extra = JSON.parse(s.notes);
       } catch (e) {}
 
-      return {
+      const fecha = extra.fecha || s.date.toISOString().split("T")[0];
+      const hora = extra.hora || "09:00";
+      const key = `${s.patientId}_${s.therapistId}_${fecha}_${hora}`;
+
+      const estado = extra.estadoAsistencia || extra.estado || (s.status === "COMPLETED" ? "Asistio" : (s.status === "CANCELLED" ? "Cancelo sin anticipacion" : "Agendado"));
+
+      const item = {
         id: s.id,
         paciente: s.patient?.name || "Desconocido",
         terapeuta: s.therapist?.name || "Desconocido",
-        fecha: (extra as any).fecha || s.date.toISOString().split("T")[0],
-        hora: (extra as any).hora || "09:00",
-        tipoServicio: (extra as any).tipoServicio || "individual",
-        frecuencia: (extra as any).frecuencia || "semanal",
-        estado: (extra as any).estadoAsistencia || (extra as any).estado || (s.status === "COMPLETED" ? "Asistio" : (s.status === "CANCELLED" ? "Cancelo sin anticipacion" : "Agendado")),
-        pagado: (extra as any).pagado || false,
-        metodoPago: (extra as any).metodoPago || ""
+        fecha,
+        hora,
+        tipoServicio: extra.tipoServicio || "individual",
+        frecuencia: extra.frecuencia || "semanal",
+        estado,
+        pagado: extra.pagado || false,
+        metodoPago: extra.metodoPago || ""
       };
-    });
 
-    return { success: true, data: citas };
+      if (!seenMap.has(key)) {
+        seenMap.set(key, item);
+      } else {
+        const prev = seenMap.get(key);
+        if (item.estado === "Asistio" || item.estado.includes("Cancelo")) {
+          seenMap.set(key, item);
+        }
+      }
+    }
+
+    return { success: true, data: Array.from(seenMap.values()) };
   } catch (error) {
     console.error("Error obteniendo agenda:", error);
     return { success: false, error: "Error al cargar la agenda." };
