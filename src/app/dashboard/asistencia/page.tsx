@@ -86,8 +86,8 @@ export default function AsistenciaPage() {
 
   const handleAddPrice = async () => {
     const val = parseFloat(newPriceInput);
-    if (isNaN(val) || val <= 0) {
-      alert("Por favor ingresa un precio válido mayor a 0.");
+    if (isNaN(val) || val < 0) {
+      alert("Por favor ingresa un precio válido igual o mayor a 0.");
       return;
     }
     setIsAddingPrice(true);
@@ -1454,8 +1454,8 @@ export default function AsistenciaPage() {
                 <input
                   type="number"
                   step="50"
-                  min="1"
-                  placeholder="Ej. 1200"
+                  min="0"
+                  placeholder="Ej. 0.00 o 1200"
                   value={newPriceInput}
                   onChange={(e) => setNewPriceInput(e.target.value)}
                   className="flex-1 text-sm p-2 border border-emerald-300 rounded-lg focus:border-[#27ae60] outline-none text-slate-700 bg-white font-medium"

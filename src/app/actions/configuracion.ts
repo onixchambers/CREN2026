@@ -519,15 +519,15 @@ export async function getTherapyPrices() {
     const s = await prisma.systemSettings.findUnique({ where: { id: 1 } });
     const raw = (s as any)?.therapyPrices;
     if (raw && typeof raw === "string" && raw.trim()) {
-      const parsed = raw.split(",").map(p => parseFloat(p.trim())).filter(p => !isNaN(p) && p > 0);
+      const parsed = raw.split(",").map(p => parseFloat(p.trim())).filter(p => !isNaN(p) && p >= 0);
       if (parsed.length > 0) {
         return { success: true, prices: Array.from(new Set(parsed)).sort((a, b) => a - b) };
       }
     }
-    const defaultPrices = [400, 450, 500, 550, 600, 650, 700, 750, 800, 850, 900, 950];
+    const defaultPrices = [0, 400, 450, 500, 550, 600, 650, 700, 750, 800, 850, 900, 950];
     return { success: true, prices: defaultPrices };
   } catch (e) {
-    return { success: true, prices: [400, 450, 500, 550, 600, 650, 700, 750, 800, 850, 900, 950] };
+    return { success: true, prices: [0, 400, 450, 500, 550, 600, 650, 700, 750, 800, 850, 900, 950] };
   }
 }
 
@@ -538,8 +538,8 @@ export async function addTherapyPrice(price: number) {
       return { success: false, error: "Únicamente el usuario con rol Administrador o Invitado puede agregar o modificar precios de terapia." };
     }
 
-    if (!price || isNaN(price) || price <= 0) {
-      return { success: false, error: "El precio debe ser un número mayor a 0." };
+    if (price === undefined || price === null || isNaN(price) || price < 0) {
+      return { success: false, error: "El precio debe ser un número igual o mayor a 0." };
     }
 
     const currentRes = await getTherapyPrices();
