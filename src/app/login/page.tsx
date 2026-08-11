@@ -43,27 +43,39 @@ export default function LoginPage() {
   };
 
   return (
-    <div className="min-h-screen bg-[#0e2f44] flex items-center justify-center p-4">
-      <div className="w-full max-w-md -mt-12">
-        <div className="text-center mb-8 flex flex-col items-center">
-          <img src="/logo.png" alt="CREN Logo" className="w-64 h-auto drop-shadow-lg" />
+    <div 
+      className="min-h-screen w-full flex items-center justify-center p-4 bg-cover bg-center bg-no-repeat relative overflow-hidden"
+      style={{ backgroundImage: "url('/cren-login-bg.jpg')" }}
+    >
+      {/* Overlay sutil para oscurecer y dar profundidad */}
+      <div className="absolute inset-0 bg-[#09141f]/35 backdrop-blur-[2px]" />
+
+      <div className="w-full max-w-sm sm:max-w-md relative z-10 flex flex-col items-center my-auto">
+        {/* LOGO SUPERIOR CREN */}
+        <div className="text-center mb-6 flex flex-col items-center transform hover:scale-105 transition-transform duration-300">
+          <img 
+            src="/logo.png" 
+            alt="CREN Logo" 
+            className="w-56 sm:w-64 h-auto drop-shadow-[0_10px_20px_rgba(0,0,0,0.8)] filter brightness-110" 
+          />
         </div>
 
-        <div className="bg-white rounded-2xl p-8 shadow-2xl">
-          <h2 className="text-2xl font-bold text-center text-blue-900 mb-6">
+        {/* TARJETA DE INICIO DE SESIÓN GLASSMORPHISM */}
+        <div className="w-full bg-[#112435]/75 backdrop-blur-md rounded-2xl sm:rounded-3xl p-6 sm:p-8 shadow-[0_20px_50px_rgba(0,0,0,0.7)] border border-slate-500/25">
+          <h2 className="text-xl sm:text-2xl font-extrabold text-center text-white mb-6 tracking-wide drop-shadow-sm">
             Iniciar Sesión
           </h2>
 
           {error && (
-            <div className="bg-red-50 text-red-600 p-3 rounded-lg text-sm mb-4 text-center font-medium">
-              {error}
+            <div className="bg-red-500/20 border border-red-500/50 text-red-200 p-3 rounded-xl text-xs sm:text-sm mb-5 text-center font-semibold animate-in fade-in">
+              ⚠️ {error}
             </div>
           )}
 
-          <form onSubmit={handleSubmit} className="space-y-5">
+          <form onSubmit={handleSubmit} className="space-y-4 sm:space-y-5">
             <div>
-              <label className="block text-xs font-semibold text-gray-500 uppercase tracking-wide mb-2">
-                Usuario
+              <label className="block text-[11px] font-bold text-slate-300 uppercase tracking-wider mb-1.5">
+                USUARIO
               </label>
               <input
                 type="text"
@@ -72,15 +84,15 @@ export default function LoginPage() {
                 autoCapitalize="none"
                 autoCorrect="off"
                 spellCheck={false}
-                className="w-full px-4 py-3 rounded-lg border-2 border-gray-200 focus:border-blue-500 focus:ring-4 focus:ring-blue-500/10 transition-all outline-none text-slate-900 font-medium"
-                placeholder="Nombre de usuario"
+                className="w-full px-4 py-2.5 sm:py-3 rounded-xl bg-[#091522]/80 border border-slate-600/60 focus:border-cyan-400 focus:ring-2 focus:ring-cyan-400/20 transition-all outline-none text-white font-medium text-sm placeholder-slate-500 shadow-inner"
+                placeholder="Usuario"
                 required
               />
             </div>
 
             <div>
-              <label className="block text-xs font-semibold text-gray-500 uppercase tracking-wide mb-2">
-                Contraseña
+              <label className="block text-[11px] font-bold text-slate-300 uppercase tracking-wider mb-1.5">
+                CONTRASEÑA
               </label>
               <input
                 type="password"
@@ -89,7 +101,7 @@ export default function LoginPage() {
                 autoCapitalize="none"
                 autoCorrect="off"
                 spellCheck={false}
-                className="w-full px-4 py-3 rounded-lg border-2 border-gray-200 focus:border-blue-500 focus:ring-4 focus:ring-blue-500/10 transition-all outline-none text-slate-900 font-medium"
+                className="w-full px-4 py-2.5 sm:py-3 rounded-xl bg-[#091522]/80 border border-slate-600/60 focus:border-cyan-400 focus:ring-2 focus:ring-cyan-400/20 transition-all outline-none text-white font-medium text-sm placeholder-slate-500 shadow-inner"
                 placeholder="••••••••"
                 required
               />
@@ -98,7 +110,7 @@ export default function LoginPage() {
             <button
               type="submit"
               disabled={loading}
-              className="w-full bg-[#1a5276] hover:bg-[#0e2f44] text-white font-bold py-3 px-4 rounded-lg transition-colors disabled:opacity-50 flex items-center justify-center gap-2"
+              className="w-full mt-2 bg-gradient-to-r from-[#296893] to-[#174669] hover:from-[#3179aa] hover:to-[#1e5884] text-white font-bold py-3 px-4 rounded-xl transition-all shadow-lg hover:shadow-cyan-950/50 disabled:opacity-50 flex items-center justify-center gap-2 cursor-pointer border border-cyan-400/30 text-sm"
             >
               {loading && (
                 <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
@@ -108,8 +120,11 @@ export default function LoginPage() {
           </form>
         </div>
 
-        <div className="text-center mt-8">
-          <p className="text-[#a5c2d4] text-lg font-medium tracking-wide">Sistema Operativo-Financiero</p>
+        {/* PIE DE PÁGINA */}
+        <div className="text-center mt-6">
+          <p className="text-slate-400/90 text-xs sm:text-sm font-medium tracking-wider drop-shadow-sm">
+            Sistema Operativo-Financiero
+          </p>
         </div>
       </div>
     </div>
