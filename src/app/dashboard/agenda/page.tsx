@@ -293,37 +293,32 @@ export default function AgendaPage() {
 
   const handleStatusChange = async (estado: string) => {
     if (!selectedCitaForStatus) return;
-    const isAttendanceStatus = ["Asistió", "Canceló con Anticipación", "Canceló sin Anticipación", "Canceló el Centro"].includes(estado);
     
     try {
       const updatedData = { ...selectedCitaForStatus, estado };
       await updateCita(selectedCitaForStatus.id, updatedData);
       setCitas(citas.map(c => c.id === selectedCitaForStatus.id ? updatedData : c));
       
-      if (isAttendanceStatus) {
-         const tMatch = terapeutasFullData.find((t: any) => (t.name || "").trim().toLowerCase() === (selectedCitaForStatus.terapeuta || "").trim().toLowerCase());
-         const areaFinal = selectedCitaForStatus.area || selectedCitaForStatus.especialidad || tMatch?.especialidad || "";
+      const tMatch = terapeutasFullData.find((t: any) => (t.name || "").trim().toLowerCase() === (selectedCitaForStatus.terapeuta || "").trim().toLowerCase());
+      const areaFinal = selectedCitaForStatus.area || selectedCitaForStatus.especialidad || tMatch?.especialidad || "";
 
-         const prefillData = {
-           agendaId: selectedCitaForStatus.id,
-           pacienteNombre: selectedCitaForStatus.paciente,
-           fecha: selectedCitaForStatus.fecha,
-           hora: selectedCitaForStatus.hora,
-           terapeuta: selectedCitaForStatus.terapeuta,
-           area: areaFinal,
-           tipoSesion: selectedCitaForStatus.tipoServicio,
-           estadoAsistencia: estado,
-           numeroSesiones: selectedCitaForStatus.numeroSesiones?.toString() || "1",
-           frecuencia: selectedCitaForStatus.frecuencia || "unica",
-           pagado: selectedCitaForStatus.pagado,
-           metodoPago: selectedCitaForStatus.metodoPago
-         };
-         sessionStorage.setItem("prefillAsistencia", JSON.stringify(prefillData));
-         window.location.href = "/dashboard/asistencia";
-         return;
-      } else {
-         alert(`Estado actualizado a '${estado}'.`);
-      }
+      const prefillData = {
+        agendaId: selectedCitaForStatus.id,
+        pacienteNombre: selectedCitaForStatus.paciente,
+        fecha: selectedCitaForStatus.fecha,
+        hora: selectedCitaForStatus.hora,
+        terapeuta: selectedCitaForStatus.terapeuta,
+        area: areaFinal,
+        tipoSesion: selectedCitaForStatus.tipoServicio,
+        estadoAsistencia: estado,
+        numeroSesiones: selectedCitaForStatus.numeroSesiones?.toString() || "1",
+        frecuencia: selectedCitaForStatus.frecuencia || "unica",
+        pagado: selectedCitaForStatus.pagado,
+        metodoPago: selectedCitaForStatus.metodoPago
+      };
+      sessionStorage.setItem("prefillAsistencia", JSON.stringify(prefillData));
+      window.location.href = "/dashboard/asistencia";
+      return;
     } catch (err) {
       console.error(err);
       alert("Hubo un error al actualizar el estado.");
@@ -455,16 +450,10 @@ export default function AgendaPage() {
         style: { color: "#7c2d12", backgroundColor: "rgba(254, 215, 170, 0.85)" }
       };
     }
-    if (est === "agendado" || est === "alta") {
-      return {
-        className: "bg-emerald-100 text-emerald-900 border-emerald-400 font-bold shadow-sm",
-        style: { color: "#065f46", backgroundColor: "#d1fae5" }
-      };
-    }
     if (est.includes("asisti") || est === "asistio") {
       return {
-        className: "bg-slate-200 text-slate-800 border-slate-300 font-bold shadow-sm",
-        style: { color: "#1e293b", backgroundColor: "#e2e8f0" }
+        className: "bg-[#e6f4ea] text-[#1e8e3e] border-[#a7f3d0] font-bold shadow-sm",
+        style: { color: "#1e8e3e", backgroundColor: "#e6f4ea" }
       };
     }
     if (est === "baja") {
@@ -480,9 +469,10 @@ export default function AgendaPage() {
       };
     }
     
+    // Default y Agendado (ej. Ginna Hudson) -> AMARILLO (Yellow)
     return {
-      className: "bg-emerald-100 text-emerald-900 border-emerald-400 font-bold shadow-sm",
-      style: { color: "#065f46", backgroundColor: "#d1fae5" }
+      className: "bg-yellow-100 text-yellow-900 border-yellow-300 font-bold shadow-sm",
+      style: { color: "#713f12", backgroundColor: "#fef9c3" }
     };
   };
 
