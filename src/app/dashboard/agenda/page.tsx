@@ -299,26 +299,32 @@ export default function AgendaPage() {
       await updateCita(selectedCitaForStatus.id, updatedData);
       setCitas(citas.map(c => c.id === selectedCitaForStatus.id ? updatedData : c));
       
-      const tMatch = terapeutasFullData.find((t: any) => (t.name || "").trim().toLowerCase() === (selectedCitaForStatus.terapeuta || "").trim().toLowerCase());
-      const areaFinal = selectedCitaForStatus.area || selectedCitaForStatus.especialidad || tMatch?.especialidad || "";
+      const sNorm = (estado || "").trim().toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "");
+      const isAsistio = sNorm.includes("asisti") || sNorm === "asistio";
 
-      const prefillData = {
-        agendaId: selectedCitaForStatus.id,
-        pacienteNombre: selectedCitaForStatus.paciente,
-        fecha: selectedCitaForStatus.fecha,
-        hora: selectedCitaForStatus.hora,
-        terapeuta: selectedCitaForStatus.terapeuta,
-        area: areaFinal,
-        tipoSesion: selectedCitaForStatus.tipoServicio,
-        estadoAsistencia: estado,
-        numeroSesiones: selectedCitaForStatus.numeroSesiones?.toString() || "1",
-        frecuencia: selectedCitaForStatus.frecuencia || "unica",
-        pagado: selectedCitaForStatus.pagado,
-        metodoPago: selectedCitaForStatus.metodoPago
-      };
-      sessionStorage.setItem("prefillAsistencia", JSON.stringify(prefillData));
-      window.location.href = "/dashboard/asistencia";
-      return;
+      // Solo redirigir a la pestaña de Asistencia si el estado es "Asistió"
+      if (isAsistio) {
+        const tMatch = terapeutasFullData.find((t: any) => (t.name || "").trim().toLowerCase() === (selectedCitaForStatus.terapeuta || "").trim().toLowerCase());
+        const areaFinal = selectedCitaForStatus.area || selectedCitaForStatus.especialidad || tMatch?.especialidad || "";
+
+        const prefillData = {
+          agendaId: selectedCitaForStatus.id,
+          pacienteNombre: selectedCitaForStatus.paciente,
+          fecha: selectedCitaForStatus.fecha,
+          hora: selectedCitaForStatus.hora,
+          terapeuta: selectedCitaForStatus.terapeuta,
+          area: areaFinal,
+          tipoSesion: selectedCitaForStatus.tipoServicio,
+          estadoAsistencia: estado,
+          numeroSesiones: selectedCitaForStatus.numeroSesiones?.toString() || "1",
+          frecuencia: selectedCitaForStatus.frecuencia || "unica",
+          pagado: selectedCitaForStatus.pagado,
+          metodoPago: selectedCitaForStatus.metodoPago
+        };
+        sessionStorage.setItem("prefillAsistencia", JSON.stringify(prefillData));
+        window.location.href = "/dashboard/asistencia";
+        return;
+      }
     } catch (err) {
       console.error(err);
       alert("Hubo un error al actualizar el estado.");
