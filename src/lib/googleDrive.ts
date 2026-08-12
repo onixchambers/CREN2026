@@ -102,7 +102,7 @@ export async function uploadFileToGoogleDrive(fileBuffer: Buffer, fileName: stri
       try {
         const response = await fetch(webhookUrl.trim(), {
           method: "POST",
-          headers: { "Content-Type": "application/json" },
+          headers: { "Content-Type": "text/plain;charset=utf-8" },
           body: JSON.stringify({
             fileName: fileName,
             mimeType: mimeType,
@@ -118,16 +118,19 @@ export async function uploadFileToGoogleDrive(fileBuffer: Buffer, fileName: stri
           scriptData = JSON.parse(text);
         } catch (e) {}
 
-        if (scriptData && scriptData.success && scriptData.webViewLink) {
+        const webViewLink = scriptData?.webViewLink || scriptData?.url || scriptData?.link || scriptData?.fileUrl || "https://drive.google.com";
+        if (scriptData && (scriptData.success !== false) && (scriptData.fileId || scriptData.id || scriptData.success || webViewLink !== "https://drive.google.com")) {
           return {
             success: true,
-            fileId: scriptData.fileId || "gdrive",
+            fileId: scriptData.fileId || scriptData.id || "gdrive",
             fileName: fileName,
-            webViewLink: scriptData.webViewLink,
-            webContentLink: scriptData.webViewLink,
+            webViewLink: webViewLink,
+            webContentLink: webViewLink,
           };
         } else if (scriptData && scriptData.error) {
           console.warn("Apps Script Webhook returned error, using fallback:", scriptData.error);
+        } else {
+          console.warn("Apps Script Webhook response text:", text.slice(0, 300));
         }
       } catch (e) {
         console.warn("Apps Script Webhook fetch failed, using fallback:", e);
@@ -175,7 +178,7 @@ export async function uploadFileToGoogleDrive(fileBuffer: Buffer, fileName: stri
     ]);
 
     const uploadRes = await fetch(
-      "https://www.googleapis.com/upload/drive/v3/files?uploadType=multipart&supportsAllDrives=true&fields=id,name,webViewLink,webContentLink",
+      "https://www.googleapis.com/upload/drive/v3/files?uploadType=multipart&supportsAllDrives=true&supportsTeamDrives=true&enforceSingleParent=true&fields=id,name,webViewLink,webContentLink",
       {
         method: "POST",
         headers: {
