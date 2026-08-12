@@ -452,8 +452,8 @@ export default function AgendaPage() {
     }
     if (est.includes("asisti") || est === "asistio") {
       return {
-        className: "bg-[#e6f4ea] text-[#1e8e3e] border-[#a7f3d0] font-bold shadow-sm",
-        style: { color: "#1e8e3e", backgroundColor: "#e6f4ea" }
+        className: "bg-slate-200 text-slate-800 border-slate-300 font-bold shadow-sm",
+        style: { color: "#1e293b", backgroundColor: "#e2e8f0" }
       };
     }
     if (est === "baja") {
