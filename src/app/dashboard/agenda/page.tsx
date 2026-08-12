@@ -476,6 +476,19 @@ export default function AgendaPage() {
     };
   };
 
+  const formatEstadoLabel = (estRaw: string) => {
+    if (!estRaw) return "AGENDADO";
+    const s = estRaw.trim().toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "");
+    if (s === "disponible") return "Abierto";
+    if (s.includes("ocupado") || s.includes("no disponible")) return "Bloqueado";
+    if (s.includes("centro")) return "CANCELÓ EL CENTRO";
+    if (s.includes("sin anticipacion") || s.includes("sin anticipa")) return "CANCELÓ SIN ANTICIPACIÓN";
+    if (s.includes("anticipad") || s.includes("con anticipacion")) return "CANCELÓ CON ANTICIPACIÓN";
+    if (s.includes("asisti") || s === "asistio") return "ASISTIÓ";
+    if (s.includes("agend")) return "AGENDADO";
+    return estRaw.toUpperCase();
+  };
+
   if (isLoading || isLoadingTerapeutas) {
     return (
       <div className="flex items-center justify-center p-12">
@@ -675,7 +688,7 @@ export default function AgendaPage() {
                                       {cita.estado === 'Disponible' ? 'DISPONIBLE' : ((cita.estado === "Ocupado" || cita.estado === "No Disponible" || cita.paciente === "No Disponible") ? "No Disp." : cita.paciente.split(' ')[0])}
                                     </span>
                                     <span className="opacity-90 uppercase mt-0.5 truncate w-full text-center">
-                                      {cita.estado === 'Disponible' ? 'Abierto' : ((cita.estado === "Ocupado" || cita.estado === "No Disponible" || cita.paciente === "No Disponible") ? "Bloqueado" : (cita.estado || "Agendado"))}
+                                      {formatEstadoLabel(cita.estado)}
                                     </span>
                                   </div>
                                 );
@@ -764,7 +777,7 @@ export default function AgendaPage() {
                                     {cita.estado === 'Disponible' ? 'DISPONIBLE' : ((cita.estado === "Ocupado" || cita.estado === "No Disponible" || cita.paciente === "No Disponible") ? "No Disponible" : cita.paciente)}
                                   </span>
                                   <span className="text-[10px] opacity-90 uppercase mt-0.5 truncate w-full text-center">
-                                    {cita.estado === 'Disponible' ? 'Abierto' : ((cita.estado === "Ocupado" || cita.estado === "No Disponible" || cita.paciente === "No Disponible") ? "Bloqueado" : (cita.estado || "Agendado"))}
+                                    {formatEstadoLabel(cita.estado)}
                                   </span>
                                 </div>
                               );
