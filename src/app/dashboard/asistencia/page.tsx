@@ -567,12 +567,14 @@ export default function AsistenciaPage() {
 
     let subVal = totVal;
     let ivaVal = 0;
+    let finalTotVal = totVal;
 
     const solicitaFacturaChecked = Boolean(formData.solicitaFactura);
 
     if (solicitaFacturaChecked && totVal > 0) {
-      subVal = totVal / (1 + ivaDec);
-      ivaVal = totVal - subVal;
+      subVal = totVal;
+      ivaVal = totVal * ivaDec;
+      finalTotVal = subVal + ivaVal;
     }
 
     let metodoPagoFinal = formData.metodoPago || "Efectivo";
@@ -603,7 +605,7 @@ export default function AsistenciaPage() {
       fact: solicitaFacturaChecked ? "Sí" : "No",
       subtotal: `$${subVal.toFixed(2)}`,
       iva: `$${ivaVal.toFixed(2)}`,
-      total: `$${totVal.toFixed(2)}`,
+      total: `$${finalTotVal.toFixed(2)}`,
       precioTerapia: formData.precioTerapia,
       montoPago: montoPagado.toString(),
       metodoPago: metodoPagoFinal,
@@ -930,14 +932,13 @@ export default function AsistenciaPage() {
 
           const totalFinal = isCanceled ? montoIngresado : (montoPagado > 0 ? montoPagado : precioTerapia);
 
-          const ivaPct = await getSystemIvaRate();
-          const ivaDec = (ivaPct || 16) / 100;
-
           let sVal = totalFinal;
           let iVal = 0;
+          let fTot = totalFinal;
           if (solicitaFacturaChecked && totalFinal > 0) {
-            sVal = totalFinal / (1 + ivaDec);
-            iVal = totalFinal - sVal;
+            sVal = totalFinal;
+            iVal = totalFinal * ivaDec;
+            fTot = sVal + iVal;
           }
 
           const fuePagado = !isCanceled && (montoPagado > 0 || (precioTerapia === 0 && formData.precioTerapia === "0"));
@@ -959,7 +960,7 @@ export default function AsistenciaPage() {
             fact: solicitaFacturaChecked ? "Sí" : "No",
             subtotal: `$${sVal.toFixed(2)}`,
             iva: `$${iVal.toFixed(2)}`,
-            total: `$${totalFinal.toFixed(2)}`,
+            total: `$${fTot.toFixed(2)}`,
             precioTerapia: formData.precioTerapia,
             montoPago: montoPagado.toString(),
             metodoPago: metodoPagoFinal,
