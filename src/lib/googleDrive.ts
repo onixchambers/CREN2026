@@ -99,28 +99,38 @@ export async function uploadFileToGoogleDrive(fileBuffer: Buffer, fileName: stri
     // 1. Check if Google Apps Script Webhook URL is configured (Instant 5TB upload without OAuth errors)
     const webhookUrl = settings.googleDriveWebhookUrl;
     if (webhookUrl && typeof webhookUrl === "string" && webhookUrl.trim().length > 0) {
-      const response = await fetch(webhookUrl.trim(), {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          fileName: fileName,
-          mimeType: mimeType,
-          base64: fileBuffer.toString("base64"),
-          terapeutaName: terapeutaName || "",
-        }),
-      });
+      try {
+        const response = await fetch(webhookUrl.trim(), {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            fileName: fileName,
+            mimeType: mimeType,
+            base64: fileBuffer.toString("base64"),
+            terapeutaName: terapeutaName || "",
+          }),
+          redirect: "follow",
+        });
 
-      const scriptData = await response.json();
-      if (scriptData.success && scriptData.webViewLink) {
-        return {
-          success: true,
-          fileId: scriptData.fileId || "gdrive",
-          fileName: fileName,
-          webViewLink: scriptData.webViewLink,
-          webContentLink: scriptData.webViewLink,
-        };
-      } else if (scriptData.error) {
-        throw new Error(scriptData.error);
+        const text = await response.text();
+        let scriptData: any = null;
+        try {
+          scriptData = JSON.parse(text);
+        } catch (e) {}
+
+        if (scriptData && scriptData.success && scriptData.webViewLink) {
+          return {
+            success: true,
+            fileId: scriptData.fileId || "gdrive",
+            fileName: fileName,
+            webViewLink: scriptData.webViewLink,
+            webContentLink: scriptData.webViewLink,
+          };
+        } else if (scriptData && scriptData.error) {
+          console.warn("Apps Script Webhook returned error, using fallback:", scriptData.error);
+        }
+      } catch (e) {
+        console.warn("Apps Script Webhook fetch failed, using fallback:", e);
       }
     }
 
