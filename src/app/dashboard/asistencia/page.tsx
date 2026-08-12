@@ -857,35 +857,40 @@ export default function AsistenciaPage() {
 
 
     let match = true;
+    const norm = (st: string) => (st || "").trim().toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "");
+
     if (filtroEstado !== "Todos") {
-      if (a.estado !== filtroEstado) match = false;
+      if (norm(a.estado) !== norm(filtroEstado)) match = false;
     }
     if (filtroDesde && a.fecha < filtroDesde) match = false;
     if (filtroHasta && a.fecha > filtroHasta) match = false;
     
     if (filtroPaciente) {
-      const searchNorm = filtroPaciente.trim().toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "");
-      const patNorm = (a.paciente || "").toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "");
+      const searchNorm = norm(filtroPaciente);
+      const patNorm = norm(a.paciente);
       if (!patNorm.includes(searchNorm)) match = false;
     }
     
     if (filtroMetodoPago !== "Todos") {
-      const pago = (a.metodoPago || "").trim();
-      if (!pago.toLowerCase().includes(filtroMetodoPago.toLowerCase())) match = false;
+      const pago = norm(a.metodoPago);
+      if (!pago.includes(norm(filtroMetodoPago))) match = false;
     }
     if (filtroTipoSesion !== "Todos") {
-      if ((a.tipoSesion || "") !== filtroTipoSesion) match = false;
+      if (norm(a.tipoSesion) !== norm(filtroTipoSesion)) match = false;
     }
     if (filtroFrecuencia !== "Todos") {
-      if ((a.frecuencia || "") !== filtroFrecuencia) match = false;
+      if (norm(a.frecuencia) !== norm(filtroFrecuencia)) match = false;
     }
     
     if (filtroTerapeuta !== "Todos") {
-      if ((a.terapeuta || "") !== filtroTerapeuta) match = false;
+      if (norm(a.terapeuta) !== norm(filtroTerapeuta)) match = false;
     }
 
     if (userRole.toUpperCase() === "TERAPEUTA") {
-      if ((a.terapeuta || "") !== userName && !(a.creadoPor || "").includes(userName)) {
+      const tNorm = norm(a.terapeuta);
+      const uNorm = norm(userName);
+      const cNorm = norm(a.creadoPor);
+      if (tNorm !== uNorm && !tNorm.includes(uNorm) && !uNorm.includes(tNorm) && !cNorm.includes(uNorm)) {
         match = false;
       }
     }
