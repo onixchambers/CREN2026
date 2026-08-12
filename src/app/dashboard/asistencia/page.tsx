@@ -551,7 +551,9 @@ export default function AsistenciaPage() {
     const p2 = showSegundoPago ? parseFloat(formData.montoPago2 || "0") : 0;
     const montoPagado = p1 + p2;
     const precioTerapia = parseFloat(formData.precioTerapia || "0");
-    const totVal = montoPagado > 0 ? montoPagado : precioTerapia;
+    const estadoFinal = formData.estadoAsistencia || "Cancelo el centro";
+    const isCanceled = (estadoFinal || "").toLowerCase().includes("cancelo");
+    const totVal = isCanceled ? montoPagado : (montoPagado > 0 ? montoPagado : precioTerapia);
 
     const ivaPct = await getSystemIvaRate();
     const ivaDec = (ivaPct || 16) / 100;
@@ -582,7 +584,7 @@ export default function AsistenciaPage() {
       sexo: formData.pacienteSexo,
       edad: formData.pacienteEdad,
       tipoSesion: formData.tipoSesion,
-      estado: formData.estadoAsistencia,
+      estado: estadoFinal,
       sesiones: formData.numeroSesiones || "1",
       frecuencia: formData.frecuencia || "Única",
       pago: totVal > 0 ? "SÍ" : (metodoPagoFinal || "No"),
@@ -591,7 +593,7 @@ export default function AsistenciaPage() {
       iva: `$${ivaVal.toFixed(2)}`,
       total: `$${totVal.toFixed(2)}`,
       precioTerapia: formData.precioTerapia,
-      montoPago: totVal.toString(),
+      montoPago: montoPagado.toString(),
       metodoPago: metodoPagoFinal,
       obs: formData.observaciones || "—",
       creadoPor: userName,
@@ -616,8 +618,8 @@ export default function AsistenciaPage() {
       if (citaExistente) {
         await updateCita(citaExistente.id, {
           ...citaExistente,
-          estado: formData.estadoAsistencia || "Asistió",
-          pagado: totVal > 0,
+          estado: estadoFinal,
+          pagado: montoPagado > 0,
           metodoPago: metodoPagoFinal,
           terapeuta: formData.terapeuta
         });
@@ -629,8 +631,8 @@ export default function AsistenciaPage() {
           terapeuta: formData.terapeuta,
           tipoServicio: formData.tipoSesion,
           frecuencia: formData.frecuencia,
-          estado: formData.estadoAsistencia || "Asistió",
-          pagado: totVal > 0,
+          estado: estadoFinal,
+          pagado: montoPagado > 0,
           metodoPago: metodoPagoFinal,
           numeroSesiones: parseInt(formData.numeroSesiones) || 1
         });

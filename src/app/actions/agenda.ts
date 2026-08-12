@@ -39,7 +39,7 @@ export async function getAgenda() {
       const hora = extra.hora || "09:00";
       const key = `${s.patientId}_${s.therapistId}_${fecha}_${hora}`;
 
-      const estado = extra.estadoAsistencia || extra.estado || (s.status === "COMPLETED" ? "Asistio" : (s.status === "CANCELLED" ? "Cancelo sin anticipacion" : "Agendado"));
+      const estado = extra.estadoAsistencia || extra.estado || (s.status === "COMPLETED" ? "Asistio" : (s.status === "CANCELLED" ? "Cancelo el centro" : "Agendado"));
 
       const item = {
         id: s.id,
