@@ -1,6 +1,6 @@
 "use server";
 
-import XLSX from "xlsx";
+import * as XLSX from "xlsx";
 import fs from "fs";
 import { getAsistenciasDB } from "@/app/actions/asistencia";
 import { uploadFileToGoogleDrive } from "@/lib/googleDrive";
