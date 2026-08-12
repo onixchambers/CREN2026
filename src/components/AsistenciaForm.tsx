@@ -609,7 +609,11 @@ export function AsistenciaForm({
                 )}
               </div>
               <div className="flex items-center gap-1.5">
-                <select name="precioTerapia" value={formData.precioTerapia} onChange={handleChange} className="w-full text-sm p-2 border border-slate-300 rounded focus:border-[#2980b9] outline-none text-slate-700 bg-white font-medium">
+                <select name="precioTerapia" value={(() => {
+                  if (!formData.precioTerapia) return "";
+                  const num = parseFloat(String(formData.precioTerapia).replace(/[^0-9.-]/g, ""));
+                  return isNaN(num) ? "" : num.toString();
+                })()} onChange={handleChange} className="w-full text-sm p-2 border border-slate-300 rounded focus:border-[#2980b9] outline-none text-slate-700 bg-white font-medium">
                   <option value="">Seleccionar precio...</option>
                   {therapyPrices.map(p => (
                     <option key={p} value={p.toString()}>${p.toFixed(2)}</option>
@@ -622,7 +626,7 @@ export function AsistenciaForm({
               <div className="relative">
                 <span className="absolute left-2 top-1.5 text-slate-500">$</span>
                 <input type="text" readOnly value={(() => {
-                  const precioF = parseFloat(formData.precioTerapia || "0");
+                  const precioF = parseFloat(String(formData.precioTerapia || "0").replace(/[^0-9.-]/g, "")) || 0;
                   return precioF.toFixed(2);
                 })()} className="w-full text-sm p-2 pl-6 border border-slate-300 rounded bg-slate-50 outline-none text-slate-600 font-bold" />
               </div>
@@ -745,10 +749,10 @@ export function AsistenciaForm({
           </div>
 
           {/* TOTALS & ACTIONS */}
-          <div className="grid grid-cols-1 md:grid-cols-12 gap-4 pt-4 items-end">
-            <div className="flex items-center gap-2 pb-2 md:col-span-3">
+          <div className="grid grid-cols-1 md:grid-cols-12 gap-3 pt-4 items-end">
+            <div className="flex items-center gap-2 pb-2 md:col-span-2">
               <input type="checkbox" name="solicitaFactura" checked={formData.solicitaFactura} onChange={handleChange} className="w-4 h-4 rounded border-slate-300 cursor-pointer" />
-              <label className="text-sm font-medium text-[#1a5276] cursor-pointer">¿Solicita factura?</label>
+              <label className="text-xs font-semibold text-[#1a5276] cursor-pointer">¿Solicita factura?</label>
             </div>
             {(() => {
               const p1 = parseFloat((formData.montoPago || "0").replace(/[^0-9.-]/g, ""));
@@ -774,12 +778,12 @@ export function AsistenciaForm({
 
               return (
                 <>
-                  <div className="md:col-span-3">
+                  <div className="md:col-span-2">
                     <label className="block text-[10px] font-bold text-slate-400 uppercase mb-1">SUBTOTAL (SIN IVA)</label>
                     <input type="text" readOnly value={`$${subCalc.toFixed(2)}`} className="w-full text-sm p-2 border border-slate-200 rounded bg-slate-100 outline-none text-slate-700 font-bold" />
                   </div>
-                  <div className="md:col-span-3">
-                    <label className="block text-[10px] font-bold text-slate-400 uppercase mb-1">IVA (16% SI APLICA)</label>
+                  <div className="md:col-span-2">
+                    <label className="block text-[10px] font-bold text-slate-400 uppercase mb-1">IVA (16%)</label>
                     <input type="text" readOnly value={`$${ivaCalc.toFixed(2)}`} className="w-full text-sm p-2 border border-slate-200 rounded bg-slate-100 outline-none text-amber-700 font-bold" />
                   </div>
                   <div className="md:col-span-3">
@@ -789,7 +793,7 @@ export function AsistenciaForm({
                 </>
               );
             })()}
-            <div className="md:col-span-12">
+            <div className="md:col-span-3">
               <label className="block text-[10px] font-bold text-slate-400 uppercase mb-1">OBSERVACIONES</label>
               <input type="text" name="observaciones" value={formData.observaciones} onChange={handleChange} placeholder="Notas adicionales..." className="w-full text-sm p-2 border border-slate-300 rounded focus:border-[#2980b9] outline-none text-slate-900" />
             </div>
