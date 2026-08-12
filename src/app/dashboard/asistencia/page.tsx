@@ -923,14 +923,15 @@ export default function AsistenciaPage() {
         onAddPrice={() => setShowAddPriceModal(true)}
         onClear={handleLimpiarForm}
         onSave={async (formData, subVal, ivaVal, totVal, metodoPagoFinal) => {
+          const parseMoney = (val: any) => parseFloat((val || "0").toString().replace(/[^0-9.-]/g, "")) || 0;
           const solicitaFacturaChecked = Boolean(formData.solicitaFactura);
           const estNorm = (formData.estadoAsistencia || "").toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "");
           const isFreeCancel = (estNorm.includes("con anticip") || estNorm.includes("anticipad") || estNorm.includes("centro")) && !estNorm.includes("sin anticip");
 
-          const p1 = parseFloat((formData.montoPago || "0").replace(/[^0-9.-]/g, ""));
-          const p2 = parseFloat((formData.montoPago2 || "0").replace(/[^0-9.-]/g, ""));
+          const p1 = parseMoney(formData.montoPago);
+          const p2 = showSegundoPago ? parseMoney(formData.montoPago2) : 0;
           const montoIngresado = p1 + p2;
-          const precioTerapia = parseFloat((formData.precioTerapia || "0").replace(/[^0-9.-]/g, ""));
+          const precioTerapia = parseMoney(formData.precioTerapia);
 
           let montoPagado = montoIngresado;
           if (!isFreeCancel && montoIngresado === 0 && precioTerapia > 0 && !formData.montoPago) {
@@ -949,7 +950,12 @@ export default function AsistenciaPage() {
             sVal = totalFinal - iVal;
           }
 
-          const fuePagado = !isFreeCancel && (montoPagado > 0 || (precioTerapia === 0 && formData.precioTerapia === "0"));
+          const fuePagado = !isFreeCancel && (montoPagado > 0 || (precioTerapia === 0 && (formData.precioTerapia === "0" || formData.precioTerapia === "$0.00")));
+
+          let metodoFinal = metodoPagoFinal || formData.metodoPago || "Efectivo";
+          if (!metodoFinal.includes("$") && totalFinal > 0) {
+            metodoFinal = `${metodoFinal} $${totalFinal}`;
+          }
 
           const nuevaAsistencia = {
             id: Date.now().toString(),
@@ -969,9 +975,9 @@ export default function AsistenciaPage() {
             subtotal: `$${sVal.toFixed(2)}`,
             iva: `$${iVal.toFixed(2)}`,
             total: `$${totalFinal.toFixed(2)}`,
-            precioTerapia: formData.precioTerapia,
+            precioTerapia: precioTerapia > 0 ? precioTerapia.toString() : formData.precioTerapia,
             montoPago: montoPagado.toString(),
-            metodoPago: metodoPagoFinal,
+            metodoPago: metodoFinal,
             obs: formData.observaciones || "—",
             creadoPor: userName,
             terapeuta: formData.terapeuta

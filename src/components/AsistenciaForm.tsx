@@ -293,11 +293,21 @@ export function AsistenciaForm({
       }
     }
 
-    const p1 = parseFloat(formData.montoPago || "0");
-    const p2 = showSegundoPago ? parseFloat(formData.montoPago2 || "0") : 0;
+    const parseMoney = (val: any) => parseFloat((val || "0").toString().replace(/[^0-9.-]/g, "")) || 0;
+    const p1 = parseMoney(formData.montoPago);
+    const p2 = showSegundoPago ? parseMoney(formData.montoPago2) : 0;
     const montoPagado = p1 + p2;
-    const precioTerapia = parseFloat(formData.precioTerapia || "0");
-    let totVal = montoPagado > 0 ? montoPagado : precioTerapia;
+    const precioTerapia = parseMoney(formData.precioTerapia);
+
+    const estNorm = normalizeEstadoAsistencia(formData.estadoAsistencia || "").toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "");
+    const isFreeCancel = (estNorm.includes("con anticip") || estNorm.includes("anticipad") || estNorm.includes("centro")) && !estNorm.includes("sin anticip");
+
+    let montoEfectivo = montoPagado;
+    if (!isFreeCancel && montoPagado === 0 && precioTerapia > 0 && !formData.montoPago) {
+      montoEfectivo = precioTerapia;
+    }
+
+    let totVal = isFreeCancel ? montoPagado : (montoEfectivo > 0 ? montoEfectivo : precioTerapia);
 
     const ivaPct = await getSystemIvaRate();
     const ivaDec = (ivaPct || 16) / 100;
@@ -311,13 +321,15 @@ export function AsistenciaForm({
       subVal = totVal - ivaVal;
     }
 
-    let metodoPagoFinal = formData.metodoPago;
+    let metodoPagoFinal = formData.metodoPago || "Efectivo";
     if (showSegundoPago && formData.metodoPago2) {
       metodoPagoFinal = `${formData.metodoPago || 'P1'} $${p1}\n${formData.metodoPago2} $${p2}`;
     } else if (showSegundoPago) {
       metodoPagoFinal = `${formData.metodoPago || 'Efectivo'} $${p1}`;
     } else if (p1 > 0 && formData.metodoPago) {
       metodoPagoFinal = `${formData.metodoPago} $${p1}`;
+    } else if (formData.metodoPago && !formData.metodoPago.includes("$") && totVal > 0) {
+      metodoPagoFinal = `${formData.metodoPago} $${totVal}`;
     }
 
     setDuplicateWarning({ isOpen: false, duplicates: [], isDraft: false });
