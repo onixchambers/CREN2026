@@ -194,10 +194,14 @@ export async function saveAsistenciaDB(data: any) {
       estadoAsistencia: estadoVal,
       estado: estadoVal,
       sesiones: data.sesiones || data.numeroSesiones,
-      solicitaFactura: data.solicitaFactura === true || data.solicitaFactura === "true" || data.solicitaFactura === "Sí" || data.solicitaFactura === "Si" || data.solicitaFactura === "S" || data.fact === "Sí" || data.fact === "Si" || data.fact === "S" || data.fact === true,
-      subtotal: data.subtotal ? (typeof data.subtotal === 'string' ? parseFloat(data.subtotal.replace(/[^0-9.-]/g, "")) : data.subtotal) : 0,
-      iva: data.iva ? (typeof data.iva === 'string' ? parseFloat(data.iva.replace(/[^0-9.-]/g, "")) : data.iva) : 0,
-      total: data.total ? (typeof data.total === 'string' ? parseFloat(data.total.replace(/[^0-9.-]/g, "")) : data.total) : 0,
+      solicitaFactura: (data.solicitaFactura === true || data.solicitaFactura === "true" || data.solicitaFactura === "Sí" || data.solicitaFactura === "Si" || data.solicitaFactura === "S" || data.fact === "Sí" || data.fact === "Si" || data.fact === "S" || data.fact === true),
+      subtotal: (data.solicitaFactura === true || data.solicitaFactura === "true" || data.solicitaFactura === "Sí" || data.solicitaFactura === "Si" || data.solicitaFactura === "S" || data.fact === "Sí" || data.fact === "Si" || data.fact === "S" || data.fact === true)
+        ? (parseMoneyStr(data.total) > 0 ? (parseMoneyStr(data.total) - (parseMoneyStr(data.total) * 0.16)) : parseMoneyStr(data.subtotal))
+        : (parseMoneyStr(data.subtotal) || parseMoneyStr(data.total)),
+      iva: (data.solicitaFactura === true || data.solicitaFactura === "true" || data.solicitaFactura === "Sí" || data.solicitaFactura === "Si" || data.solicitaFactura === "S" || data.fact === "Sí" || data.fact === "Si" || data.fact === "S" || data.fact === true)
+        ? (parseMoneyStr(data.total) > 0 ? (parseMoneyStr(data.total) * 0.16) : parseMoneyStr(data.iva))
+        : 0,
+      total: parseMoneyStr(data.total),
       fact: (data.solicitaFactura === true || data.solicitaFactura === "true" || data.solicitaFactura === "Sí" || data.solicitaFactura === "Si" || data.solicitaFactura === "S" || data.fact === "Sí" || data.fact === "Si" || data.fact === "S" || data.fact === true) ? "Sí" : "No",
       obs: data.obs,
       creadoPor: data.creadoPor,
