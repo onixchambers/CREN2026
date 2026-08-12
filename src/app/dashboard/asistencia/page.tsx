@@ -570,6 +570,11 @@ export default function AsistenciaPage() {
 
     const solicitaFacturaChecked = Boolean(formData.solicitaFactura);
 
+    if (solicitaFacturaChecked && totVal > 0) {
+      ivaVal = totVal * ivaDec;
+      subVal = totVal - ivaVal;
+    }
+
     let metodoPagoFinal = formData.metodoPago || "Efectivo";
     if (showSegundoPago && formData.metodoPago2) {
       metodoPagoFinal = `${formData.metodoPago || 'Efectivo'} $${p1}\n${formData.metodoPago2} $${p2}`;
@@ -925,8 +930,15 @@ export default function AsistenciaPage() {
 
           const totalFinal = isCanceled ? montoIngresado : (montoPagado > 0 ? montoPagado : precioTerapia);
 
+          const ivaPct = await getSystemIvaRate();
+          const ivaDec = (ivaPct || 16) / 100;
+
           let sVal = totalFinal;
           let iVal = 0;
+          if (solicitaFacturaChecked && totalFinal > 0) {
+            iVal = totalFinal * ivaDec;
+            sVal = totalFinal - iVal;
+          }
 
           const fuePagado = !isCanceled && (montoPagado > 0 || (precioTerapia === 0 && formData.precioTerapia === "0"));
 

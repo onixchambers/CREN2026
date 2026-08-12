@@ -357,8 +357,16 @@ export async function getAsistenciasDB(_ts?: string) {
         runningBalance = runningBalance + montoP - costoS;
 
         const solicitaFactura = extra.solicitaFactura === true || extra.solicitaFactura === "true" || extra.solicitaFactura === "Sí" || extra.solicitaFactura === "Si" || extra.solicitaFactura === "S" || extra.fact === "Sí" || extra.fact === "Si" || extra.fact === "S" || extra.fact === true;
-        let subtotalVal = parseMoneyStr(extra.subtotal) || totalVal;
+        let subtotalVal = parseMoneyStr(extra.subtotal);
         let ivaVal = parseMoneyStr(extra.iva);
+
+        if (solicitaFactura && totalVal > 0) {
+          if (ivaVal === 0) ivaVal = totalVal * 0.16;
+          if (subtotalVal === 0 || subtotalVal === totalVal) subtotalVal = totalVal - ivaVal;
+        } else if (!solicitaFactura) {
+          subtotalVal = totalVal;
+          ivaVal = 0;
+        }
 
         asistencias.push({
           id: s.id,
