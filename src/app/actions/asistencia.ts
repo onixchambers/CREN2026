@@ -316,31 +316,41 @@ export async function getAsistenciasDB(_ts?: string) {
           metodoPagoStr = `Mixto (${extra.metodoPago || extra.metodoPago1 || 'P1'}: $${extra.montoPago || 0}, ${extra.metodoPago2}: $${extra.montoPago2 || 0})`;
         }
 
-        let montoP = parseFloat(extra.montoPago || "0");
-        let totalVal = parseFloat(extra.total || extra.subtotal || "0");
+        const parseMoneyStr = (val: any): number => {
+          if (typeof val === 'number') return isNaN(val) ? 0 : val;
+          if (!val) return 0;
+          const cleaned = String(val).replace(/[^0-9.-]/g, '');
+          const num = parseFloat(cleaned);
+          return isNaN(num) ? 0 : num;
+        };
+
+        let montoP = parseMoneyStr(extra.montoPago);
+        let totalVal = parseMoneyStr(extra.total || extra.subtotal);
         const estNorm = (extra.estadoAsistencia || extra.estado || s.status || "").toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "");
         const isCanceled = estNorm.includes("cancelo");
 
         // Si montoP o totalVal no se guardaron explícitamente, extraer montos numéricos de metodoPago
-        if ((isNaN(montoP) || montoP === 0) && metodoPagoStr) {
+        if (montoP === 0 && metodoPagoStr) {
           const dollarMatches = metodoPagoStr.match(/\$([\d.]+)/g);
           if (dollarMatches) {
-            montoP = dollarMatches.reduce((sum: number, val: string) => sum + (parseFloat(val.replace("$", "")) || 0), 0);
+            montoP = dollarMatches.reduce((sum: number, val: string) => sum + parseMoneyStr(val), 0);
           }
         }
 
         // Si es Asistio y totalVal/montoP es 0 pero hay costoSesion o precioTerapia, recuperar valores
-        if (!isCanceled && (totalVal === 0 || isNaN(totalVal))) {
-          const costoS = parseFloat(extra.costoSesion || extra.precioTerapia || "0");
+        if (!isCanceled) {
+          const costoS = parseMoneyStr(extra.costoSesion || extra.precioTerapia);
           if (costoS > 0) {
-            totalVal = costoS;
+            if (totalVal === 0) totalVal = costoS;
             if (montoP === 0) montoP = costoS;
+          } else if (totalVal > 0 && montoP === 0) {
+            montoP = totalVal;
+          } else if (montoP > 0 && totalVal === 0) {
+            totalVal = montoP;
           }
-        } else if (isNaN(totalVal) || totalVal === 0) {
-          totalVal = montoP;
         }
 
-        const costoS = isCanceled ? 0 : (parseFloat(extra.costoSesion || extra.precioTerapia || "0") || totalVal);
+        const costoS = isCanceled ? 0 : (parseMoneyStr(extra.costoSesion || extra.precioTerapia) || totalVal || montoP);
         
         // Sumar pago y restar costo de la sesión al saldo acumulado progresivo
         runningBalance = runningBalance + montoP - costoS;
