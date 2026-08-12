@@ -250,15 +250,27 @@ export default function PacientesPage() {
                 const selHora = matchedCita ? matchedCita.hora : (pHora || "12:00");
                 const selTerapeuta = matchedCita ? matchedCita.terapeuta : (pTerapeuta || userName || "");
 
+                const pNoteType = urlParams.get("noteType") || sessionStorage.getItem("autoOpenNoteType") || "Registro de Evolución";
+                sessionStorage.removeItem("autoOpenNoteType");
+
+                const pMotivo = urlParams.get("motivo") || sessionStorage.getItem("autoOpenNoteMotivo") || "";
+                const pNotas = urlParams.get("notas") || sessionStorage.getItem("autoOpenNoteNotas") || "";
+                sessionStorage.removeItem("autoOpenNoteMotivo");
+                sessionStorage.removeItem("autoOpenNoteNotas");
+
                 setViewingPatient(p);
                 setModalTab("nuevo_documento");
-                setSelectedNoteType("Registro de Evolución");
+                setSelectedNoteType(pNoteType);
                 setDocFormData({
                   linkedCitaId: selCitaId,
                   citaId: selCitaId,
                   fecha: selFecha,
                   hora: selHora,
-                  terapeuta: selTerapeuta
+                  terapeuta: selTerapeuta,
+                  motivoCancelacion: pMotivo,
+                  motivo: pMotivo,
+                  notas: pNotas,
+                  notasGenerales: pNotas
                 });
               }
             }
@@ -1179,7 +1191,8 @@ export default function PacientesPage() {
                         "Historia Clínica de Neurodesarrollo",
                         "Sesión de Plática con Padres",
                         "Informe de Visita Escolar",
-                        "Reunión con Terapeuta"
+                        "Reunión con Terapeuta",
+                        "Motivo de Cancelación"
                       ].map((tipoName) => (
                         <button
                           key={tipoName}
@@ -1287,33 +1300,45 @@ export default function PacientesPage() {
                         )}
 
                         {/* SELECCIÓN DE TERAPEUTA RESPONSABLE */}
-                        <div className="grid grid-cols-3 gap-2 bg-slate-50 p-2.5 rounded-xl border border-slate-200">
-                          <div>
-                            <label className="block text-[10px] font-bold text-slate-500 uppercase mb-1">Fecha</label>
-                            <input 
-                              type="date" 
-                              value={docFormData.fecha || new Date().toISOString().split("T")[0]} 
-                              onChange={(e) => setDocFormData({...docFormData, fecha: e.target.value})}
-                              className="w-full text-xs p-2 border border-slate-300 rounded-lg bg-white outline-none font-medium"
-                            />
+                        <div className="space-y-2 bg-slate-50 p-2.5 rounded-xl border border-slate-200">
+                          <div className="grid grid-cols-3 gap-2">
+                            <div>
+                              <label className="block text-[10px] font-bold text-slate-500 uppercase mb-1">Fecha</label>
+                              <input 
+                                type="date" 
+                                value={docFormData.fecha || new Date().toISOString().split("T")[0]} 
+                                onChange={(e) => setDocFormData({...docFormData, fecha: e.target.value})}
+                                className="w-full text-xs p-2 border border-slate-300 rounded-lg bg-white outline-none font-medium"
+                              />
+                            </div>
+                            <div>
+                              <label className="block text-[10px] font-bold text-slate-500 uppercase mb-1">Hora</label>
+                              <input 
+                                type="time" 
+                                value={docFormData.hora || "12:00"} 
+                                onChange={(e) => setDocFormData({...docFormData, hora: e.target.value})}
+                                className="w-full text-xs p-2 border border-slate-300 rounded-lg bg-white outline-none font-medium"
+                              />
+                            </div>
+                            <div>
+                              <label className="block text-[10px] font-bold text-slate-500 uppercase mb-1">Terapeuta</label>
+                              <input 
+                                type="text" 
+                                value={docFormData.terapeuta || userName || "LOURDES RINCÓN"} 
+                                onChange={(e) => setDocFormData({...docFormData, terapeuta: e.target.value})}
+                                className="w-full text-xs p-2 border border-slate-300 rounded-lg bg-white outline-none font-medium"
+                                placeholder="Nombre del terapeuta..."
+                              />
+                            </div>
                           </div>
                           <div>
-                            <label className="block text-[10px] font-bold text-slate-500 uppercase mb-1">Hora</label>
-                            <input 
-                              type="time" 
-                              value={docFormData.hora || "12:00"} 
-                              onChange={(e) => setDocFormData({...docFormData, hora: e.target.value})}
-                              className="w-full text-xs p-2 border border-slate-300 rounded-lg bg-white outline-none font-medium"
-                            />
-                          </div>
-                          <div>
-                            <label className="block text-[10px] font-bold text-slate-500 uppercase mb-1">Terapeuta</label>
+                            <label className="block text-[10px] font-bold text-slate-500 uppercase mb-1">Notas</label>
                             <input 
                               type="text" 
-                              value={docFormData.terapeuta || userName || "LOURDES RINCÓN"} 
-                              onChange={(e) => setDocFormData({...docFormData, terapeuta: e.target.value})}
+                              value={docFormData.notasGenerales || docFormData.notas || ""} 
+                              onChange={(e) => setDocFormData({...docFormData, notasGenerales: e.target.value, notas: e.target.value})}
                               className="w-full text-xs p-2 border border-slate-300 rounded-lg bg-white outline-none font-medium"
-                              placeholder="Nombre del terapeuta..."
+                              placeholder="Notas adicionales..."
                             />
                           </div>
                         </div>
@@ -1432,6 +1457,32 @@ export default function PacientesPage() {
                           <>
                             <div><label className="block text-[11px] font-medium text-slate-600 mb-1">Objetivo de Reunión</label><textarea rows={3} value={docFormData.objetivoReunion || ""} onChange={(e) => setDocFormData({...docFormData, objetivoReunion: e.target.value})} className="w-full p-2 border border-slate-300 rounded-lg outline-none text-xs" /></div>
                             <div><label className="block text-[11px] font-medium text-slate-600 mb-1">Comentarios</label><textarea rows={5} value={docFormData.comentarios || ""} onChange={(e) => setDocFormData({...docFormData, comentarios: e.target.value})} className="w-full p-2 border border-slate-300 rounded-lg outline-none text-xs" /></div>
+                          </>
+                        )}
+
+                        {/* CAMPOS ESPECÍFICOS MOTIVO DE CANCELACIÓN */}
+                        {selectedNoteType === "Motivo de Cancelación" && (
+                          <>
+                            <div>
+                              <label className="block text-[11px] font-medium text-slate-600 mb-1">Motivo de Cancelación</label>
+                              <textarea 
+                                rows={3} 
+                                value={docFormData.motivoCancelacion || docFormData.motivo || ""} 
+                                onChange={(e) => setDocFormData({...docFormData, motivoCancelacion: e.target.value})} 
+                                placeholder="Escribe el motivo de la cancelación..." 
+                                className="w-full p-2 border border-slate-300 rounded-lg outline-none text-xs" 
+                              />
+                            </div>
+                            <div>
+                              <label className="block text-[11px] font-medium text-slate-600 mb-1">Notas</label>
+                              <textarea 
+                                rows={4} 
+                                value={docFormData.notas || docFormData.observaciones || ""} 
+                                onChange={(e) => setDocFormData({...docFormData, notas: e.target.value, observaciones: e.target.value, notasGenerales: e.target.value})} 
+                                placeholder="Notas adicionales..." 
+                                className="w-full p-2 border border-slate-300 rounded-lg outline-none text-xs" 
+                              />
+                            </div>
                           </>
                         )}
 

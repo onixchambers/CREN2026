@@ -136,6 +136,7 @@ export function AsistenciaForm({
       setFormData(prev => ({ 
         ...prev, 
         ...initialData,
+        solicitaFactura: prev.solicitaFactura || Boolean(initialData.solicitaFactura),
         estadoAsistencia: initialData.estadoAsistencia ? normalizeEstadoAsistencia(initialData.estadoAsistencia) : (prev.estadoAsistencia || "Asistio"),
         area: resolvedArea || prev.area || "Fisioterapia"
       }));
@@ -228,36 +229,36 @@ export function AsistenciaForm({
         }
       }
 
-      setFormData({
-        ...formData,
+      setFormData(prev => ({
+        ...prev,
         pacienteId: p.id,
         pacienteNombre: p.paciente,
         pacienteNac: p.nac !== "?" ? p.nac : "",
         pacienteSexo: normalizeSexo(p.sexo),
         pacienteEdad: p.edad,
         terapeuta: terapeutaAgenda,
-        area: areaAgenda || formData.area || "Fisioterapia",
+        area: areaAgenda || prev.area || "Fisioterapia",
         hora: horaAgenda,
         tipoSesion: tipoSesionAgenda,
         estadoAsistencia: normalizeEstadoAsistencia(estadoAsistenciaAgenda),
         saldoDisponible: p.saldoCalculado || "0.00",
-        precioTerapia: p.precioTerapia || formData.precioTerapia,
+        precioTerapia: p.precioTerapia || prev.precioTerapia,
         numeroSesiones: "1", 
         frecuencia: agendaCitas.find((c: any) => c.paciente === p.paciente) ? (() => {
           const f = (agendaCitas.find((c: any) => c.paciente === p.paciente).frecuencia || "").toLowerCase();
-          return f === "diario" || f === "diaria" ? "Diaria" : f === "semanal" ? "Semanal" : f === "quincenal" ? "Quincenal" : f === "mensual" ? "Mensual" : formData.frecuencia;
-        })() : formData.frecuencia
-      });
+          return f === "diario" || f === "diaria" ? "Diaria" : f === "semanal" ? "Semanal" : f === "quincenal" ? "Quincenal" : f === "mensual" ? "Mensual" : prev.frecuencia;
+        })() : prev.frecuencia
+      }));
     } else {
-      setFormData({
-        ...formData,
+      setFormData(prev => ({
+        ...prev,
         pacienteId: "",
         pacienteNombre: val,
         pacienteNac: "",
         pacienteSexo: "",
         pacienteEdad: "",
         saldoDisponible: "0.00"
-      });
+      }));
     }
   };
 
@@ -504,8 +505,8 @@ export function AsistenciaForm({
                             }
                           }
 
-                          setFormData({
-                            ...formData,
+                          setFormData(prev => ({
+                            ...prev,
                             fecha: fechaAgenda,
                             pacienteId: p.id,
                             pacienteNombre: p.paciente,
@@ -513,18 +514,18 @@ export function AsistenciaForm({
                             pacienteSexo: normalizeSexo(p.sexo),
                             pacienteEdad: p.edad,
                             saldoDisponible: p.saldoCalculado || "0.00",
-                            precioTerapia: p.precioTerapia || formData.precioTerapia,
+                            precioTerapia: p.precioTerapia || prev.precioTerapia,
                             numeroSesiones: "1",
                             hora: horaAgenda,
                             terapeuta: terapeutaAgenda,
-                            area: areaAgenda || formData.area || "Fisioterapia",
+                            area: areaAgenda || prev.area || "Fisioterapia",
                             estadoAsistencia: normalizeEstadoAsistencia(estadoAgenda),
                             tipoSesion: tipoSesionAgenda,
                             frecuencia: agendaCitas.find((c: any) => c.paciente === p.paciente) ? (() => {
                               const f = (agendaCitas.find((c: any) => c.paciente === p.paciente).frecuencia || "").toLowerCase();
-                              return f === "diario" || f === "diaria" ? "Diaria" : f === "semanal" ? "Semanal" : f === "quincenal" ? "Quincenal" : f === "mensual" ? "Mensual" : formData.frecuencia;
-                            })() : formData.frecuencia
-                          });
+                              return f === "diario" || f === "diaria" ? "Diaria" : f === "semanal" ? "Semanal" : f === "quincenal" ? "Quincenal" : f === "mensual" ? "Mensual" : prev.frecuencia;
+                            })() : prev.frecuencia
+                          }));
                           setShowDropdown(false);
                         }}
                       >
@@ -746,8 +747,8 @@ export function AsistenciaForm({
           {/* TOTALS & ACTIONS */}
           <div className="grid grid-cols-1 md:grid-cols-12 gap-3 pt-4 items-end">
             <div className="flex items-center gap-2 pb-2 md:col-span-2">
-              <input type="checkbox" name="solicitaFactura" checked={formData.solicitaFactura} onChange={handleChange} className="w-4 h-4 rounded border-slate-300 cursor-pointer" />
-              <label className="text-xs font-semibold text-[#1a5276] cursor-pointer">¿Solicita factura?</label>
+              <input type="checkbox" name="solicitaFactura" id="asistencia_fact_chk" checked={Boolean(formData.solicitaFactura)} onChange={handleChange} className="w-4 h-4 rounded border-slate-300 accent-[#1a5276] cursor-pointer" />
+              <label htmlFor="asistencia_fact_chk" className="text-xs font-semibold text-[#1a5276] cursor-pointer select-none">¿Solicita factura?</label>
             </div>
             {(() => {
               const p1 = parseFloat((formData.montoPago || "0").replace(/[^0-9.-]/g, ""));

@@ -301,9 +301,26 @@ export default function AgendaPage() {
       
       const sNorm = (estado || "").trim().toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "");
       const isAsistio = sNorm.includes("asisti") || sNorm === "asistio";
+      const isSinAnticipacion = sNorm.includes("sin anticip");
+      const isCanceloConAnticipacionOCentro = (sNorm.includes("con anticip") || sNorm.includes("anticipad") || sNorm.includes("centro")) && !isSinAnticipacion;
 
-      // Solo redirigir a la pestaña de Asistencia si el estado es "Asistió"
-      if (isAsistio) {
+      // Si es "Canceló con anticipación" o "Canceló el centro", llevar directo a Notas Clínicas
+      if (isCanceloConAnticipacionOCentro) {
+        sessionStorage.setItem("triggerAutoOpenNote", "true");
+        sessionStorage.setItem("autoOpenNotePatientName", selectedCitaForStatus.paciente || "");
+        sessionStorage.setItem("autoOpenNoteAgendaId", selectedCitaForStatus.id || "");
+        sessionStorage.setItem("autoOpenNoteFecha", selectedCitaForStatus.fecha || "");
+        sessionStorage.setItem("autoOpenNoteHora", selectedCitaForStatus.hora || "");
+        sessionStorage.setItem("autoOpenNoteTerapeuta", selectedCitaForStatus.terapeuta || "");
+        sessionStorage.setItem("autoOpenNoteType", "Motivo de Cancelación");
+        
+        const url = `/dashboard/pacientes?autoNote=true&noteType=${encodeURIComponent("Motivo de Cancelación")}&patientName=${encodeURIComponent(selectedCitaForStatus.paciente || "")}&agendaId=${encodeURIComponent(selectedCitaForStatus.id || "")}&fecha=${encodeURIComponent(selectedCitaForStatus.fecha || "")}&hora=${encodeURIComponent(selectedCitaForStatus.hora || "")}&terapeuta=${encodeURIComponent(selectedCitaForStatus.terapeuta || "")}`;
+        window.location.href = url;
+        return;
+      }
+
+      // Si es "Asistió" o "Canceló sin anticipación", llevar a Asistencia
+      if (isAsistio || isSinAnticipacion) {
         const tMatch = terapeutasFullData.find((t: any) => (t.name || "").trim().toLowerCase() === (selectedCitaForStatus.terapeuta || "").trim().toLowerCase());
         const areaFinal = selectedCitaForStatus.area || selectedCitaForStatus.especialidad || tMatch?.especialidad || "";
 
