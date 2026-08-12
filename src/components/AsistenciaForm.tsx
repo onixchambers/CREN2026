@@ -305,9 +305,9 @@ export function AsistenciaForm({
     let ivaVal = 0;
     let finalTotal = totVal;
 
-    if (formData.solicitaFactura) {
-      ivaVal = totVal * ivaDec;
-      subVal = totVal - ivaVal;
+    if (formData.solicitaFactura && totVal > 0) {
+      subVal = totVal / (1 + ivaDec);
+      ivaVal = totVal - subVal;
     }
 
     let metodoPagoFinal = formData.metodoPago;

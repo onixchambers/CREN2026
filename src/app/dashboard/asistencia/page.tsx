@@ -914,6 +914,34 @@ export default function AsistenciaPage() {
         onAddPrice={() => setShowAddPriceModal(true)}
         onClear={handleLimpiarForm}
         onSave={async (formData, subVal, ivaVal, totVal, metodoPagoFinal) => {
+          const solicitaFacturaChecked = Boolean(formData.solicitaFactura);
+          const estNorm = (formData.estadoAsistencia || "").toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "");
+          const isCanceled = estNorm.includes("cancelo");
+
+          const p1 = parseFloat((formData.montoPago || "0").replace(/[^0-9.-]/g, ""));
+          const p2 = parseFloat((formData.montoPago2 || "0").replace(/[^0-9.-]/g, ""));
+          const montoIngresado = p1 + p2;
+          const precioTerapia = parseFloat((formData.precioTerapia || "0").replace(/[^0-9.-]/g, ""));
+
+          let montoPagado = montoIngresado;
+          if (!isCanceled && montoIngresado === 0 && precioTerapia > 0 && !formData.montoPago) {
+            montoPagado = precioTerapia;
+          }
+
+          const totalFinal = isCanceled ? montoIngresado : (montoPagado > 0 ? montoPagado : precioTerapia);
+
+          const ivaPct = await getSystemIvaRate();
+          const ivaDec = (ivaPct || 16) / 100;
+
+          let sVal = totalFinal;
+          let iVal = 0;
+          if (solicitaFacturaChecked && totalFinal > 0) {
+            sVal = totalFinal / (1 + ivaDec);
+            iVal = totalFinal - sVal;
+          }
+
+          const fuePagado = !isCanceled && (montoPagado > 0 || (precioTerapia === 0 && formData.precioTerapia === "0"));
+
           const nuevaAsistencia = {
             id: Date.now().toString(),
             fecha: formData.fecha,
@@ -923,16 +951,17 @@ export default function AsistenciaPage() {
             sexo: formData.pacienteSexo,
             edad: formData.pacienteEdad,
             tipoSesion: formData.tipoSesion,
-            estado: formData.estadoAsistencia,
+            estado: formData.estadoAsistencia || "Asistio",
             sesiones: formData.numeroSesiones || "1",
             frecuencia: formData.frecuencia || "Única",
-            pago: totVal > 0 ? "SÍ" : (metodoPagoFinal || "No"),
-            fact: formData.solicitaFactura ? "Sí" : "No",
-            subtotal: `$${subVal.toFixed(2)}`,
-            iva: `$${ivaVal.toFixed(2)}`,
-            total: `$${totVal.toFixed(2)}`,
+            pago: fuePagado ? "SÍ" : "NO",
+            solicitaFactura: solicitaFacturaChecked,
+            fact: solicitaFacturaChecked ? "Sí" : "No",
+            subtotal: `$${sVal.toFixed(2)}`,
+            iva: `$${iVal.toFixed(2)}`,
+            total: `$${totalFinal.toFixed(2)}`,
             precioTerapia: formData.precioTerapia,
-            montoPago: totVal.toString(),
+            montoPago: montoPagado.toString(),
             metodoPago: metodoPagoFinal,
             obs: formData.observaciones || "—",
             creadoPor: userName,
