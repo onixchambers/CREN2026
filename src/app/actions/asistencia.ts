@@ -318,6 +318,8 @@ export async function getAsistenciasDB(_ts?: string) {
 
         let montoP = parseFloat(extra.montoPago || "0");
         let totalVal = parseFloat(extra.total || extra.subtotal || "0");
+        const estNorm = (extra.estadoAsistencia || extra.estado || s.status || "").toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "");
+        const isCanceled = estNorm.includes("cancelo");
 
         // Si montoP o totalVal no se guardaron explícitamente, extraer montos numéricos de metodoPago
         if ((isNaN(montoP) || montoP === 0) && metodoPagoStr) {
@@ -327,11 +329,18 @@ export async function getAsistenciasDB(_ts?: string) {
           }
         }
 
-        if (isNaN(totalVal) || totalVal === 0) {
+        // Si es Asistio y totalVal/montoP es 0 pero hay costoSesion o precioTerapia, recuperar valores
+        if (!isCanceled && (totalVal === 0 || isNaN(totalVal))) {
+          const costoS = parseFloat(extra.costoSesion || extra.precioTerapia || "0");
+          if (costoS > 0) {
+            totalVal = costoS;
+            if (montoP === 0) montoP = costoS;
+          }
+        } else if (isNaN(totalVal) || totalVal === 0) {
           totalVal = montoP;
         }
 
-        const costoS = parseFloat(extra.costoSesion || extra.precioTerapia || "0") || totalVal;
+        const costoS = isCanceled ? 0 : (parseFloat(extra.costoSesion || extra.precioTerapia || "0") || totalVal);
         
         // Sumar pago y restar costo de la sesión al saldo acumulado progresivo
         runningBalance = runningBalance + montoP - costoS;
@@ -358,7 +367,7 @@ export async function getAsistenciasDB(_ts?: string) {
           estado: extra.estadoAsistencia || s.status,
           sesiones: displaySesiones,
           frecuencia: extra.frecuencia || "-",
-          pago: extra.pago || (montoP > 0 ? "SÍ" : "NO"),
+          pago: !isCanceled && (montoP > 0 || totalVal > 0 || extra.pago === "SÍ") ? "SÍ" : (extra.pago || "NO"),
           metodoPago: metodoPagoStr,
           fact: solicitaFactura ? "Sí" : "No",
           subtotal: "$" + Number(subtotalVal).toFixed(2),

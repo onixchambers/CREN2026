@@ -549,11 +549,18 @@ export default function AsistenciaPage() {
 
     const p1 = parseFloat(formData.montoPago || "0");
     const p2 = showSegundoPago ? parseFloat(formData.montoPago2 || "0") : 0;
-    const montoPagado = p1 + p2;
+    const montoIngresado = p1 + p2;
     const precioTerapia = parseFloat(formData.precioTerapia || "0");
-    const estadoFinal = formData.estadoAsistencia || "Cancelo el centro";
+    const estadoFinal = formData.estadoAsistencia || "Asistio";
     const isCanceled = (estadoFinal || "").toLowerCase().includes("cancelo");
-    const totVal = isCanceled ? montoPagado : (montoPagado > 0 ? montoPagado : precioTerapia);
+
+    // Para "Asistió": si no ingresó monto explícito pero hay precioTerapia, se asume que pagó el precio de la terapia
+    let montoPagado = montoIngresado;
+    if (!isCanceled && montoIngresado === 0 && precioTerapia > 0 && !formData.montoPago) {
+      montoPagado = precioTerapia;
+    }
+
+    const totVal = isCanceled ? montoIngresado : (montoPagado > 0 ? montoPagado : precioTerapia);
 
     const ivaPct = await getSystemIvaRate();
     const ivaDec = (ivaPct || 16) / 100;
@@ -561,19 +568,21 @@ export default function AsistenciaPage() {
     let subVal = totVal;
     let ivaVal = 0;
 
-    if (formData.solicitaFactura) {
-      ivaVal = totVal * ivaDec;
-      subVal = totVal - ivaVal;
+    if (formData.solicitaFactura && totVal > 0) {
+      subVal = totVal / (1 + ivaDec);
+      ivaVal = totVal - subVal;
     }
 
-    let metodoPagoFinal = formData.metodoPago;
+    let metodoPagoFinal = formData.metodoPago || "Efectivo";
     if (showSegundoPago && formData.metodoPago2) {
-      metodoPagoFinal = `${formData.metodoPago || 'P1'} $${p1}\n${formData.metodoPago2} $${p2}`;
+      metodoPagoFinal = `${formData.metodoPago || 'Efectivo'} $${p1}\n${formData.metodoPago2} $${p2}`;
     } else if (showSegundoPago) {
       metodoPagoFinal = `${formData.metodoPago || 'Efectivo'} $${p1}`;
     } else if (p1 > 0 && formData.metodoPago) {
       metodoPagoFinal = `${formData.metodoPago} $${p1}`;
     }
+
+    const fuePagado = !isCanceled && (montoPagado > 0 || (precioTerapia === 0 && formData.precioTerapia === "0"));
 
     const nuevaAsistencia: Asistencia = {
       id: Date.now().toString(),
@@ -587,7 +596,7 @@ export default function AsistenciaPage() {
       estado: estadoFinal,
       sesiones: formData.numeroSesiones || "1",
       frecuencia: formData.frecuencia || "Única",
-      pago: totVal > 0 ? "SÍ" : (metodoPagoFinal || "No"),
+      pago: fuePagado ? "SÍ" : "NO",
       fact: formData.solicitaFactura ? "Sí" : "No",
       subtotal: `$${subVal.toFixed(2)}`,
       iva: `$${ivaVal.toFixed(2)}`,
@@ -619,7 +628,7 @@ export default function AsistenciaPage() {
         await updateCita(citaExistente.id, {
           ...citaExistente,
           estado: estadoFinal,
-          pagado: montoPagado > 0,
+          pagado: fuePagado,
           metodoPago: metodoPagoFinal,
           terapeuta: formData.terapeuta
         });
@@ -632,7 +641,7 @@ export default function AsistenciaPage() {
           tipoServicio: formData.tipoSesion,
           frecuencia: formData.frecuencia,
           estado: estadoFinal,
-          pagado: montoPagado > 0,
+          pagado: fuePagado,
           metodoPago: metodoPagoFinal,
           numeroSesiones: parseInt(formData.numeroSesiones) || 1
         });
