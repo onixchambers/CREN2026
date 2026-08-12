@@ -4,6 +4,14 @@ import { prisma } from "@/lib/prisma";
 import { revalidatePath } from "next/cache";
 import { unstable_noStore as noStore } from "next/cache";
 
+function parseMoneyStr(val: any): number {
+  if (typeof val === 'number') return isNaN(val) ? 0 : val;
+  if (!val) return 0;
+  const cleaned = String(val).replace(/[^0-9.-]/g, '');
+  const num = parseFloat(cleaned);
+  return isNaN(num) ? 0 : num;
+}
+
 export async function saveAsistenciaDB(data: any) {
   try {
     const settings = await prisma.systemSettings.findUnique({ where: { id: 1 } });
@@ -172,40 +180,64 @@ export async function saveAsistenciaDB(data: any) {
         saldoPrevio = totalPag - totalCos;
       }
     }
+        // Calcular saldo final incluyendo crédito previo (ej: +100 previo + 400 pago - 500 costo = 0.00)
+    const montoP = parseMoneyStr(data.montoPago);
+    const costoS = parseMoneyStr(data.costoSesion || data.precioTerapia);
+    const totalInput = parseMoneyStr(data.total);
+    const subtotalInput = parseMoneyStr(data.subtotal);
+    const totalVal = totalInput > 0 ? totalInput : (montoP > 0 ? montoP : costoS);
 
-    // Calcular saldo final incluyendo crédito previo (ej: +100 previo + 400 pago - 500 costo = 0.00)
-    const montoP = parseFloat(data.montoPago || "0");
-    const costoS = parseFloat(data.costoSesion || data.precioTerapia || "0");
-    const saldo = saldoPrevio + montoP - costoS;
+    const solicitaFactura = (data.solicitaFactura === true || data.solicitaFactura === "true" || data.solicitaFactura === "Sí" || data.solicitaFactura === "Si" || data.solicitaFactura === "S" || data.fact === "Sí" || data.fact === "Si" || data.fact === "S" || data.fact === true);
+
+    let subVal = totalVal;
+    let ivaVal = 0;
+
+    if (solicitaFactura && totalVal > 0) {
+      ivaVal = totalVal * 0.16;
+      subVal = totalVal - ivaVal;
+    } else if (!solicitaFactura && subtotalInput > 0) {
+      subVal = subtotalInput;
+    }
+
+    const estadoVal = data.estadoAsistencia || data.estado || "Asistio";
+    const isCanceled = estadoVal.toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "").includes("cancelo");
+    const fuePagado = !isCanceled && (data.pago === "SÍ" || data.pago === "SI" || data.pagado === true || data.pagado === "SÍ" || (montoP > 0 || totalVal > 0));
+
+    let metodoPagoStr = data.metodoPagoFinal || data.metodoPago || "Efectivo";
+    if (!metodoPagoStr.includes("$") && (montoP > 0 || totalVal > 0)) {
+      const amt = montoP > 0 ? montoP : totalVal;
+      metodoPagoStr = `${metodoPagoStr} $${amt}`;
+    }
+
+    const saldo = saldoPrevio + (isCanceled ? 0 : montoP) - (isCanceled ? 0 : costoS);
 
     // Datos financieros a guardar
-    const estadoVal = data.estadoAsistencia || data.estado || "Asistio";
     const extra = {
       asistenciaGuardada: estadoVal !== "Agendado",
       agendaId: data.agendaId || "",
       paqueteActual: paqueteActual,
       saldo: saldo,
-      montoPago: data.montoPago || "",
-      costoSesion: data.costoSesion || data.precioTerapia || "",
+      montoPago: (montoP > 0 ? montoP : totalVal).toString(),
+      costoSesion: costoS.toString(),
       fecha: data.fecha,
       hora: data.hora || "09:00",
-      area: data.area,
-      tipoSesion: data.tipoSesion,
+      area: data.area || "",
+      tipoSesion: data.tipoSesion || "Individual",
       estadoAsistencia: estadoVal,
       estado: estadoVal,
-      sesiones: data.sesiones || data.numeroSesiones,
-      solicitaFactura: (data.solicitaFactura === true || data.solicitaFactura === "true" || data.solicitaFactura === "Sí" || data.solicitaFactura === "Si" || data.solicitaFactura === "S" || data.fact === "Sí" || data.fact === "Si" || data.fact === "S" || data.fact === true),
-      subtotal: (data.solicitaFactura === true || data.solicitaFactura === "true" || data.solicitaFactura === "Sí" || data.solicitaFactura === "Si" || data.solicitaFactura === "S" || data.fact === "Sí" || data.fact === "Si" || data.fact === "S" || data.fact === true)
-        ? (parseMoneyStr(data.total) > 0 ? (parseMoneyStr(data.total) - (parseMoneyStr(data.total) * 0.16)) : parseMoneyStr(data.subtotal))
-        : (parseMoneyStr(data.subtotal) || parseMoneyStr(data.total)),
-      iva: (data.solicitaFactura === true || data.solicitaFactura === "true" || data.solicitaFactura === "Sí" || data.solicitaFactura === "Si" || data.solicitaFactura === "S" || data.fact === "Sí" || data.fact === "Si" || data.fact === "S" || data.fact === true)
-        ? (parseMoneyStr(data.total) > 0 ? (parseMoneyStr(data.total) * 0.16) : parseMoneyStr(data.iva))
-        : 0,
-      total: parseMoneyStr(data.total),
-      fact: (data.solicitaFactura === true || data.solicitaFactura === "true" || data.solicitaFactura === "Sí" || data.solicitaFactura === "Si" || data.solicitaFactura === "S" || data.fact === "Sí" || data.fact === "Si" || data.fact === "S" || data.fact === true) ? "Sí" : "No",
-      obs: data.obs,
+      sesiones: data.sesiones || data.numeroSesiones || "1",
+      solicitaFactura: solicitaFactura,
+      subtotal: subVal,
+      iva: ivaVal,
+      total: totalVal,
+      fact: solicitaFactura ? "Sí" : "No",
+      obs: data.obs || "—",
       creadoPor: data.creadoPor,
-      pagado: estadoVal === "Asistio" || estadoVal === "Cancelo sin anticipacion",
+      pago: fuePagado ? "SÍ" : "NO",
+      pagado: fuePagado,
+      metodoPago: metodoPagoStr,
+      metodoPago2: data.metodoPago2 || "",
+      montoPago2: data.montoPago2 || "",
       frecuencia: data.frecuencia || "Única",
       horaRegistro: (() => {
         // Usar la hora agendada de la cita (de la session existente en agenda)
@@ -229,14 +261,11 @@ export async function saveAsistenciaDB(data: any) {
         if (targetSession.notes) existingExtra = JSON.parse(targetSession.notes);
       } catch(e) {}
       finalNotes = JSON.stringify({ ...existingExtra, ...extra });
-
       await prisma.session.update({
         where: { id: targetSession.id },
         data: {
           date: jsDate,
-          patientId: patient.id,
-          therapistId: therapistId,
-          status: estadoVal === "Asistio" ? "COMPLETED" : (estadoVal.includes("Cancelo") ? "CANCELLED" : targetSession.status),
+          status: estadoVal === "Asistio" ? "COMPLETED" : "CANCELLED",
           notes: finalNotes
         }
       });
@@ -244,68 +273,65 @@ export async function saveAsistenciaDB(data: any) {
       finalNotes = JSON.stringify(extra);
       await prisma.session.create({
         data: {
+          patientId: patient.id,
+          therapistId: therapistId,
           date: jsDate,
-          status: estadoVal === "Asistio" ? "COMPLETED" : (estadoVal.includes("Cancelo") ? "CANCELLED" : "SCHEDULED"),
-          notes: finalNotes,
-          therapistId,
-          patientId: patient.id
+          status: estadoVal === "Asistio" ? "COMPLETED" : "CANCELLED",
+          notes: finalNotes
         }
       });
     }
 
     revalidatePath("/dashboard/asistencia");
-    revalidatePath("/dashboard/agenda");
-    revalidatePath("/dashboard/pacientes");
-    revalidatePath("/dashboard/finanzas");
-    revalidatePath("/dashboard/honorarios");
-    revalidatePath("/dashboard/estado-resultados");
     return { success: true };
   } catch (error: any) {
-    console.error("Error guardando asistencia:", error);
-    return { success: false, error: error.message };
+    console.error("Error al guardar asistencia en BD:", error);
+    return { success: false, error: error.message || "Error al guardar asistencia." };
   }
 }
 
-
-export async function getAsistenciasDB(_ts?: string) {
+export async function getAsistenciasDB() {
   noStore();
   try {
     const sessions = await prisma.session.findMany({
-      include: { patient: true, therapist: true },
-      orderBy: { date: 'asc' }
+      include: {
+        patient: true,
+        therapist: true
+      },
+      orderBy: { date: "asc" }
     });
 
-    const patientAttendanceMap: { [patientKey: string]: any[] } = {};
+    const patientMap: { [key: string]: any[] } = {};
 
-    for (const s of sessions) {
-      if (!s.notes) continue;
-      try {
-        const extra = JSON.parse(s.notes);
-        const estNorm = (extra.estadoAsistencia || extra.estado || s.status || "").trim().toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "");
-        const isRegistered = extra.asistenciaGuardada === true || 
-                             extra.pagado === "SÍ" || 
-                             extra.pagado === "SI" || 
-                             Boolean(extra.metodoPago && extra.metodoPago.trim() !== "") || 
-                             Boolean(extra.montoPago && extra.montoPago !== "0" && extra.montoPago !== "") || 
-                             estNorm.includes("asistio") || 
-                             estNorm.includes("cancelo") || 
-                             s.status === "COMPLETED" || 
-                             s.status === "CANCELLED";
+    sessions.forEach(s => {
+      let extra: any = {};
+      if (s.notes) {
+        try { extra = JSON.parse(s.notes); } catch(e) {}
+      }
 
-        if (isRegistered) {
-          const patientKey = s.patientId || s.patient?.name || "unknown";
-          if (!patientAttendanceMap[patientKey]) {
-            patientAttendanceMap[patientKey] = [];
-          }
-          patientAttendanceMap[patientKey].push({ s, extra });
-        }
-      } catch (e) {}
-    }
+      const estNorm = (extra.estadoAsistencia || extra.estado || s.status || "").trim().toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "");
+      const isRegistered = extra.asistenciaGuardada === true || 
+                           extra.pagado === "SÍ" || 
+                           extra.pagado === "SI" || 
+                           extra.pagado === true || 
+                           Boolean(extra.metodoPago && extra.metodoPago.trim() !== "") || 
+                           Boolean(extra.montoPago && extra.montoPago !== "0" && extra.montoPago !== "") || 
+                           estNorm.includes("asistio") || 
+                           estNorm.includes("cancelo") || 
+                           s.status === "COMPLETED" || 
+                           s.status === "CANCELLED";
+
+      if (!isRegistered) return;
+
+      const pKey = s.patientId || s.patient?.name || "desconocido";
+      if (!patientMap[pKey]) patientMap[pKey] = [];
+      patientMap[pKey].push({ s, extra });
+    });
 
     const asistencias: any[] = [];
-    Object.values(patientAttendanceMap).forEach(records => {
+
+    Object.values(patientMap).forEach(records => {
       records.sort((a, b) => new Date(a.s.date).getTime() - new Date(b.s.date).getTime());
-      
       let runningBalance = 0;
 
       records.forEach((rec, index) => {
@@ -321,26 +347,10 @@ export async function getAsistenciasDB(_ts?: string) {
           metodoPagoStr = `Mixto (${extra.metodoPago || extra.metodoPago1 || 'P1'}: $${extra.montoPago || 0}, ${extra.metodoPago2}: $${extra.montoPago2 || 0})`;
         }
 
-        const parseMoneyStr = (val: any): number => {
-          if (typeof val === 'number') return isNaN(val) ? 0 : val;
-          if (!val) return 0;
-          const cleaned = String(val).replace(/[^0-9.-]/g, '');
-          const num = parseFloat(cleaned);
-          return isNaN(num) ? 0 : num;
-        };
-
         let montoP = parseMoneyStr(extra.montoPago);
         let totalVal = parseMoneyStr(extra.total || extra.subtotal);
         const estNorm = (extra.estadoAsistencia || extra.estado || s.status || "").toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "");
         const isCanceled = estNorm.includes("cancelo");
-
-        // Si montoP o totalVal no se guardaron explícitamente, extraer montos numéricos de metodoPago
-        if (montoP === 0 && metodoPagoStr) {
-          const dollarMatches = metodoPagoStr.match(/\$([\d.]+)/g);
-          if (dollarMatches) {
-            montoP = dollarMatches.reduce((sum: number, val: string) => sum + parseMoneyStr(val), 0);
-          }
-        }
 
         // Si es Asistio y totalVal/montoP es 0 pero hay costoSesion o precioTerapia, recuperar valores
         if (!isCanceled) {
@@ -353,6 +363,11 @@ export async function getAsistenciasDB(_ts?: string) {
           } else if (montoP > 0 && totalVal === 0) {
             totalVal = montoP;
           }
+        }
+
+        if (!metodoPagoStr.includes("$") && (montoP > 0 || totalVal > 0)) {
+          const amt = montoP > 0 ? montoP : totalVal;
+          metodoPagoStr = `${metodoPagoStr} $${amt}`;
         }
 
         const costoS = isCanceled ? 0 : (parseMoneyStr(extra.costoSesion || extra.precioTerapia) || totalVal || montoP);
@@ -372,20 +387,22 @@ export async function getAsistenciasDB(_ts?: string) {
           ivaVal = 0;
         }
 
+        const fuePagado = !isCanceled && (montoP > 0 || totalVal > 0 || extra.pago === "SÍ" || extra.pago === "SI" || extra.pagado === true);
+
         asistencias.push({
           id: s.id,
           fecha: extra.fecha || s.date.toISOString().split("T")[0],
           horaRegistro: extra.hora || extra.horaRegistro || "-",
-          area: extra.area || "-",
+          area: extra.area || s.patient?.medicoTratante || "-",
           paciente: s.patient?.name || "-",
           pacienteId: s.patient?.id || "",
           sexo: s.patient?.sexo || "-",
           edad: s.patient?.age?.toString() || "-",
-          tipoSesion: extra.tipoSesion || "-",
+          tipoSesion: extra.tipoSesion || "Individual",
           estado: extra.estadoAsistencia || s.status,
           sesiones: displaySesiones,
-          frecuencia: extra.frecuencia || "-",
-          pago: !isCanceled && (montoP > 0 || totalVal > 0 || extra.pago === "SÍ") ? "SÍ" : (extra.pago || "NO"),
+          frecuencia: extra.frecuencia || "Única",
+          pago: fuePagado ? "SÍ" : "NO",
           metodoPago: metodoPagoStr,
           fact: solicitaFactura ? "Sí" : "No",
           subtotal: "$" + Number(subtotalVal).toFixed(2),
