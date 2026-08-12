@@ -385,17 +385,17 @@ export async function getAsistenciasDB() {
           ivaVal = 0;
         }
 
-        const fuePagado = !isCanceled && (montoP > 0 || totalVal > 0 || extra.pago === "SÍ" || extra.pago === "SI" || extra.pagado === true);
+        const fuePagado = !isFreeCancel && (montoP > 0 || totalVal > 0 || extra.pago === "SÍ" || extra.pago === "SI" || extra.pagado === true);
 
         asistencias.push({
           id: s.id,
           fecha: extra.fecha || s.date.toISOString().split("T")[0],
           horaRegistro: extra.hora || extra.horaRegistro || "-",
           area: extra.area || s.patient?.medicoTratante || "-",
-          paciente: s.patient?.name || "-",
-          pacienteId: s.patient?.id || "",
-          sexo: s.patient?.sexo || "-",
-          edad: s.patient?.age?.toString() || "-",
+          paciente: s.patient?.name || extra.paciente || extra.pacienteNombre || "-",
+          pacienteId: s.patient?.id || extra.pacienteId || "",
+          sexo: s.patient?.sexo || extra.sexo || extra.pacienteSexo || "-",
+          edad: s.patient?.age?.toString() || extra.edad || extra.pacienteEdad || "-",
           tipoSesion: extra.tipoSesion || "Individual",
           estado: extra.estadoAsistencia || s.status,
           sesiones: displaySesiones,
@@ -409,7 +409,7 @@ export async function getAsistenciasDB() {
           saldo: runningBalance,
           obs: extra.obs || "-",
           creadoPor: extra.creadoPor || "-",
-          terapeuta: s.therapist?.name || "-"
+          terapeuta: s.therapist?.name || extra.terapeuta || extra.terapeutaNombre || "-"
         });
       });
     });
