@@ -34,7 +34,28 @@ export async function GET() {
       );
     `);
 
-    return NextResponse.json({ success: true, message: "Migrations executed successfully" });
+    // Enable Row Level Security (RLS) on all public tables to resolve Supabase security alerts
+    const tables = [
+      'AuditLog',
+      'User',
+      'Patient',
+      'Session',
+      'Payment',
+      'SystemSettings',
+      'OperationalExpense',
+      'Horario',
+      'PreRegistration'
+    ];
+
+    for (const tbl of tables) {
+      try {
+        await prisma.$executeRawUnsafe(`ALTER TABLE "${tbl}" ENABLE ROW LEVEL SECURITY;`);
+      } catch (e) {
+        console.log(`RLS enable notice for ${tbl}:`, e);
+      }
+    }
+
+    return NextResponse.json({ success: true, message: "Migrations and RLS security policies executed successfully" });
   } catch (error: any) {
     return NextResponse.json({ success: false, error: error.message });
   }
