@@ -359,17 +359,6 @@ export async function getAsistenciasDB(_ts?: string) {
         const solicitaFactura = extra.solicitaFactura === true || extra.solicitaFactura === "true" || extra.solicitaFactura === "Sí" || extra.solicitaFactura === "Si" || extra.solicitaFactura === "S" || extra.fact === "Sí" || extra.fact === "Si" || extra.fact === "S" || extra.fact === true;
         let subtotalVal = parseMoneyStr(extra.subtotal) || totalVal;
         let ivaVal = parseMoneyStr(extra.iva);
-        let totalValFinal = parseMoneyStr(extra.total) || totalVal;
-
-        if (solicitaFactura && totalVal > 0) {
-          if (subtotalVal === 0) subtotalVal = totalVal;
-          if (ivaVal === 0) ivaVal = subtotalVal * 0.16;
-          totalValFinal = subtotalVal + ivaVal;
-        } else if (!solicitaFactura) {
-          subtotalVal = totalVal;
-          ivaVal = 0;
-          totalValFinal = totalVal;
-        }
 
         asistencias.push({
           id: s.id,
@@ -389,7 +378,7 @@ export async function getAsistenciasDB(_ts?: string) {
           fact: solicitaFactura ? "Sí" : "No",
           subtotal: "$" + Number(subtotalVal).toFixed(2),
           iva: "$" + Number(ivaVal).toFixed(2),
-          total: "$" + Number(totalValFinal).toFixed(2),
+          total: "$" + Number(totalVal).toFixed(2),
           saldo: runningBalance,
           obs: extra.obs || "-",
           creadoPor: extra.creadoPor || "-",

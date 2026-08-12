@@ -305,12 +305,6 @@ export function AsistenciaForm({
     let ivaVal = 0;
     let finalTotal = totVal;
 
-    if (formData.solicitaFactura && totVal > 0) {
-      subVal = totVal;
-      ivaVal = totVal * ivaDec;
-      finalTotal = subVal + ivaVal;
-    }
-
     let metodoPagoFinal = formData.metodoPago;
     if (showSegundoPago && formData.metodoPago2) {
       metodoPagoFinal = `${formData.metodoPago || 'P1'} $${p1}\n${formData.metodoPago2} $${p2}`;
@@ -772,12 +766,6 @@ export function AsistenciaForm({
               
               let subCalc = totalCalc;
               let ivaCalc = 0;
-              let finalTotalCalc = totalCalc;
-              if (formData.solicitaFactura && totalCalc > 0) {
-                subCalc = totalCalc;
-                ivaCalc = totalCalc * 0.16;
-                finalTotalCalc = subCalc + ivaCalc;
-              }
 
               return (
                 <>
@@ -791,7 +779,7 @@ export function AsistenciaForm({
                   </div>
                   <div className="md:col-span-3">
                     <label className="block text-[10px] font-bold text-slate-400 uppercase mb-1">TOTAL CON IVA</label>
-                    <input type="text" readOnly value={`$${finalTotalCalc.toFixed(2)}`} className="w-full text-sm p-2 border border-slate-200 rounded bg-slate-100 outline-none text-slate-900 font-extrabold" />
+                    <input type="text" readOnly value={`$${totalCalc.toFixed(2)}`} className="w-full text-sm p-2 border border-slate-200 rounded bg-slate-100 outline-none text-slate-900 font-extrabold" />
                   </div>
                 </>
               );
