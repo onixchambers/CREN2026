@@ -650,6 +650,7 @@ export function EditPatientModal({
                   <option value="Tarjeta">Tarjeta</option>
                   <option value="Por definir">Por definir</option>
                   <option value="Beca">Beca</option>
+                  <option value="Ninguno">Ninguno</option>
                 </select>
               </div>
             </div>

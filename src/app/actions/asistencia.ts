@@ -204,8 +204,11 @@ export async function saveAsistenciaDB(data: any) {
     const isFreeCancel = (estNormVal.includes("con anticip") || estNormVal.includes("anticipad") || estNormVal.includes("centro")) && !estNormVal.includes("sin anticip");
     const fuePagado = !isFreeCancel && (data.pago === "SÍ" || data.pago === "SI" || data.pagado === true || data.pagado === "SÍ" || (montoP > 0 || (totalVal > 0 && data.montoPago && parseMoneyStr(data.montoPago) > 0)));
 
-    let metodoPagoStr = data.metodoPagoFinal || data.metodoPago || "Efectivo";
-    if (!metodoPagoStr.includes("$") && (montoP > 0 || totalVal > 0)) {
+    let metodoPagoStr = data.metodoPagoFinal || data.metodoPago || (isFreeCancel ? "Ninguno" : "Efectivo");
+    if (isFreeCancel && (metodoPagoStr === "Efectivo" || (!data.metodoPagoFinal && !data.metodoPago))) {
+      metodoPagoStr = "Ninguno";
+    }
+    if (!metodoPagoStr.includes("$") && (montoP > 0 || totalVal > 0) && metodoPagoStr !== "Ninguno") {
       const amt = montoP > 0 ? montoP : totalVal;
       metodoPagoStr = `${metodoPagoStr} $${amt}`;
     }
@@ -343,15 +346,19 @@ export async function getAsistenciasDB() {
         const totalCount = Math.max(totalFromNotes, patientSessions.length);
         const displaySesiones = totalCount > 1 ? `${sessionNum}/${totalCount}` : `${sessionNum}`;
 
-        let metodoPagoStr = extra.metodoPago || extra.metodoPagoFinal || extra.metodoPago1 || "Efectivo";
+        const estNorm = (extra.estadoAsistencia || extra.estado || s.status || "").toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "");
+        const isFreeCancel = (estNorm.includes("con anticip") || estNorm.includes("anticipad") || estNorm.includes("centro")) && !estNorm.includes("sin anticip");
+
+        let metodoPagoStr = extra.metodoPago || extra.metodoPagoFinal || extra.metodoPago1 || (isFreeCancel ? "Ninguno" : "Efectivo");
+        if (isFreeCancel && (metodoPagoStr === "Efectivo" || !extra.metodoPago)) {
+          metodoPagoStr = "Ninguno";
+        }
         if (extra.metodoPago2) {
           metodoPagoStr = `Mixto (${extra.metodoPago || extra.metodoPago1 || 'P1'}: $${extra.montoPago || 0}, ${extra.metodoPago2}: $${extra.montoPago2 || 0})`;
         }
 
         let montoP = parseMoneyStr(extra.montoPago);
         let totalVal = parseMoneyStr(extra.total || extra.subtotal);
-        const estNorm = (extra.estadoAsistencia || extra.estado || s.status || "").toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "");
-        const isFreeCancel = (estNorm.includes("con anticip") || estNorm.includes("anticipad") || estNorm.includes("centro")) && !estNorm.includes("sin anticip");
 
         // Si es una sesión con costo (Asistió o Canceló S/A) y totalVal/montoP es 0 pero hay costoSesion o precioTerapia, recuperar valores
         if (!isFreeCancel) {

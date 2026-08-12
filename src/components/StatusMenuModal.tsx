@@ -41,6 +41,8 @@ export function StatusMenuModal({
       // 2. Si el estado no es Agendado, guardar registro automático
       // en asistencia para que aparezca en registros recientes.
       if (estado !== "Agendado" && estado !== "Ocupado" && estado !== "Disponible") {
+        const estNorm = estado.toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "");
+        const isFreeCancel = (estNorm.includes("con anticip") || estNorm.includes("anticipad") || estNorm.includes("centro")) && !estNorm.includes("sin anticip");
         await saveAsistenciaDB({
           agendaId: cita.id,
           fecha: cita.fecha,
@@ -50,7 +52,7 @@ export function StatusMenuModal({
           tipoSesion: cita.tipoServicio,
           frecuencia: cita.frecuencia,
           estadoAsistencia: estado,
-          metodoPago: cita.metodoPago || "Por definir",
+          metodoPago: isFreeCancel ? "Ninguno" : (cita.metodoPago || "Por definir"),
           montoPago: "0",
           asistenciaGuardada: true
         });

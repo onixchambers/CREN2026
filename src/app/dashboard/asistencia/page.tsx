@@ -575,11 +575,15 @@ export default function AsistenciaPage() {
       subVal = totVal - ivaVal;
     }
 
-    let metodoPagoFinal = formData.metodoPago || "Efectivo";
+    let defaultMetodo = isFreeCancel ? "Ninguno" : "Efectivo";
+    let metodoPagoFinal = formData.metodoPago || defaultMetodo;
+    if (isFreeCancel && (metodoPagoFinal === "Efectivo" || !formData.metodoPago)) {
+      metodoPagoFinal = "Ninguno";
+    }
     if (showSegundoPago && formData.metodoPago2) {
-      metodoPagoFinal = `${formData.metodoPago || 'Efectivo'} $${p1}\n${formData.metodoPago2} $${p2}`;
+      metodoPagoFinal = `${formData.metodoPago || defaultMetodo} $${p1}\n${formData.metodoPago2} $${p2}`;
     } else if (showSegundoPago) {
-      metodoPagoFinal = `${formData.metodoPago || 'Efectivo'} $${p1}`;
+      metodoPagoFinal = `${formData.metodoPago || defaultMetodo} $${p1}`;
     } else if (p1 > 0 && formData.metodoPago) {
       metodoPagoFinal = `${formData.metodoPago} $${p1}`;
     }
@@ -700,7 +704,12 @@ export default function AsistenciaPage() {
     }
     setEditingAsistencia(a);
     
-    let baseMetodo = a.metodoPago || "Efectivo";
+    const estNorm = (a.estado || "").toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "");
+    const isFreeCancel = (estNorm.includes("con anticip") || estNorm.includes("anticipad") || estNorm.includes("centro")) && !estNorm.includes("sin anticip");
+    let baseMetodo = a.metodoPago || (isFreeCancel ? "Ninguno" : "Efectivo");
+    if (isFreeCancel && (baseMetodo === "Efectivo" || !a.metodoPago)) {
+      baseMetodo = "Ninguno";
+    }
     let baseMonto = "";
     let baseMetodo2 = "";
     let baseMonto2 = "";
@@ -720,7 +729,7 @@ export default function AsistenciaPage() {
         baseMonto2 = m2[2];
       }
     } else if (a.metodoPago) {
-      const validMethods = ["Efectivo", "Transferencia", "Tarjeta", "Mixto", "Por definir", "Beca"];
+      const validMethods = ["Efectivo", "Transferencia", "Tarjeta", "Mixto", "Por definir", "Beca", "Ninguno"];
       const foundMethod = validMethods.find(m => baseMetodo.startsWith(m));
       if (foundMethod) {
         baseMetodo = foundMethod;
@@ -753,6 +762,15 @@ export default function AsistenciaPage() {
     const { name, value, type } = e.target;
     if (type === "checkbox") {
       setEditForm((prev: any) => ({ ...prev, [name]: (e.target as HTMLInputElement).checked }));
+    } else if (name === "estado") {
+      const sNorm = (value || "").toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "");
+      const isFreeCancel = (sNorm.includes("con anticip") || sNorm.includes("anticipad") || sNorm.includes("centro")) && !sNorm.includes("sin anticip");
+      setEditForm((prev: any) => ({
+        ...prev,
+        estado: value,
+        metodoPago: isFreeCancel ? "Ninguno" : (prev.metodoPago === "Ninguno" ? "Efectivo" : prev.metodoPago),
+        montoPago: isFreeCancel ? "0" : prev.montoPago
+      }));
     } else {
       setEditForm((prev: any) => ({ ...prev, [name]: value }));
     }
@@ -775,9 +793,16 @@ export default function AsistenciaPage() {
       subVal = totVal - ivaVal;
     }
 
-    let editMetodoPagoFinal = editForm.metodoPago || "Efectivo";
+    const estNormEdit = (editForm.estado || "").toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "");
+    const isFreeCancelEdit = (estNormEdit.includes("con anticip") || estNormEdit.includes("anticipad") || estNormEdit.includes("centro")) && !estNormEdit.includes("sin anticip");
+
+    let defaultEditMetodo = isFreeCancelEdit ? "Ninguno" : "Efectivo";
+    let editMetodoPagoFinal = editForm.metodoPago || defaultEditMetodo;
+    if (isFreeCancelEdit && (editMetodoPagoFinal === "Efectivo" || !editForm.metodoPago)) {
+      editMetodoPagoFinal = "Ninguno";
+    }
     if (showEditSegundoPago && editForm.metodoPago2) {
-      editMetodoPagoFinal = `${editForm.metodoPago || 'Efectivo'} $${m1}\n${editForm.metodoPago2} $${m2}`;
+      editMetodoPagoFinal = `${editForm.metodoPago || defaultEditMetodo} $${m1}\n${editForm.metodoPago2} $${m2}`;
     } else if (m1 > 0 && editForm.metodoPago) {
       editMetodoPagoFinal = `${editForm.metodoPago} $${m1}`;
     }
@@ -1064,6 +1089,7 @@ export default function AsistenciaPage() {
                 <option value="Mixto">Mixto</option>
                 <option value="Por definir">Por definir</option>
                 <option value="Beca">Beca</option>
+                <option value="Ninguno">Ninguno</option>
               </select>
             </div>
             <div className="flex items-center gap-2">
@@ -1177,8 +1203,9 @@ export default function AsistenciaPage() {
                         <div className="w-full max-w-[110px] mx-auto flex flex-col items-stretch justify-center gap-0.5 my-0.5">
                           {lines.map((line, idx) => {
                             const isPorDefinir = line.toLowerCase().replace(/\s+/g, "").includes("pordefinir");
+                            const isNinguno = line.toLowerCase().includes("ninguno");
                             return (
-                              <span key={idx} className={`w-full border px-1 py-0.5 rounded text-[9px] font-bold block text-center whitespace-nowrap leading-tight shadow-xs ${isPorDefinir ? 'bg-red-500/20 text-red-800 border-red-300' : 'bg-blue-50 text-blue-800 border-blue-200'}`}>
+                              <span key={idx} className={`w-full border px-1 py-0.5 rounded text-[9px] font-bold block text-center whitespace-nowrap leading-tight shadow-xs ${isPorDefinir ? 'bg-red-500/20 text-red-800 border-red-300' : isNinguno ? 'bg-gray-500/20 text-slate-800 border-slate-300' : 'bg-blue-50 text-blue-800 border-blue-200'}`}>
                                 {line}
                               </span>
                             );
@@ -1387,7 +1414,7 @@ export default function AsistenciaPage() {
                         handleEditChange(e);
                         if (e.target.value === "Mixto") setShowEditSegundoPago(true);
                       }}
-                      className="w-full text-xs px-1.5 py-1.5 border border-slate-300 rounded-lg focus:border-[#2980b9] outline-none text-slate-900 bg-white font-medium cursor-pointer"
+                      className={`w-full text-xs px-1.5 py-1.5 border border-slate-300 rounded-lg focus:border-[#2980b9] outline-none font-medium cursor-pointer ${editForm.metodoPago === 'Ninguno' ? 'bg-gray-500/20 text-slate-800' : 'bg-white text-slate-900'}`}
                     >
                       <option value="Efectivo">Efectivo</option>
                       <option value="Transferencia">Transferencia</option>
@@ -1395,6 +1422,7 @@ export default function AsistenciaPage() {
                       <option value="Mixto">Mixto (MIX)</option>
                       <option value="Por definir">Por definir</option>
                       <option value="Beca">Beca</option>
+                      <option value="Ninguno">Ninguno</option>
                     </select>
                   </div>
 
@@ -1437,12 +1465,13 @@ export default function AsistenciaPage() {
                         name="metodoPago2"
                         value={editForm.metodoPago2 || "Transferencia"}
                         onChange={handleEditChange}
-                        className="w-full text-xs py-1.5 px-1.5 border border-blue-300 rounded-lg focus:border-[#2980b9] outline-none text-slate-900 bg-white font-medium cursor-pointer"
+                        className="w-full text-xs px-1.5 py-1.5 border border-blue-300 rounded-lg focus:border-[#2980b9] outline-none text-slate-900 bg-white font-medium cursor-pointer"
                       >
                         <option value="Transferencia">Transferencia</option>
                         <option value="Efectivo">Efectivo</option>
                         <option value="Tarjeta">Tarjeta</option>
                         <option value="Por definir">Por definir</option>
+                        <option value="Ninguno">Ninguno</option>
                       </select>
                     </div>
                     <div className="col-span-8">

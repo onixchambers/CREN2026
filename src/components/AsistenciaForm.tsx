@@ -122,6 +122,8 @@ export function AsistenciaForm({
   useEffect(() => {
     if (initialData) {
       const normEstado = initialData.estadoAsistencia ? normalizeEstadoAsistencia(initialData.estadoAsistencia) : "";
+      const estNormInit = normEstado.toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "");
+      const isFreeCancelInit = (estNormInit.includes("con anticip") || estNormInit.includes("anticipad") || estNormInit.includes("centro")) && !estNormInit.includes("sin anticip");
       
       let resolvedArea = initialData.area;
       if (!resolvedArea && (initialData.terapeuta || userRole.toUpperCase() === "TERAPEUTA")) {
@@ -133,9 +135,12 @@ export function AsistenciaForm({
         }
       }
 
+      const defaultMetodoInit = isFreeCancelInit ? (initialData.metodoPago && initialData.metodoPago !== "Efectivo" ? initialData.metodoPago : "Ninguno") : (initialData.metodoPago || "");
+
       setFormData(prev => ({ 
         ...prev, 
         ...initialData,
+        metodoPago: defaultMetodoInit,
         solicitaFactura: prev.solicitaFactura || Boolean(initialData.solicitaFactura),
         estadoAsistencia: initialData.estadoAsistencia ? normalizeEstadoAsistencia(initialData.estadoAsistencia) : (prev.estadoAsistencia || "Asistio"),
         area: resolvedArea || prev.area || "Fisioterapia"
@@ -241,6 +246,11 @@ export function AsistenciaForm({
         hora: horaAgenda,
         tipoSesion: tipoSesionAgenda,
         estadoAsistencia: normalizeEstadoAsistencia(estadoAsistenciaAgenda),
+        metodoPago: (() => {
+          const normE = normalizeEstadoAsistencia(estadoAsistenciaAgenda).toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "");
+          const isFC = (normE.includes("con anticip") || normE.includes("anticipad") || normE.includes("centro")) && !normE.includes("sin anticip");
+          return isFC ? "Ninguno" : prev.metodoPago;
+        })(),
         saldoDisponible: p.saldoCalculado || "0.00",
         precioTerapia: p.precioTerapia || prev.precioTerapia,
         numeroSesiones: "1", 
@@ -266,6 +276,16 @@ export function AsistenciaForm({
     const { name, value, type } = e.target;
     if (type === "checkbox") {
       setFormData(prev => ({ ...prev, [name]: (e.target as HTMLInputElement).checked }));
+    } else if (name === "estadoAsistencia") {
+      const norm = normalizeEstadoAsistencia(value);
+      const sNorm = norm.toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "");
+      const isFreeCancel = (sNorm.includes("con anticip") || sNorm.includes("anticipad") || sNorm.includes("centro")) && !sNorm.includes("sin anticip");
+      setFormData(prev => ({
+        ...prev,
+        estadoAsistencia: value,
+        metodoPago: isFreeCancel ? "Ninguno" : (prev.metodoPago === "Ninguno" ? "Efectivo" : prev.metodoPago),
+        montoPago: isFreeCancel ? "0" : prev.montoPago
+      }));
     } else {
       setFormData(prev => ({ ...prev, [name]: value }));
     }
@@ -321,11 +341,15 @@ export function AsistenciaForm({
       subVal = totVal - ivaVal;
     }
 
-    let metodoPagoFinal = formData.metodoPago || "Efectivo";
+    let defaultMetodo = isFreeCancel ? "Ninguno" : "Efectivo";
+    let metodoPagoFinal = formData.metodoPago || defaultMetodo;
+    if (isFreeCancel && (metodoPagoFinal === "Efectivo" || !formData.metodoPago)) {
+      metodoPagoFinal = "Ninguno";
+    }
     if (showSegundoPago && formData.metodoPago2) {
-      metodoPagoFinal = `${formData.metodoPago || 'P1'} $${p1}\n${formData.metodoPago2} $${p2}`;
+      metodoPagoFinal = `${formData.metodoPago || defaultMetodo} $${p1}\n${formData.metodoPago2} $${p2}`;
     } else if (showSegundoPago) {
-      metodoPagoFinal = `${formData.metodoPago || 'Efectivo'} $${p1}`;
+      metodoPagoFinal = `${formData.metodoPago || defaultMetodo} $${p1}`;
     } else if (p1 > 0 && formData.metodoPago) {
       metodoPagoFinal = `${formData.metodoPago} $${p1}`;
     } else if (formData.metodoPago && !formData.metodoPago.includes("$") && totVal > 0) {
@@ -486,7 +510,7 @@ export function AsistenciaForm({
 
                       const inputTokens = inputNorm.split(/\s+/).filter(Boolean);
                       const pTokens = pNameNorm.split(/\s+/).filter(Boolean);
-                      return inputTokens.every(tok => pTokens.some(pt => pt.includes(tok) || tok.includes(pt)));
+                      return inputTokens.every(tok => pTokens.some((pt: string) => pt.includes(tok) || tok.includes(pt)));
                     })
                     .map(p => (
                       <li 
@@ -558,7 +582,7 @@ export function AsistenciaForm({
 
                     const inputTokens = inputNorm.split(/\s+/).filter(Boolean);
                     const pTokens = pNameNorm.split(/\s+/).filter(Boolean);
-                    return inputTokens.every(tok => pTokens.some(pt => pt.includes(tok) || tok.includes(pt)));
+                    return inputTokens.every(tok => pTokens.some((pt: string) => pt.includes(tok) || tok.includes(pt)));
                   }).length === 0 && (
                     <li className="px-3 py-2 text-sm text-slate-400 italic">No se encontraron pacientes coincidentes</li>
                   )}
@@ -696,14 +720,22 @@ export function AsistenciaForm({
             </div>
             <div className="flex flex-col gap-2 max-w-2xl">
               <div className="flex items-center gap-2">
-                <select name="metodoPago" value={formData.metodoPago} onChange={handleChange} className="flex-1 text-sm p-2 border border-slate-300 rounded focus:border-[#2980b9] outline-none text-slate-900">
-                  <option value="">Método 1...</option>
-                  <option value="Efectivo">Efectivo</option>
-                  <option value="Transferencia">Transferencia</option>
-                  <option value="Tarjeta">Tarjeta</option>
-                  <option value="Por definir">Por definir</option>
-                  <option value="Beca">Beca</option>
-                </select>
+                {(() => {
+                  const estNorm = normalizeEstadoAsistencia(formData.estadoAsistencia || "").toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "");
+                  const isFreeCancel = (estNorm.includes("con anticip") || estNorm.includes("anticipad") || estNorm.includes("centro")) && !estNorm.includes("sin anticip");
+                  const isNinguno = formData.metodoPago === "Ninguno" || isFreeCancel;
+                  return (
+                    <select name="metodoPago" value={formData.metodoPago} onChange={handleChange} className={`flex-1 text-sm p-2 border border-slate-300 rounded focus:border-[#2980b9] outline-none ${isNinguno ? 'bg-gray-500/20 text-slate-800 font-medium' : 'text-slate-900 bg-white'}`}>
+                      <option value="">Método 1...</option>
+                      <option value="Efectivo">Efectivo</option>
+                      <option value="Transferencia">Transferencia</option>
+                      <option value="Tarjeta">Tarjeta</option>
+                      <option value="Por definir">Por definir</option>
+                      <option value="Beca">Beca</option>
+                      <option value="Ninguno">Ninguno</option>
+                    </select>
+                  );
+                })()}
                 <div className="relative w-32">
                   <span className="absolute left-2 top-1.5 text-slate-500">$</span>
                   <input type="number" name="montoPago" value={formData.montoPago} onChange={handleChange} placeholder="0" className="w-full text-sm p-2 pl-6 border border-slate-300 rounded bg-slate-50 outline-none text-slate-900" />
@@ -744,6 +776,7 @@ export function AsistenciaForm({
                     <option value="Tarjeta">Tarjeta</option>
                     <option value="Por definir">Por definir</option>
                     <option value="Beca">Beca</option>
+                    <option value="Ninguno">Ninguno</option>
                   </select>
                   <div className="relative w-32">
                     <span className="absolute left-2 top-1.5 text-slate-500">$</span>

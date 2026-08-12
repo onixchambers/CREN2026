@@ -149,6 +149,7 @@ export default function DashboardPage() {
     else if (m.toLowerCase().includes("transferencia")) m = "Transferencia";
     else if (m.toLowerCase().includes("tarjeta")) m = "Tarjeta";
     else if (m.toLowerCase().includes("efectivo")) m = "Efectivo";
+    else if (m.toLowerCase().includes("ninguno")) m = "Ninguno";
     else if (m.toLowerCase().replace(/\s+/g, "").includes("pordefinir")) m = "Por definir";
     else m = "Otros";
     const sub = typeof a.saldo === "number" ? (parseFloat(a.total ? a.total.replace("$","") : "0")) : parseFloat(a.subtotal ? a.subtotal.replace("$","") : "0");
