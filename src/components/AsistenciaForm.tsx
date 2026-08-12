@@ -136,7 +136,7 @@ export function AsistenciaForm({
       setFormData(prev => ({ 
         ...prev, 
         ...initialData,
-        estadoAsistencia: normEstado || prev.estadoAsistencia || "Asistio",
+        estadoAsistencia: initialData.estadoAsistencia ? normalizeEstadoAsistencia(initialData.estadoAsistencia) : (prev.estadoAsistencia || "Asistio"),
         area: resolvedArea || prev.area || "Fisioterapia"
       }));
 

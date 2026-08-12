@@ -179,7 +179,7 @@ export async function saveAsistenciaDB(data: any) {
     const saldo = saldoPrevio + montoP - costoS;
 
     // Datos financieros a guardar
-    const estadoVal = data.estado || data.estadoAsistencia || "";
+    const estadoVal = data.estadoAsistencia || data.estado || "Asistio";
     const extra = {
       asistenciaGuardada: estadoVal !== "Agendado",
       agendaId: data.agendaId || "",
