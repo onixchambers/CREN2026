@@ -568,7 +568,9 @@ export default function AsistenciaPage() {
     let subVal = totVal;
     let ivaVal = 0;
 
-    if (formData.solicitaFactura && totVal > 0) {
+    const solicitaFacturaChecked = Boolean(formData.solicitaFactura);
+
+    if (solicitaFacturaChecked && totVal > 0) {
       subVal = totVal / (1 + ivaDec);
       ivaVal = totVal - subVal;
     }
@@ -597,7 +599,8 @@ export default function AsistenciaPage() {
       sesiones: formData.numeroSesiones || "1",
       frecuencia: formData.frecuencia || "Única",
       pago: fuePagado ? "SÍ" : "NO",
-      fact: formData.solicitaFactura ? "Sí" : "No",
+      solicitaFactura: solicitaFacturaChecked,
+      fact: solicitaFacturaChecked ? "Sí" : "No",
       subtotal: `$${subVal.toFixed(2)}`,
       iva: `$${ivaVal.toFixed(2)}`,
       total: `$${totVal.toFixed(2)}`,

@@ -194,10 +194,11 @@ export async function saveAsistenciaDB(data: any) {
       estadoAsistencia: estadoVal,
       estado: estadoVal,
       sesiones: data.sesiones || data.numeroSesiones,
-      metodoPago: data.metodoPago || data.metodoPagoFinal || data.metodoPago1 || "Efectivo",
-      solicitaFactura: data.fact === "S" || data.fact === "Sí" || data.fact === "Si" || data.fact === true || data.solicitaFactura === "S" || data.solicitaFactura === "Sí" || data.solicitaFactura === "Si" || data.solicitaFactura === true,
-      subtotal: data.subtotal ? (typeof data.subtotal === 'string' ? parseFloat(data.subtotal.replace("$", "")) : data.subtotal) : 0,
-      total: data.total ? (typeof data.total === 'string' ? parseFloat(data.total.replace("$", "")) : data.total) : 0,
+      solicitaFactura: data.solicitaFactura === true || data.solicitaFactura === "true" || data.solicitaFactura === "Sí" || data.solicitaFactura === "Si" || data.solicitaFactura === "S" || data.fact === "Sí" || data.fact === "Si" || data.fact === "S" || data.fact === true,
+      subtotal: data.subtotal ? (typeof data.subtotal === 'string' ? parseFloat(data.subtotal.replace(/[^0-9.-]/g, "")) : data.subtotal) : 0,
+      iva: data.iva ? (typeof data.iva === 'string' ? parseFloat(data.iva.replace(/[^0-9.-]/g, "")) : data.iva) : 0,
+      total: data.total ? (typeof data.total === 'string' ? parseFloat(data.total.replace(/[^0-9.-]/g, "")) : data.total) : 0,
+      fact: (data.solicitaFactura === true || data.solicitaFactura === "true" || data.solicitaFactura === "Sí" || data.solicitaFactura === "Si" || data.solicitaFactura === "S" || data.fact === "Sí" || data.fact === "Si" || data.fact === "S" || data.fact === true) ? "Sí" : "No",
       obs: data.obs,
       creadoPor: data.creadoPor,
       pagado: estadoVal === "Asistio" || estadoVal === "Cancelo sin anticipacion",
@@ -355,13 +356,16 @@ export async function getAsistenciasDB(_ts?: string) {
         // Sumar pago y restar costo de la sesión al saldo acumulado progresivo
         runningBalance = runningBalance + montoP - costoS;
 
-        const solicitaFactura = Boolean(extra.solicitaFactura || (extra.fact === "Sí" || extra.fact === "Si" || extra.fact === true));
-        let subtotalVal = totalVal;
-        let ivaVal = 0;
+        const solicitaFactura = extra.solicitaFactura === true || extra.solicitaFactura === "true" || extra.solicitaFactura === "Sí" || extra.solicitaFactura === "Si" || extra.solicitaFactura === "S" || extra.fact === "Sí" || extra.fact === "Si" || extra.fact === "S" || extra.fact === true;
+        let subtotalVal = parseMoneyStr(extra.subtotal) || totalVal;
+        let ivaVal = parseMoneyStr(extra.iva);
 
         if (solicitaFactura && totalVal > 0) {
           subtotalVal = totalVal / 1.16;
           ivaVal = totalVal - subtotalVal;
+        } else if (!solicitaFactura) {
+          subtotalVal = totalVal;
+          ivaVal = 0;
         }
 
         asistencias.push({
