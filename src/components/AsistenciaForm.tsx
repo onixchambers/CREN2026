@@ -648,19 +648,14 @@ export function AsistenciaForm({
                 const estNorm = normalizeEstadoAsistencia(formData.estadoAsistencia || "");
                 const isCanceled = estNorm.toLowerCase().includes("cancelo");
 
-                let montoEfectivo = montoIngresado;
-                if (!isCanceled && montoIngresado === 0 && costoSesionF > 0 && !formData.montoPago) {
-                  montoEfectivo = costoSesionF;
-                }
-
                 const costoAplica = isCanceled ? 0 : costoSesionF;
-                const saldoF = saldoPrevioF + montoEfectivo - costoAplica;
+                const saldoF = saldoPrevioF + montoIngresado - costoAplica;
                 const isNeg = saldoF < 0;
+                const formattedVal = isNeg ? `-$${Math.abs(saldoF).toFixed(2)}` : `$${saldoF.toFixed(2)}`;
+
                 return (
                   <div className="relative">
-                    <span className={`absolute left-2 top-1.5 ${isNeg ? 'text-red-500' : 'text-green-600'}`}>$</span>
-                    <input type="text" readOnly value={Math.abs(saldoF).toFixed(2)} className={`w-full text-sm p-2 pl-6 border ${isNeg ? 'border-red-300 bg-red-50 text-red-700' : 'border-green-300 bg-green-50 text-green-700'} rounded outline-none font-bold`} />
-                    {isNeg && <span className="absolute right-2 top-2 text-red-500 font-bold">-</span>}
+                    <input type="text" readOnly value={formattedVal} className={`w-full text-sm p-2 border ${isNeg ? 'border-red-300 bg-red-50 text-red-700 font-extrabold' : 'border-green-300 bg-green-50 text-green-700 font-bold'} rounded outline-none`} />
                   </div>
                 );
               })()}
