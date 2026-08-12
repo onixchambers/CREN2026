@@ -49,24 +49,22 @@ export default function LoginPage() {
           <img src="/logo.png" alt="CREN Logo" className="w-64 h-auto drop-shadow-lg" />
         </div>
 
-        {/* Cuadro principal traslúcido con bordes en blanco */}
-        <div className="bg-white/10 backdrop-blur-md rounded-2xl p-8 border-2 border-white/40 shadow-2xl">
-          <h2 className="text-2xl font-bold text-center text-white mb-6 tracking-wide">
+        <div className="bg-white rounded-2xl p-8 shadow-2xl">
+          <h2 className="text-2xl font-bold text-center text-blue-900 mb-6">
             Iniciar Sesión
           </h2>
 
           {error && (
-            <div className="bg-red-500/20 border border-red-400 text-red-100 p-3 rounded-lg text-sm mb-4 text-center font-medium">
+            <div className="bg-red-50 text-red-600 p-3 rounded-lg text-sm mb-4 text-center font-medium">
               {error}
             </div>
           )}
 
           <form onSubmit={handleSubmit} className="space-y-5">
             <div>
-              <label className="block text-xs font-semibold text-slate-200 uppercase tracking-wide mb-2">
+              <label className="block text-xs font-semibold text-gray-500 uppercase tracking-wide mb-2">
                 Usuario
               </label>
-              {/* Input con fondo del color del fondo (#0e2f44) y texto de escritura en BLANCO */}
               <input
                 type="text"
                 value={username}
@@ -74,17 +72,16 @@ export default function LoginPage() {
                 autoCapitalize="none"
                 autoCorrect="off"
                 spellCheck={false}
-                className="w-full px-4 py-3 rounded-lg border-2 border-white/40 bg-[#0e2f44] focus:border-white focus:ring-4 focus:ring-white/20 transition-all outline-none text-white font-medium placeholder-slate-300"
+                className="w-full px-4 py-3 rounded-lg border-2 border-gray-200 focus:border-blue-500 focus:ring-4 focus:ring-blue-500/10 transition-all outline-none text-slate-900 font-medium"
                 placeholder="Nombre de usuario"
                 required
               />
             </div>
 
             <div>
-              <label className="block text-xs font-semibold text-slate-200 uppercase tracking-wide mb-2">
+              <label className="block text-xs font-semibold text-gray-500 uppercase tracking-wide mb-2">
                 Contraseña
               </label>
-              {/* Input con fondo del color del fondo (#0e2f44) y texto de escritura en BLANCO */}
               <input
                 type="password"
                 value={password}
@@ -92,7 +89,7 @@ export default function LoginPage() {
                 autoCapitalize="none"
                 autoCorrect="off"
                 spellCheck={false}
-                className="w-full px-4 py-3 rounded-lg border-2 border-white/40 bg-[#0e2f44] focus:border-white focus:ring-4 focus:ring-white/20 transition-all outline-none text-white font-medium placeholder-slate-300"
+                className="w-full px-4 py-3 rounded-lg border-2 border-gray-200 focus:border-blue-500 focus:ring-4 focus:ring-blue-500/10 transition-all outline-none text-slate-900 font-medium"
                 placeholder="••••••••"
                 required
               />
@@ -101,7 +98,7 @@ export default function LoginPage() {
             <button
               type="submit"
               disabled={loading}
-              className="w-full bg-[#1a5276] hover:bg-[#154360] border border-white/30 text-white font-bold py-3 px-4 rounded-lg transition-all shadow-lg disabled:opacity-50 flex items-center justify-center gap-2"
+              className="w-full bg-[#1a5276] hover:bg-[#0e2f44] text-white font-bold py-3 px-4 rounded-lg transition-colors disabled:opacity-50 flex items-center justify-center gap-2"
             >
               {loading && (
                 <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
