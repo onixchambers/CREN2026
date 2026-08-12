@@ -645,11 +645,10 @@ export function AsistenciaForm({
                 const p2 = showSegundoPago ? parseMoney(formData.montoPago2) : 0;
                 const montoIngresado = p1 + p2;
                 const costoSesionF = parseMoney(formData.precioTerapia);
-                
-                const estNorm = normalizeEstadoAsistencia(formData.estadoAsistencia || "");
-                const isCanceled = estNorm.toLowerCase().includes("cancelo");
+                const estNorm = normalizeEstadoAsistencia(formData.estadoAsistencia || "").toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "");
+                const isFreeCancel = (estNorm.includes("con anticip") || estNorm.includes("anticipad") || estNorm.includes("centro")) && !estNorm.includes("sin anticip");
 
-                const costoAplica = isCanceled ? 0 : costoSesionF;
+                const costoAplica = isFreeCancel ? 0 : costoSesionF;
                 const saldoF = saldoPrevioF + montoIngresado - costoAplica;
                 const isNeg = saldoF < 0;
                 const formattedVal = isNeg ? `-$${Math.abs(saldoF).toFixed(2)}` : `$${saldoF.toFixed(2)}`;
@@ -755,15 +754,15 @@ export function AsistenciaForm({
               const p2 = showSegundoPago ? parseFloat((formData.montoPago2 || "0").replace(/[^0-9.-]/g, "")) : 0;
               const montoIngresado = p1 + p2;
               const precioTerapia = parseFloat((formData.precioTerapia || "0").replace(/[^0-9.-]/g, ""));
-              const estNorm = normalizeEstadoAsistencia(formData.estadoAsistencia || "");
-              const isCanceled = estNorm.toLowerCase().includes("cancelo");
+              const estNorm = normalizeEstadoAsistencia(formData.estadoAsistencia || "").toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "");
+              const isFreeCancel = (estNorm.includes("con anticip") || estNorm.includes("anticipad") || estNorm.includes("centro")) && !estNorm.includes("sin anticip");
 
               let montoEfectivo = montoIngresado;
-              if (!isCanceled && montoIngresado === 0 && precioTerapia > 0 && !formData.montoPago) {
+              if (!isFreeCancel && montoIngresado === 0 && precioTerapia > 0 && !formData.montoPago) {
                 montoEfectivo = precioTerapia;
               }
 
-              const totalCalc = isCanceled ? montoIngresado : (montoEfectivo > 0 ? montoEfectivo : precioTerapia);
+              const totalCalc = isFreeCancel ? montoIngresado : (montoEfectivo > 0 ? montoEfectivo : precioTerapia);
               
               let subCalc = totalCalc;
               let ivaCalc = 0;

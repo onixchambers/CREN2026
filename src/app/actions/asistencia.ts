@@ -199,9 +199,9 @@ export async function saveAsistenciaDB(data: any) {
       subVal = subtotalInput;
     }
 
-    const estadoVal = data.estadoAsistencia || data.estado || "Asistio";
-    const isCanceled = estadoVal.toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "").includes("cancelo");
-    const fuePagado = !isCanceled && (data.pago === "SÍ" || data.pago === "SI" || data.pagado === true || data.pagado === "SÍ" || (montoP > 0 || totalVal > 0));
+    const estNormVal = estadoVal.toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "");
+    const isFreeCancel = (estNormVal.includes("con anticip") || estNormVal.includes("anticipad") || estNormVal.includes("centro")) && !estNormVal.includes("sin anticip");
+    const fuePagado = !isFreeCancel && (data.pago === "SÍ" || data.pago === "SI" || data.pagado === true || data.pagado === "SÍ" || (montoP > 0 || (totalVal > 0 && data.montoPago && parseMoneyStr(data.montoPago) > 0)));
 
     let metodoPagoStr = data.metodoPagoFinal || data.metodoPago || "Efectivo";
     if (!metodoPagoStr.includes("$") && (montoP > 0 || totalVal > 0)) {
@@ -209,7 +209,7 @@ export async function saveAsistenciaDB(data: any) {
       metodoPagoStr = `${metodoPagoStr} $${amt}`;
     }
 
-    const saldo = saldoPrevio + (isCanceled ? 0 : montoP) - (isCanceled ? 0 : costoS);
+    const saldo = saldoPrevio + montoP - (isFreeCancel ? 0 : costoS);
 
     // Datos financieros a guardar
     const extra = {
@@ -217,7 +217,7 @@ export async function saveAsistenciaDB(data: any) {
       agendaId: data.agendaId || "",
       paqueteActual: paqueteActual,
       saldo: saldo,
-      montoPago: (montoP > 0 ? montoP : totalVal).toString(),
+      montoPago: montoP.toString(),
       costoSesion: costoS.toString(),
       fecha: data.fecha,
       hora: data.hora || "09:00",
@@ -350,18 +350,16 @@ export async function getAsistenciasDB() {
         let montoP = parseMoneyStr(extra.montoPago);
         let totalVal = parseMoneyStr(extra.total || extra.subtotal);
         const estNorm = (extra.estadoAsistencia || extra.estado || s.status || "").toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "");
-        const isCanceled = estNorm.includes("cancelo");
+        const isFreeCancel = (estNorm.includes("con anticip") || estNorm.includes("anticipad") || estNorm.includes("centro")) && !estNorm.includes("sin anticip");
 
-        // Si es Asistio y totalVal/montoP es 0 pero hay costoSesion o precioTerapia, recuperar valores
-        if (!isCanceled) {
+        // Si es una sesión con costo (Asistió o Canceló S/A) y totalVal/montoP es 0 pero hay costoSesion o precioTerapia, recuperar valores
+        if (!isFreeCancel) {
           const costoS = parseMoneyStr(extra.costoSesion || extra.precioTerapia);
           if (costoS > 0) {
             if (totalVal === 0) totalVal = costoS;
-            if (montoP === 0) montoP = costoS;
-          } else if (totalVal > 0 && montoP === 0) {
-            montoP = totalVal;
-          } else if (montoP > 0 && totalVal === 0) {
-            totalVal = montoP;
+            if (montoP === 0 && (extra.pago === "SÍ" || extra.pago === "SI" || extra.pagado === true)) {
+              montoP = costoS;
+            }
           }
         }
 
@@ -370,7 +368,7 @@ export async function getAsistenciasDB() {
           metodoPagoStr = `${metodoPagoStr} $${amt}`;
         }
 
-        const costoS = isCanceled ? 0 : (parseMoneyStr(extra.costoSesion || extra.precioTerapia) || totalVal || montoP);
+        const costoS = isFreeCancel ? 0 : (parseMoneyStr(extra.costoSesion || extra.precioTerapia) || totalVal);
         
         // Sumar pago y restar costo de la sesión al saldo acumulado progresivo
         runningBalance = runningBalance + montoP - costoS;

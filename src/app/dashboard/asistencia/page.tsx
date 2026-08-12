@@ -551,16 +551,16 @@ export default function AsistenciaPage() {
     const p2 = showSegundoPago ? parseFloat(formData.montoPago2 || "0") : 0;
     const montoIngresado = p1 + p2;
     const precioTerapia = parseFloat(formData.precioTerapia || "0");
-    const estadoFinal = formData.estadoAsistencia || "Asistio";
-    const isCanceled = (estadoFinal || "").toLowerCase().includes("cancelo");
+    const estNorm = (estadoFinal || "").toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "");
+    const isFreeCancel = (estNorm.includes("con anticip") || estNorm.includes("anticipad") || estNorm.includes("centro")) && !estNorm.includes("sin anticip");
 
-    // Para "Asistió": si no ingresó monto explícito pero hay precioTerapia, se asume que pagó el precio de la terapia
+    // Para "Asistió" y "Canceló S/A": si no ingresó monto explícito pero hay precioTerapia, se asume que pagó el precio de la terapia
     let montoPagado = montoIngresado;
-    if (!isCanceled && montoIngresado === 0 && precioTerapia > 0 && !formData.montoPago) {
+    if (!isFreeCancel && montoIngresado === 0 && precioTerapia > 0 && !formData.montoPago) {
       montoPagado = precioTerapia;
     }
 
-    const totVal = isCanceled ? montoIngresado : (montoPagado > 0 ? montoPagado : precioTerapia);
+    const totVal = isFreeCancel ? montoIngresado : (montoPagado > 0 ? montoPagado : precioTerapia);
 
     const ivaPct = await getSystemIvaRate();
     const ivaDec = (ivaPct || 16) / 100;
@@ -920,7 +920,7 @@ export default function AsistenciaPage() {
         onSave={async (formData, subVal, ivaVal, totVal, metodoPagoFinal) => {
           const solicitaFacturaChecked = Boolean(formData.solicitaFactura);
           const estNorm = (formData.estadoAsistencia || "").toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "");
-          const isCanceled = estNorm.includes("cancelo");
+          const isFreeCancel = (estNorm.includes("con anticip") || estNorm.includes("anticipad") || estNorm.includes("centro")) && !estNorm.includes("sin anticip");
 
           const p1 = parseFloat((formData.montoPago || "0").replace(/[^0-9.-]/g, ""));
           const p2 = parseFloat((formData.montoPago2 || "0").replace(/[^0-9.-]/g, ""));
@@ -928,11 +928,11 @@ export default function AsistenciaPage() {
           const precioTerapia = parseFloat((formData.precioTerapia || "0").replace(/[^0-9.-]/g, ""));
 
           let montoPagado = montoIngresado;
-          if (!isCanceled && montoIngresado === 0 && precioTerapia > 0 && !formData.montoPago) {
+          if (!isFreeCancel && montoIngresado === 0 && precioTerapia > 0 && !formData.montoPago) {
             montoPagado = precioTerapia;
           }
 
-          const totalFinal = isCanceled ? montoIngresado : (montoPagado > 0 ? montoPagado : precioTerapia);
+          const totalFinal = isFreeCancel ? montoIngresado : (montoPagado > 0 ? montoPagado : precioTerapia);
 
           const ivaPct = await getSystemIvaRate();
           const ivaDec = (ivaPct || 16) / 100;
@@ -944,7 +944,7 @@ export default function AsistenciaPage() {
             sVal = totalFinal - iVal;
           }
 
-          const fuePagado = !isCanceled && (montoPagado > 0 || (precioTerapia === 0 && formData.precioTerapia === "0"));
+          const fuePagado = !isFreeCancel && (montoPagado > 0 || (precioTerapia === 0 && formData.precioTerapia === "0"));
 
           const nuevaAsistencia = {
             id: Date.now().toString(),
