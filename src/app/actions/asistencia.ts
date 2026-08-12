@@ -199,6 +199,7 @@ export async function saveAsistenciaDB(data: any) {
       subVal = subtotalInput;
     }
 
+    const estadoVal = data.estadoAsistencia || data.estado || "Asistio";
     const estNormVal = estadoVal.toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "");
     const isFreeCancel = (estNormVal.includes("con anticip") || estNormVal.includes("anticipad") || estNormVal.includes("centro")) && !estNormVal.includes("sin anticip");
     const fuePagado = !isFreeCancel && (data.pago === "SÍ" || data.pago === "SI" || data.pagado === true || data.pagado === "SÍ" || (montoP > 0 || (totalVal > 0 && data.montoPago && parseMoneyStr(data.montoPago) > 0)));
