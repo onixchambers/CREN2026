@@ -469,10 +469,10 @@ export default function AgendaPage() {
       };
     }
     
-    // Default y Agendado (ej. Ginna Hudson) -> AMARILLO (Yellow)
+    // Default y Agendado (cuando se agenda una cita) -> VERDE CLARO
     return {
-      className: "bg-yellow-100 text-yellow-900 border-yellow-300 font-bold shadow-sm",
-      style: { color: "#713f12", backgroundColor: "#fef9c3" }
+      className: "bg-emerald-100 text-emerald-900 border-emerald-400 font-bold shadow-sm",
+      style: { color: "#065f46", backgroundColor: "#d1fae5" }
     };
   };
 
