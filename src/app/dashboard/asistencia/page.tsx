@@ -983,12 +983,6 @@ export default function AsistenciaPage() {
             terapeuta: formData.terapeuta
           };
 
-          const dbRes = await saveAsistenciaDB(nuevaAsistencia);
-          if (dbRes?.success === false) {
-            alert("Error al guardar en BD: " + (dbRes as any).error);
-            return;
-          }
-          
           try {
             await addCita({
               paciente: formData.pacienteNombre,
@@ -997,13 +991,19 @@ export default function AsistenciaPage() {
               terapeuta: formData.terapeuta,
               tipoServicio: formData.tipoSesion,
               frecuencia: formData.frecuencia,
-              estado: "Asistio",
-              pagado: totVal > 0 ? "SÍ" : "No",
-              metodoPago: metodoPagoFinal,
+              estado: formData.estadoAsistencia || "Asistio",
+              pagado: fuePagado ? "SÍ" : "No",
+              metodoPago: metodoFinal,
               numeroSesiones: 1
             });
           } catch (e) {
             console.error("Error agendando cita al guardar asistencia", e);
+          }
+
+          const dbRes = await saveAsistenciaDB(nuevaAsistencia);
+          if (dbRes?.success === false) {
+            alert("Error al guardar en BD: " + (dbRes as any).error);
+            return;
           }
 
           if (formData.pacienteId || formData.pacienteNombre) {

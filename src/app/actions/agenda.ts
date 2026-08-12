@@ -178,7 +178,13 @@ export async function addCita(data: any) {
         if (existingPatientId !== patientId) {
           return { success: false, error: `Ya hay una cita programada para la fecha ${finalDateStr} a las ${data.hora} con esta terapeuta. Intenta con otra hora.` };
         } else {
+          let existingExtra = {};
+          try {
+            if (existingSession.notes) existingExtra = JSON.parse(existingSession.notes);
+          } catch (e) {}
+
           const notesJson = JSON.stringify({
+            ...existingExtra,
             fecha: finalDateStr,
             hora: data.hora,
             tipoServicio: data.tipoServicio,
