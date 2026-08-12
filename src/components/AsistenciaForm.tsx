@@ -634,17 +634,23 @@ export function AsistenciaForm({
             <div className="md:col-span-3">
               <label className="block text-[10px] font-bold text-slate-400 uppercase mb-1">SALDO DISPONIBLE</label>
               {(() => {
-                const saldoPrevioF = parseFloat(formData.saldoDisponible || "0");
-                const p1 = parseFloat(formData.montoPago || "0");
-                const p2 = showSegundoPago ? parseFloat(formData.montoPago2 || "0") : 0;
-                const montoF = p1 + p2;
-                const costoSesionF = parseFloat(formData.precioTerapia || "0");
+                const parseMoney = (val: any) => parseFloat((val || "0").toString().replace(/[^0-9.-]/g, "")) || 0;
+                const saldoPrevioF = parseMoney(formData.saldoDisponible);
+                const p1 = parseMoney(formData.montoPago);
+                const p2 = showSegundoPago ? parseMoney(formData.montoPago2) : 0;
+                const montoIngresado = p1 + p2;
+                const costoSesionF = parseMoney(formData.precioTerapia);
                 
                 const estNorm = normalizeEstadoAsistencia(formData.estadoAsistencia || "");
-                const isAttended = estNorm === "Asistio" || estNorm === "Asistió" || estNorm.includes("Cancelo sin anticipacion");
-                const costoAplica = isAttended ? costoSesionF : 0;
+                const isCanceled = estNorm.toLowerCase().includes("cancelo");
 
-                const saldoF = saldoPrevioF + montoF - costoAplica;
+                let montoEfectivo = montoIngresado;
+                if (!isCanceled && montoIngresado === 0 && costoSesionF > 0 && !formData.montoPago) {
+                  montoEfectivo = costoSesionF;
+                }
+
+                const costoAplica = isCanceled ? 0 : costoSesionF;
+                const saldoF = saldoPrevioF + montoEfectivo - costoAplica;
                 const isNeg = saldoF < 0;
                 return (
                   <div className="relative">
@@ -741,18 +747,49 @@ export function AsistenciaForm({
           {/* TOTALS & ACTIONS */}
           <div className="grid grid-cols-1 md:grid-cols-12 gap-4 pt-4 items-end">
             <div className="flex items-center gap-2 pb-2 md:col-span-3">
-              <input type="checkbox" name="solicitaFactura" checked={formData.solicitaFactura} onChange={handleChange} className="w-4 h-4 rounded border-slate-300" />
-              <label className="text-sm font-medium text-[#1a5276]">¿Solicita factura?</label>
+              <input type="checkbox" name="solicitaFactura" checked={formData.solicitaFactura} onChange={handleChange} className="w-4 h-4 rounded border-slate-300 cursor-pointer" />
+              <label className="text-sm font-medium text-[#1a5276] cursor-pointer">¿Solicita factura?</label>
             </div>
-            <div className="md:col-span-3">
-              <label className="block text-[10px] font-bold text-slate-400 uppercase mb-1">SUBTOTAL (SIN IVA)</label>
-              <input type="text" readOnly value="Automático" className="w-full text-sm p-2 border border-slate-200 rounded bg-slate-50 outline-none text-slate-400" />
-            </div>
-            <div className="md:col-span-3">
-              <label className="block text-[10px] font-bold text-slate-400 uppercase mb-1">TOTAL (CON IVA SI APLICA)</label>
-              <input type="text" readOnly value="Automático" className="w-full text-sm p-2 border border-slate-200 rounded bg-slate-50 outline-none text-slate-400" />
-            </div>
-            <div className="md:col-span-3">
+            {(() => {
+              const p1 = parseFloat((formData.montoPago || "0").replace(/[^0-9.-]/g, ""));
+              const p2 = showSegundoPago ? parseFloat((formData.montoPago2 || "0").replace(/[^0-9.-]/g, "")) : 0;
+              const montoIngresado = p1 + p2;
+              const precioTerapia = parseFloat((formData.precioTerapia || "0").replace(/[^0-9.-]/g, ""));
+              const estNorm = normalizeEstadoAsistencia(formData.estadoAsistencia || "");
+              const isCanceled = estNorm.toLowerCase().includes("cancelo");
+
+              let montoEfectivo = montoIngresado;
+              if (!isCanceled && montoIngresado === 0 && precioTerapia > 0 && !formData.montoPago) {
+                montoEfectivo = precioTerapia;
+              }
+
+              const totalCalc = isCanceled ? montoIngresado : (montoEfectivo > 0 ? montoEfectivo : precioTerapia);
+              
+              let subCalc = totalCalc;
+              let ivaCalc = 0;
+              if (formData.solicitaFactura && totalCalc > 0) {
+                subCalc = totalCalc / 1.16;
+                ivaCalc = totalCalc - subCalc;
+              }
+
+              return (
+                <>
+                  <div className="md:col-span-3">
+                    <label className="block text-[10px] font-bold text-slate-400 uppercase mb-1">SUBTOTAL (SIN IVA)</label>
+                    <input type="text" readOnly value={`$${subCalc.toFixed(2)}`} className="w-full text-sm p-2 border border-slate-200 rounded bg-slate-100 outline-none text-slate-700 font-bold" />
+                  </div>
+                  <div className="md:col-span-3">
+                    <label className="block text-[10px] font-bold text-slate-400 uppercase mb-1">IVA (16% SI APLICA)</label>
+                    <input type="text" readOnly value={`$${ivaCalc.toFixed(2)}`} className="w-full text-sm p-2 border border-slate-200 rounded bg-slate-100 outline-none text-amber-700 font-bold" />
+                  </div>
+                  <div className="md:col-span-3">
+                    <label className="block text-[10px] font-bold text-slate-400 uppercase mb-1">TOTAL CON IVA</label>
+                    <input type="text" readOnly value={`$${totalCalc.toFixed(2)}`} className="w-full text-sm p-2 border border-slate-200 rounded bg-slate-100 outline-none text-slate-900 font-extrabold" />
+                  </div>
+                </>
+              );
+            })()}
+            <div className="md:col-span-12">
               <label className="block text-[10px] font-bold text-slate-400 uppercase mb-1">OBSERVACIONES</label>
               <input type="text" name="observaciones" value={formData.observaciones} onChange={handleChange} placeholder="Notas adicionales..." className="w-full text-sm p-2 border border-slate-300 rounded focus:border-[#2980b9] outline-none text-slate-900" />
             </div>
