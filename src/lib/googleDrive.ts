@@ -134,7 +134,7 @@ export async function uploadFileToGoogleDrive(fileBuffer: Buffer, fileName: stri
         }
 
         const webViewLink = scriptData?.webViewLink || scriptData?.url || scriptData?.link || scriptData?.fileUrl || "https://drive.google.com";
-        if (scriptData && (scriptData.success !== false) && (scriptData.fileId || scriptData.id || scriptData.success || webViewLink !== "https://drive.google.com")) {
+        if (scriptData && (scriptData.success === true || (scriptData.fileId && scriptData.success !== false))) {
           return {
             success: true,
             fileId: scriptData.fileId || scriptData.id || "gdrive",
@@ -143,12 +143,21 @@ export async function uploadFileToGoogleDrive(fileBuffer: Buffer, fileName: stri
             webContentLink: webViewLink,
           };
         } else if (scriptData && scriptData.error) {
-          console.warn("Apps Script Webhook returned error, using fallback:", scriptData.error);
-        } else {
-          console.warn("Apps Script Webhook response text:", text.slice(0, 300));
+          return {
+            success: false,
+            error: "Error en Google Apps Script: " + scriptData.error
+          };
+        } else if (scriptData && scriptData.success === false) {
+          return {
+            success: false,
+            error: "Google Apps Script devolvió un error de ejecución."
+          };
         }
-      } catch (e) {
-        console.warn("Apps Script Webhook fetch failed, using fallback:", e);
+      } catch (e: any) {
+        return {
+          success: false,
+          error: "Error al conectar con Google Apps Script: " + (e?.message || e)
+        };
       }
     }
 
