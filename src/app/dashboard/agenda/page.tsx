@@ -268,12 +268,36 @@ export default function AgendaPage() {
     }
   };
   
-  const handleDeleteCita = async (id: string) => {
-    if (!confirm("¿Eliminar esta cita permanentemente?")) return;
-    const res = await deleteCita(id);
-    if (res.success) {
-      setCitas(citas.filter(c => c.id !== id));
-      setIsEditModalOpen(false);
+  const [deleteModalCita, setDeleteModalCita] = useState<any>(null);
+  const [isDeletingCita, setIsDeletingCita] = useState(false);
+
+  const handleDeleteCita = (citaOrId: any) => {
+    const citaObj = typeof citaOrId === "string" ? citas.find((c: any) => c.id === citaOrId) : citaOrId;
+    if (citaObj) {
+      setDeleteModalCita(citaObj);
+    }
+  };
+
+  const confirmDeleteCita = async (deleteFuture: boolean) => {
+    if (!deleteModalCita) return;
+    setIsDeletingCita(true);
+    try {
+      const res = await deleteCita(deleteModalCita.id, deleteFuture);
+      if (res.success) {
+        if (deleteFuture) {
+          const fechaTarget = deleteModalCita.fecha;
+          const pacienteName = deleteModalCita.paciente;
+          setCitas(citas.filter((c: any) => !(c.paciente === pacienteName && c.fecha >= fechaTarget)));
+        } else {
+          setCitas(citas.filter((c: any) => c.id !== deleteModalCita.id));
+        }
+        setDeleteModalCita(null);
+        setIsEditModalOpen(false);
+      } else {
+        alert("Error: " + (res.error || "No se pudo eliminar la cita"));
+      }
+    } finally {
+      setIsDeletingCita(false);
     }
   };
 
@@ -1257,6 +1281,62 @@ export default function AgendaPage() {
               </button>
 
               <button onClick={() => { setIsConfirmMoveModalOpen(false); setPendingMoveCita(null); }} className="w-full py-2 bg-slate-100 text-slate-700 font-semibold rounded-lg hover:bg-slate-200 transition-colors">
+                Cancelar
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* MODAL ELIMINAR CITA (SOLO ESTA O FUTURAS) */}
+      {deleteModalCita && (
+        <div className="fixed inset-0 bg-slate-900/60 backdrop-blur-xs z-[999] flex items-center justify-center p-4 animate-in fade-in">
+          <div className="bg-white rounded-2xl shadow-2xl w-full max-w-md overflow-hidden p-6 border border-slate-200">
+            <div className="flex items-center gap-3 mb-4 text-red-600">
+              <div className="w-10 h-10 rounded-full bg-red-100 flex items-center justify-center font-bold text-xl shrink-0">
+                🗑️
+              </div>
+              <div>
+                <h3 className="font-extrabold text-lg text-slate-800">Eliminar Cita</h3>
+                <p className="text-xs text-slate-500 font-medium">Selecciona la opción de eliminación</p>
+              </div>
+            </div>
+
+            <div className="bg-slate-50 rounded-xl p-4 mb-5 border border-slate-200 space-y-1 text-xs">
+              <p className="font-bold text-slate-800 text-sm">{deleteModalCita.paciente}</p>
+              <p className="text-slate-600">📅 <strong>Fecha:</strong> {deleteModalCita.fecha}</p>
+              <p className="text-slate-600">⏰ <strong>Hora:</strong> {deleteModalCita.hora}</p>
+              <p className="text-slate-600">👩‍⚕️ <strong>Terapeuta:</strong> {deleteModalCita.terapeuta}</p>
+            </div>
+
+            <p className="text-xs font-bold text-slate-700 mb-3">
+              ¿Qué citas deseas eliminar de este paciente?
+            </p>
+
+            <div className="flex flex-col gap-2.5">
+              <button
+                disabled={isDeletingCita}
+                onClick={() => confirmDeleteCita(false)}
+                className="w-full py-3 px-4 bg-slate-100 hover:bg-slate-200 text-slate-800 font-bold rounded-xl text-xs transition-colors flex items-center justify-between border border-slate-300 cursor-pointer disabled:opacity-50"
+              >
+                <span>🗓️ Solo esta cita</span>
+                <span className="text-[10px] text-slate-500 font-normal">Elimina solo el {deleteModalCita.fecha}</span>
+              </button>
+
+              <button
+                disabled={isDeletingCita}
+                onClick={() => confirmDeleteCita(true)}
+                className="w-full py-3 px-4 bg-red-600 hover:bg-red-700 text-white font-bold rounded-xl text-xs transition-colors flex items-center justify-between shadow-md cursor-pointer disabled:opacity-50"
+              >
+                <span>🚨 Esta cita y las futuras</span>
+                <span className="text-[10px] text-red-100 font-normal">No afectará citas anteriores</span>
+              </button>
+
+              <button
+                disabled={isDeletingCita}
+                onClick={() => setDeleteModalCita(null)}
+                className="w-full py-2 text-slate-500 hover:text-slate-800 font-semibold text-xs transition-colors mt-1 cursor-pointer"
+              >
                 Cancelar
               </button>
             </div>

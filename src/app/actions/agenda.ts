@@ -327,6 +327,201 @@ export async function updateCita(id: string, data: any) {
       details: `Se actualizó la cita del paciente "${citaTarget?.patient?.name || id}".`,
       target: citaTarget?.patient?.name || id
     });
+            where: { id: patientId },
+            data: { medicoTratante: match.name }
+          });
+        } catch (e) {
+          console.error("Error actualizando medicoTratante:", e);
+        }
+      }
+    } else {
+      const admin = allUsers.find(u => (u.role || "").toUpperCase() === "ADMIN");
+      if (admin) {
+        therapistId = admin.id;
+      } else if (allUsers.length > 0) {
+        therapistId = allUsers[0].id;
+      }
+    }
+
+    if (!therapistId) return { success: false, error: "No hay terapeutas ni usuarios registrados en la base de datos." };
+
+    const numSesiones = parseInt(data.numeroSesiones) || 1;
+    const frecuencia = data.frecuencia || "unica";
+    
+    let currentDateStr = data.fecha;
+    const createdCitas = [];
+
+    for (let i = 0; i < numSesiones; i++) {
+      let currentDate = new Date(`${currentDateStr}T12:00:00Z`);
+      
+      // Si cae domingo (0), empujarlo al Lunes (1)
+      if (currentDate.getUTCDay() === 0) {
+        currentDate.setUTCDate(currentDate.getUTCDate() + 1);
+      }
+      
+      const finalDateStr = currentDate.toISOString().split('T')[0];
+      const jsDate = new Date(`${finalDateStr}T${data.hora}:00`);
+
+      const existingSession = await prisma.session.findFirst({
+        where: {
+          therapistId: therapistId,
+          date: jsDate
+        }
+      });
+      if (existingSession) {
+        const existingPatientId = existingSession.patientId;
+        if (existingPatientId !== patientId) {
+          return { success: false, error: `Ya hay una cita programada para la fecha ${finalDateStr} a las ${data.hora} con esta terapeuta. Intenta con otra hora.` };
+        } else {
+          let existingExtra = {};
+          try {
+            if (existingSession.notes) existingExtra = JSON.parse(existingSession.notes);
+          } catch (e) {}
+
+          const notesJson = JSON.stringify({
+            ...existingExtra,
+            fecha: finalDateStr,
+            hora: data.hora,
+            tipoServicio: data.tipoServicio,
+            frecuencia: data.frecuencia,
+            estado: data.estado,
+            pagado: data.pagado || false,
+            metodoPago: data.metodoPago || ""
+          });
+
+          const updatedSession = await prisma.session.update({
+            where: { id: existingSession.id },
+            data: {
+              status: data.estado,
+              notes: notesJson
+            }
+          });
+
+          createdCitas.push({
+            id: updatedSession.id,
+            paciente: data.paciente,
+            fecha: finalDateStr,
+            hora: data.hora,
+            terapeuta: data.terapeuta,
+            tipoServicio: data.tipoServicio,
+            frecuencia: data.frecuencia,
+            estado: data.estado,
+            pagado: data.pagado,
+            metodoPago: data.metodoPago
+          });
+
+          if (frecuencia === "diario") {
+            currentDate.setUTCDate(currentDate.getUTCDate() + 1);
+          } else if (frecuencia === "semanal") {
+            currentDate.setUTCDate(currentDate.getUTCDate() + 7);
+          } else if (frecuencia === "quincenal") {
+            currentDate.setUTCDate(currentDate.getUTCDate() + 14);
+          } else if (frecuencia === "mensual") {
+            currentDate.setUTCMonth(currentDate.getUTCMonth() + 1);
+          }
+          currentDateStr = currentDate.toISOString().split('T')[0];
+          continue;
+        }
+      }
+      
+      const notesJson = JSON.stringify({
+        fecha: finalDateStr,
+        hora: data.hora,
+        tipoServicio: data.tipoServicio,
+        frecuencia: data.frecuencia,
+        estado: data.estado,
+        pagado: data.pagado || false,
+        metodoPago: data.metodoPago || ""
+      });
+
+      const newSession = await prisma.session.create({
+        data: {
+          patientId: patientId,
+          therapistId: therapistId,
+          date: jsDate,
+          status: data.estado,
+          notes: notesJson
+        }
+      });
+      
+      createdCitas.push({
+        id: newSession.id,
+        paciente: data.paciente,
+        fecha: finalDateStr,
+        hora: data.hora,
+        terapeuta: data.terapeuta,
+        tipoServicio: data.tipoServicio,
+        frecuencia: data.frecuencia,
+        estado: data.estado,
+        pagado: data.pagado,
+        metodoPago: data.metodoPago
+      });
+      
+      if (frecuencia === "diario") {
+        currentDate.setUTCDate(currentDate.getUTCDate() + 1);
+      } else if (frecuencia === "semanal") {
+        currentDate.setUTCDate(currentDate.getUTCDate() + 7);
+      } else if (frecuencia === "quincenal") {
+        currentDate.setUTCDate(currentDate.getUTCDate() + 14);
+      } else if (frecuencia === "mensual") {
+        currentDate.setUTCMonth(currentDate.getUTCMonth() + 1);
+      } else {
+        break;
+      }
+      
+      currentDateStr = currentDate.toISOString().split('T')[0];
+    }
+
+    revalidatePath("/dashboard/agenda");
+    revalidatePath("/dashboard/asistencia");
+    
+    await logAuditAction({
+      action: "AGENDAR_CITA",
+      details: `Se agendó/actualizó cita para el paciente "${data.paciente}" con el terapeuta "${data.terapeuta}" (${numSesiones} sesión/es, ${frecuencia}).`,
+      target: data.paciente
+    });
+
+    return { success: true, citas: createdCitas, id: createdCitas[0]?.id };
+  } catch (error: any) {
+    console.error("Error agregando cita:", error);
+    return { success: false, error: "Error al agendar la cita en la base de datos." };
+  }
+}
+
+export async function updateCita(id: string, data: any) {
+  try {
+    const citaTarget = await prisma.session.findUnique({ where: { id }, include: { patient: true } });
+    const existingNotes = citaTarget?.notes ? (() => { try { return JSON.parse(citaTarget.notes); } catch { return {}; } })() : {};
+    
+    const updatedNotes = JSON.stringify({
+      ...existingNotes,
+      ...data
+    });
+
+    let newDate = citaTarget?.date;
+    if (data.fecha || data.hora) {
+      const f = data.fecha || existingNotes.fecha || citaTarget?.date.toISOString().split("T")[0];
+      const h = data.hora || existingNotes.hora || "09:00";
+      newDate = new Date(`${f}T${h}:00`);
+    }
+
+    await prisma.session.update({
+      where: { id },
+      data: {
+        status: data.estado || citaTarget?.status,
+        date: newDate,
+        notes: updatedNotes
+      }
+    });
+
+    revalidatePath("/dashboard/agenda");
+    revalidatePath("/dashboard/asistencia");
+
+    await logAuditAction({
+      action: "ACTUALIZAR_CITA",
+      details: `Se actualizó la cita del paciente "${citaTarget?.patient?.name || id}".`,
+      target: citaTarget?.patient?.name || id
+    });
 
     return { success: true };
   } catch (error) {
@@ -335,7 +530,7 @@ export async function updateCita(id: string, data: any) {
   }
 }
 
-export async function deleteCita(id: string) {
+export async function deleteCita(id: string, deleteFuture: boolean = false) {
   try {
     const session = await getServerSession(authOptions);
     if (!session?.user) {
@@ -363,31 +558,56 @@ export async function deleteCita(id: string) {
         } catch (e) {}
       }
 
-      const matchingSessions = await prisma.session.findMany({
-        where: {
-          patientId: citaTarget.patientId,
-          therapistId: citaTarget.therapistId,
-        }
-      });
-
-      const idsToDelete = matchingSessions.filter(s => {
-        if (s.id === id) return true;
-        let f = s.date.toISOString().split("T")[0];
-        let h = "09:00";
-        if (s.notes) {
-          try {
-            const p = JSON.parse(s.notes);
-            if (p.fecha) f = p.fecha;
-            if (p.hora) h = p.hora;
-          } catch (e) {}
-        }
-        return f === fechaTarget && h.substring(0, 2) === horaTarget.substring(0, 2);
-      }).map(s => s.id);
-
-      if (idsToDelete.length > 0) {
-        await prisma.session.deleteMany({
-          where: { id: { in: idsToDelete } }
+      if (deleteFuture) {
+        const matchingSessions = await prisma.session.findMany({
+          where: citaTarget.patientId ? { patientId: citaTarget.patientId } : { therapistId: citaTarget.therapistId }
         });
+
+        const idsToDelete = matchingSessions.filter(s => {
+          let f = s.date.toISOString().split("T")[0];
+          if (s.notes) {
+            try {
+              const p = JSON.parse(s.notes);
+              if (p.fecha) f = p.fecha;
+            } catch (e) {}
+          }
+          return f >= fechaTarget;
+        }).map(s => s.id);
+
+        if (idsToDelete.length > 0) {
+          await prisma.session.deleteMany({
+            where: { id: { in: idsToDelete } }
+          });
+        }
+      } else {
+        const matchingSessions = await prisma.session.findMany({
+          where: {
+            patientId: citaTarget.patientId,
+            therapistId: citaTarget.therapistId,
+          }
+        });
+
+        const idsToDelete = matchingSessions.filter(s => {
+          if (s.id === id) return true;
+          let f = s.date.toISOString().split("T")[0];
+          let h = "09:00";
+          if (s.notes) {
+            try {
+              const p = JSON.parse(s.notes);
+              if (p.fecha) f = p.fecha;
+              if (p.hora) h = p.hora;
+            } catch (e) {}
+          }
+          return f === fechaTarget && h.substring(0, 2) === horaTarget.substring(0, 2);
+        }).map(s => s.id);
+
+        if (idsToDelete.length > 0) {
+          await prisma.session.deleteMany({
+            where: { id: { in: idsToDelete } }
+          });
+        } else {
+          await prisma.session.delete({ where: { id } }).catch(() => {});
+        }
       }
     } else {
       await prisma.session.delete({ where: { id } }).catch(() => {});
@@ -398,7 +618,7 @@ export async function deleteCita(id: string) {
 
     await logAuditAction({
       action: "ELIMINAR_CITA",
-      details: `Se eliminó la cita del paciente "${citaTarget?.patient?.name || id}".`,
+      details: `Se eliminó la cita del paciente "${citaTarget?.patient?.name || id}"${deleteFuture ? " (y citas futuras)" : ""}.`,
       target: citaTarget?.patient?.name || id
     });
 
