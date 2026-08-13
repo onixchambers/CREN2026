@@ -94,6 +94,7 @@ export async function getSettings(month: string) {
         googleDriveClientEmail: "",
         googleDrivePrivateKey: "",
         googleDriveFolderId: "",
+        googleDriveWebhookUrl: "",
         timezone: "America/Mexico_City",
         auditLogEnabled: true,
       },
@@ -304,6 +305,7 @@ export async function saveSettings(data: {
           googleDriveClientEmail: (data as any).googleDriveClientEmail || "",
           googleDrivePrivateKey: (data as any).googleDrivePrivateKey || "",
           googleDriveFolderId: (data as any).googleDriveFolderId || "",
+          googleDriveWebhookUrl: (data as any).googleDriveWebhookUrl || "",
           timezone: (data as any).timezone || "America/Mexico_City",
           auditLogEnabled: (data as any).auditLogEnabled !== undefined ? Boolean((data as any).auditLogEnabled) : true,
         },
@@ -324,6 +326,7 @@ export async function saveSettings(data: {
           googleDriveClientEmail: (data as any).googleDriveClientEmail || "",
           googleDrivePrivateKey: (data as any).googleDrivePrivateKey || "",
           googleDriveFolderId: (data as any).googleDriveFolderId || "",
+          googleDriveWebhookUrl: (data as any).googleDriveWebhookUrl || "",
           timezone: (data as any).timezone || "America/Mexico_City",
           auditLogEnabled: (data as any).auditLogEnabled !== undefined ? Boolean((data as any).auditLogEnabled) : true,
         }

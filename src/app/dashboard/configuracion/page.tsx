@@ -39,6 +39,7 @@ export default function ConfiguracionPage() {
   const [googleDriveClientEmail, setGoogleDriveClientEmail] = useState("");
   const [googleDrivePrivateKey, setGoogleDrivePrivateKey] = useState("");
   const [googleDriveFolderId, setGoogleDriveFolderId] = useState("");
+  const [googleDriveWebhookUrl, setGoogleDriveWebhookUrl] = useState("");
   const [timezone, setTimezone] = useState("America/Mexico_City");
 
   const [showResendKey, setShowResendKey] = useState(false);
@@ -129,6 +130,7 @@ export default function ConfiguracionPage() {
         setGoogleDriveClientEmail(res.settings?.googleDriveClientEmail || "");
         setGoogleDrivePrivateKey(res.settings?.googleDrivePrivateKey || "");
         setGoogleDriveFolderId(res.settings?.googleDriveFolderId || "");
+        setGoogleDriveWebhookUrl(res.settings?.googleDriveWebhookUrl || "");
         setTimezone(res.settings?.timezone || "America/Mexico_City");
         setAuditLogEnabled(res.settings?.auditLogEnabled ?? true);
         
@@ -189,6 +191,7 @@ export default function ConfiguracionPage() {
         googleDriveClientEmail,
         googleDrivePrivateKey,
         googleDriveFolderId,
+        googleDriveWebhookUrl,
         timezone,
         auditLogEnabled,
         month,
@@ -661,6 +664,19 @@ export default function ConfiguracionPage() {
             </div>
 
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div className="md:col-span-2">
+                <label className="block text-xs font-bold text-slate-700 mb-1">URL Webhook / Google Apps Script (Recomendado sin límites de almacenamiento)</label>
+                <input 
+                  type="text" 
+                  placeholder="https://script.google.com/macros/s/AKfycb.../exec"
+                  value={googleDriveWebhookUrl}
+                  onChange={(e) => setGoogleDriveWebhookUrl(e.target.value)}
+                  className="w-full p-2.5 border border-slate-300 rounded-lg text-xs text-slate-900 focus:border-emerald-500 outline-none bg-white font-mono"
+                />
+                <p className="text-[11px] text-slate-500 mt-1">
+                  💡 Copia y pega aquí la URL generada en Google Apps Script al hacer clic en <b>Implementar ➔ Administrar implementaciones ➔ URL de Aplicación web</b>.
+                </p>
+              </div>
               <div>
                 <label className="block text-xs font-bold text-slate-700 mb-1">Correo Electrónico de Cuenta de Servicio (Client Email)</label>
                 <input 
