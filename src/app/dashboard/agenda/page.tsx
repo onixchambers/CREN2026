@@ -447,9 +447,14 @@ export default function AgendaPage() {
 
   const citasFiltradas = citas.filter(c => c.fecha === fechaSeleccionada);
 
-  const getCitaParaCelda = (hora: string, terapeuta: string, dateOverride?: string) => {
-    const horaPrefix = hora.split(":")[0];
-    return (dateOverride ? citas : citasFiltradas).find(c => c.terapeuta === terapeuta && c.hora.startsWith(horaPrefix) && (!dateOverride || c.fecha === dateOverride));
+  const getCitasParaCelda = (hora: string, terapeuta: string, dateOverride?: string) => {
+    const horaPrefix = hora.split(":")[0].padStart(2, "0");
+    return (dateOverride ? citas : citasFiltradas).filter(c => {
+      if (c.terapeuta !== terapeuta) return false;
+      if (dateOverride && c.fecha !== dateOverride) return false;
+      const cHoraPrefix = (c.hora || "").split(":")[0].padStart(2, "0");
+      return cHoraPrefix === horaPrefix;
+    });
   };
 
   const getEstadoStyle = (estado: string) => {
@@ -677,11 +682,11 @@ export default function AgendaPage() {
                       {hora}
                     </td>
                     {getDaysOfWeek(fechaSeleccionada).map(d => {
-                      const cita = getCitaParaCelda(hora, userName, d.dateStr);
+                      const citasCelda = getCitasParaCelda(hora, userName, d.dateStr);
                       return (
                         <td 
                           key={`${hora}-${d.dateStr}`} 
-                          className="border-b border-r border-slate-200 p-0 h-16 w-32 relative align-top group" 
+                          className="border-b border-r border-slate-200 p-1 h-auto min-h-[64px] w-32 relative align-top group" 
                           onDragOver={(e) => e.preventDefault()}
                           onDrop={(e) => {
                             e.preventDefault();
@@ -697,30 +702,34 @@ export default function AgendaPage() {
                             }
                           }}
                         >
-                          {cita ? (
-                              (() => {
+                          {citasCelda.length > 0 ? (
+                            <div className="w-full flex flex-col gap-1">
+                              {citasCelda.map((cita) => {
                                 const st = getEstadoStyle(cita.estado);
                                 return (
                                   <div 
+                                    key={cita.id}
                                     onClick={(e) => { e.stopPropagation(); handleEditCitaModal(cita); }}
                                     style={st.style}
                                     draggable={true}
                                     onDragStart={(e) => { e.stopPropagation(); e.dataTransfer.setData("citaId", cita.id); }}
-                                    className={`absolute left-0 w-full h-full p-1 rounded border text-[10px] font-semibold flex flex-col items-center justify-center cursor-pointer shadow-sm hover:brightness-95 touch-none transition-all ${cita.hora.includes(":30") ? "top-[50%] z-10" : "top-0"} ${st.className}`}>
-                                    <span className="truncate w-full text-center mt-0.5 font-bold">
-                                      {cita.estado === 'Disponible' ? 'DISPONIBLE' : ((cita.estado === "Ocupado" || cita.estado === "No Disponible" || cita.paciente === "No Disponible") ? "No Disp." : cita.paciente.split(' ')[0])}
+                                    className={`w-full p-1 rounded border text-[10px] font-semibold flex flex-col items-center justify-center cursor-pointer shadow-xs hover:brightness-95 touch-none transition-all relative group/cita ${st.className}`}
+                                  >
+                                    <span className="truncate w-full text-center font-bold text-[10px] leading-tight">
+                                      {cita.estado === 'Disponible' ? 'DISPONIBLE' : ((cita.estado === "Ocupado" || cita.estado === "No Disponible" || cita.paciente === "No Disponible") ? "No Disp." : cita.paciente)}
                                     </span>
-                                    <span className="opacity-90 uppercase mt-0.5 truncate w-full text-center">
-                                      {formatEstadoLabel(cita.estado)}
+                                    <span className="text-[8px] opacity-90 uppercase mt-0.5 truncate w-full text-center leading-none">
+                                      {formatEstadoLabel(cita.estado)} {cita.hora && cita.hora.includes(":") ? `(${cita.hora})` : ""}
                                     </span>
                                   </div>
                                 );
-                              })()
+                              })}
+                            </div>
                           ) : (
                             <div 
-                               onClick={() => { setFechaSeleccionada(d.dateStr); handleOpenModal(userName, hora); }}
-                              className="w-full h-full flex items-center justify-center cursor-pointer hover:bg-blue-50/60 transition-colors group/cell"
-                              title={`Agendar el ${d.name} a las ${hora}`}
+                              onClick={() => handleOpenModal(userName, hora, d.dateStr)}
+                              className="w-full h-full min-h-[56px] flex items-center justify-center cursor-pointer hover:bg-blue-50/60 transition-colors group/cell"
+                              title="Haz clic para agendar en esta hora"
                             >
                               <span className="text-slate-300 group-hover/cell:text-[#1a5276] font-extrabold text-sm">+</span>
                             </div>
@@ -755,11 +764,11 @@ export default function AgendaPage() {
                     {hora}
                   </td>
                   {terapeutas.map(t => {
-                    const cita = getCitaParaCelda(hora, t);
+                    const citasCelda = getCitasParaCelda(hora, t);
                     return (
                       <td 
                         key={`${hora}-${t}`} 
-                        className="border border-slate-200 p-0 h-16 w-40 relative align-top group" 
+                        className="border border-slate-200 p-1 h-auto min-h-[64px] w-40 relative align-top group" 
                         onDragOver={(e) => e.preventDefault()}
                         onDrop={(e) => {
                           e.preventDefault();
@@ -775,41 +784,41 @@ export default function AgendaPage() {
                           }
                         }}
                       >
-                        {cita ? (
-                            (() => {
+                        {citasCelda.length > 0 ? (
+                          <div className="w-full flex flex-col gap-1">
+                            {citasCelda.map((cita) => {
                               const st = getEstadoStyle(cita.estado);
                               return (
                                 <div 
+                                  key={cita.id}
                                   onClick={(e) => { e.stopPropagation(); handleEditCitaModal(cita); }}
                                   style={st.style}
                                   draggable={true}
                                   onDragStart={(e) => { e.stopPropagation(); e.dataTransfer.setData("citaId", cita.id); }}
-                                  className={`absolute left-0 w-full h-full p-2 rounded border text-xs font-semibold flex flex-col items-center justify-center cursor-pointer shadow-sm hover:brightness-95 touch-none transition-all ${cita.hora.includes(":30") ? "top-[50%] z-10" : "top-0"} ${st.className}`}>
-                                  
+                                  className={`w-full p-1.5 rounded border text-xs font-semibold flex flex-col items-center justify-center cursor-pointer shadow-xs hover:brightness-95 touch-none transition-all relative group/cita ${st.className}`}
+                                >
                                   {userRole.toUpperCase() !== "TERAPEUTA" && (
-                                  <button 
-                                    onClick={(e) => { e.stopPropagation(); handleDeleteCita(cita.id); }} 
-                                    className="absolute top-1 right-1 text-red-500 hover:text-red-700 font-bold bg-white/70 hover:bg-white rounded-full w-4 h-4 flex items-center justify-center leading-none shadow-sm cursor-pointer" 
-                                    title="Eliminar Cita"
-                                  >&times;</button>
+                                    <button 
+                                      onClick={(e) => { e.stopPropagation(); handleDeleteCita(cita.id); }} 
+                                      className="absolute top-1 right-1 text-red-500 hover:text-red-700 font-bold bg-white/80 hover:bg-white rounded-full w-4 h-4 flex items-center justify-center leading-none shadow-xs cursor-pointer text-[10px]" 
+                                      title="Eliminar Cita"
+                                    >&times;</button>
                                   )}
 
-                                  <span 
-                                    className="truncate w-full text-center mt-1 font-bold"
-                                  >
+                                  <span className="truncate w-full text-center font-bold text-[11px] leading-tight">
                                     {cita.estado === 'Disponible' ? 'DISPONIBLE' : ((cita.estado === "Ocupado" || cita.estado === "No Disponible" || cita.paciente === "No Disponible") ? "No Disponible" : cita.paciente)}
                                   </span>
-                                  <span className="text-[10px] opacity-90 uppercase mt-0.5 truncate w-full text-center">
-                                    {formatEstadoLabel(cita.estado)}
+                                  <span className="text-[9px] opacity-90 uppercase mt-0.5 truncate w-full text-center leading-none">
+                                    {formatEstadoLabel(cita.estado)} {cita.hora && cita.hora.includes(":") ? `(${cita.hora})` : ""}
                                   </span>
                                 </div>
                               );
-                            })()
+                            })}
+                          </div>
                         ) : (
                           <div 
-                            
                             onClick={() => handleOpenModal(t, hora)}
-                            className="w-full h-full flex items-center justify-center cursor-pointer hover:bg-blue-50/60 transition-colors group/cell"
+                            className="w-full h-full min-h-[56px] flex items-center justify-center cursor-pointer hover:bg-blue-50/60 transition-colors group/cell"
                             title="Haz clic para agendar en esta hora"
                           >
                             <span className="text-slate-300 group-hover/cell:text-[#1a5276] font-extrabold text-sm">+</span>
