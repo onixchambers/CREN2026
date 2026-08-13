@@ -1316,29 +1316,29 @@ export default function AsistenciaPage() {
           </div>
         </div>
 
-        <div className="overflow-x-auto w-full">
-          <table className="w-full text-xs text-center border-collapse table-auto">
-            <thead className="bg-[#0e2f44] text-white text-[8.5px] xl:text-[9.5px] font-extrabold uppercase leading-tight tracking-tight">
+        <div className="overflow-x-auto w-full border-t border-slate-200">
+          <table className="w-full min-w-[1350px] text-xs text-center border-collapse table-auto">
+            <thead className="bg-[#0e2f44] text-white text-[10px] xl:text-[11px] font-extrabold uppercase leading-tight tracking-tight shadow-sm">
               <tr>
-                <th className="px-1 py-2 border-b border-[#0e2f44] whitespace-nowrap">FECHA</th>
-                <th className="px-1 py-2 border-b border-[#0e2f44] whitespace-nowrap">HORA</th>
-                <th className="px-1 py-2 border-b border-[#0e2f44] whitespace-nowrap">TERAPEUTA</th>
-                <th className="px-1 py-2 border-b border-[#0e2f44] whitespace-nowrap">ÁREA</th>
-                <th className="px-1.5 py-2 text-left border-b border-[#0e2f44] whitespace-nowrap">PACIENTE</th>
-                <th className="px-1 py-2 border-b border-[#0e2f44] whitespace-nowrap">SEXO</th>
-                <th className="px-1 py-2 border-b border-[#0e2f44] whitespace-nowrap">EDAD</th>
-                <th className="px-1 py-2 border-b border-[#0e2f44] whitespace-nowrap">TIPO SESIÓN</th>
-                <th className="px-1 py-2 border-b border-[#0e2f44] whitespace-nowrap">ESTADO</th>
-                <th className="px-1 py-2 border-b border-[#0e2f44] whitespace-nowrap">FREC.</th>
-                <th className="px-1 py-2 border-b border-[#0e2f44] whitespace-nowrap">MÉTODO PAGO</th>
-                <th className="px-1 py-2 border-b border-[#0e2f44] whitespace-nowrap">PAGO</th>
-                <th className="px-1 py-2 border-b border-[#0e2f44] whitespace-nowrap">FACT.</th>
-                <th className="px-1 py-2 border-b border-[#0e2f44] whitespace-nowrap">SALDO</th>
-                <th className="px-1 py-2 border-b border-[#0e2f44] whitespace-nowrap">SUBTOTAL</th>
-                <th className="px-1 py-2 border-b border-[#0e2f44] whitespace-nowrap">IVA</th>
-                <th className="px-1 py-2 border-b border-[#0e2f44] whitespace-nowrap">TOTAL</th>
-                <th className="px-1 py-2 border-b border-[#0e2f44] whitespace-nowrap">OBS</th>
-                <th className="px-1 py-2 border-b border-[#0e2f44] whitespace-nowrap">ACCIONES</th>
+                <th className="px-2 py-2.5 border-b border-[#0e2f44] whitespace-nowrap min-w-[80px]">FECHA</th>
+                <th className="px-2 py-2.5 border-b border-[#0e2f44] whitespace-nowrap min-w-[60px]">HORA</th>
+                <th className="px-2 py-2.5 border-b border-[#0e2f44] whitespace-nowrap min-w-[90px]">TERAPEUTA</th>
+                <th className="px-2 py-2.5 border-b border-[#0e2f44] whitespace-nowrap min-w-[90px]">ÁREA</th>
+                <th className="px-2.5 py-2.5 text-left border-b border-[#0e2f44] whitespace-nowrap min-w-[140px]">PACIENTE</th>
+                <th className="px-2 py-2.5 border-b border-[#0e2f44] whitespace-nowrap min-w-[70px]">SEXO</th>
+                <th className="px-2 py-2.5 border-b border-[#0e2f44] whitespace-nowrap min-w-[50px]">EDAD</th>
+                <th className="px-2 py-2.5 border-b border-[#0e2f44] whitespace-nowrap min-w-[90px]">TIPO SESIÓN</th>
+                <th className="px-2 py-2.5 border-b border-[#0e2f44] whitespace-nowrap min-w-[80px]">ESTADO</th>
+                <th className="px-2 py-2.5 border-b border-[#0e2f44] whitespace-nowrap min-w-[65px]">FREC.</th>
+                <th className="px-2 py-2.5 border-b border-[#0e2f44] whitespace-nowrap min-w-[110px]">MÉTODO PAGO</th>
+                <th className="px-2 py-2.5 border-b border-[#0e2f44] whitespace-nowrap min-w-[60px]">PAGO</th>
+                <th className="px-2 py-2.5 border-b border-[#0e2f44] whitespace-nowrap min-w-[55px]">FACT.</th>
+                <th className="px-2 py-2.5 border-b border-[#0e2f44] whitespace-nowrap min-w-[75px]">SALDO</th>
+                <th className="px-2 py-2.5 border-b border-[#0e2f44] whitespace-nowrap min-w-[80px]">SUBTOTAL</th>
+                <th className="px-2 py-2.5 border-b border-[#0e2f44] whitespace-nowrap min-w-[65px]">IVA</th>
+                <th className="px-2 py-2.5 border-b border-[#0e2f44] whitespace-nowrap min-w-[80px]">TOTAL</th>
+                <th className="px-2 py-2.5 border-b border-[#0e2f44] whitespace-nowrap min-w-[100px]">OBS</th>
+                <th className="px-2 py-2.5 border-b border-[#0e2f44] whitespace-nowrap min-w-[70px]">ACCIONES</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-slate-100">

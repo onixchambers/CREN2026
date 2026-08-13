@@ -124,6 +124,116 @@ export default function SalarioPage() {
         </div>
       </div>
 
+      {/* CÁLCULO DE TOTALES GENERALES PARA LAS 4 TARJETAS FINANCIERAS */}
+      {(() => {
+        let totalIngresosGen = 0;
+        let totalIvaPacientesGen = 0;
+        let totalIvaRetenidoGen = 0;
+        let totalHonorariosGen = 0;
+
+        asistenciasPeriodo.forEach((a: any) => {
+          const precioSession = parseFloat(a.total ? a.total.replace(/[^0-9.-]+/g,"") : (a.subtotal ? a.subtotal.replace(/[^0-9.-]+/g,"") : "0")) || 0;
+          totalIngresosGen += precioSession;
+
+          const hasFactura = a.fact === "Sí" || a.fact === "SI" || a.solicitaFactura === true || a.solicitaFactura === "Sí";
+          let sessionIva = 0;
+          if (a.iva !== undefined && a.iva !== null && a.iva !== "" && a.iva !== 0) {
+            sessionIva = typeof a.iva === 'string' ? parseFloat(a.iva.replace("$", "").replace(",", "")) : Number(a.iva);
+          } else if (hasFactura) {
+            const sub = parseFloat((a.subtotal || "0").toString().replace(/[^0-9.-]+/g,"")) || 0;
+            const tot = parseFloat((a.total || "0").toString().replace(/[^0-9.-]+/g,"")) || 0;
+            if (tot > sub && sub > 0) sessionIva = tot - sub;
+            else sessionIva = precioSession * 0.16;
+          }
+          totalIvaPacientesGen += sessionIva;
+
+          const tObj = terapeutas.find(t => t.name === a.terapeuta || t.id === a.therapistId);
+          const pNameLower = (a.paciente || a.pacienteNombre || "").trim().toLowerCase();
+          const rateConfig = fixedHonorarios?.enabled ? fixedHonorarios?.rates?.[pNameLower] : null;
+          const isFixedActive = rateConfig && rateConfig.enabled !== false && typeof rateConfig.therapistPay === "number";
+
+          let pagoSesionTerapeuta = 0;
+          let ivaSesionRetenido = 0;
+
+          if (isFixedActive) {
+            pagoSesionTerapeuta = rateConfig.therapistPay;
+          } else if (tObj) {
+            if (tObj.tipoPago === "Porcentaje") {
+              const comisionBase = precioSession * ((tObj.porcentaje || 50) / 100);
+              if (tObj.retieneIVA) {
+                ivaSesionRetenido = comisionBase * 0.16;
+                pagoSesionTerapeuta = comisionBase + ivaSesionRetenido;
+              } else {
+                pagoSesionTerapeuta = comisionBase;
+              }
+            } else if (tObj.tipoPago === "Monto Fijo") {
+              const comisionBase = tObj.montoFijo || 0;
+              if (tObj.retieneIVA) {
+                ivaSesionRetenido = comisionBase * 0.16;
+                pagoSesionTerapeuta = comisionBase + ivaSesionRetenido;
+              } else {
+                pagoSesionTerapeuta = comisionBase;
+              }
+            }
+          }
+
+          totalHonorariosGen += pagoSesionTerapeuta;
+          totalIvaRetenidoGen += ivaSesionRetenido;
+        });
+
+        const totalIvaRecaudadoRetenido = totalIvaPacientesGen + totalIvaRetenidoGen;
+        const totalGastosGen = totalHonorariosGen;
+        const balanceActualGen = totalIngresosGen - totalGastosGen;
+
+        return (
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
+            {/* TARJETA 1: INGRESOS TOTALES */}
+            <div className="bg-white rounded-2xl p-5 border border-slate-200 shadow-sm hover:shadow-md transition-all">
+              <h4 className="text-[11px] font-bold text-slate-500 tracking-wider uppercase mb-2">INGRESOS TOTALES</h4>
+              <div className="text-2xl font-black text-emerald-600 mb-2">
+                ${totalIngresosGen.toLocaleString("es-MX", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+              </div>
+              <p className="text-[11px] text-slate-400 font-medium">Pagos de terapias registrados en el periodo</p>
+            </div>
+
+            {/* TARJETA 2: IVA RECAUDADO / RETENIDO */}
+            <div className="bg-white rounded-2xl p-5 border border-slate-200 shadow-sm hover:shadow-md transition-all">
+              <h4 className="text-[11px] font-bold text-slate-500 tracking-wider uppercase mb-2">IVA RECAUDADO / RETENIDO</h4>
+              <div className="text-2xl font-black text-amber-600 mb-2">
+                ${totalIvaRecaudadoRetenido.toLocaleString("es-MX", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+              </div>
+              <div className="space-y-0.5 text-[11px] text-amber-700 font-medium">
+                <p>• IVA Paciente (CREN): <span className="font-bold">${totalIvaPacientesGen.toLocaleString("es-MX", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</span></p>
+                <p>• IVA Retenido Terapeuta: <span className="font-bold">${totalIvaRetenidoGen.toLocaleString("es-MX", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</span></p>
+              </div>
+            </div>
+
+            {/* TARJETA 3: GASTOS TOTALES */}
+            <div className="bg-white rounded-2xl p-5 border border-slate-200 shadow-sm hover:shadow-md transition-all">
+              <h4 className="text-[11px] font-bold text-slate-500 tracking-wider uppercase mb-2">GASTOS TOTALES</h4>
+              <div className="text-2xl font-black text-red-600 mb-2">
+                -${totalGastosGen.toLocaleString("es-MX", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+              </div>
+              <div className="space-y-0.5 text-[11px] text-red-700 font-medium">
+                <p>• Honorarios terapeutas: <span className="font-bold">${totalHonorariosGen.toLocaleString("es-MX", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</span></p>
+                <p>• Gastos operativos: <span className="font-bold">$0.00</span></p>
+              </div>
+            </div>
+
+            {/* TARJETA 4: BALANCE ACTUAL */}
+            <div className="bg-gradient-to-br from-[#0e2f44] to-[#1a5276] rounded-2xl p-5 border border-slate-700 shadow-md text-white">
+              <h4 className="text-[11px] font-bold text-blue-200 tracking-wider uppercase mb-2">BALANCE ACTUAL</h4>
+              <div className="text-2xl font-black text-white mb-2">
+                ${balanceActualGen.toLocaleString("es-MX", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+              </div>
+              <p className="text-[10px] text-blue-100 font-medium leading-snug">
+                Calculado: Ingresos (${totalIngresosGen.toLocaleString("es-MX", { minimumFractionDigits: 2 })}) - Gastos (${totalGastosGen.toLocaleString("es-MX", { minimumFractionDigits: 2 })})
+              </p>
+            </div>
+          </div>
+        );
+      })()}
+
       {loading ? (
         <div className="flex justify-center p-12"><div className="animate-spin rounded-full h-10 w-10 border-b-2 border-[#1a5276]"></div></div>
       ) : (
