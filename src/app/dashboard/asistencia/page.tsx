@@ -1292,7 +1292,7 @@ export default function AsistenciaPage() {
                 return currentItems.length > 0 ? currentItems.map(a => (
                 <tr key={a.id} className="hover:bg-slate-50 transition-colors">
                   <td className="px-1 py-2 text-slate-500 font-medium text-[11px] whitespace-nowrap">{formatDateStr(a.fecha)}</td>
-                  <td className="px-1 py-2 text-slate-500 font-medium text-[11px] whitespace-nowrap">{a.horaRegistro || "-"}</td>
+                  <td className="px-1 py-2 text-slate-500 font-medium text-[11px] whitespace-nowrap">{a.hora || a.horaRegistro || "-"}</td>
                   <td className="px-1 py-2 text-slate-500 text-[11px] max-w-[85px] truncate" title={a.terapeuta}>{a.terapeuta}</td>
                   <td className="px-1 py-2 text-slate-500 text-[11px] whitespace-nowrap">{a.area}</td>
                   <td className="px-1.5 py-2 text-left font-bold text-[#1a5276] text-[11px] max-w-[130px] truncate" title={a.paciente}>{a.paciente}</td>
