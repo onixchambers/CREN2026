@@ -201,11 +201,13 @@ export default function SalarioPage() {
                 if (hasFactura || sessionIva > 0) {
                   ivaCrenSesion = Math.max(0, sessionIva - ivaSesionRetenido);
                 }
-              } else if (hasFactura || sessionIva > 0) {
-                ivaCrenSesion = sessionIva;
-                pagoSesionTerapeuta = precioSession;
+                crenGananciaSesion = Math.max(0, precioSession - pagoSesionTerapeuta - ivaCrenSesion);
               } else {
-                pagoSesionTerapeuta = precioSession;
+                pagoSesionTerapeuta = 0;
+                if (hasFactura || sessionIva > 0) {
+                  ivaCrenSesion = sessionIva;
+                }
+                crenGananciaSesion = Math.max(0, precioSession - ivaCrenSesion);
               }
 
               honorariosTotalGen += pagoSesionTerapeuta;
@@ -256,11 +258,12 @@ export default function SalarioPage() {
               }
             });
 
-            // Si el esquema es Salario Base Fijo, el pago no depende exclusivamente de sesiones acumuladas
+            // Si el esquema es Salario Base Fijo, el pago no depende de comisiones por sesión acumuladas
             let totalAPagarFinal = honorariosTotalGen;
             if (t.tipoPago === "Salario Base") {
               const baseSal = t.salarioBase || 0;
               totalAPagarFinal = baseSal;
+              honorariosTotalGen = baseSal;
               q1 = baseSal / 2;
               q2 = baseSal / 2;
               sem1 = baseSal / 4;
@@ -270,7 +273,7 @@ export default function SalarioPage() {
               sem5 = 0;
             }
 
-            const utilidadCrenFinal = ingresoBrutoTotalGen - honorariosTotalGen - ivaCrenTotalGen;
+            const utilidadCrenFinal = ingresoBrutoTotalGen - totalAPagarFinal - ivaCrenTotalGen;
             const pacienteList = Array.from(pacienteMap.values());
 
             return (
