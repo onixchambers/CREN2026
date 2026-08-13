@@ -118,6 +118,13 @@ export async function uploadFileToGoogleDrive(fileBuffer: Buffer, fileName: stri
           scriptData = JSON.parse(text);
         } catch (e) {}
 
+        if (text.includes("Necesitas acceso") || text.includes("<html") || text.includes("accounts.google.com") || text.includes("google.com/accounts")) {
+          return {
+            success: false,
+            error: "Permisos de Google Apps Script pendientes: Tu script Webhook requiere cambiar el acceso. En Google Apps Script, ve a Implementar > Administrar implementaciones > Editar (ícono lápiz) > 'Quién tiene acceso' y selecciona 'Cualquiera' ('Anyone'), luego haz clic en Implementar."
+          };
+        }
+
         const webViewLink = scriptData?.webViewLink || scriptData?.url || scriptData?.link || scriptData?.fileUrl || "https://drive.google.com";
         if (scriptData && (scriptData.success !== false) && (scriptData.fileId || scriptData.id || scriptData.success || webViewLink !== "https://drive.google.com")) {
           return {
