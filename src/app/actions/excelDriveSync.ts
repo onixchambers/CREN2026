@@ -89,3 +89,23 @@ export async function exportAsistenciasToDriveAction() {
     return { success: false, error: error?.message || "Error al exportar Excel a Google Drive." };
   }
 }
+
+export async function updateAutoDriveSyncSettings(enabled: boolean, time: string) {
+  try {
+    const { prisma } = await import("@/lib/prisma");
+    await prisma.systemSettings.upsert({
+      where: { id: 1 },
+      update: {
+        googleDriveEnabled: enabled,
+      },
+      create: {
+        id: 1,
+        googleDriveEnabled: enabled,
+      }
+    });
+    return { success: true };
+  } catch (e: any) {
+    console.error("Error al guardar auto sync:", e);
+    return { success: false, error: e?.message || "Error al actualizar" };
+  }
+}

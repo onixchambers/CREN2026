@@ -66,6 +66,63 @@ export default function AsistenciaPage() {
   const [isAddingPrice, setIsAddingPrice] = useState(false);
   const [prefacturaModalData, setPrefacturaModalData] = useState<Asistencia | null>(null);
   const [isExportingDrive, setIsExportingDrive] = useState(false);
+  const [autoDriveSyncEnabled, setAutoDriveSyncEnabled] = useState(false);
+  const [autoDriveSyncTime, setAutoDriveSyncTime] = useState("20:00");
+
+  useEffect(() => {
+    if (typeof window !== "undefined") {
+      const savedEnabled = localStorage.getItem("cren_autoDriveSyncEnabled");
+      const savedTime = localStorage.getItem("cren_autoDriveSyncTime");
+      if (savedEnabled !== null) setAutoDriveSyncEnabled(savedEnabled === "true");
+      if (savedTime) setAutoDriveSyncTime(savedTime);
+    }
+  }, []);
+
+  useEffect(() => {
+    if (!autoDriveSyncEnabled) return;
+
+    const checkInterval = setInterval(async () => {
+      const now = new Date();
+      const currentHours = String(now.getHours()).padStart(2, "0");
+      const currentMinutes = String(now.getMinutes()).padStart(2, "0");
+      const currentTimeStr = `${currentHours}:${currentMinutes}`;
+      const todayStr = now.toISOString().split("T")[0];
+
+      const lastSent = localStorage.getItem("lastAutoDriveExportDate");
+
+      if (currentTimeStr === autoDriveSyncTime && lastSent !== todayStr) {
+        localStorage.setItem("lastAutoDriveExportDate", todayStr);
+        try {
+          const res = await exportAsistenciasToDriveAction();
+          if (res.success) {
+            console.log("Auto Google Drive Export Success:", todayStr, currentTimeStr);
+          }
+        } catch (err) {
+          console.error("Auto Google Drive Export Error:", err);
+        }
+      }
+    }, 30000);
+
+    return () => clearInterval(checkInterval);
+  }, [autoDriveSyncEnabled, autoDriveSyncTime]);
+
+  const handleToggleAutoDriveSync = async (enabled: boolean) => {
+    setAutoDriveSyncEnabled(enabled);
+    if (typeof window !== "undefined") {
+      localStorage.setItem("cren_autoDriveSyncEnabled", String(enabled));
+    }
+    const { updateAutoDriveSyncSettings } = await import("@/app/actions/excelDriveSync");
+    await updateAutoDriveSyncSettings(enabled, autoDriveSyncTime);
+  };
+
+  const handleTimeAutoDriveSyncChange = async (timeVal: string) => {
+    setAutoDriveSyncTime(timeVal);
+    if (typeof window !== "undefined") {
+      localStorage.setItem("cren_autoDriveSyncTime", timeVal);
+    }
+    const { updateAutoDriveSyncSettings } = await import("@/app/actions/excelDriveSync");
+    await updateAutoDriveSyncSettings(autoDriveSyncEnabled, timeVal);
+  };
 
   useEffect(() => {
     async function loadInitialData() {
@@ -1060,31 +1117,57 @@ export default function AsistenciaPage() {
             Registros Recientes
           </h3>
           {(userRole.toUpperCase() === "ADMIN" || userRole.toUpperCase() === "INVITADO") && (
-            <button
-              type="button"
-              disabled={isExportingDrive}
-              onClick={async () => {
-                setIsExportingDrive(true);
-                try {
-                  const res = await exportAsistenciasToDriveAction();
-                  if (res.success) {
-                    alert("¡Excel 'Informes PDF CREN' generado y enviado exitosamente a Google Drive!");
-                    if (res.webViewLink) window.open(res.webViewLink, "_blank");
-                  } else {
-                    alert("Error al enviar Excel a Google Drive: " + (res.error || "Error desconocido"));
+            <div className="flex items-center gap-2.5 flex-wrap">
+              <div className="flex items-center gap-1.5 bg-slate-100 hover:bg-slate-200/70 px-2.5 py-1 rounded-lg border border-slate-300 text-xs transition-all shadow-2xs">
+                <label className="flex items-center gap-1.5 cursor-pointer select-none text-slate-700 font-bold text-[11px]">
+                  <input
+                    type="checkbox"
+                    checked={autoDriveSyncEnabled}
+                    onChange={(e) => handleToggleAutoDriveSync(e.target.checked)}
+                    className="w-3.5 h-3.5 accent-emerald-600 rounded cursor-pointer"
+                  />
+                  <span>⏰ Envío Auto Diario:</span>
+                </label>
+                <input
+                  type="time"
+                  disabled={!autoDriveSyncEnabled}
+                  value={autoDriveSyncTime}
+                  onChange={(e) => handleTimeAutoDriveSyncChange(e.target.value)}
+                  className="px-1.5 py-0.5 text-xs font-extrabold border border-slate-300 rounded bg-white text-slate-800 disabled:opacity-50 disabled:bg-slate-50 outline-none focus:border-emerald-500 shadow-2xs cursor-pointer"
+                />
+                {autoDriveSyncEnabled && (
+                  <span className="text-[10px] bg-emerald-100 text-emerald-800 font-extrabold px-1.5 py-0.5 rounded border border-emerald-300 animate-pulse">
+                    {autoDriveSyncTime} hs
+                  </span>
+                )}
+              </div>
+
+              <button
+                type="button"
+                disabled={isExportingDrive}
+                onClick={async () => {
+                  setIsExportingDrive(true);
+                  try {
+                    const res = await exportAsistenciasToDriveAction();
+                    if (res.success) {
+                      alert("¡Excel 'Informes PDF CREN' generado y enviado exitosamente a Google Drive!");
+                      if (res.webViewLink) window.open(res.webViewLink, "_blank");
+                    } else {
+                      alert("Error al enviar Excel a Google Drive: " + (res.error || "Error desconocido"));
+                    }
+                  } catch (err: any) {
+                    alert("Error al enviar Excel a Google Drive: " + err.message);
+                  } finally {
+                    setIsExportingDrive(false);
                   }
-                } catch (err: any) {
-                  alert("Error al enviar Excel a Google Drive: " + err.message);
-                } finally {
-                  setIsExportingDrive(false);
-                }
-              }}
-              className="bg-[#107c41] hover:bg-[#0b5c30] text-white px-3 py-1.5 rounded text-xs font-bold flex items-center gap-1.5 transition-colors cursor-pointer disabled:opacity-50 shadow-xs"
-              title="Generar Excel 'Informes PDF CREN' con todos los Registros Recientes y enviarlo a Google Drive"
-            >
-              <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 24 24"><path d="M19 9h-4V3H9v6H5l7 7 7-7zM5 18v2h14v-2H5z"/></svg>
-              <span>{isExportingDrive ? "Enviando a Google Drive..." : "Enviar Excel a Google Drive (Informes PDF CREN)"}</span>
-            </button>
+                }}
+                className="bg-[#107c41] hover:bg-[#0b5c30] text-white px-3 py-1.5 rounded text-xs font-bold flex items-center gap-1.5 transition-colors cursor-pointer disabled:opacity-50 shadow-xs"
+                title="Generar Excel 'Informes PDF CREN' con todos los Registros Recientes y enviarlo a Google Drive"
+              >
+                <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 24 24"><path d="M19 9h-4V3H9v6H5l7 7 7-7zM5 18v2h14v-2H5z"/></svg>
+                <span>{isExportingDrive ? "Enviando a Google Drive..." : "Enviar Excel a Google Drive (Informes PDF CREN)"}</span>
+              </button>
+            </div>
           )}
         </div>
 
