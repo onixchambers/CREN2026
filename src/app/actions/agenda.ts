@@ -355,11 +355,13 @@ export async function deleteCita(id: string, deleteFuture: boolean = false) {
     if (citaTarget) {
       let fechaTarget = citaTarget.date.toISOString().split("T")[0];
       let horaTarget = "09:00";
+      let frecuenciaTarget = "semanal";
       if (citaTarget.notes) {
         try {
           const parsed = JSON.parse(citaTarget.notes);
           if (parsed.fecha) fechaTarget = parsed.fecha;
           if (parsed.hora) horaTarget = parsed.hora;
+          if (parsed.frecuencia) frecuenciaTarget = parsed.frecuencia;
         } catch (e) {}
       }
 
@@ -368,15 +370,51 @@ export async function deleteCita(id: string, deleteFuture: boolean = false) {
           where: citaTarget.patientId ? { patientId: citaTarget.patientId } : { therapistId: citaTarget.therapistId }
         });
 
+        const targetDate = new Date(`${fechaTarget}T12:00:00Z`);
+        const targetDayOfWeek = targetDate.getUTCDay();
+        const targetDayOfMonth = parseInt(fechaTarget.split("-")[2] || "1", 10);
+        const freqLower = (frecuenciaTarget || "").toLowerCase();
+
         const idsToDelete = matchingSessions.filter(s => {
           let f = s.date.toISOString().split("T")[0];
+          let h = "09:00";
+          let sFreq = "";
           if (s.notes) {
             try {
               const p = JSON.parse(s.notes);
               if (p.fecha) f = p.fecha;
+              if (p.hora) h = p.hora;
+              if (p.frecuencia) sFreq = p.frecuencia;
             } catch (e) {}
           }
-          return f >= fechaTarget;
+
+          // No borrar citas anteriores a la fecha seleccionada
+          if (f < fechaTarget) return false;
+
+          // Misma cita seleccionada
+          if (s.id === id || (f === fechaTarget && h.substring(0, 2) === horaTarget.substring(0, 2))) {
+            return true;
+          }
+
+          const sessionDate = new Date(`${f}T12:00:00Z`);
+          const sessionDayOfWeek = sessionDate.getUTCDay();
+          const sessionDayOfMonth = parseInt(f.split("-")[2] || "1", 10);
+          const isSameTime = h.substring(0, 2) === horaTarget.substring(0, 2);
+          const effectiveFreq = (freqLower || sFreq || "semanal").toLowerCase();
+
+          if (effectiveFreq.includes("mensual")) {
+            // Para citas mensuales: solo los mismos días del mes (ej. día 5) a la misma hora
+            return sessionDayOfMonth === targetDayOfMonth && isSameTime;
+          } else if (effectiveFreq.includes("semanal") || effectiveFreq.includes("quincenal")) {
+            // Para citas semanales/quincenales: solo el mismo día de la semana (ej. Martes) a la misma hora
+            return sessionDayOfWeek === targetDayOfWeek && isSameTime;
+          } else if (effectiveFreq.includes("diario")) {
+            // Para citas diarias: misma hora en días futuros
+            return isSameTime;
+          } else {
+            // Fallback por defecto: mismo día de la semana a la misma hora
+            return sessionDayOfWeek === targetDayOfWeek && isSameTime;
+          }
         }).map(s => s.id);
 
         if (idsToDelete.length > 0) {
@@ -423,7 +461,7 @@ export async function deleteCita(id: string, deleteFuture: boolean = false) {
 
     await logAuditAction({
       action: "ELIMINAR_CITA",
-      details: `Se eliminó la cita del paciente "${citaTarget?.patient?.name || id}"${deleteFuture ? " (y citas futuras)" : ""}.`,
+      details: `Se eliminó la cita del paciente "${citaTarget?.patient?.name || id}"${deleteFuture ? " (y citas futuras de su serie)" : ""}.`,
       target: citaTarget?.patient?.name || id
     });
 

@@ -286,8 +286,41 @@ export default function AgendaPage() {
       if (res.success) {
         if (deleteFuture) {
           const fechaTarget = deleteModalCita.fecha;
+          const horaTarget = deleteModalCita.hora || "09:00";
           const pacienteName = deleteModalCita.paciente;
-          setCitas(citas.filter((c: any) => !(c.paciente === pacienteName && c.fecha >= fechaTarget)));
+          const freqTarget = (deleteModalCita.frecuencia || "semanal").toLowerCase();
+
+          const targetDate = new Date(`${fechaTarget}T12:00:00Z`);
+          const targetDayOfWeek = targetDate.getUTCDay();
+          const targetDayOfMonth = parseInt(fechaTarget.split("-")[2] || "1", 10);
+
+          setCitas(citas.filter((c: any) => {
+            if (c.paciente !== pacienteName) return true;
+            if (c.fecha < fechaTarget) return true; // Mantener citas pasadas
+
+            if (c.id === deleteModalCita.id || (c.fecha === fechaTarget && c.hora.substring(0, 2) === horaTarget.substring(0, 2))) {
+              return false; // Eliminar la cita seleccionada
+            }
+
+            const cDate = new Date(`${c.fecha}T12:00:00Z`);
+            const cDayOfWeek = cDate.getUTCDay();
+            const cDayOfMonth = parseInt(c.fecha.split("-")[2] || "1", 10);
+            const isSameTime = c.hora.substring(0, 2) === horaTarget.substring(0, 2);
+            const effectiveFreq = (freqTarget || c.frecuencia || "semanal").toLowerCase();
+
+            if (effectiveFreq.includes("mensual")) {
+              const matchesMonth = cDayOfMonth === targetDayOfMonth && isSameTime;
+              return !matchesMonth;
+            } else if (effectiveFreq.includes("semanal") || effectiveFreq.includes("quincenal")) {
+              const matchesWeek = cDayOfWeek === targetDayOfWeek && isSameTime;
+              return !matchesWeek;
+            } else if (effectiveFreq.includes("diario")) {
+              return !isSameTime;
+            } else {
+              const matchesWeek = cDayOfWeek === targetDayOfWeek && isSameTime;
+              return !matchesWeek;
+            }
+          }));
         } else {
           setCitas(citas.filter((c: any) => c.id !== deleteModalCita.id));
         }
@@ -298,6 +331,23 @@ export default function AgendaPage() {
       }
     } finally {
       setIsDeletingCita(false);
+    }
+  };
+
+  const getFutureDeleteDescription = (cita: any) => {
+    if (!cita || !cita.fecha) return "No afectará citas anteriores";
+    const freq = (cita.frecuencia || "semanal").toLowerCase();
+    const dateObj = new Date(`${cita.fecha}T12:00:00Z`);
+    const dayNames = ["Domingos", "Lunes", "Martes", "Miércoles", "Jueves", "Viernes", "Sábados"];
+    const dayName = dayNames[dateObj.getUTCDay()] || "días de la semana";
+    const dayNum = cita.fecha.split("-")[2] || "";
+
+    if (freq.includes("mensual")) {
+      return `Solo los días ${dayNum} de cada mes en adelante`;
+    } else if (freq.includes("diario")) {
+      return `Todas las citas diarias a las ${cita.hora} en adelante`;
+    } else {
+      return `Solo los ${dayName} a las ${cita.hora} en adelante`;
     }
   };
 
@@ -1329,7 +1379,7 @@ export default function AgendaPage() {
                 className="w-full py-3 px-4 bg-red-600 hover:bg-red-700 text-white font-bold rounded-xl text-xs transition-colors flex items-center justify-between shadow-md cursor-pointer disabled:opacity-50"
               >
                 <span>🚨 Esta cita y las futuras</span>
-                <span className="text-[10px] text-red-100 font-normal">No afectará citas anteriores</span>
+                <span className="text-[10px] text-red-100 font-normal">{getFutureDeleteDescription(deleteModalCita)}</span>
               </button>
 
               <button
