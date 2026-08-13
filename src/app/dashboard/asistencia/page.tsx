@@ -69,6 +69,8 @@ export default function AsistenciaPage() {
   const [autoDriveSyncEnabled, setAutoDriveSyncEnabled] = useState(false);
   const [autoDriveSyncTime, setAutoDriveSyncTime] = useState("20:00");
   const [driveToast, setDriveToast] = useState<string | null>(null);
+  const [systemTimezone, setSystemTimezone] = useState("America/Mexico_City");
+  const [liveSystemTime, setLiveSystemTime] = useState("");
 
   useEffect(() => {
     if (driveToast) {
@@ -84,24 +86,74 @@ export default function AsistenciaPage() {
       if (savedEnabled !== null) setAutoDriveSyncEnabled(savedEnabled === "true");
       if (savedTime) setAutoDriveSyncTime(savedTime);
     }
+    async function fetchTimezone() {
+      try {
+        const { getSettings } = await import("@/app/actions/configuracion");
+        const res = await getSettings("2026-08");
+        if (res.success && res.settings?.timezone) {
+          setSystemTimezone(res.settings.timezone);
+        }
+      } catch (e) {}
+    }
+    fetchTimezone();
   }, []);
+
+  // Reloj en tiempo real según zona horaria del sistema
+  useEffect(() => {
+    const timer = setInterval(() => {
+      try {
+        const now = new Date();
+        const formatter = new Intl.DateTimeFormat("es-MX", {
+          timeZone: systemTimezone,
+          hour: "2-digit",
+          minute: "2-digit",
+          second: "2-digit",
+          hour12: false,
+        });
+        setLiveSystemTime(formatter.format(now));
+      } catch (e) {
+        const now = new Date();
+        const h = String(now.getHours()).padStart(2, "0");
+        const m = String(now.getMinutes()).padStart(2, "0");
+        const s = String(now.getSeconds()).padStart(2, "0");
+        setLiveSystemTime(`${h}:${m}:${s}`);
+      }
+    }, 1000);
+
+    return () => clearInterval(timer);
+  }, [systemTimezone]);
 
   useEffect(() => {
     if (!autoDriveSyncEnabled) return;
 
     const checkInterval = setInterval(() => {
       const now = new Date();
-      const currentH = now.getHours();
-      const currentM = now.getMinutes();
+      let currentH = now.getHours();
+      let currentM = now.getMinutes();
+
+      try {
+        const parts = new Intl.DateTimeFormat("en-US", {
+          timeZone: systemTimezone,
+          hour: "numeric",
+          minute: "numeric",
+          hour12: false,
+        }).formatToParts(now);
+
+        for (const p of parts) {
+          if (p.type === "hour") currentH = parseInt(p.value, 10);
+          if (p.type === "minute") currentM = parseInt(p.value, 10);
+        }
+        if (currentH === 24) currentH = 0;
+      } catch (e) {}
 
       const y = now.getFullYear();
       const m = String(now.getMonth() + 1).padStart(2, "0");
       const d = String(now.getDate()).padStart(2, "0");
       const todayStr = `${y}-${m}-${d}`;
 
-      const parts = (autoDriveSyncTime || "20:00").split(":");
-      const targetH = parseInt(parts[0] || "0", 10);
-      const targetM = parseInt(parts[1] || "0", 10);
+      const targetParts = (autoDriveSyncTime || "20:00").split(":");
+      const targetH = parseInt(targetParts[0] || "0", 10);
+      const targetM = parseInt(targetParts[1] || "0", 10);
 
       const isTimeMatch = !isNaN(targetH) && !isNaN(targetM) && currentH === targetH && currentM === targetM;
       const lastSent = localStorage.getItem("lastAutoDriveExportDate");
@@ -110,14 +162,14 @@ export default function AsistenciaPage() {
         localStorage.setItem("lastAutoDriveExportDate", todayStr);
         const btn = document.getElementById("btn-export-drive") as HTMLButtonElement | null;
         if (btn && !btn.disabled) {
-          console.log("Presionando automáticamente el botón verde de enviar a Google Drive a las:", todayStr, `${currentH}:${currentM}`);
+          console.log("Presionando automáticamente el botón verde a las:", todayStr, `${currentH}:${currentM}`);
           btn.click();
         }
       }
-    }, 5000);
+    }, 1000);
 
     return () => clearInterval(checkInterval);
-  }, [autoDriveSyncEnabled, autoDriveSyncTime]);
+  }, [autoDriveSyncEnabled, autoDriveSyncTime, systemTimezone]);
 
   const handleToggleAutoDriveSync = async (enabled: boolean) => {
     setAutoDriveSyncEnabled(enabled);
@@ -1160,9 +1212,14 @@ export default function AsistenciaPage() {
                   onChange={(e) => handleTimeAutoDriveSyncChange(e.target.value)}
                   className="px-1.5 py-0.5 text-xs font-extrabold border border-slate-300 rounded bg-white text-slate-800 disabled:opacity-50 disabled:bg-slate-50 outline-none focus:border-emerald-500 shadow-2xs cursor-pointer"
                 />
+                {liveSystemTime && (
+                  <span className="font-mono text-[11px] font-black bg-blue-100 text-blue-900 border border-blue-300 px-2 py-0.5 rounded flex items-center gap-1 shadow-2xs" title="Hora actual del sistema">
+                    ⏱️ {liveSystemTime}
+                  </span>
+                )}
                 {autoDriveSyncEnabled && (
-                  <span className="text-[10px] bg-emerald-100 text-emerald-800 font-extrabold px-1.5 py-0.5 rounded border border-emerald-300 animate-pulse">
-                    {autoDriveSyncTime} hs
+                  <span className="font-mono text-[10px] bg-emerald-100 text-emerald-800 font-extrabold px-1.5 py-0.5 rounded border border-emerald-300 animate-pulse" title="Hora programada de envío">
+                    Prog. {autoDriveSyncTime} hs
                   </span>
                 )}
               </div>
