@@ -1220,10 +1220,10 @@ export default function AsistenciaPage() {
                       setDriveToast("¡Excel 'Informes PDF CREN' generado y enviado exitosamente a Google Drive!");
                       if (res.webViewLink) window.open(res.webViewLink, "_blank");
                     } else {
-                      alert("Error al enviar Excel a Google Drive: " + (res.error || "Error desconocido"));
+                      setDriveToast("⚠️ " + (res.error || "Error al sincronizar con Google Drive"));
                     }
                   } catch (err: any) {
-                    alert("Error al enviar Excel a Google Drive: " + err.message);
+                    setDriveToast("⚠️ Error: " + err.message);
                   } finally {
                     setIsExportingDrive(false);
                   }
