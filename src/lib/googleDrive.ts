@@ -169,39 +169,74 @@ export async function uploadFileToGoogleDrive(fileBuffer: Buffer, fileName: stri
       return { success: false, error: "Faltan credenciales de Google Drive en Configuración." };
     }
 
-    const metadata: any = {
-      name: fileName,
-      mimeType: mimeType,
-    };
-
-    if (settings.googleDriveFolderId && settings.googleDriveFolderId.trim().length > 0) {
-      metadata.parents = [settings.googleDriveFolderId.trim()];
-    }
-
-    const boundary = "-------314159265358979323846";
-    const delimiter = `\r\n--${boundary}\r\n`;
-    const closeDelimiter = `\r\n--${boundary}--`;
-
-    const multipartRequestBody = Buffer.concat([
-      Buffer.from(
-        `${delimiter}Content-Type: application/json; charset=UTF-8\r\n\r\n${JSON.stringify(metadata)}`
-      ),
-      Buffer.from(`${delimiter}Content-Type: ${mimeType}\r\n\r\n`),
-      fileBuffer,
-      Buffer.from(closeDelimiter),
-    ]);
-
-    const uploadRes = await fetch(
-      "https://www.googleapis.com/upload/drive/v3/files?uploadType=multipart&supportsAllDrives=true&supportsTeamDrives=true&enforceSingleParent=true&fields=id,name,webViewLink,webContentLink",
-      {
-        method: "POST",
-        headers: {
-          Authorization: `Bearer ${accessToken}`,
-          "Content-Type": `multipart/related; boundary=${boundary}`,
-        },
-        body: multipartRequestBody,
+    // 2. Buscar si el archivo ya existe en Google Drive para actualizarlo en lugar de duplicarlo
+    let existingFileId: string | null = null;
+    let existingFileUrl: string | null = null;
+    try {
+      const searchRes = await fetch(
+        `https://www.googleapis.com/drive/v3/files?q=name='${encodeURIComponent(fileName)}' and trashed=false&fields=files(id,name,webViewLink,webContentLink)&supportsAllDrives=true&includeItemsFromAllDrives=true`,
+        {
+          method: "GET",
+          headers: { Authorization: `Bearer ${accessToken}` },
+        }
+      );
+      if (searchRes.ok) {
+        const searchData = await searchRes.json();
+        if (searchData.files && searchData.files.length > 0) {
+          existingFileId = searchData.files[0].id;
+          existingFileUrl = searchData.files[0].webViewLink;
+        }
       }
-    );
+    } catch (e) {}
+
+    let uploadRes;
+    if (existingFileId) {
+      uploadRes = await fetch(
+        `https://www.googleapis.com/upload/drive/v3/files/${existingFileId}?uploadType=media&supportsAllDrives=true&fields=id,name,webViewLink,webContentLink`,
+        {
+          method: "PATCH",
+          headers: {
+            Authorization: `Bearer ${accessToken}`,
+            "Content-Type": mimeType,
+          },
+          body: fileBuffer,
+        }
+      );
+    } else {
+      const metadata: any = {
+        name: fileName,
+        mimeType: mimeType,
+      };
+
+      if (settings.googleDriveFolderId && settings.googleDriveFolderId.trim().length > 0) {
+        metadata.parents = [settings.googleDriveFolderId.trim()];
+      }
+
+      const boundary = "-------314159265358979323846";
+      const delimiter = `\r\n--${boundary}\r\n`;
+      const closeDelimiter = `\r\n--${boundary}--`;
+
+      const multipartRequestBody = Buffer.concat([
+        Buffer.from(
+          `${delimiter}Content-Type: application/json; charset=UTF-8\r\n\r\n${JSON.stringify(metadata)}`
+        ),
+        Buffer.from(`${delimiter}Content-Type: ${mimeType}\r\n\r\n`),
+        fileBuffer,
+        Buffer.from(closeDelimiter),
+      ]);
+
+      uploadRes = await fetch(
+        "https://www.googleapis.com/upload/drive/v3/files?uploadType=multipart&supportsAllDrives=true&supportsTeamDrives=true&enforceSingleParent=true&fields=id,name,webViewLink,webContentLink",
+        {
+          method: "POST",
+          headers: {
+            Authorization: `Bearer ${accessToken}`,
+            "Content-Type": `multipart/related; boundary=${boundary}`,
+          },
+          body: multipartRequestBody,
+        }
+      );
+    }
 
     const fileData = await uploadRes.json();
     if (!uploadRes.ok) {
