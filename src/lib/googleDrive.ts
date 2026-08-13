@@ -118,6 +118,13 @@ export async function uploadFileToGoogleDrive(fileBuffer: Buffer, fileName: stri
           scriptData = JSON.parse(text);
         } catch (e) {}
 
+        if (response.status === 404 || text.includes("El archivo que solicitaste no existe") || text.includes("No se encontró la página")) {
+          return {
+            success: false,
+            error: "La URL de Google Apps Script no encuentra el script (Error 404). Por favor asegúrate de haber pegado el código 'function doPost(e)' en el editor de Google Apps Script, guardar con Ctrl+S y crear una 'Nueva implementación' como Aplicación web con acceso 'Cualquiera'."
+          };
+        }
+
         if (text.includes("Necesitas acceso") || text.includes("<html") || text.includes("accounts.google.com") || text.includes("google.com/accounts") || response.status === 403) {
           return {
             success: false,
