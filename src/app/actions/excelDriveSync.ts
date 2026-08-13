@@ -80,7 +80,8 @@ export async function exportAsistenciasToDriveAction() {
       excelBuffer,
       "Informes PDF CREN.xlsx",
       "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
-      "Informes PDF CREN"
+      "Informes PDF CREN",
+      rows
     );
 
     return driveRes;
