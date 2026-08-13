@@ -127,49 +127,33 @@ export default function AsistenciaPage() {
     if (!autoDriveSyncEnabled) return;
 
     const checkInterval = setInterval(() => {
+      if (!liveSystemTime || !autoDriveSyncTime) return;
+
+      const currentBlueHHMM = liveSystemTime.slice(0, 5).trim();
+      const targetGreenHHMM = autoDriveSyncTime.trim();
+
       const now = new Date();
-      let currentH = now.getHours();
-      let currentM = now.getMinutes();
-
-      try {
-        const parts = new Intl.DateTimeFormat("en-US", {
-          timeZone: systemTimezone,
-          hour: "numeric",
-          minute: "numeric",
-          hour12: false,
-        }).formatToParts(now);
-
-        for (const p of parts) {
-          if (p.type === "hour") currentH = parseInt(p.value, 10);
-          if (p.type === "minute") currentM = parseInt(p.value, 10);
-        }
-        if (currentH === 24) currentH = 0;
-      } catch (e) {}
-
       const y = now.getFullYear();
       const m = String(now.getMonth() + 1).padStart(2, "0");
       const d = String(now.getDate()).padStart(2, "0");
       const todayStr = `${y}-${m}-${d}`;
+      const lastKey = `${todayStr}_${targetGreenHHMM}`;
 
-      const targetParts = (autoDriveSyncTime || "20:00").split(":");
-      const targetH = parseInt(targetParts[0] || "0", 10);
-      const targetM = parseInt(targetParts[1] || "0", 10);
+      const isMatch = currentBlueHHMM === targetGreenHHMM;
+      const lastSentKey = localStorage.getItem("lastAutoDriveExportKey");
 
-      const isTimeMatch = !isNaN(targetH) && !isNaN(targetM) && currentH === targetH && currentM === targetM;
-      const lastSent = localStorage.getItem("lastAutoDriveExportDate");
-
-      if (isTimeMatch && lastSent !== todayStr) {
-        localStorage.setItem("lastAutoDriveExportDate", todayStr);
+      if (isMatch && lastSentKey !== lastKey) {
+        localStorage.setItem("lastAutoDriveExportKey", lastKey);
         const btn = document.getElementById("btn-export-drive") as HTMLButtonElement | null;
         if (btn && !btn.disabled) {
-          console.log("Presionando automáticamente el botón verde a las:", todayStr, `${currentH}:${currentM}`);
+          console.log(`Coincidencia detectada (Azul: ${currentBlueHHMM} == Verde: ${targetGreenHHMM}). Presionando botón verde automáticamente...`);
           btn.click();
         }
       }
     }, 1000);
 
     return () => clearInterval(checkInterval);
-  }, [autoDriveSyncEnabled, autoDriveSyncTime, systemTimezone]);
+  }, [autoDriveSyncEnabled, autoDriveSyncTime, liveSystemTime]);
 
   const handleToggleAutoDriveSync = async (enabled: boolean) => {
     setAutoDriveSyncEnabled(enabled);
