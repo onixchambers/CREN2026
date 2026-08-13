@@ -118,10 +118,10 @@ export async function uploadFileToGoogleDrive(fileBuffer: Buffer, fileName: stri
           scriptData = JSON.parse(text);
         } catch (e) {}
 
-        if (text.includes("Necesitas acceso") || text.includes("<html") || text.includes("accounts.google.com") || text.includes("google.com/accounts")) {
+        if (text.includes("Necesitas acceso") || text.includes("<html") || text.includes("accounts.google.com") || text.includes("google.com/accounts") || response.status === 403) {
           return {
             success: false,
-            error: "Permisos de Google Apps Script pendientes: Tu script Webhook requiere cambiar el acceso. En Google Apps Script, ve a Implementar > Administrar implementaciones > Editar (ícono lápiz) > 'Quién tiene acceso' y selecciona 'Cualquiera' ('Anyone'), luego haz clic en Implementar."
+            error: "Permisos de Google Apps Script pendientes: En Google Apps Script, ve a Implementar > Administrar implementaciones > Editar (ícono lápiz). Asegúrate de que 'Ejecutar como' sea 'Yo', 'Quién tiene acceso' sea 'Cualquiera' (Anyone), y en 'Versión' selecciona 'Nueva versión'. Luego haz clic en Implementar y copia la URL completa con el botón 📋 Copiar."
           };
         }
 
