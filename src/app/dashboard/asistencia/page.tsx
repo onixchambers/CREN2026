@@ -208,6 +208,7 @@ export default function AsistenciaPage() {
         return {
           id: c.id,
           fecha: c.fecha,
+          hora: c.hora || (c.horaRegistro && c.horaRegistro !== "-" ? c.horaRegistro : "") || "09:00",
           area: c.area || "-",
           paciente: c.paciente,
           sexo: c.sexo || "-",
@@ -740,10 +741,19 @@ export default function AsistenciaPage() {
       }
     }
 
+    const getFormattedHora = (rawHora?: string, rawHoraReg?: string) => {
+      let h = (rawHora || rawHoraReg || "").trim();
+      if (!h || h === "-") return "09:00";
+      if (h.length >= 5 && h.includes(":")) {
+        return h.substring(0, 5);
+      }
+      return "09:00";
+    };
+
     setShowEditSegundoPago(isMixto);
     setEditForm({
       fecha: a.fecha,
-      hora: a.hora || "",
+      hora: getFormattedHora(a.hora, a.horaRegistro),
       area: a.area,
       tipoSesion: a.tipoSesion,
       estado: a.estado,

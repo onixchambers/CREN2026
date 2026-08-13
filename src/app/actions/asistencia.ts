@@ -395,9 +395,12 @@ export async function getAsistenciasDB() {
 
         const fuePagado = !isFreeCancel && (montoP > 0 || totalVal > 0 || extra.pago === "SÍ" || extra.pago === "SI" || extra.pagado === true);
 
+        const horaFormatted = (extra.hora || extra.horaRegistro || (s.date ? new Date(s.date).toISOString().split("T")[1]?.substring(0, 5) : "") || "09:00").toString().trim().substring(0, 5);
+
         asistencias.push({
           id: s.id,
           fecha: extra.fecha || s.date.toISOString().split("T")[0],
+          hora: horaFormatted,
           horaRegistro: extra.hora || extra.horaRegistro || "-",
           area: extra.area || s.patient?.medicoTratante || "-",
           paciente: s.patient?.name || extra.paciente || extra.pacienteNombre || "-",
