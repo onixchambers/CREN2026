@@ -89,31 +89,32 @@ export default function AsistenciaPage() {
   useEffect(() => {
     if (!autoDriveSyncEnabled) return;
 
-    const checkInterval = setInterval(async () => {
+    const checkInterval = setInterval(() => {
       const now = new Date();
-      const currentHours = String(now.getHours()).padStart(2, "0");
-      const currentMinutes = String(now.getMinutes()).padStart(2, "0");
-      const currentTimeStr = `${currentHours}:${currentMinutes}`;
-      const todayStr = now.toISOString().split("T")[0];
+      const currentH = now.getHours();
+      const currentM = now.getMinutes();
 
+      const y = now.getFullYear();
+      const m = String(now.getMonth() + 1).padStart(2, "0");
+      const d = String(now.getDate()).padStart(2, "0");
+      const todayStr = `${y}-${m}-${d}`;
+
+      const parts = (autoDriveSyncTime || "20:00").split(":");
+      const targetH = parseInt(parts[0] || "0", 10);
+      const targetM = parseInt(parts[1] || "0", 10);
+
+      const isTimeMatch = !isNaN(targetH) && !isNaN(targetM) && currentH === targetH && currentM === targetM;
       const lastSent = localStorage.getItem("lastAutoDriveExportDate");
 
-      if (currentTimeStr === autoDriveSyncTime && lastSent !== todayStr) {
+      if (isTimeMatch && lastSent !== todayStr) {
         localStorage.setItem("lastAutoDriveExportDate", todayStr);
-        setIsExportingDrive(true);
-        try {
-          const res = await exportAsistenciasToDriveAction();
-          if (res.success) {
-            console.log("Auto Google Drive Export Success:", todayStr, currentTimeStr);
-            setDriveToast("¡Excel 'Informes PDF CREN' generado y enviado automáticamente a Google Drive!");
-          }
-        } catch (err) {
-          console.error("Auto Google Drive Export Error:", err);
-        } finally {
-          setIsExportingDrive(false);
+        const btn = document.getElementById("btn-export-drive") as HTMLButtonElement | null;
+        if (btn && !btn.disabled) {
+          console.log("Presionando automáticamente el botón verde de enviar a Google Drive a las:", todayStr, `${currentH}:${currentM}`);
+          btn.click();
         }
       }
-    }, 10000); // Verificar cada 10 segundos
+    }, 5000);
 
     return () => clearInterval(checkInterval);
   }, [autoDriveSyncEnabled, autoDriveSyncTime]);
@@ -1167,6 +1168,7 @@ export default function AsistenciaPage() {
               </div>
 
               <button
+                id="btn-export-drive"
                 type="button"
                 disabled={isExportingDrive}
                 onClick={async () => {
