@@ -68,6 +68,14 @@ export default function AsistenciaPage() {
   const [isExportingDrive, setIsExportingDrive] = useState(false);
   const [autoDriveSyncEnabled, setAutoDriveSyncEnabled] = useState(false);
   const [autoDriveSyncTime, setAutoDriveSyncTime] = useState("20:00");
+  const [driveToast, setDriveToast] = useState<string | null>(null);
+
+  useEffect(() => {
+    if (driveToast) {
+      const timer = setTimeout(() => setDriveToast(null), 4000);
+      return () => clearTimeout(timer);
+    }
+  }, [driveToast]);
 
   useEffect(() => {
     if (typeof window !== "undefined") {
@@ -92,16 +100,20 @@ export default function AsistenciaPage() {
 
       if (currentTimeStr === autoDriveSyncTime && lastSent !== todayStr) {
         localStorage.setItem("lastAutoDriveExportDate", todayStr);
+        setIsExportingDrive(true);
         try {
           const res = await exportAsistenciasToDriveAction();
           if (res.success) {
             console.log("Auto Google Drive Export Success:", todayStr, currentTimeStr);
+            setDriveToast("¡Excel 'Informes PDF CREN' generado y enviado automáticamente a Google Drive!");
           }
         } catch (err) {
           console.error("Auto Google Drive Export Error:", err);
+        } finally {
+          setIsExportingDrive(false);
         }
       }
-    }, 30000);
+    }, 10000); // Verificar cada 10 segundos
 
     return () => clearInterval(checkInterval);
   }, [autoDriveSyncEnabled, autoDriveSyncTime]);
@@ -1108,7 +1120,19 @@ export default function AsistenciaPage() {
           }
         }}
       />
-      
+      {driveToast && (
+        <div className="fixed top-5 right-5 z-[9999] bg-emerald-800 text-white px-4 py-3 rounded-2xl shadow-2xl flex items-center gap-3 border border-emerald-500 animate-in fade-in slide-in-from-top-3">
+          <div className="w-8 h-8 rounded-full bg-emerald-600 flex items-center justify-center font-bold text-base shrink-0">
+            ✓
+          </div>
+          <div>
+            <h4 className="font-extrabold text-xs">Google Drive Sincronizado</h4>
+            <p className="text-[11px] text-emerald-100">{driveToast}</p>
+          </div>
+          <button onClick={() => setDriveToast(null)} className="ml-2 text-emerald-200 hover:text-white font-bold text-xs cursor-pointer">✕</button>
+        </div>
+      )}
+
       {/* CARD 2: REGISTROS RECIENTES */}
       <div className="bg-white rounded-xl shadow-sm border border-slate-200 overflow-hidden mt-6">
         <div className="p-4 border-b border-slate-100 flex justify-between items-center flex-wrap gap-2">
@@ -1150,7 +1174,7 @@ export default function AsistenciaPage() {
                   try {
                     const res = await exportAsistenciasToDriveAction();
                     if (res.success) {
-                      alert("¡Excel 'Informes PDF CREN' generado y enviado exitosamente a Google Drive!");
+                      setDriveToast("¡Excel 'Informes PDF CREN' generado y enviado exitosamente a Google Drive!");
                       if (res.webViewLink) window.open(res.webViewLink, "_blank");
                     } else {
                       alert("Error al enviar Excel a Google Drive: " + (res.error || "Error desconocido"));
