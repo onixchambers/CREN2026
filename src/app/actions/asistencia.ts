@@ -180,8 +180,20 @@ export async function saveAsistenciaDB(data: any) {
         saldoPrevio = totalPag - totalCos;
       }
     }
-        // Calcular saldo final incluyendo crédito previo (ej: +100 previo + 400 pago - 500 costo = 0.00)
-    const montoP = parseMoneyStr(data.montoPago);
+        // Calcular saldo final incluyendo crédito previo (ej: +100 previo + 400 pago 1 + 300 pago 2 - 700 costo = 0.00)
+    const p1 = parseMoneyStr(data.montoPago);
+    const p2 = parseMoneyStr(data.montoPago2);
+    let montoP = p1 + p2;
+
+    if (montoP === 0 && data.metodoPagoFinal && data.metodoPagoFinal.includes("$")) {
+      const matches = [...data.metodoPagoFinal.matchAll(/\$([\d.]+)/g)];
+      let sum = 0;
+      for (const m of matches) {
+        sum += parseFloat(m[1]) || 0;
+      }
+      if (sum > 0) montoP = sum;
+    }
+
     const costoS = parseMoneyStr(data.costoSesion || data.precioTerapia);
     const totalInput = parseMoneyStr(data.total);
     const subtotalInput = parseMoneyStr(data.subtotal);
