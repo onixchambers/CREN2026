@@ -61,8 +61,10 @@ export async function saveAsistenciaDB(data: any) {
     let targetSession = null;
 
     // Si viene un ID directo de la sesión (ej. desde el modal de edición)
-    if (data.id && data.id.length > 15) {
-      targetSession = existingSessions.find(s => s.id === data.id) || null;
+    if (data.id && data.id.length > 10) {
+      targetSession = await prisma.session.findUnique({
+        where: { id: data.id }
+      });
     }
 
     if (!targetSession && data.agendaId) {

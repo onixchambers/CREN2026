@@ -958,6 +958,8 @@ export default function AsistenciaPage() {
       return a;
     });
 
+    setAsistencias(nuevasAsistencias);
+
     if (asisActualizada) {
        const dbRes = await saveAsistenciaDB(asisActualizada);
        if (dbRes?.success === false) {
