@@ -1072,7 +1072,7 @@ export default function AsistenciaPage() {
           const isFreeCancel = (estNorm.includes("con anticip") || estNorm.includes("anticipad") || estNorm.includes("centro")) && !estNorm.includes("sin anticip");
 
           const p1 = parseMoney(formData.montoPago);
-          const p2 = showSegundoPago ? parseMoney(formData.montoPago2) : 0;
+          const p2 = parseMoney(formData.montoPago2);
           const montoIngresado = p1 + p2;
           const precioTerapia = parseMoney(formData.precioTerapia);
 
@@ -1119,8 +1119,10 @@ export default function AsistenciaPage() {
             iva: `$${iVal.toFixed(2)}`,
             total: `$${totalFinal.toFixed(2)}`,
             precioTerapia: precioTerapia > 0 ? precioTerapia.toString() : formData.precioTerapia,
-            montoPago: montoPagado.toString(),
+            montoPago: p1.toString(),
             metodoPago: metodoFinal,
+            metodoPago2: formData.metodoPago2 || "",
+            montoPago2: p2 > 0 ? p2.toString() : "",
             obs: formData.observaciones || "—",
             creadoPor: userName,
             terapeuta: formData.terapeuta
