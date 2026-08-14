@@ -332,9 +332,25 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
                 }}
               />
             </div>
-            <span className="text-[9px] md:text-[10px] font-medium text-white/90 uppercase tracking-tight border-l border-white/30 pl-2.5 py-0.5 leading-none whitespace-nowrap">
-              Sistema Financiero
-            </span>
+            <div className="flex flex-col border-l border-white/30 pl-2.5 py-0.5 justify-center">
+              <span className="text-[9px] md:text-[10px] font-bold text-white/95 uppercase tracking-wider leading-none whitespace-nowrap">
+                Sistema Financiero
+              </span>
+              <div className="flex items-center justify-between w-full mt-1">
+                <div className="w-3.5 h-3.5 md:w-4 md:h-4 rounded-full border border-white flex items-center justify-center text-[7.5px] md:text-[8.5px] font-bold text-white leading-none bg-transparent">
+                  a
+                </div>
+                <div className="w-3.5 h-3.5 md:w-4 md:h-4 rounded-full border border-white flex items-center justify-center text-[7.5px] md:text-[8.5px] font-bold text-white leading-none bg-transparent">
+                  x
+                </div>
+                <div className="w-3.5 h-3.5 md:w-4 md:h-4 rounded-full border border-white flex items-center justify-center text-[7.5px] md:text-[8.5px] font-bold text-white leading-none bg-transparent">
+                  i
+                </div>
+                <div className="w-3.5 h-3.5 md:w-4 md:h-4 rounded-full border border-white flex items-center justify-center text-[7.5px] md:text-[8.5px] font-bold text-white leading-none bg-transparent">
+                  s
+                </div>
+              </div>
+            </div>
           </div>
           <div className="flex items-center gap-4">
             <div 
