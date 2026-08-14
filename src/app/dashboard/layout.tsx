@@ -336,52 +336,56 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
               <span className="text-[9px] md:text-[10px] font-bold text-white/95 uppercase tracking-wider leading-none whitespace-nowrap">
                 Sistema Financiero
               </span>
-              <div className="flex items-center justify-between w-full mt-1">
-                <div className="w-3.5 h-3.5 md:w-4 md:h-4 rounded-full border border-white flex items-center justify-center text-[7.5px] md:text-[8.5px] font-bold text-white leading-none bg-transparent">
+              <div className="flex items-center justify-between w-full mt-0.5">
+                <div className="w-2.5 h-2.5 md:w-3 md:h-3 rounded-full border border-white flex items-center justify-center text-[5.5px] md:text-[6.5px] font-bold text-white leading-none bg-transparent">
                   a
                 </div>
-                <div className="w-3.5 h-3.5 md:w-4 md:h-4 rounded-full border border-white flex items-center justify-center text-[7.5px] md:text-[8.5px] font-bold text-white leading-none bg-transparent">
+                <div className="w-2.5 h-2.5 md:w-3 md:h-3 rounded-full border border-white flex items-center justify-center text-[5.5px] md:text-[6.5px] font-bold text-white leading-none bg-transparent">
                   x
                 </div>
-                <div className="w-3.5 h-3.5 md:w-4 md:h-4 rounded-full border border-white flex items-center justify-center text-[7.5px] md:text-[8.5px] font-bold text-white leading-none bg-transparent">
+                <div className="w-2.5 h-2.5 md:w-3 md:h-3 rounded-full border border-white flex items-center justify-center text-[5.5px] md:text-[6.5px] font-bold text-white leading-none bg-transparent">
                   i
                 </div>
-                <div className="w-3.5 h-3.5 md:w-4 md:h-4 rounded-full border border-white flex items-center justify-center text-[7.5px] md:text-[8.5px] font-bold text-white leading-none bg-transparent">
+                <div className="w-2.5 h-2.5 md:w-3 md:h-3 rounded-full border border-white flex items-center justify-center text-[5.5px] md:text-[6.5px] font-bold text-white leading-none bg-transparent">
                   s
                 </div>
               </div>
             </div>
           </div>
-          <div className="flex items-center gap-4">
+          <div className="flex items-center gap-3">
             <div 
               onClick={() => setShowProfileModal(true)}
-              className="hidden md:flex items-center gap-2.5 px-3.5 py-1.5 bg-white/10 hover:bg-white/20 rounded-full backdrop-blur-md text-xs border border-white/10 shadow-xs cursor-pointer transition-all"
+              className="hidden md:flex items-center gap-2 px-3 py-1 bg-white/10 hover:bg-white/20 rounded-xl backdrop-blur-md border border-white/10 shadow-xs cursor-pointer transition-all"
               title="Haz clic para ver y editar tu perfil"
             >
               {userImage ? (
-                <img src={userImage} alt="Avatar" className="w-6 h-6 rounded-full object-cover border border-white/40 shrink-0" />
+                <img src={userImage} alt="Avatar" className="w-7 h-7 rounded-full object-cover border border-white/40 shrink-0" />
               ) : (
-                <div className="w-6 h-6 rounded-full bg-white/20 flex items-center justify-center font-extrabold text-white text-[10px] shrink-0">
+                <div className="w-7 h-7 rounded-full bg-white/20 flex items-center justify-center font-extrabold text-white text-[11px] shrink-0">
                   {userName ? userName.charAt(0).toUpperCase() : "U"}
                 </div>
               )}
-              <span className={`px-2 py-0.5 rounded text-[10px] font-extrabold uppercase ${userRole.toUpperCase() === 'ADMIN' ? 'bg-red-500/80' : userRole.toUpperCase() === 'CONTADOR' ? 'bg-amber-500/80' : userRole.toUpperCase() === 'INVITADO' ? 'bg-blue-500/80' : 'bg-emerald-500/80'}`}>
-                {userRole}
-              </span>
-              <span className="font-bold">{userName}</span>
-              {userEmail && (
-                <span className="text-[11px] opacity-90 border-l border-white/20 pl-2 text-cyan-100 font-mono">
-                  {userEmail}
-                </span>
-              )}
+              <div className="flex flex-col text-left leading-tight">
+                <div className="flex items-center gap-1.5">
+                  <span className={`px-1.5 py-0.2 rounded text-[9px] font-extrabold uppercase ${userRole.toUpperCase() === 'ADMIN' ? 'bg-red-500/80' : userRole.toUpperCase() === 'CONTADOR' ? 'bg-amber-500/80' : userRole.toUpperCase() === 'INVITADO' ? 'bg-blue-500/80' : 'bg-emerald-500/80'}`}>
+                    {userRole}
+                  </span>
+                  <span className="font-bold text-xs text-white">{userName}</span>
+                </div>
+                {userEmail && (
+                  <span className="text-[10px] text-cyan-100/90 font-mono tracking-tight mt-0.5">
+                    {userEmail}
+                  </span>
+                )}
+              </div>
             </div>
             {(userRole.toUpperCase() === "ADMIN" || userRole.toUpperCase() === "ADMINISTRADOR" || userRole.toUpperCase() === "INVITADO") && (
               <button
                 onClick={handleOpenAdminBroadcastModal}
-                className="px-3 py-1.5 bg-amber-500/90 hover:bg-amber-500 text-white rounded-full text-xs font-bold transition-all cursor-pointer flex items-center gap-1.5 shadow-sm border border-amber-300/30"
+                className="px-2.5 py-1 bg-amber-500/90 hover:bg-amber-500 text-white rounded-full text-[10.5px] font-bold transition-all cursor-pointer flex items-center gap-1 shadow-2xs border border-amber-300/40"
                 title="Enviar mensaje flotante a las terapeutas"
               >
-                <span>📢</span>
+                <span className="text-xs">✉️</span>
                 <span className="hidden sm:inline">Mensaje a Terapeutas</span>
               </button>
             )}
@@ -389,10 +393,10 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
             {userRole.toUpperCase() === "TERAPEUTA" && isTargetedForUser(broadcastMessage, userName) && (
               <button
                 onClick={() => setShowTherapistPopup(true)}
-                className="px-3 py-1.5 bg-amber-500/90 hover:bg-amber-500 text-white rounded-full text-xs font-bold transition-all cursor-pointer flex items-center gap-1.5 shadow-sm border border-amber-300/30 animate-pulse"
+                className="px-2.5 py-1 bg-amber-500/90 hover:bg-amber-500 text-white rounded-full text-[10.5px] font-bold transition-all cursor-pointer flex items-center gap-1 shadow-2xs border border-amber-300/40 animate-pulse"
                 title="Ver aviso de la Administración"
               >
-                <span>📢</span>
+                <span className="text-xs">✉️</span>
                 <span className="hidden sm:inline">Aviso de Dirección</span>
               </button>
             )}
