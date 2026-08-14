@@ -928,6 +928,7 @@ export default function AsistenciaPage() {
     let asisActualizada: any = null;
     const nuevasAsistencias = asistencias.map(a => {
       if (a.id === editingAsistencia.id) {
+        const origCosto = editingAsistencia.costoSesion || editingAsistencia.precioTerapia || (m1 + m2).toString();
         asisActualizada = {
           ...a,
           fecha: editForm.fecha,
@@ -936,11 +937,13 @@ export default function AsistenciaPage() {
           tipoSesion: editForm.tipoSesion,
           estado: editForm.estado,
           sesiones: editForm.sesiones,
-          pago: editForm.pago || ((m1 + m2) > 0 ? "SÍ" : "NO"),
+          pago: editForm.pago || ((m1 + m2) >= parseFloat(origCosto) ? "SÍ" : "NO"),
           metodoPago: editMetodoPagoFinal,
-          montoPago: (m1 + m2).toString(),
+          montoPago: m1.toString(),
           metodoPago2: showEditSegundoPago ? editForm.metodoPago2 : "",
-          montoPago2: showEditSegundoPago ? editForm.montoPago2.toString() : "",
+          montoPago2: showEditSegundoPago ? m2.toString() : "",
+          costoSesion: origCosto,
+          precioTerapia: origCosto,
           solicitaFactura: Boolean(editForm.fact),
           fact: editForm.fact ? "Sí" : "No",
           subtotal: `$${subVal.toFixed(2)}`,

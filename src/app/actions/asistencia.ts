@@ -194,7 +194,17 @@ export async function saveAsistenciaDB(data: any) {
       if (sum > 0) montoP = sum;
     }
 
-    const costoS = parseMoneyStr(data.costoSesion || data.precioTerapia);
+    let targetCost = parseMoneyStr(data.costoSesion || data.precioTerapia);
+    if (targetCost === 0 && targetSession && targetSession.notes) {
+      try {
+        const extraExisting = JSON.parse(targetSession.notes);
+        targetCost = parseMoneyStr(extraExisting.costoSesion || extraExisting.precioTerapia || extraExisting.total);
+      } catch(e) {}
+    }
+    if (targetCost === 0) {
+      targetCost = parseMoneyStr(data.total || data.subtotal);
+    }
+    const costoS = targetCost;
     const totalInput = parseMoneyStr(data.total);
     const subtotalInput = parseMoneyStr(data.subtotal);
     const totalVal = totalInput > 0 ? totalInput : (montoP > 0 ? montoP : costoS);
