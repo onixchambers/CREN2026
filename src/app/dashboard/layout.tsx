@@ -336,19 +336,11 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
               <span className="text-[9px] md:text-[10px] font-bold text-white/95 uppercase tracking-wider leading-none whitespace-nowrap">
                 Sistema Financiero
               </span>
-              <div className="flex items-center justify-between w-full mt-0.5">
-                <div className="w-2.5 h-2.5 md:w-3 md:h-3 rounded-full border border-white flex items-center justify-center text-[5.5px] md:text-[6.5px] font-bold text-white leading-none bg-transparent">
-                  a
-                </div>
-                <div className="w-2.5 h-2.5 md:w-3 md:h-3 rounded-full border border-white flex items-center justify-center text-[5.5px] md:text-[6.5px] font-bold text-white leading-none bg-transparent">
-                  x
-                </div>
-                <div className="w-2.5 h-2.5 md:w-3 md:h-3 rounded-full border border-white flex items-center justify-center text-[5.5px] md:text-[6.5px] font-bold text-white leading-none bg-transparent">
-                  i
-                </div>
-                <div className="w-2.5 h-2.5 md:w-3 md:h-3 rounded-full border border-white flex items-center justify-center text-[5.5px] md:text-[6.5px] font-bold text-white leading-none bg-transparent">
-                  s
-                </div>
+              <div className="flex items-center justify-between w-full mt-1.5 px-0.5">
+                <span className="text-[8px] md:text-[9px] font-bold text-white leading-none">a</span>
+                <span className="text-[8px] md:text-[9px] font-bold text-white leading-none">x</span>
+                <span className="text-[8px] md:text-[9px] font-bold text-white leading-none">i</span>
+                <span className="text-[8px] md:text-[9px] font-bold text-white leading-none">s</span>
               </div>
             </div>
           </div>
@@ -382,22 +374,20 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
             {(userRole.toUpperCase() === "ADMIN" || userRole.toUpperCase() === "ADMINISTRADOR" || userRole.toUpperCase() === "INVITADO") && (
               <button
                 onClick={handleOpenAdminBroadcastModal}
-                className="px-2.5 py-1 bg-amber-500/90 hover:bg-amber-500 text-white rounded-full text-[10.5px] font-bold transition-all cursor-pointer flex items-center gap-1 shadow-2xs border border-amber-300/40"
+                className="w-8 h-8 bg-amber-500/90 hover:bg-amber-500 text-white rounded-full transition-all cursor-pointer flex items-center justify-center shadow-2xs border border-amber-300/40 shrink-0"
                 title="Enviar mensaje flotante a las terapeutas"
               >
-                <span className="text-xs">✉️</span>
-                <span className="hidden sm:inline">Mensaje a Terapeutas</span>
+                <span className="text-sm">✉️</span>
               </button>
             )}
 
             {userRole.toUpperCase() === "TERAPEUTA" && isTargetedForUser(broadcastMessage, userName) && (
               <button
                 onClick={() => setShowTherapistPopup(true)}
-                className="px-2.5 py-1 bg-amber-500/90 hover:bg-amber-500 text-white rounded-full text-[10.5px] font-bold transition-all cursor-pointer flex items-center gap-1 shadow-2xs border border-amber-300/40 animate-pulse"
+                className="w-8 h-8 bg-amber-500/90 hover:bg-amber-500 text-white rounded-full transition-all cursor-pointer flex items-center justify-center shadow-2xs border border-amber-300/40 animate-pulse shrink-0"
                 title="Ver aviso de la Administración"
               >
-                <span className="text-xs">✉️</span>
-                <span className="hidden sm:inline">Aviso de Dirección</span>
+                <span className="text-sm">✉️</span>
               </button>
             )}
 
