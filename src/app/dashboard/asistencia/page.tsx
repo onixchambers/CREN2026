@@ -1408,14 +1408,28 @@ export default function AsistenciaPage() {
                       } else {
                         lines = [val];
                       }
+
+                      const cleanLineForPill = (lineStr: string) => {
+                        if (!lineStr) return "";
+                        const validMethods = ["Efectivo", "Transferencia", "Tarjeta", "Por definir", "Beca", "Ninguno"];
+                        const methodFound = validMethods.find(m => lineStr.toLowerCase().includes(m.toLowerCase()));
+                        if (!methodFound) return lineStr.trim();
+                        const match = lineStr.match(/\$([\d.]+)/);
+                        if (match) {
+                          return `${methodFound} $${match[1]}`;
+                        }
+                        return methodFound;
+                      };
+
                       return (
                         <div className="w-full max-w-[110px] mx-auto flex flex-col items-stretch justify-center gap-0.5 my-0.5">
                           {lines.map((line, idx) => {
-                            const isPorDefinir = line.toLowerCase().replace(/\s+/g, "").includes("pordefinir");
-                            const isNinguno = line.toLowerCase().includes("ninguno");
+                            const cleaned = cleanLineForPill(line);
+                            const isPorDefinir = cleaned.toLowerCase().replace(/\s+/g, "").includes("pordefinir");
+                            const isNinguno = cleaned.toLowerCase().includes("ninguno");
                             return (
                               <span key={idx} className={`w-full border px-1 py-0.5 rounded text-[9px] font-bold block text-center whitespace-nowrap leading-tight shadow-xs ${isPorDefinir ? 'bg-red-500/20 text-red-800 border-red-300' : isNinguno ? 'bg-gray-500/20 text-slate-800 border-slate-300' : 'bg-blue-50 text-blue-800 border-blue-200'}`}>
-                                {line}
+                                {cleaned}
                               </span>
                             );
                           })}
