@@ -738,7 +738,7 @@ export function AsistenciaForm({
                 })()}
                 <div className="relative w-32">
                   <span className="absolute left-2 top-1.5 text-slate-500">$</span>
-                  <input type="number" name="montoPago" value={formData.montoPago} onChange={handleChange} placeholder="0" className="w-full text-sm p-2 pl-6 border border-slate-300 rounded bg-slate-50 outline-none text-slate-900" />
+                  <input type="number" name="montoPago" value={formData.montoPago} onChange={handleChange} className="w-full text-sm p-2 pl-6 border border-slate-300 rounded bg-slate-50 outline-none text-slate-900" />
                 </div>
                 <button 
                   type="button"
