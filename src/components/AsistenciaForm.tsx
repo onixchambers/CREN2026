@@ -322,8 +322,10 @@ export function AsistenciaForm({
     const estNorm = normalizeEstadoAsistencia(formData.estadoAsistencia || "").toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "");
     const isFreeCancel = (estNorm.includes("con anticip") || estNorm.includes("anticipad") || estNorm.includes("centro")) && !estNorm.includes("sin anticip");
 
-    if (!isFreeCancel && montoPagado === 0) {
-      alert("Por favor coloca el monto pagado en el campo Pago antes de finalizar la sesión.");
+    const isPagoEmpty = formData.montoPago === undefined || formData.montoPago === null || formData.montoPago.toString().trim() === "";
+
+    if (!isFreeCancel && isPagoEmpty) {
+      alert("Por favor ingresa un monto en el campo Pago (puedes ingresar 0 si el paciente aún no realiza su pago).");
       return;
     }
 
