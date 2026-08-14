@@ -9,14 +9,21 @@ export default function EstadoResultadosPage() {
   const [mesActual, setMesActual] = useState(currentMonth);
   
   const getFirstDayOfMonth = () => {
-    const d = new Date();
-    d.setDate(1);
-    return d.toISOString().split("T")[0];
+    const now = new Date();
+    const y = now.getFullYear();
+    const m = String(now.getMonth() + 1).padStart(2, "0");
+    return `${y}-${m}-01`;
   };
-  const hoyStr = new Date().toISOString().split("T")[0];
+  const getTodayStr = () => {
+    const now = new Date();
+    const y = now.getFullYear();
+    const m = String(now.getMonth() + 1).padStart(2, "0");
+    const d = String(now.getDate()).padStart(2, "0");
+    return `${y}-${m}-${d}`;
+  };
 
   const [fechaDesde, setFechaDesde] = useState(getFirstDayOfMonth());
-  const [fechaHasta, setFechaHasta] = useState(hoyStr);
+  const [fechaHasta, setFechaHasta] = useState(getTodayStr());
 
   const [datos, setDatos] = useState({
     ingresosBrutos: 0,
@@ -70,7 +77,7 @@ export default function EstadoResultadosPage() {
           <h2 className="text-2xl font-bold text-slate-800">Estado de Resultados y Finanzas</h2>
           <p className="text-sm text-slate-500">Reporte contable y financiero del CREN por rango de fechas</p>
         </div>
-        <div className="flex flex-wrap items-center gap-3 bg-white p-2.5 rounded-lg shadow-sm border border-slate-200">
+        <div className="flex flex-nowrap items-center gap-2.5 bg-white p-2 rounded-lg shadow-sm border border-slate-200 overflow-x-auto whitespace-nowrap">
           <div className="flex items-center gap-2">
             <label className="text-xs font-bold text-slate-500 uppercase">Mes:</label>
             <input 

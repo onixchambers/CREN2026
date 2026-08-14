@@ -10,14 +10,21 @@ export default function SalarioPage() {
   const [mesActual, setMesActual] = useState(currentMonthStr);
 
   const getFirstDayOfMonth = () => {
-    const d = new Date();
-    d.setDate(1);
-    return d.toISOString().split("T")[0];
+    const now = new Date();
+    const y = now.getFullYear();
+    const m = String(now.getMonth() + 1).padStart(2, "0");
+    return `${y}-${m}-01`;
   };
-  const hoyStr = new Date().toISOString().split("T")[0];
+  const getTodayStr = () => {
+    const now = new Date();
+    const y = now.getFullYear();
+    const m = String(now.getMonth() + 1).padStart(2, "0");
+    const d = String(now.getDate()).padStart(2, "0");
+    return `${y}-${m}-${d}`;
+  };
 
   const [fechaDesde, setFechaDesde] = useState(getFirstDayOfMonth());
-  const [fechaHasta, setFechaHasta] = useState(hoyStr);
+  const [fechaHasta, setFechaHasta] = useState(getTodayStr());
 
   const [terapeutas, setTerapeutas] = useState<any[]>([]);
   const [asistencias, setAsistencias] = useState<any[]>([]);
@@ -63,7 +70,7 @@ export default function SalarioPage() {
           <p className="text-sm text-slate-500">Detalle por periodo (Semanal, Quincenal, Mensual) y por Paciente</p>
         </div>
 
-        <div className="flex flex-wrap items-center gap-3 bg-white p-2.5 rounded-xl shadow-sm border border-slate-200">
+        <div className="flex flex-nowrap items-center gap-2.5 bg-white p-2 rounded-xl shadow-sm border border-slate-200 overflow-x-auto whitespace-nowrap">
           {/* SELECTOR TERAPEUTA */}
           <div className="flex items-center gap-2">
             <label className="text-xs font-bold text-slate-500 uppercase">Terapeuta:</label>
