@@ -856,6 +856,8 @@ export default function AsistenciaPage() {
       return "09:00";
     };
 
+    const initialPrecio = a.precioTerapia || a.costoSesion || (a.total || a.subtotal || "").replace(/[^0-9.]/g, "");
+
     setShowEditSegundoPago(isMixto);
     setEditForm({
       fecha: a.fecha,
@@ -866,11 +868,11 @@ export default function AsistenciaPage() {
       sesiones: a.sesiones,
       pago: a.pago || "SÍ",
       metodoPago: baseMetodo,
-      montoPago: baseMonto || (a.total || a.subtotal || "").replace(/[^0-9.]/g, ""),
+      montoPago: baseMonto || (a.montoPago || ""),
       metodoPago2: baseMetodo2 || "Transferencia",
       montoPago2: baseMonto2 || "",
       fact: a.fact === "Sí",
-      subtotal: (a.total || a.subtotal).replace('$', ''),
+      subtotal: initialPrecio,
       obs: a.obs,
       terapeuta: a.terapeuta || ""
     });
@@ -899,14 +901,19 @@ export default function AsistenciaPage() {
     
     const m1 = parseFloat(editForm.montoPago || "0");
     const m2 = showEditSegundoPago ? parseFloat(editForm.montoPago2 || "0") : 0;
-    const totVal = editForm.subtotal ? parseFloat(editForm.subtotal) : (m1 + m2);
+    const montoPagado = m1 + m2;
+
+    const rawPrecio = (editForm.subtotal || editingAsistencia.precioTerapia || editingAsistencia.costoSesion || "").toString().replace(/[^0-9.]/g, "");
+    const precioTerapiaNum = parseFloat(rawPrecio) || (montoPagado > 0 ? montoPagado : 0);
+
     const ivaPct = await getSystemIvaRate();
     const ivaDec = (ivaPct || 16) / 100;
+    
+    let totVal = precioTerapiaNum > 0 ? precioTerapiaNum : montoPagado;
     let subVal = totVal;
     let ivaVal = 0;
-    let finalTotal = totVal;
 
-    if (editForm.fact) {
+    if (editForm.fact && totVal > 0) {
       ivaVal = totVal * ivaDec;
       subVal = totVal - ivaVal;
     }
@@ -914,21 +921,27 @@ export default function AsistenciaPage() {
     const estNormEdit = (editForm.estado || "").toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "");
     const isFreeCancelEdit = (estNormEdit.includes("con anticip") || estNormEdit.includes("anticipad") || estNormEdit.includes("centro")) && !estNormEdit.includes("sin anticip");
 
+    const cleanMethod = (raw: string, defaultVal: string = "Efectivo") => {
+      if (!raw) return defaultVal;
+      const valid = ["Efectivo", "Transferencia", "Tarjeta", "Por definir", "Beca", "Ninguno"];
+      const found = valid.find(v => raw.toLowerCase().replace(/\s+/g, "").includes(v.toLowerCase().replace(/\s+/g, "")));
+      return found || defaultVal;
+    };
+
     let defaultEditMetodo = isFreeCancelEdit ? "Ninguno" : "Efectivo";
-    let editMetodoPagoFinal = editForm.metodoPago || defaultEditMetodo;
-    if (isFreeCancelEdit && (editMetodoPagoFinal === "Efectivo" || !editForm.metodoPago)) {
-      editMetodoPagoFinal = "Ninguno";
+    let m1Method = cleanMethod(editForm.metodoPago, defaultEditMetodo);
+    let editMetodoPagoFinal = isFreeCancelEdit ? "Ninguno" : `${m1Method} $${m1}`;
+
+    if (!isFreeCancelEdit && showEditSegundoPago && editForm.metodoPago2 && m2 > 0) {
+      let m2Method = cleanMethod(editForm.metodoPago2, "Transferencia");
+      editMetodoPagoFinal = `${m1Method} $${m1}\n${m2Method} $${m2}`;
     }
-    if (showEditSegundoPago && editForm.metodoPago2) {
-      editMetodoPagoFinal = `${editForm.metodoPago || defaultEditMetodo} $${m1}\n${editForm.metodoPago2} $${m2}`;
-    } else if (m1 > 0 && editForm.metodoPago) {
-      editMetodoPagoFinal = `${editForm.metodoPago} $${m1}`;
-    }
+
+    const fuePagado = !isFreeCancelEdit && (montoPagado >= precioTerapiaNum || editForm.pago === "SÍ");
 
     let asisActualizada: any = null;
     const nuevasAsistencias = asistencias.map(a => {
       if (a.id === editingAsistencia.id) {
-        const origCosto = editingAsistencia.costoSesion || editingAsistencia.precioTerapia || (m1 + m2).toString();
         asisActualizada = {
           ...a,
           fecha: editForm.fecha,
@@ -937,18 +950,18 @@ export default function AsistenciaPage() {
           tipoSesion: editForm.tipoSesion,
           estado: editForm.estado,
           sesiones: editForm.sesiones,
-          pago: editForm.pago || ((m1 + m2) >= parseFloat(origCosto) ? "SÍ" : "NO"),
+          pago: fuePagado ? "SÍ" : "NO",
           metodoPago: editMetodoPagoFinal,
           montoPago: m1.toString(),
           metodoPago2: showEditSegundoPago ? editForm.metodoPago2 : "",
           montoPago2: showEditSegundoPago ? m2.toString() : "",
-          costoSesion: origCosto,
-          precioTerapia: origCosto,
+          costoSesion: precioTerapiaNum.toString(),
+          precioTerapia: precioTerapiaNum.toString(),
           solicitaFactura: Boolean(editForm.fact),
           fact: editForm.fact ? "Sí" : "No",
           subtotal: `$${subVal.toFixed(2)}`,
           iva: `$${ivaVal.toFixed(2)}`,
-          total: `$${finalTotal.toFixed(2)}`,
+          total: `$${totVal.toFixed(2)}`,
           obs: editForm.obs || "—",
           creadoPor: a.creadoPor || userName,
           terapeuta: editForm.terapeuta || a.terapeuta
@@ -1556,7 +1569,7 @@ export default function AsistenciaPage() {
                 </div>
                 
                 <div>
-                  <label className="block text-[10px] font-bold text-slate-500 uppercase mb-1">Subtotal (Monto)</label>
+                  <label className="block text-[10px] font-bold text-slate-500 uppercase mb-1">Precio de Terapia</label>
                   <select
                     name="subtotal"
                     value={(() => {
