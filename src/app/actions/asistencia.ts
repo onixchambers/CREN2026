@@ -232,7 +232,7 @@ export async function saveAsistenciaDB(data: any) {
     if (isFreeCancel && (metodoPagoStr === "Efectivo" || (!data.metodoPagoFinal && !data.metodoPago))) {
       metodoPagoStr = "Ninguno";
     }
-    if (!metodoPagoStr.includes("$") && (montoP > 0 || totalVal > 0) && metodoPagoStr !== "Ninguno") {
+    if (!metodoPagoStr.includes("$") && !metodoPagoStr.includes("\n") && (montoP > 0 || totalVal > 0) && metodoPagoStr !== "Ninguno") {
       const amt = montoP > 0 ? montoP : totalVal;
       metodoPagoStr = `${metodoPagoStr} $${amt}`;
     }
