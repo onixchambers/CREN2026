@@ -61,6 +61,12 @@ export default function FinanzasPage() {
   const gastosTotales = datos.nomina + datos.gastosOperativos;
   const balanceActual = datos.ingresosBrutos - gastosTotales;
 
+  const formatMoney = (val: number) => {
+    const isNeg = val < 0;
+    const formatted = Math.abs(val).toLocaleString('es-MX', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+    return isNeg ? `-$${formatted}` : `$${formatted}`;
+  };
+
   return (
     <div className="space-y-6 animate-in fade-in duration-500 pb-10">
       {/* HEADER CON CONTROLES DE FECHA */}
@@ -117,56 +123,56 @@ export default function FinanzasPage() {
         <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
           
           {/* TARJETAS PRINCIPALES */}
-          <div className="lg:col-span-12 grid grid-cols-1 md:grid-cols-4 gap-6">
+          <div className="lg:col-span-12 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 md:gap-6">
             {/* INGRESOS TOTALES */}
-            <div className="bg-white p-6 rounded-xl border border-slate-200 shadow-sm flex flex-col justify-between">
+            <div className="bg-white p-4 sm:p-5 md:p-6 rounded-xl border border-slate-200 shadow-sm flex flex-col justify-between overflow-hidden min-w-0">
               <div>
-                <span className="text-xs font-bold text-slate-400 uppercase tracking-wider">Ingresos Totales</span>
-                <p className="text-3xl font-extrabold text-green-600 mt-2">
-                  ${datos.ingresosBrutos.toLocaleString('es-MX', {minimumFractionDigits: 2})}
+                <span className="text-xs font-bold text-slate-400 uppercase tracking-wider block truncate">Ingresos Totales</span>
+                <p className="text-xl sm:text-2xl xl:text-3xl font-extrabold text-green-600 mt-2 truncate" title={formatMoney(datos.ingresosBrutos)}>
+                  {formatMoney(datos.ingresosBrutos)}
                 </p>
               </div>
-              <p className="text-xs text-slate-400 mt-3">Pagos de terapias registrados en el periodo</p>
+              <p className="text-xs text-slate-400 mt-3 truncate">Pagos de terapias registrados en el periodo</p>
             </div>
 
             {/* IVA RETENIDO / FACTURADO */}
-            <div className="bg-white p-6 rounded-xl border border-slate-200 shadow-sm flex flex-col justify-between">
+            <div className="bg-white p-4 sm:p-5 md:p-6 rounded-xl border border-slate-200 shadow-sm flex flex-col justify-between overflow-hidden min-w-0">
               <div>
-                <span className="text-xs font-bold text-slate-400 uppercase tracking-wider">IVA Recaudado / Retenido</span>
-                <p className="text-3xl font-extrabold text-amber-600 mt-2">
-                  ${((datos.ivaHonorarios || 0) + (datos.totalIvaFacturas || 0)).toLocaleString('es-MX', {minimumFractionDigits: 2})}
+                <span className="text-xs font-bold text-slate-400 uppercase tracking-wider block truncate">IVA Recaudado / Retenido</span>
+                <p className="text-xl sm:text-2xl xl:text-3xl font-extrabold text-amber-600 mt-2 truncate" title={formatMoney((datos.ivaHonorarios || 0) + (datos.totalIvaFacturas || 0))}>
+                  {formatMoney((datos.ivaHonorarios || 0) + (datos.totalIvaFacturas || 0))}
                 </p>
               </div>
               <div className="text-xs text-amber-700/80 mt-3 font-medium space-y-0.5">
-                <div>• IVA Paciente (CREN): <strong>${(datos.totalIvaFacturas || 0).toLocaleString('es-MX', {minimumFractionDigits: 2})}</strong></div>
-                <div>• IVA Retenido Terapeuta: <strong>${(datos.ivaHonorarios || 0).toLocaleString('es-MX', {minimumFractionDigits: 2})}</strong></div>
+                <div className="truncate">• IVA Paciente (CREN): <strong>{formatMoney(datos.totalIvaFacturas || 0)}</strong></div>
+                <div className="truncate">• IVA Retenido Terapeuta: <strong>{formatMoney(datos.ivaHonorarios || 0)}</strong></div>
               </div>
             </div>
 
             {/* GASTOS TOTALES */}
-            <div className="bg-white p-6 rounded-xl border border-slate-200 shadow-sm flex flex-col justify-between">
+            <div className="bg-white p-4 sm:p-5 md:p-6 rounded-xl border border-slate-200 shadow-sm flex flex-col justify-between overflow-hidden min-w-0">
               <div>
-                <span className="text-xs font-bold text-slate-400 uppercase tracking-wider">Gastos Totales</span>
-                <p className="text-3xl font-extrabold text-red-600 mt-2">
-                  -${gastosTotales.toLocaleString('es-MX', {minimumFractionDigits: 2})}
+                <span className="text-xs font-bold text-slate-400 uppercase tracking-wider block truncate">Gastos Totales</span>
+                <p className="text-xl sm:text-2xl xl:text-3xl font-extrabold text-red-600 mt-2 truncate" title={formatMoney(-gastosTotales)}>
+                  {formatMoney(-gastosTotales)}
                 </p>
               </div>
               <div className="text-xs text-slate-500 mt-3 space-y-0.5">
-                <div>• Honorarios terapeutas: <strong>${datos.nomina.toLocaleString('es-MX', {minimumFractionDigits: 2})}</strong></div>
-                <div>• Gastos operativos: <strong>${datos.gastosOperativos.toLocaleString('es-MX', {minimumFractionDigits: 2})}</strong></div>
+                <div className="truncate">• Honorarios terapeutas: <strong>{formatMoney(datos.nomina)}</strong></div>
+                <div className="truncate">• Gastos operativos: <strong>{formatMoney(datos.gastosOperativos)}</strong></div>
               </div>
             </div>
 
             {/* CUADRO AZUL - BALANCE ACTUAL */}
-            <div className="bg-gradient-to-br from-[#0e2f44] via-[#1a5276] to-[#2980b9] text-white p-6 rounded-xl shadow-lg flex flex-col justify-between">
+            <div className="bg-gradient-to-br from-[#0e2f44] via-[#1a5276] to-[#2980b9] text-white p-4 sm:p-5 md:p-6 rounded-xl shadow-lg flex flex-col justify-between overflow-hidden min-w-0">
               <div>
-                <span className="text-xs font-bold opacity-80 uppercase tracking-wider">Balance Actual</span>
-                <p className="text-4xl font-black mt-2">
-                  ${balanceActual.toLocaleString('es-MX', {minimumFractionDigits: 2})}
+                <span className="text-xs font-bold opacity-80 uppercase tracking-wider block truncate">Balance Actual</span>
+                <p className="text-xl sm:text-2xl xl:text-3xl font-black mt-2 truncate" title={formatMoney(balanceActual)}>
+                  {formatMoney(balanceActual)}
                 </p>
               </div>
-              <p className="text-xs text-white/80 mt-3">
-                Calculado: Ingresos (${datos.ingresosBrutos.toLocaleString()}) - Gastos (${gastosTotales.toLocaleString()})
+              <p className="text-xs text-white/80 mt-3 truncate" title={`Calculado: Ingresos (${formatMoney(datos.ingresosBrutos)}) - Gastos (${formatMoney(gastosTotales)})`}>
+                Calculado: Ingresos ({formatMoney(datos.ingresosBrutos)}) - Gastos ({formatMoney(gastosTotales)})
               </p>
             </div>
           </div>
