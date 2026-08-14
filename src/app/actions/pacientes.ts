@@ -83,8 +83,6 @@ export async function createPatient(data: any) {
         consentimientoFirmado: data.consentimientoFirmado || false,
         
         observacionesAdmin: data.observacionesAdmin || null,
-        precioTerapia: data.precioTerapia || "500",
-        metodoPago: data.metodoPago || null,
         foto: data.foto || null,
         
         // Calcular edad basada en fecha de nacimiento si no viene calculada
@@ -391,8 +389,6 @@ export async function updatePatient(id: string, data: any) {
         consentimientoFirmado: data.consentimientoFirmado || false,
         
         observacionesAdmin: data.observacionesAdmin || null,
-        precioTerapia: data.precioTerapia || "500",
-        metodoPago: data.metodoPago || null,
         foto: data.foto || null,
         
         // Calcular edad basada en fecha de nacimiento si no viene calculada

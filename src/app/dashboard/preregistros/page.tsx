@@ -160,8 +160,6 @@ export default function PreregistrosPage() {
     reglamentoFirmado: false,
     consentimientoFirmado: false,
 
-    precioTerapia: "500",
-    metodoPago: "",
     observacionesAdmin: "",
     foto: "",
   });
@@ -302,8 +300,6 @@ export default function PreregistrosPage() {
       // Se mantienen DESMARCADOS para que la terapeuta los verifique manualmente
       reglamentoFirmado: false,
       consentimientoFirmado: false,
-      precioTerapia: preReg.precioTerapia || "500",
-      metodoPago: preReg.metodoPago || "",
       observacionesAdmin: cleanObsAdmin,
       foto: "",
     });
@@ -364,8 +360,6 @@ export default function PreregistrosPage() {
       otrosContacto: oContact,
       otrosVinculo: parsedOtrosVinculo,
       otrosNombre: parsedOtrosNombre,
-      precioTerapia: ficha.precioTerapia || "500",
-      metodoPago: ficha.metodoPago || "",
       foto: ficha.foto || "",
     });
     setPhotoPreview(ficha.foto || null);
@@ -436,8 +430,6 @@ export default function PreregistrosPage() {
 
       reglamentoFirmado: false,
       consentimientoFirmado: false,
-      precioTerapia: "500",
-      metodoPago: "",
       observacionesAdmin: "",
       foto: "",
     });
@@ -1157,37 +1149,6 @@ export default function PreregistrosPage() {
                     placeholder="Notas internas..."
                     className="w-full p-2 border border-slate-300 rounded text-xs text-slate-900 outline-none"
                   />
-                </div>
-              </div>
-
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mt-4">
-                <div className="space-y-1">
-                  <label className="block text-xs font-bold text-slate-700">Precio Terapia (MXN)</label>
-                  <input
-                    type="text"
-                    name="precioTerapia"
-                    value={formData.precioTerapia}
-                    onChange={handleInputChange}
-                    placeholder="Ej: 500"
-                    className="w-full p-2 border border-slate-300 rounded text-sm text-slate-900 focus:border-[#2980b9] outline-none"
-                  />
-                </div>
-                <div className="space-y-1">
-                  <label className="block text-xs font-bold text-slate-700">Método de Pago Preferido</label>
-                  <select
-                    name="metodoPago"
-                    value={formData.metodoPago}
-                    onChange={handleInputChange}
-                    className="w-full p-2 border border-slate-300 rounded text-sm text-slate-700 bg-white focus:border-[#2980b9] outline-none"
-                  >
-                    <option value="">Seleccionar...</option>
-                    <option value="Efectivo">Efectivo</option>
-                    <option value="Transferencia">Transferencia</option>
-                    <option value="Tarjeta">Tarjeta</option>
-                    <option value="Por definir">Por definir</option>
-                    <option value="Beca">Beca</option>
-                    <option value="Ninguno">Ninguno</option>
-                  </select>
                 </div>
               </div>
             </div>
