@@ -237,14 +237,14 @@ export async function saveAsistenciaDB(data: any) {
       metodoPagoStr = `${metodoPagoStr} $${amt}`;
     }
 
-    const saldo = saldoPrevio + montoP - (isFreeCancel ? 0 : costoS);
+    const saldo = isFreeCancel ? 0 : (saldoPrevio + montoP - costoS);
 
     // Datos financieros a guardar
     const extra = {
       asistenciaGuardada: estadoVal !== "Agendado",
       agendaId: data.agendaId || "",
       paqueteActual: paqueteActual,
-      saldo: saldo,
+      saldo: isFreeCancel ? 0 : saldo,
       montoPago: montoP.toString(),
       costoSesion: costoS.toString(),
       fecha: data.fecha,
@@ -402,8 +402,12 @@ export async function getAsistenciasDB() {
 
         const costoS = isFreeCancel ? 0 : (parseMoneyStr(extra.costoSesion || extra.precioTerapia) || totalVal);
         
-        // Sumar pago y restar costo de la sesión al saldo acumulado progresivo
-        runningBalance = runningBalance + montoP - costoS;
+        // Sumar pago y restar costo de la sesión al saldo acumulado progresivo (o 0 si es cancelación libre como C/A o Centro)
+        if (isFreeCancel) {
+          runningBalance = 0;
+        } else {
+          runningBalance = runningBalance + montoP - costoS;
+        }
 
         const solicitaFactura = extra.solicitaFactura === true || extra.solicitaFactura === "true" || extra.solicitaFactura === "Sí" || extra.solicitaFactura === "Si" || extra.solicitaFactura === "S" || extra.fact === "Sí" || extra.fact === "Si" || extra.fact === "S" || extra.fact === true;
         let subtotalVal = parseMoneyStr(extra.subtotal);
@@ -441,7 +445,7 @@ export async function getAsistenciasDB() {
           subtotal: "$" + Number(subtotalVal).toFixed(2),
           iva: "$" + Number(ivaVal).toFixed(2),
           total: "$" + Number(totalVal).toFixed(2),
-          saldo: runningBalance,
+          saldo: isFreeCancel ? 0 : runningBalance,
           obs: extra.obs || "-",
           creadoPor: extra.creadoPor || "-",
           terapeuta: s.therapist?.name || extra.terapeuta || extra.terapeutaNombre || "-"

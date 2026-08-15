@@ -907,19 +907,17 @@ export default function AsistenciaPage() {
     const precioTerapiaNum = parseFloat(rawPrecio) || (montoPagado > 0 ? montoPagado : 0);
 
     const ivaPct = await getSystemIvaRate();
-    const ivaDec = (ivaPct || 16) / 100;
-    
-    let totVal = precioTerapiaNum > 0 ? precioTerapiaNum : montoPagado;
+    const estNormEdit = (editForm.estado || "").toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "");
+    const isFreeCancelEdit = (estNormEdit.includes("con anticip") || estNormEdit.includes("anticipad") || estNormEdit.includes("centro")) && !estNormEdit.includes("sin anticip");
+
+    let totVal = isFreeCancelEdit ? 0 : (precioTerapiaNum > 0 ? precioTerapiaNum : montoPagado);
     let subVal = totVal;
     let ivaVal = 0;
 
-    if (editForm.fact && totVal > 0) {
+    if (!isFreeCancelEdit && editForm.fact && totVal > 0) {
       ivaVal = totVal * ivaDec;
       subVal = totVal - ivaVal;
     }
-
-    const estNormEdit = (editForm.estado || "").toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "");
-    const isFreeCancelEdit = (estNormEdit.includes("con anticip") || estNormEdit.includes("anticipad") || estNormEdit.includes("centro")) && !estNormEdit.includes("sin anticip");
 
     const cleanMethod = (raw: string, defaultVal: string = "Efectivo") => {
       if (!raw) return defaultVal;
@@ -1453,7 +1451,10 @@ export default function AsistenciaPage() {
                   </td>
                   <td className="px-1 py-2 text-[11px] whitespace-nowrap">
                     {(() => {
-                      const sVal = typeof a.saldo === "number" ? a.saldo : parseFloat(a.saldo || "0");
+                      const estNormRow = (a.estado || "").toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "");
+                      const isFreeCancelRow = (estNormRow.includes("con anticip") || estNormRow.includes("anticipad") || estNormRow.includes("centro")) && !estNormRow.includes("sin anticip");
+                      const rawS = typeof a.saldo === "number" ? a.saldo : parseFloat(a.saldo || "0");
+                      const sVal = isFreeCancelRow ? 0 : rawS;
                       if (isNaN(sVal) || Math.abs(sVal) < 0.01) {
                         return <span className="text-slate-800 font-semibold">$0.00</span>;
                       } else if (sVal < 0) {
