@@ -907,6 +907,7 @@ export default function AsistenciaPage() {
     const precioTerapiaNum = parseFloat(rawPrecio) || (montoPagado > 0 ? montoPagado : 0);
 
     const ivaPct = await getSystemIvaRate();
+    const ivaDec = (ivaPct || 16) / 100;
     const estNormEdit = (editForm.estado || "").toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "");
     const isFreeCancelEdit = (estNormEdit.includes("con anticip") || estNormEdit.includes("anticipad") || estNormEdit.includes("centro")) && !estNormEdit.includes("sin anticip");
 
