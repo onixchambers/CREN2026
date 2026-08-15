@@ -71,6 +71,7 @@ export async function getFinanzasMensuales(month: string, fechaDesde?: string, f
 
     let ingresosBrutosBruto = 0;
     let totalCanceloSAoPendiente = 0;
+    let totalCanceloSAoPendienteDeducible = 0;
     
     // Terapeutas - agrupar por ID
     const terapeutasMap = new Map<string, any>();
