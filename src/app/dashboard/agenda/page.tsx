@@ -69,8 +69,27 @@ export default function AgendaPage() {
   const [isEditModalOpen, setIsEditModalOpen] = useState(false);
   const [selectedCita, setSelectedCita] = useState<Cita | null>(null);
   const [formData, setFormData] = useState({
-    paciente: "", fecha: hoy, hora: "09:00", terapeuta: "", tipoServicio: "individual", frecuencia: "unica", numeroSesiones: 1, estado: "Agendado" as Cita["estado"], pagado: false, metodoPago: ""
+    paciente: "", fecha: hoy, hora: "09:00", terapeuta: "", area: "", tipoServicio: "individual", frecuencia: "unica", numeroSesiones: 1, estado: "Agendado" as Cita["estado"], pagado: false, metodoPago: ""
   });
+
+  const getSpecialtiesForTerapeuta = (tName: string) => {
+    if (!tName) return ["Neurodesarrollo", "Fisioterapia", "Psicología", "Lenguaje", "Terapia Ocupacional"];
+    const matched = terapeutasFullData.find(t => (t.name || "").trim().toLowerCase() === tName.trim().toLowerCase());
+    if (matched && matched.especialidad) {
+      const parts = matched.especialidad.split(/[,/]/).map((x: string) => x.trim()).filter(Boolean);
+      if (parts.length > 0) return parts;
+    }
+    return ["Neurodesarrollo", "Fisioterapia", "Psicología", "Lenguaje", "Terapia Ocupacional"];
+  };
+
+  useEffect(() => {
+    if (formData.terapeuta && terapeutasFullData.length > 0) {
+      const specialties = getSpecialtiesForTerapeuta(formData.terapeuta);
+      if (specialties.length > 0 && (!formData.area || !specialties.includes(formData.area))) {
+        setFormData(prev => ({ ...prev, area: specialties[0] }));
+      }
+    }
+  }, [formData.terapeuta, terapeutasFullData]);
 
   const [editingPatient, setEditingPatient] = useState<any>(null);
   const [isSaving, setIsSaving] = useState(false);
@@ -243,6 +262,7 @@ export default function AgendaPage() {
         fecha: formData.fecha,
         hora: formData.hora,
         terapeuta: formData.terapeuta,
+        area: formData.area,
         tipoServicio: formData.tipoServicio,
         frecuencia: formData.frecuencia,
         numeroSesiones: formData.numeroSesiones || 1,
@@ -259,7 +279,7 @@ export default function AgendaPage() {
           setCitas([...citas, { id: res.id, ...nuevaCitaObj } as Cita]); 
         }
         setIsModalOpen(false);
-        setFormData({ paciente: "", fecha: fechaSeleccionada, hora: "09:00", terapeuta: terapeutas[0] || "", tipoServicio: "individual", frecuencia: "unica", numeroSesiones: 1, estado: "Agendado", pagado: false, metodoPago: "" });
+        setFormData({ paciente: "", fecha: fechaSeleccionada, hora: "09:00", terapeuta: terapeutas[0] || "", area: "", tipoServicio: "individual", frecuencia: "unica", numeroSesiones: 1, estado: "Agendado", pagado: false, metodoPago: "" });
       } else {
         alert("Error: " + res.error);
       }
@@ -997,6 +1017,14 @@ export default function AgendaPage() {
                   <select name="terapeuta" value={formData.terapeuta} onChange={handleInputChange} className="w-full text-slate-900 font-medium border border-slate-300 rounded-lg px-3 py-2 outline-none focus:border-[#2980b9]">
                     {terapeutas.map(t => (
                       <option key={t} value={t}>{t}</option>
+                    ))}
+                  </select>
+                </div>
+                <div>
+                  <label className="block text-xs font-semibold text-slate-600 uppercase mb-1">Especialidad / Área</label>
+                  <select name="area" value={formData.area} onChange={handleInputChange} className="w-full text-slate-900 font-medium border border-slate-300 rounded-lg px-3 py-2 outline-none focus:border-[#2980b9] bg-white">
+                    {getSpecialtiesForTerapeuta(formData.terapeuta).map(esp => (
+                      <option key={esp} value={esp}>{esp}</option>
                     ))}
                   </select>
                 </div>
