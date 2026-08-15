@@ -74,6 +74,7 @@ export default function HonorariosPage() {
       porcentajeValoracion: t.porcentajeValoracion ?? (t.porcentaje ?? 50),
       salarioBase: t.salarioBase ?? 0,
       retieneIVA: t.retieneIVA ?? false,
+      cobrarCanceloSA: t.cobrarCanceloSA ?? false,
     });
   };
 
@@ -367,6 +368,19 @@ export default function HonorariosPage() {
                     />
                     <label htmlFor="retieneIVA" className="text-xs font-semibold text-amber-900 cursor-pointer">
                       Descontar IVA (16%) de sus honorarios
+                    </label>
+                  </div>
+
+                  <div className="flex items-center gap-3 pt-2 bg-red-50 p-3 rounded-lg border border-red-200 mt-2">
+                    <input 
+                      type="checkbox"
+                      id="cobrarCanceloSA"
+                      className="w-4 h-4 text-red-600 rounded focus:ring-red-500 cursor-pointer"
+                      checked={Boolean(editForm.cobrarCanceloSA)}
+                      onChange={(e) => setEditForm({ ...editForm, cobrarCanceloSA: e.target.checked })}
+                    />
+                    <label htmlFor="cobrarCanceloSA" className="text-xs font-semibold text-red-900 cursor-pointer">
+                      Cancelo S/A o Pendiente
                     </label>
                   </div>
                 </>

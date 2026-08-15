@@ -205,7 +205,8 @@ export default function SalarioPage() {
                 }
               }
 
-              const ingresoEfectivoSesion = Math.max(0, precioSession - (sVal < 0 ? Math.abs(sVal) : 0));
+              const cobrarCanceloSA = Boolean(t.cobrarCanceloSA);
+              const ingresoEfectivoSesion = cobrarCanceloSA ? precioSession : Math.max(0, precioSession - (sVal < 0 ? Math.abs(sVal) : 0));
 
               if (t.tipoPago === "Porcentaje") {
                 const comisionBase = ingresoEfectivoSesion * ((t.porcentaje || 50) / 100);
@@ -275,7 +276,8 @@ export default function SalarioPage() {
               }
             });
 
-            const ingresoBrutoTotalGen = Math.max(0, ingresoBrutoTotalGenBruto - canceloSAoPendienteTerapeuta);
+            const cobrarCanceloSAFinal = Boolean(t.cobrarCanceloSA);
+            const ingresoBrutoTotalGen = Math.max(0, ingresoBrutoTotalGenBruto - (cobrarCanceloSAFinal ? 0 : canceloSAoPendienteTerapeuta));
 
             // Si el esquema es Salario Base Fijo, el pago no depende de comisiones por sesión acumuladas
             let totalAPagarFinal = honorariosTotalGen;

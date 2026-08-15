@@ -110,6 +110,7 @@ export async function getTerapeutasFull() {
   try {
     try {
       await prisma.$executeRawUnsafe(`ALTER TABLE "User" ADD COLUMN IF NOT EXISTS "porcentajeValoracion" DOUBLE PRECISION DEFAULT 50;`);
+      await prisma.$executeRawUnsafe(`ALTER TABLE "User" ADD COLUMN IF NOT EXISTS "cobrarCanceloSA" BOOLEAN DEFAULT FALSE;`);
     } catch (e) {}
 
     let terapeutas: any[] = [];
@@ -142,12 +143,14 @@ export async function getTerapeutasFull() {
           porcentaje: true,
           salarioBase: true,
           retieneIVA: true,
+          cobrarCanceloSA: true,
         },
         orderBy: { name: 'asc' },
       });
       terapeutas = fallbacks.map(t => ({
         ...t,
-        porcentajeValoracion: t.porcentaje ?? 50
+        porcentajeValoracion: (t as any).porcentajeValoracion ?? (t.porcentaje ?? 50),
+        cobrarCanceloSA: (t as any).cobrarCanceloSA ?? false,
       }));
     }
 
@@ -172,6 +175,7 @@ export async function updateTerapeutaConfig(id: string, data: any) {
 
     try {
       await prisma.$executeRawUnsafe(`ALTER TABLE "User" ADD COLUMN IF NOT EXISTS "porcentajeValoracion" DOUBLE PRECISION DEFAULT 50;`);
+      await prisma.$executeRawUnsafe(`ALTER TABLE "User" ADD COLUMN IF NOT EXISTS "cobrarCanceloSA" BOOLEAN DEFAULT FALSE;`);
     } catch (e) {}
 
     try {
@@ -183,6 +187,7 @@ export async function updateTerapeutaConfig(id: string, data: any) {
           porcentajeValoracion: data.porcentajeValoracion !== undefined ? parseFloat(data.porcentajeValoracion) : (data.porcentaje || 50),
           salarioBase: data.salarioBase,
           retieneIVA: data.retieneIVA,
+          cobrarCanceloSA: Boolean(data.cobrarCanceloSA),
         } as any
       });
     } catch (e: any) {
@@ -193,6 +198,7 @@ export async function updateTerapeutaConfig(id: string, data: any) {
           porcentaje: data.porcentaje,
           salarioBase: data.salarioBase,
           retieneIVA: data.retieneIVA,
+          cobrarCanceloSA: Boolean(data.cobrarCanceloSA),
         }
       });
     }

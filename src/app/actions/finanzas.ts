@@ -84,8 +84,16 @@ export async function getFinanzasMensuales(month: string, fechaDesde?: string, f
         saldoNum = parseFloat(rawSaldo.replace(/[^0-9.-]+/g, '')) || 0;
       }
 
-      if (saldoNum < 0) {
+      const estNormFin = (extra.estadoAsistencia || extra.estado || s.status || "").toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "");
+      const isFreeCancelFin = (estNormFin.includes("con anticip") || estNormFin.includes("anticipad") || estNormFin.includes("centro")) && !estNormFin.includes("sin anticip");
+
+      const cobrarCanceloSA = Boolean((s.therapist as any)?.cobrarCanceloSA);
+
+      if (!isFreeCancelFin && saldoNum < 0) {
         totalCanceloSAoPendiente += Math.abs(saldoNum);
+        if (!cobrarCanceloSA) {
+          totalCanceloSAoPendienteDeducible += Math.abs(saldoNum);
+        }
       }
 
       // Check if factura was requested in the attendance session
@@ -113,6 +121,7 @@ export async function getFinanzasMensuales(month: string, fechaDesde?: string, f
           porcentaje: s.therapist?.porcentaje || 0,
           salarioBase: s.therapist?.salarioBase || 0,
           retieneIVA: s.therapist?.retieneIVA || false,
+          cobrarCanceloSA: cobrarCanceloSA,
           ivaRetenido: 0,
           ivaPaciente: 0,
           tieneFacturasEnPeriodo: false,
@@ -124,7 +133,7 @@ export async function getFinanzasMensuales(month: string, fechaDesde?: string, f
         const tData = terapeutasMap.get(tId);
         tData.sesiones += 1;
         tData.ingresoGenerado += precioTotal;
-        if (saldoNum < 0) {
+        if (!isFreeCancelFin && saldoNum < 0) {
           tData.canceloSAoPendiente += Math.abs(saldoNum);
         }
 
@@ -133,8 +142,10 @@ export async function getFinanzasMensuales(month: string, fechaDesde?: string, f
           tData.ivaPaciente += sessionIva;
         }
 
-        // Calcular pago sobre el ingreso efectivo efectivamente cobrado de la sesión
-        const ingresoEfectivoSesion = Math.max(0, precioTotal - (saldoNum < 0 ? Math.abs(saldoNum) : 0));
+        // Si la terapeuta tiene activada la opcion de cobrar sobre Cancelo S/A, se toma el precioTotal integro. Si no, se descuenta la deuda.
+        const ingresoEfectivoSesion = tData.cobrarCanceloSA
+          ? precioTotal
+          : Math.max(0, precioTotal - (saldoNum < 0 ? Math.abs(saldoNum) : 0));
 
         if (tData.tipoPago === "Porcentaje") {
           let comisionBase = ingresoEfectivoSesion * ((tData.porcentaje || 0) / 100);
@@ -150,7 +161,7 @@ export async function getFinanzasMensuales(month: string, fechaDesde?: string, f
     });
 
     const ingresosBrutosOriginal = ingresosBrutosBruto;
-    const ingresosBrutos = Math.max(0, ingresosBrutosBruto - totalCanceloSAoPendiente);
+    const ingresosBrutos = Math.max(0, ingresosBrutosBruto - totalCanceloSAoPendienteDeducible);
 
     // Agregar TODOS los terapeutas al reporte aunque no tengan sesiones
     const todosTerapeutas = await prisma.user.findMany({ where: { role: "Terapeuta" } });
