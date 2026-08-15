@@ -2,6 +2,34 @@
 
 import { prisma } from "@/lib/prisma";
 
+function toIsoDateStr(dStr?: string): string {
+  if (!dStr) return "";
+  const clean = dStr.trim();
+  if (clean.includes("/")) {
+    const parts = clean.split("/");
+    if (parts.length === 3) {
+      if (parts[2].length === 4) {
+        return `${parts[2]}-${parts[1].padStart(2, "0")}-${parts[0].padStart(2, "0")}`;
+      }
+      if (parts[0].length === 4) {
+        return `${parts[0]}-${parts[1].padStart(2, "0")}-${parts[2].padStart(2, "0")}`;
+      }
+    }
+  }
+  if (clean.includes("-")) {
+    const parts = clean.split("-");
+    if (parts.length === 3) {
+      if (parts[0].length === 4) {
+        return `${parts[0]}-${parts[1].padStart(2, "0")}-${parts[2].padStart(2, "0")}`;
+      }
+      if (parts[2].length === 4) {
+        return `${parts[2]}-${parts[1].padStart(2, "0")}-${parts[0].padStart(2, "0")}`;
+      }
+    }
+  }
+  return clean;
+}
+
 export async function getFinanzasMensuales(month: string, fechaDesde?: string, fechaHasta?: string) {
   try {
     try {
@@ -38,6 +66,9 @@ export async function getFinanzasMensuales(month: string, fechaDesde?: string, f
       });
     }
 
+    const normDesde = toIsoDateStr(fechaDesde);
+    const normHasta = toIsoDateStr(fechaHasta);
+
     // Filtrar sesiones por rango de fechas o mes de consulta
     const monthSessions = sessions.filter(s => {
       let extra: any = {};
@@ -45,7 +76,7 @@ export async function getFinanzasMensuales(month: string, fechaDesde?: string, f
         if (s.notes) extra = JSON.parse(s.notes);
       } catch (e) {}
 
-      const sessionDateStr = extra.fecha || s.date.toISOString().split("T")[0];
+      const sessionDateStr = toIsoDateStr(extra.fecha || s.date.toISOString().split("T")[0]);
 
       const estNorm = (extra.estadoAsistencia || extra.estado || s.status || "").trim().toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "");
       const isRegistered = extra.asistenciaGuardada === true || 
@@ -61,8 +92,8 @@ export async function getFinanzasMensuales(month: string, fechaDesde?: string, f
 
       if (!isRegistered) return false;
 
-      if (fechaDesde && fechaHasta) {
-        return sessionDateStr >= fechaDesde && sessionDateStr <= fechaHasta;
+      if (normDesde && normHasta) {
+        return sessionDateStr >= normDesde && sessionDateStr <= normHasta;
       }
 
       const sessionMonth = sessionDateStr.substring(0, 7); // YYYY-MM
