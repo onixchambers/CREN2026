@@ -47,12 +47,26 @@ export async function getFinanzasMensuales(month: string, fechaDesde?: string, f
 
       const sessionDateStr = extra.fecha || s.date.toISOString().split("T")[0];
 
+      const estNorm = (extra.estadoAsistencia || extra.estado || s.status || "").trim().toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "");
+      const isRegistered = extra.asistenciaGuardada === true || 
+                           extra.pagado === "SÍ" || 
+                           extra.pagado === "SI" || 
+                           extra.pagado === true || 
+                           Boolean(extra.metodoPago && extra.metodoPago.trim() !== "") || 
+                           Boolean(extra.montoPago && extra.montoPago !== "0" && extra.montoPago !== "") || 
+                           estNorm.includes("asistio") || 
+                           estNorm.includes("cancelo") || 
+                           s.status === "COMPLETED" || 
+                           s.status === "CANCELLED";
+
+      if (!isRegistered) return false;
+
       if (fechaDesde && fechaHasta) {
-        return sessionDateStr >= fechaDesde && sessionDateStr <= fechaHasta && (extra.pagado === true || extra.asistenciaGuardada === true);
+        return sessionDateStr >= fechaDesde && sessionDateStr <= fechaHasta;
       }
 
       const sessionMonth = sessionDateStr.substring(0, 7); // YYYY-MM
-      return sessionMonth === month && (extra.pagado === true || extra.asistenciaGuardada === true);
+      return sessionMonth === month;
     });
 
     let ingresosBrutosBruto = 0;
