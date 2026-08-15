@@ -3,8 +3,9 @@ import { useState, useEffect } from "react";
 import { useSession } from "next-auth/react";
 import { useRouter } from "next/navigation";
 import { getPatients } from "@/app/actions/pacientes";
-import { getAsistenciasDB, saveAsistenciaDB, toggleRevisarAsistencia } from "@/app/actions/asistencia";
+import { getAsistenciasDB } from "@/app/actions/asistencia";
 import { getAgenda, addCita } from "@/app/actions/agenda";
+import { saveAsistenciaDB } from "@/app/actions/asistencia";
 import { deleteCita } from "@/app/actions/agenda";
 import { getTerapeutasFull, getSystemIvaRate, getTherapyPrices, addTherapyPrice, removeTherapyPrice } from "@/app/actions/configuracion";
 import { DateInput } from "@/components/DateInput";
@@ -51,7 +52,6 @@ type Asistencia = {
   terapeuta?: string;
   hora?: string;
   iva?: string;
-  revisar?: boolean;
 };
 
 export default function AsistenciaPage() {
@@ -254,7 +254,6 @@ export default function AsistenciaPage() {
   const [filtroMetodoPago, setFiltroMetodoPago] = useState("Todos");
   const [filtroTipoSesion, setFiltroTipoSesion] = useState("Todos");
   const [filtroFrecuencia, setFiltroFrecuencia] = useState("Todos");
-  const [filtroSoloRevisar, setFiltroSoloRevisar] = useState(false);
   const [availableAreas, setAvailableAreas] = useState<string[]>(["Psicología", "Lenguaje", "Fisioterapia"]);
   const [terapeutas, setTerapeutas] = useState<string[]>([]);
   const [terapeutasFullData, setTerapeutasFullData] = useState<any[]>([]);
@@ -334,7 +333,6 @@ export default function AsistenciaPage() {
           iva: `$${ivaVal.toFixed(2)}`,
           total: `$${totVal.toFixed(2)}`,
           saldo: c.saldo || 0,
-          revisar: Boolean(c.revisar),
           obs: c.obs || "-",
           creadoPor: c.creadoPor || "-"
         };
@@ -1324,21 +1322,6 @@ export default function AsistenciaPage() {
                 <option value="Mensual">Mensual</option>
               </select>
             </div>
-
-            {/* FILTRO SOLO MARCADOS PARA REVISAR */}
-            <div className="flex items-center gap-1.5 bg-amber-50 border border-amber-300 px-2 py-1 rounded-md cursor-pointer shadow-2xs">
-              <input 
-                type="checkbox" 
-                id="filtroSoloRevisar"
-                checked={filtroSoloRevisar} 
-                onChange={e => setFiltroSoloRevisar(e.target.checked)} 
-                className="w-3.5 h-3.5 accent-[#1a5276] cursor-pointer"
-              />
-              <label htmlFor="filtroSoloRevisar" className="text-[11px] font-bold text-amber-900 cursor-pointer select-none flex items-center gap-1">
-                <span>📌</span> Solo Marcados para Revisar
-              </label>
-            </div>
-
             <div className="flex items-center gap-2">
               <label className="text-[11px] font-semibold text-slate-500">Paciente:</label>
               <input type="text" value={filtroPaciente} onChange={e => setFiltroPaciente(e.target.value)} placeholder="Buscar..." className="w-32 text-xs p-1.5 border border-slate-300 rounded outline-none text-slate-700 bg-white font-medium" />
@@ -1346,7 +1329,7 @@ export default function AsistenciaPage() {
           </div>
 
           <div className="flex flex-wrap items-center gap-2">
-            <button type="button" onClick={() => { setFiltroDesde(""); setFiltroHasta(""); setFiltroEstado("Todos"); setFiltroPaciente(""); setFiltroTerapeuta("Todos"); setFiltroMetodoPago("Todos"); setFiltroTipoSesion("Todos"); setFiltroFrecuencia("Todos"); setFiltroSoloRevisar(false); }} className="bg-[#1a5276] text-white hover:bg-[#0e2f44] px-3 py-1 rounded text-xs font-semibold transition-colors cursor-pointer" title="Ver registros pasados, presentes y futuros">
+            <button type="button" onClick={() => { setFiltroDesde(""); setFiltroHasta(""); setFiltroEstado("Todos"); setFiltroPaciente(""); setFiltroTerapeuta("Todos"); setFiltroMetodoPago("Todos"); setFiltroTipoSesion("Todos"); setFiltroFrecuencia("Todos"); }} className="bg-[#1a5276] text-white hover:bg-[#0e2f44] px-3 py-1 rounded text-xs font-semibold transition-colors cursor-pointer" title="Ver registros pasados, presentes y futuros">
               Ver Todos (Permanente)
             </button>
           </div>
@@ -1374,7 +1357,6 @@ export default function AsistenciaPage() {
                 <th className="px-1 py-2 border-b border-[#0e2f44] whitespace-nowrap">IVA</th>
                 <th className="px-1 py-2 border-b border-[#0e2f44] whitespace-nowrap">TOTAL</th>
                 <th className="px-1 py-2 border-b border-[#0e2f44] whitespace-nowrap">OBS</th>
-                <th className="px-1.5 py-2 border-b border-[#0e2f44] whitespace-nowrap text-center" title="Marcar paciente para revisar después">📌 REVISAR</th>
                 <th className="px-1 py-2 border-b border-[#0e2f44] whitespace-nowrap">ACCIONES</th>
               </tr>
             </thead>
@@ -1487,19 +1469,6 @@ export default function AsistenciaPage() {
                   <td className="px-1 py-2 font-semibold text-amber-600 text-[11px] whitespace-nowrap">{a.iva || "$0.00"}</td>
                   <td className="px-1 py-2 font-bold text-[#1a5276] text-[11px] whitespace-nowrap">{a.total}</td>
                   <td className="px-1 py-2 text-slate-500 text-[11px] max-w-[80px] truncate" title={a.obs}>{a.obs}</td>
-                  <td className="px-1.5 py-2 whitespace-nowrap text-center">
-                    <input
-                      type="checkbox"
-                      checked={Boolean(a.revisar)}
-                      onChange={async () => {
-                        const newStatus = !a.revisar;
-                        setAsistencias(prev => prev.map(item => item.id === a.id ? { ...item, revisar: newStatus } : item));
-                        await toggleRevisarAsistencia(a.id, newStatus);
-                      }}
-                      className="w-4 h-4 cursor-pointer accent-[#1a5276] rounded"
-                      title="Marcar / Desmarcar paciente para revisar después"
-                    />
-                  </td>
                   <td className="px-1 py-2 whitespace-nowrap">
                     <div className="flex items-center justify-center gap-1.5">
                       {((userRole.toUpperCase() !== "TERAPEUTA" && userRole.toUpperCase() !== "INVITADO") || allowTherapistEdit) && (
@@ -1517,7 +1486,7 @@ export default function AsistenciaPage() {
                 </tr>
               )) : (
                   <tr>
-                    <td colSpan={20} className="px-4 py-8 text-center text-slate-400 font-medium">
+                    <td colSpan={19} className="px-4 py-8 text-center text-slate-400 font-medium">
                       Sin registros.
                     </td>
                   </tr>
