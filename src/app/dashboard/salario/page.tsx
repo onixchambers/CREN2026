@@ -160,16 +160,24 @@ export default function SalarioPage() {
               tipoSesiones: string[];
             }>();
 
-            let ingresoBrutoTotalGen = 0;
+            let ingresoBrutoTotalGenBruto = 0;
             let honorariosTotalGen = 0;
             let ivaTotalRetenidoGen = 0;
             let ivaCrenTotalGen = 0;
+            let canceloSAoPendienteTerapeuta = 0;
 
             asistenciasT.forEach((a: any) => {
               const day = parseInt((a.fecha || "").split("-")[2] || "1");
               const precioSession = parseFloat(a.total ? a.total.replace(/[^0-9.-]+/g,"") : (a.subtotal ? a.subtotal.replace(/[^0-9.-]+/g,"") : "0")) || 0;
               
-              ingresoBrutoTotalGen += precioSession;
+              ingresoBrutoTotalGenBruto += precioSession;
+
+              let sVal = 0;
+              if (typeof a.saldo === "number") sVal = a.saldo;
+              else if (typeof a.saldo === "string") sVal = parseFloat(a.saldo.replace(/[^0-9.-]+/g, "")) || 0;
+              if (sVal < 0) {
+                canceloSAoPendienteTerapeuta += Math.abs(sVal);
+              }
 
               const pName = (a.paciente || a.pacienteNombre || "Paciente Desconocido").trim();
               const pNameLower = pName.toLowerCase();
@@ -265,6 +273,8 @@ export default function SalarioPage() {
               }
             });
 
+            const ingresoBrutoTotalGen = Math.max(0, ingresoBrutoTotalGenBruto - canceloSAoPendienteTerapeuta);
+
             // Si el esquema es Salario Base Fijo, el pago no depende de comisiones por sesión acumuladas
             let totalAPagarFinal = honorariosTotalGen;
             if (t.tipoPago === "Salario Base") {
@@ -306,7 +316,7 @@ export default function SalarioPage() {
                     </div>
                   </div>
 
-                  {/* LÍNEAS DE RESUMEN Y MONTO DE TOTAL A PAGAR (5 FILAS EXACTAS) */}
+                  {/* LÍNEAS DE RESUMEN Y MONTO DE TOTAL A PAGAR (CON FILA CANCELO S/A O PENDIENTE DE PAGO DEBAJO DE HONORARIOS) */}
                   <div className="space-y-1.5 text-xs text-slate-600 border-t border-slate-100 pt-3">
                     <div className="flex justify-between max-w-xl">
                       <span className="font-semibold">TOTAL DE ASISTENCIAS:</span>
@@ -319,6 +329,10 @@ export default function SalarioPage() {
                     <div className="flex justify-between max-w-xl">
                       <span className="font-semibold">HONORARIOS TERAPEUTA:</span>
                       <span className="font-bold text-slate-800">${honorariosTotalGen.toLocaleString('es-MX', {minimumFractionDigits: 2})}</span>
+                    </div>
+                    <div className="flex justify-between max-w-xl">
+                      <span className="font-semibold text-red-600">Cancelo S/A o Pendiente de Pago:</span>
+                      <span className="font-bold text-red-600">-${canceloSAoPendienteTerapeuta.toLocaleString('es-MX', {minimumFractionDigits: 2})}</span>
                     </div>
                     <div className="flex justify-between max-w-xl">
                       <span className="font-semibold text-amber-700">IVA 16% TERAPEUTA SAT FACTURA:</span>

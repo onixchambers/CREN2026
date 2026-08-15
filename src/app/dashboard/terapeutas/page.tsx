@@ -366,6 +366,7 @@ export default function TerapeutasPage() {
                     <th className="py-2.5 px-4 text-center">Retención IVA</th>
                     <th className="py-2.5 px-4 text-center">Sesiones</th>
                     <th className="py-2.5 px-4 text-right">Ingreso Bruto</th>
+                    <th className="py-2.5 px-4 text-right text-red-600">Cancelo S/A o Pendiente</th>
                     <th className="py-2.5 px-4 text-right text-amber-600">IVA Retenido (16%)</th>
                     <th className="py-2.5 px-4 text-right">Honorario Neto</th>
                   </tr>
@@ -401,6 +402,9 @@ export default function TerapeutasPage() {
                         <td className="py-3 px-4 text-right font-semibold text-green-600">
                           ${t.ingresoGenerado.toLocaleString('es-MX', {minimumFractionDigits: 2})}
                         </td>
+                        <td className="py-3 px-4 text-right font-semibold text-red-600">
+                          {t.canceloSAoPendiente > 0 ? `-$${t.canceloSAoPendiente.toLocaleString('es-MX', {minimumFractionDigits: 2})}` : "$0.00"}
+                        </td>
                         <td className="py-3 px-4 text-right font-semibold text-amber-600">
                           ${(t.ivaRetenido || 0).toLocaleString('es-MX', {minimumFractionDigits: 2})}
                         </td>
@@ -412,7 +416,7 @@ export default function TerapeutasPage() {
                   })}
                   {listTerapeutaFinanzas.length === 0 && (
                     <tr>
-                      <td colSpan={9} className="py-6 text-center text-slate-400">No hay terapeutas registradas.</td>
+                      <td colSpan={10} className="py-6 text-center text-slate-400">No hay terapeutas registradas.</td>
                     </tr>
                   )}
                 </tbody>

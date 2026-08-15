@@ -142,6 +142,12 @@ export default function EstadoResultadosPage() {
                     <td className="p-3 pl-6 font-semibold text-slate-700">Pagos de Terapias Registrados</td>
                     <td className="p-3 text-right font-bold text-green-700">${datos.ingresosBrutos.toLocaleString('en-US', {minimumFractionDigits: 2})}</td>
                   </tr>
+                  {Boolean((datos as any).totalCanceloSAoPendiente) && (
+                    <tr className="border-b border-slate-100 bg-red-50/30">
+                      <td className="p-3 pl-6 font-semibold text-red-600">Cancelo S/A o Pendiente de Pago</td>
+                      <td className="p-3 text-right font-bold text-red-600">-${((datos as any).totalCanceloSAoPendiente || 0).toLocaleString('en-US', {minimumFractionDigits: 2})}</td>
+                    </tr>
+                  )}
                   <tr><td colSpan={2} className="h-4"></td></tr>
 
                   {/* Egresos */}

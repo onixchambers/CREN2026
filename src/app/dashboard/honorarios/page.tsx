@@ -169,6 +169,7 @@ export default function HonorariosPage() {
                   <th className="p-4 font-semibold">Retención IVA</th>
                   <th className="p-4 font-semibold text-center">Sesiones</th>
                   <th className="p-4 font-semibold text-right">Ingreso Bruto</th>
+                  <th className="p-4 font-semibold text-right text-red-600">Cancelo S/A o Pendiente</th>
                   <th className="p-4 font-semibold text-right text-amber-600">IVA SAT Terapeuta (16%)</th>
                   <th className="p-4 font-semibold text-right text-indigo-600">IVA 16% CREN Pacientes</th>
                   <th className="p-4 font-semibold text-right text-blue-700">Total a Pagar</th>
@@ -180,6 +181,7 @@ export default function HonorariosPage() {
                   const finData = finanzasMap.get(t.id) || {};
                   const sesionesCount = finData.sesiones || 0;
                   const ingresoGenerado = finData.ingresoGenerado || 0;
+                  const canceloSAoPendiente = finData.canceloSAoPendiente || 0;
                   const pagoNeto = finData.pago || (t.tipoPago === "Salario Base" ? (t.salarioBase || 0) : 0);
                   const ivaRetenido = finData.ivaRetenido !== undefined ? finData.ivaRetenido : (t.retieneIVA ? (pagoNeto * 0.16) : 0);
                   const ivaCren = finData.ivaPaciente || 0;
@@ -223,6 +225,9 @@ export default function HonorariosPage() {
                       <td className="p-4 text-right font-semibold text-green-600">
                         ${ingresoGenerado.toLocaleString('es-MX', {minimumFractionDigits: 2})}
                       </td>
+                      <td className="p-4 text-right font-semibold text-red-600">
+                        {canceloSAoPendiente > 0 ? `-$${canceloSAoPendiente.toLocaleString('es-MX', {minimumFractionDigits: 2})}` : "$0.00"}
+                      </td>
                       <td className="p-4 text-right font-semibold text-amber-600">
                         ${ivaRetenido.toLocaleString('es-MX', {minimumFractionDigits: 2})}
                       </td>
@@ -249,7 +254,7 @@ export default function HonorariosPage() {
                 })}
                 {terapeutas.length === 0 && (
                   <tr>
-                    <td colSpan={9} className="p-6 text-center text-slate-500">No hay terapeutas registrados en Configuración</td>
+                    <td colSpan={10} className="p-6 text-center text-slate-500">No hay terapeutas registrados en Configuración</td>
                   </tr>
                 )}
               </tbody>

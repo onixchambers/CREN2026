@@ -132,7 +132,14 @@ export default function FinanzasPage() {
                   {formatMoney(datos.ingresosBrutos)}
                 </p>
               </div>
-              <p className="text-xs text-slate-400 mt-3 truncate">Pagos de terapias registrados en el periodo</p>
+              <div className="mt-3">
+                <p className="text-xs text-slate-400 truncate">Pagos de terapias registrados en el periodo</p>
+                {Boolean((datos as any).totalCanceloSAoPendiente) && (
+                  <p className="text-xs text-red-600 font-semibold truncate mt-0.5">
+                    • Cancelo S/A o Pendiente de Pago: <strong>-{formatMoney((datos as any).totalCanceloSAoPendiente)}</strong>
+                  </p>
+                )}
+              </div>
             </div>
 
             {/* IVA RETENIDO / FACTURADO */}

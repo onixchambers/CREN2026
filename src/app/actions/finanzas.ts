@@ -55,7 +55,8 @@ export async function getFinanzasMensuales(month: string, fechaDesde?: string, f
       return sessionMonth === month && (extra.pagado === true || extra.asistenciaGuardada === true);
     });
 
-    let ingresosBrutos = 0;
+    let ingresosBrutosBruto = 0;
+    let totalCanceloSAoPendiente = 0;
     
     // Terapeutas - agrupar por ID
     const terapeutasMap = new Map<string, any>();
@@ -74,6 +75,19 @@ export async function getFinanzasMensuales(month: string, fechaDesde?: string, f
       const montoPaid = parseFloat(extra.total || extra.montoPago || extra.costoSesion || s.patient?.precioTerapia || "0");
       const precioTotal = isNaN(montoPaid) ? 0 : montoPaid;
 
+      // Calcular saldo negativo para "Cancelo S/A o Pendiente de Pago"
+      let rawSaldo = extra.saldo !== undefined && extra.saldo !== null ? extra.saldo : s.saldo;
+      let saldoNum = 0;
+      if (typeof rawSaldo === 'number') {
+        saldoNum = rawSaldo;
+      } else if (typeof rawSaldo === 'string') {
+        saldoNum = parseFloat(rawSaldo.replace(/[^0-9.-]+/g, '')) || 0;
+      }
+
+      if (saldoNum < 0) {
+        totalCanceloSAoPendiente += Math.abs(saldoNum);
+      }
+
       // Check if factura was requested in the attendance session
       const hasFactura = extra.solicitaFactura === true || extra.solicitaFactura === "Sí" || extra.solicitaFactura === "SI" || extra.factura === "Sí" || extra.fact === "Sí";
 
@@ -84,7 +98,7 @@ export async function getFinanzasMensuales(month: string, fechaDesde?: string, f
         sessionIva = precioTotal * ivaDec;
       }
 
-      ingresosBrutos += precioTotal;
+      ingresosBrutosBruto += precioTotal;
 
       const tId = s.therapistId;
       if (tId && !terapeutasMap.has(tId)) {
@@ -101,7 +115,8 @@ export async function getFinanzasMensuales(month: string, fechaDesde?: string, f
           retieneIVA: s.therapist?.retieneIVA || false,
           ivaRetenido: 0,
           ivaPaciente: 0,
-          tieneFacturasEnPeriodo: false
+          tieneFacturasEnPeriodo: false,
+          canceloSAoPendiente: 0
         });
       }
 
@@ -109,6 +124,9 @@ export async function getFinanzasMensuales(month: string, fechaDesde?: string, f
         const tData = terapeutasMap.get(tId);
         tData.sesiones += 1;
         tData.ingresoGenerado += precioTotal;
+        if (saldoNum < 0) {
+          tData.canceloSAoPendiente += Math.abs(saldoNum);
+        }
 
         if (hasFactura || sessionIva > 0) {
           tData.tieneFacturasEnPeriodo = true;
@@ -128,6 +146,9 @@ export async function getFinanzasMensuales(month: string, fechaDesde?: string, f
         }
       }
     });
+
+    const ingresosBrutosOriginal = ingresosBrutosBruto;
+    const ingresosBrutos = Math.max(0, ingresosBrutosBruto - totalCanceloSAoPendiente);
 
     // Agregar TODOS los terapeutas al reporte aunque no tengan sesiones
     const todosTerapeutas = await prisma.user.findMany({ where: { role: "Terapeuta" } });
@@ -178,7 +199,8 @@ export async function getFinanzasMensuales(month: string, fechaDesde?: string, f
             salarioBase: t.salarioBase,
             retieneIVA: t.retieneIVA,
             ivaRetenido: 0,
-            ivaPaciente: 0
+            ivaPaciente: 0,
+            canceloSAoPendiente: 0
           });
         } else {
           if (t.tipoPago === "Salario Base") {
@@ -199,7 +221,6 @@ export async function getFinanzasMensuales(month: string, fechaDesde?: string, f
     const totalGastosOperativos = gastos.reduce((acc, g) => acc + g.amount, 0);
 
     // 3. Cálculos Finales:
-    // Regla exacta del usuario: Si sesión cuesta 400 y comision 50%: Terapeuta recibe 200, IVA retenido por CREN es 32 (16% de 200), Utilidad CREN = 400 - 200 - 32 = 168.
     let ivaTotal = 0;
     let totalIvaFacturas = 0;
 
@@ -256,6 +277,8 @@ export async function getFinanzasMensuales(month: string, fechaDesde?: string, f
       success: true,
       data: {
         ingresosBrutos,
+        ingresosBrutosOriginal,
+        totalCanceloSAoPendiente,
         subtotalIngresos,
         totalIvaFacturas,
         nomina: totalNomina,

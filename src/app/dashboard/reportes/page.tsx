@@ -18,6 +18,7 @@ export default function ReportesPage() {
   const [totalesAnuales, setTotalesAnuales] = useState({
     asistencias: 0,
     ingresoBruto: 0,
+    canceloSAoPendiente: 0,
     honorarios: 0,
     ivaHonorarios: 0,
     ivaCren: 0,
@@ -40,6 +41,7 @@ export default function ReportesPage() {
         const finRes = await getFinanzasMensuales(monthKey);
         const finData = finRes.success && finRes.data ? finRes.data : {
           ingresosBrutos: 0,
+          totalCanceloSAoPendiente: 0,
           nomina: 0,
           gastosOperativos: 0,
           ivaHonorarios: 0,
@@ -60,6 +62,7 @@ export default function ReportesPage() {
           mesNombre: MONTH_NAMES[idx],
           totalAsistencias: totalAsistenciasMes,
           ingresoBrutoTotal: finData.ingresosBrutos,
+          canceloSAoPendiente: finData.totalCanceloSAoPendiente || 0,
           honorariosTerapeutas: finData.nomina,
           ivaHonorarios: finData.ivaHonorarios,
           ivaCren: finData.totalIvaFacturas,
@@ -75,6 +78,7 @@ export default function ReportesPage() {
       const acc = rows.reduce((tot, r) => ({
         asistencias: tot.asistencias + r.totalAsistencias,
         ingresoBruto: tot.ingresoBruto + r.ingresoBrutoTotal,
+        canceloSAoPendiente: tot.canceloSAoPendiente + r.canceloSAoPendiente,
         honorarios: tot.honorarios + r.honorariosTerapeutas,
         ivaHonorarios: tot.ivaHonorarios + r.ivaHonorarios,
         ivaCren: tot.ivaCren + r.ivaCren,
@@ -83,6 +87,7 @@ export default function ReportesPage() {
       }), {
         asistencias: 0,
         ingresoBruto: 0,
+        canceloSAoPendiente: 0,
         honorarios: 0,
         ivaHonorarios: 0,
         ivaCren: 0,
@@ -119,26 +124,28 @@ export default function ReportesPage() {
     }).join(", ");
 
     return (
-      <div className="flex flex-col sm:flex-row items-center gap-6">
+      <div className="flex flex-col items-center">
         <div 
-          className="w-36 h-36 rounded-full relative flex items-center justify-center shadow-inner shrink-0"
+          className="w-32 h-32 rounded-full relative flex items-center justify-center shadow-inner"
           style={{ background: `conic-gradient(${gradientStops})` }}
         >
-          <div className="w-20 h-20 bg-white rounded-full flex flex-col items-center justify-center shadow">
-            <span className="text-[10px] font-bold text-slate-400 uppercase">Total</span>
-            <span className="text-xs font-black text-slate-800">${(total/1000).toFixed(1)}k</span>
+          <div className="w-20 h-20 bg-white rounded-full flex flex-col items-center justify-center shadow-xs">
+            <span className="text-[10px] text-slate-400 font-bold uppercase">Total</span>
+            <span className="text-base font-black text-slate-800">{total > 1000 ? `$${(total/1000).toFixed(1)}k` : total}</span>
           </div>
         </div>
-        <div className="space-y-2 flex-1 w-full">
+        <div className="space-y-2 flex-1 w-full mt-4">
           {data.map((d, i) => {
             const pct = ((d.value / total) * 100).toFixed(1);
             return (
               <div key={i} className="flex items-center justify-between text-xs">
-                <div className="flex items-center gap-2">
+                <div className="flex items-center gap-2 truncate pr-2">
                   <span className="w-3 h-3 rounded-full shrink-0" style={{ backgroundColor: d.color }}></span>
-                  <span className="font-semibold text-slate-700">{d.label}</span>
+                  <span className="font-semibold text-slate-700 truncate">{d.label}</span>
                 </div>
-                <span className="font-bold text-slate-900">${d.value.toLocaleString()} ({pct}%)</span>
+                <span className="font-bold text-slate-900 shrink-0">
+                  ${d.value.toLocaleString()} ({pct}%)
+                </span>
               </div>
             );
           })}
@@ -148,19 +155,21 @@ export default function ReportesPage() {
   };
 
   return (
-    <div className="space-y-6 animate-in fade-in duration-500 max-w-[1400px] mx-auto pb-10">
+    <div className="space-y-8 animate-in fade-in duration-500 max-w-[1400px] mx-auto pb-12">
       {/* HEADER */}
       <div className="flex flex-col md:flex-row md:items-center justify-between border-b pb-4 gap-4">
         <div>
-          <h2 className="text-2xl font-bold text-slate-800">Centro de Reportes Financieros CREN</h2>
-          <p className="text-sm text-slate-500">Reporte mensualizado consolidado por ejercicio fiscal</p>
+          <h2 className="text-2xl font-bold text-slate-800">Reportes Financieros Anuales CREN</h2>
+          <p className="text-sm text-slate-500">Histórico de ingresos, pagos a terapeutas, gastos y utilidades por año</p>
         </div>
+
+        {/* SELECTOR DE AÑO */}
         <div className="flex items-center gap-3 bg-white p-2.5 rounded-xl shadow-sm border border-slate-200">
           <label className="text-xs font-bold text-slate-500 uppercase">Año Fiscal:</label>
           <select
             value={selectedYear}
             onChange={(e) => setSelectedYear(e.target.value)}
-            className="border border-slate-300 rounded px-3 py-1.5 text-xs font-bold text-[#1a5276] outline-none focus:border-[#2980b9]"
+            className="border border-slate-300 rounded px-3 py-1 text-xs font-bold text-[#1a5276] outline-none"
           >
             {[2024, 2025, 2026, 2027].map(y => (
               <option key={y} value={y.toString()}>{y}</option>
@@ -172,31 +181,29 @@ export default function ReportesPage() {
       {loading ? (
         <div className="flex justify-center p-12"><div className="animate-spin rounded-full h-10 w-10 border-b-2 border-[#1a5276]"></div></div>
       ) : (
-        <>
-          {/* TARJETAS ANUALES ACUMULADAS */}
+        <div className="space-y-8">
+          
+          {/* TARJETAS RESUMEN DE ANUALIDAD */}
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-5">
             <div className="bg-white rounded-xl p-5 border border-slate-200 shadow-sm relative overflow-hidden">
-              <div className="absolute top-0 left-0 right-0 h-1 bg-green-500"></div>
               <p className="text-[11px] font-bold text-slate-400 uppercase tracking-wide">Ingreso Bruto Anual</p>
               <p className="text-2xl font-black text-green-600 mt-1">
                 ${totalesAnuales.ingresoBruto.toLocaleString('es-MX', {minimumFractionDigits: 2})}
               </p>
-              <p className="text-[11px] text-slate-400 mt-2 font-medium">Recaudación acumulada {selectedYear}</p>
+              <p className="text-[11px] text-slate-400 mt-2 font-medium">Sumatoria de ingresos del ejercicio</p>
             </div>
 
             <div className="bg-white rounded-xl p-5 border border-slate-200 shadow-sm relative overflow-hidden">
-              <div className="absolute top-0 left-0 right-0 h-1 bg-blue-500"></div>
-              <p className="text-[11px] font-bold text-slate-400 uppercase tracking-wide">Total Asistencias Año</p>
-              <p className="text-2xl font-black text-blue-600 mt-1">
-                {totalesAnuales.asistencias}
+              <p className="text-[11px] font-bold text-slate-400 uppercase tracking-wide">Cancelo S/A o Pendiente</p>
+              <p className="text-2xl font-black text-red-600 mt-1">
+                -${totalesAnuales.canceloSAoPendiente.toLocaleString('es-MX', {minimumFractionDigits: 2})}
               </p>
-              <p className="text-[11px] text-slate-400 mt-2 font-medium">Sesiones impartidas en el centro</p>
+              <p className="text-[11px] text-slate-400 mt-2 font-medium">Descontado del ingreso bruto</p>
             </div>
 
             <div className="bg-white rounded-xl p-5 border border-slate-200 shadow-sm relative overflow-hidden">
-              <div className="absolute top-0 left-0 right-0 h-1 bg-purple-500"></div>
-              <p className="text-[11px] font-bold text-slate-400 uppercase tracking-wide">Honorarios Pagados</p>
-              <p className="text-2xl font-black text-purple-600 mt-1">
+              <p className="text-[11px] font-bold text-slate-400 uppercase tracking-wide">Nómina Terapeutas Anual</p>
+              <p className="text-2xl font-black text-blue-600 mt-1">
                 ${totalesAnuales.honorarios.toLocaleString('es-MX', {minimumFractionDigits: 2})}
               </p>
               <p className="text-[11px] text-slate-400 mt-2 font-medium">Nómina / Comisiones pagadas</p>
@@ -211,16 +218,16 @@ export default function ReportesPage() {
             </div>
           </div>
 
-          {/* TABLA PRINCIPAL BASADA EN LA IMAGEN DEL CLIENTE */}
+          {/* TABLA PRINCIPAL */}
           <div className="bg-white rounded-xl shadow-lg border border-slate-200 overflow-hidden">
             <div className="overflow-x-auto">
               <table className="w-full text-xs text-left border-collapse">
-                {/* CABECERA AZUL OSCURA DE LA IMAGEN DEL USUARIO */}
                 <thead className="bg-[#0e2f44] text-white font-black uppercase tracking-wider text-[11px]">
                   <tr>
                     <th className="py-4 px-4 border-r border-slate-700/50">MES</th>
                     <th className="py-4 px-4 text-center border-r border-slate-700/50">TOTAL ASISTENCIAS</th>
                     <th className="py-4 px-4 text-right border-r border-slate-700/50">INGRESO BRUTO TOTAL</th>
+                    <th className="py-4 px-4 text-right border-r border-slate-700/50 text-red-300">CANCL S/A O PENDIENTE</th>
                     <th className="py-4 px-4 text-right border-r border-slate-700/50">HONORARIOS TERAPEUTAS</th>
                     <th className="py-4 px-4 text-right border-r border-slate-700/50">IVA TERAPEUTA</th>
                     <th className="py-4 px-4 text-right border-r border-slate-700/50">IVA CREN</th>
@@ -239,6 +246,9 @@ export default function ReportesPage() {
                       </td>
                       <td className="py-3 px-4 text-right font-bold text-green-600">
                         ${row.ingresoBrutoTotal.toLocaleString('es-MX', {minimumFractionDigits: 2})}
+                      </td>
+                      <td className="py-3 px-4 text-right font-semibold text-red-600">
+                        {row.canceloSAoPendiente > 0 ? `-$${row.canceloSAoPendiente.toLocaleString('es-MX', {minimumFractionDigits: 2})}` : "$0.00"}
                       </td>
                       <td className="py-3 px-4 text-right text-slate-700">
                         ${row.honorariosTerapeutas.toLocaleString('es-MX', {minimumFractionDigits: 2})}
@@ -259,13 +269,15 @@ export default function ReportesPage() {
                   ))}
                 </tbody>
 
-                {/* FILA DE TOTALES ANUALES */}
                 <tfoot className="bg-[#1a5276] text-white font-black text-xs uppercase border-t-2 border-[#0e2f44]">
                   <tr>
                     <td className="py-4 px-4">TOTAL ACUMULADO {selectedYear}</td>
                     <td className="py-4 px-4 text-center">{totalesAnuales.asistencias}</td>
                     <td className="py-4 px-4 text-right text-green-300">
                       ${totalesAnuales.ingresoBruto.toLocaleString('es-MX', {minimumFractionDigits: 2})}
+                    </td>
+                    <td className="py-4 px-4 text-right text-red-300">
+                      -${totalesAnuales.canceloSAoPendiente.toLocaleString('es-MX', {minimumFractionDigits: 2})}
                     </td>
                     <td className="py-4 px-4 text-right">
                       ${totalesAnuales.honorarios.toLocaleString('es-MX', {minimumFractionDigits: 2})}
@@ -337,7 +349,7 @@ export default function ReportesPage() {
             </div>
 
           </div>
-        </>
+        </div>
       )}
     </div>
   );
