@@ -178,6 +178,8 @@ export async function updateTerapeutaConfig(id: string, data: any) {
       await prisma.$executeRawUnsafe(`ALTER TABLE "User" ADD COLUMN IF NOT EXISTS "cobrarCanceloSA" BOOLEAN DEFAULT FALSE;`);
     } catch (e) {}
 
+    const cobrarVal = Boolean(data.cobrarCanceloSA);
+
     try {
       await prisma.user.update({
         where: { id },
@@ -187,20 +189,25 @@ export async function updateTerapeutaConfig(id: string, data: any) {
           porcentajeValoracion: data.porcentajeValoracion !== undefined ? parseFloat(data.porcentajeValoracion) : (data.porcentaje || 50),
           salarioBase: data.salarioBase,
           retieneIVA: data.retieneIVA,
-          cobrarCanceloSA: Boolean(data.cobrarCanceloSA),
-        } as any
-      });
-    } catch (e: any) {
-      await prisma.user.update({
-        where: { id },
-        data: {
-          tipoPago: data.tipoPago,
-          porcentaje: data.porcentaje,
-          salarioBase: data.salarioBase,
-          retieneIVA: data.retieneIVA,
-          cobrarCanceloSA: Boolean(data.cobrarCanceloSA),
+          cobrarCanceloSA: cobrarVal,
         }
       });
+    } catch (e: any) {
+      console.warn("Prisma update fallback for cobrarCanceloSA:", e);
+      try {
+        await prisma.user.update({
+          where: { id },
+          data: {
+            tipoPago: data.tipoPago,
+            porcentaje: data.porcentaje,
+            salarioBase: data.salarioBase,
+            retieneIVA: data.retieneIVA,
+          }
+        });
+      } catch (e2) {}
+      try {
+        await prisma.$executeRawUnsafe(`UPDATE "User" SET "cobrarCanceloSA" = ${cobrarVal ? 'TRUE' : 'FALSE'} WHERE id = '${id}';`);
+      } catch (rawErr) {}
     }
 
     return { success: true };

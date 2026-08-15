@@ -31,6 +31,7 @@ model User {
   porcentajeValoracion Float?    @default(50)
   salarioBase          Float?    @default(0)
   retieneIVA           Boolean?  @default(false)
+  cobrarCanceloSA      Boolean?  @default(false)
 }
 
 model Patient {
