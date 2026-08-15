@@ -2,6 +2,16 @@
 
 import { prisma } from "@/lib/prisma";
 
+function parseMoneyStr(val: any): number {
+  if (typeof val === "number") return isNaN(val) ? 0 : val;
+  if (typeof val === "string") {
+    const clean = val.replace(/[^0-9.-]+/g, "");
+    const parsed = parseFloat(clean);
+    return isNaN(parsed) ? 0 : parsed;
+  }
+  return 0;
+}
+
 function toIsoDateStr(dStr?: string): string {
   if (!dStr) return "";
   const clean = dStr.trim();
@@ -221,9 +231,9 @@ export async function getFinanzasMensuales(month: string, fechaDesde?: string, f
         // Calcular salario base acumulado en las quincenas (15 y 30) del rango de fechas
         let pagoSalarioBase = 0;
         if (t.tipoPago === "Salario Base" && t.salarioBase) {
-          if (fechaDesde && fechaHasta) {
-            const dStart = new Date(fechaDesde);
-            const dEnd = new Date(fechaHasta);
+          if (normDesde && normHasta) {
+            const dStart = new Date(normDesde);
+            const dEnd = new Date(normHasta);
             let cur = new Date(dStart.getFullYear(), dStart.getMonth(), 1);
             const endMonth = new Date(dEnd.getFullYear(), dEnd.getMonth(), 1);
 
@@ -233,14 +243,14 @@ export async function getFinanzasMensuales(month: string, fechaDesde?: string, f
               
               // 1ª Quincena (Día 15)
               const q1DateStr = `${y}-${m}-15`;
-              if (q1DateStr >= fechaDesde && q1DateStr <= fechaHasta) {
+              if (q1DateStr >= normDesde && q1DateStr <= normHasta) {
                 pagoSalarioBase += t.salarioBase / 2;
               }
 
               // 2ª Quincena (Día 30 o último día)
               const lastDay = new Date(y, cur.getMonth() + 1, 0).getDate();
               const q2DateStr = `${y}-${m}-${lastDay.toString().padStart(2, '0')}`;
-              if (q2DateStr >= fechaDesde && q2DateStr <= fechaHasta) {
+              if (q2DateStr >= normDesde && q2DateStr <= normHasta) {
                 pagoSalarioBase += t.salarioBase / 2;
               }
 
