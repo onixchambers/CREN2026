@@ -133,15 +133,17 @@ export async function getFinanzasMensuales(month: string, fechaDesde?: string, f
           tData.ivaPaciente += sessionIva;
         }
 
-        // Calcular pago
+        // Calcular pago sobre el ingreso efectivo efectivamente cobrado de la sesión
+        const ingresoEfectivoSesion = Math.max(0, precioTotal - (saldoNum < 0 ? Math.abs(saldoNum) : 0));
+
         if (tData.tipoPago === "Porcentaje") {
-          let comisionBase = precioTotal * ((tData.porcentaje || 0) / 100); // 75
+          let comisionBase = ingresoEfectivoSesion * ((tData.porcentaje || 0) / 100);
           if (tData.retieneIVA) {
-            const ivaDelTerapeuta = comisionBase * ivaDec; // 12
-            tData.pago += (comisionBase + ivaDelTerapeuta); // 87
-            tData.ivaRetenido += ivaDelTerapeuta; // 12
+            const ivaDelTerapeuta = comisionBase * ivaDec;
+            tData.pago += (comisionBase + ivaDelTerapeuta);
+            tData.ivaRetenido += ivaDelTerapeuta;
           } else {
-            tData.pago += comisionBase; // 75
+            tData.pago += comisionBase;
           }
         }
       }

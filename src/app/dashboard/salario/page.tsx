@@ -205,8 +205,10 @@ export default function SalarioPage() {
                 }
               }
 
+              const ingresoEfectivoSesion = Math.max(0, precioSession - (sVal < 0 ? Math.abs(sVal) : 0));
+
               if (t.tipoPago === "Porcentaje") {
-                const comisionBase = precioSession * ((t.porcentaje || 50) / 100);
+                const comisionBase = ingresoEfectivoSesion * ((t.porcentaje || 50) / 100);
                 if (t.retieneIVA) {
                   ivaSesionRetenido = comisionBase * 0.16;
                   pagoSesionTerapeuta = comisionBase + ivaSesionRetenido;
@@ -216,13 +218,13 @@ export default function SalarioPage() {
                 if (hasFactura || sessionIva > 0) {
                   ivaCrenSesion = Math.max(0, sessionIva - ivaSesionRetenido);
                 }
-                crenGananciaSesion = Math.max(0, precioSession - pagoSesionTerapeuta - ivaCrenSesion);
+                crenGananciaSesion = Math.max(0, ingresoEfectivoSesion - pagoSesionTerapeuta - ivaCrenSesion);
               } else {
                 pagoSesionTerapeuta = 0;
                 if (hasFactura || sessionIva > 0) {
                   ivaCrenSesion = sessionIva;
                 }
-                crenGananciaSesion = Math.max(0, precioSession - ivaCrenSesion);
+                crenGananciaSesion = Math.max(0, ingresoEfectivoSesion - ivaCrenSesion);
               }
 
               honorariosTotalGen += pagoSesionTerapeuta;
