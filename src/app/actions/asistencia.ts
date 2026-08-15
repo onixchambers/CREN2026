@@ -446,6 +446,7 @@ export async function getAsistenciasDB() {
           iva: "$" + Number(ivaVal).toFixed(2),
           total: "$" + Number(totalVal).toFixed(2),
           saldo: isFreeCancel ? 0 : runningBalance,
+          revisar: Boolean(extra.revisar),
           obs: extra.obs || "-",
           creadoPor: extra.creadoPor || "-",
           terapeuta: s.therapist?.name || extra.terapeuta || extra.terapeutaNombre || "-"
@@ -467,6 +468,33 @@ export async function getAsistenciasDB() {
   } catch (error: any) {
     console.error("Error getAsistenciasDB:", error);
     return { success: false, error: error.message };
+  }
+}
+
+export async function toggleRevisarAsistencia(id: string, revisar: boolean) {
+  try {
+    const s = await prisma.session.findUnique({ where: { id } });
+    if (!s) return { success: false, error: "Sesión no encontrada" };
+
+    let extra: any = {};
+    try {
+      if (s.notes) extra = JSON.parse(s.notes);
+    } catch (e) {}
+
+    extra.revisar = Boolean(revisar);
+
+    await prisma.session.update({
+      where: { id },
+      data: {
+        notes: JSON.stringify(extra)
+      }
+    });
+
+    revalidatePath("/dashboard/asistencia");
+    return { success: true };
+  } catch (err: any) {
+    console.error("Error toggleRevisarAsistencia:", err);
+    return { success: false, error: err.message };
   }
 }
 
