@@ -35,6 +35,7 @@ export default function DashboardPage() {
   const [fechaDia, setFechaDia] = useState(todayStr);
   const [fechaMes, setFechaMes] = useState(currentMonthStr);
   const [fechaAnio, setFechaAnio] = useState(currentYearStr);
+  const [terapeutaFiltro, setTerapeutaFiltro] = useState<string>("TODOS");
 
   const [loading, setLoading] = useState(true);
 
@@ -103,14 +104,39 @@ export default function DashboardPage() {
     );
   }
 
-  // Filtrar asistencias según el modo seleccionado
+  // Filtrar asistencias según el modo seleccionado y terapeuta seleccionado
   const asistFiltradas = asistencias.filter(a => {
     if (!a.fecha) return false;
-    if (modoFiltro === "dia") return a.fecha === fechaDia;
-    if (modoFiltro === "mes") return a.fecha.startsWith(fechaMes);
-    if (modoFiltro === "anio") return a.fecha.startsWith(fechaAnio);
+    let dateMatch = true;
+    if (modoFiltro === "dia") dateMatch = a.fecha === fechaDia;
+    else if (modoFiltro === "mes") dateMatch = a.fecha.startsWith(fechaMes);
+    else if (modoFiltro === "anio") dateMatch = a.fecha.startsWith(fechaAnio);
+    if (!dateMatch) return false;
+
+    if (terapeutaFiltro !== "TODOS") {
+      const aTer = (a.terapeuta || "").trim().toLowerCase();
+      const targetTer = terapeutaFiltro.trim().toLowerCase();
+      if (!aTer.includes(targetTer) && !targetTer.includes(aTer)) return false;
+    }
+
     return true;
   });
+
+  const selectedTerFin = (finanzas.terapeutas || []).find((t: any) =>
+    (t.nombre || "").trim().toLowerCase().includes(terapeutaFiltro.trim().toLowerCase())
+  );
+
+  const displayIngresos = terapeutaFiltro === "TODOS"
+    ? finanzas.ingresosBrutos
+    : (selectedTerFin ? selectedTerFin.ingresoGenerado : 0);
+
+  const displayCanceloSA = terapeutaFiltro === "TODOS"
+    ? finanzas.totalCanceloSAoPendiente
+    : (selectedTerFin ? selectedTerFin.canceloSAoPendiente : 0);
+
+  const displayIva = terapeutaFiltro === "TODOS"
+    ? (finanzas.ivaHonorarios || 0)
+    : (selectedTerFin ? selectedTerFin.ivaPaciente : 0);
 
   const asistidasCount = asistFiltradas.filter(a => a.estado === "Asistio").length;
   const canceladasCount = asistFiltradas.filter(a => a.estado && a.estado.includes("Cancelo")).length;
@@ -333,6 +359,23 @@ export default function DashboardPage() {
               ))}
             </select>
           )}
+
+          <div className="h-4 w-px bg-slate-200 hidden md:block"></div>
+
+          {/* FILTRO POR TERAPEUTA */}
+          <div className="flex items-center gap-1.5">
+            <span className="text-xs font-bold text-slate-500 uppercase">Terapeuta:</span>
+            <select
+              value={terapeutaFiltro}
+              onChange={(e) => setTerapeutaFiltro(e.target.value)}
+              className="border border-slate-300 rounded px-2.5 py-1 text-xs font-bold text-[#1a5276] outline-none bg-white cursor-pointer hover:border-[#1a5276] transition-all"
+            >
+              <option value="TODOS">Todos los Terapeutas</option>
+              {terapeutas.map((t: any) => (
+                <option key={t.id || t.name} value={t.name}>{t.name}</option>
+              ))}
+            </select>
+          </div>
         </div>
       </div>
 
@@ -351,7 +394,7 @@ export default function DashboardPage() {
                     Ingresos {modoFiltro === 'dia' ? 'del Día' : modoFiltro === 'mes' ? 'del Mes' : 'del Año'}
                   </p>
                   <p className="text-xl font-black text-slate-800 mt-1">
-                    ${finanzas.ingresosBrutos.toLocaleString('es-MX', {minimumFractionDigits: 2})}
+                    ${displayIngresos.toLocaleString('es-MX', {minimumFractionDigits: 2})}
                   </p>
                 </div>
                 <div className="p-1.5 bg-green-50 text-green-600 rounded-lg">
@@ -360,9 +403,9 @@ export default function DashboardPage() {
               </div>
               <div>
                 <p className="text-[10px] text-slate-500 mt-2 font-medium">Recaudación bruta</p>
-                {Boolean(finanzas.totalCanceloSAoPendiente) && (
+                {Boolean(displayCanceloSA) && (
                   <p className="text-[9.5px] text-red-600 font-semibold truncate mt-0.5">
-                    Cancelo S/A o Pendiente de Pago: -${finanzas.totalCanceloSAoPendiente.toLocaleString('es-MX', {minimumFractionDigits: 2})}
+                    Cancelo S/A o Pendiente de Pago: -${displayCanceloSA.toLocaleString('es-MX', {minimumFractionDigits: 2})}
                   </p>
                 )}
               </div>
@@ -375,7 +418,7 @@ export default function DashboardPage() {
                 <div>
                   <p className="text-[10px] font-bold text-slate-400 uppercase tracking-wide">IVA Recaudado (16%)</p>
                   <p className="text-xl font-black text-amber-600 mt-1">
-                    ${(finanzas.ivaHonorarios || 0).toLocaleString('es-MX', {minimumFractionDigits: 2})}
+                    ${(displayIva || 0).toLocaleString('es-MX', {minimumFractionDigits: 2})}
                   </p>
                 </div>
                 <div className="p-1.5 bg-amber-50 text-amber-600 rounded-lg">
