@@ -90,24 +90,30 @@ export async function getFinanzasMensuales(month: string, fechaDesde?: string, f
       const montoPaid = parseFloat(extra.total || extra.montoPago || extra.costoSesion || s.patient?.precioTerapia || "0");
       const precioTotal = isNaN(montoPaid) ? 0 : montoPaid;
 
-      // Calcular saldo negativo para "Cancelo S/A o Pendiente de Pago"
-      let rawSaldo = extra.saldo !== undefined && extra.saldo !== null ? extra.saldo : s.saldo;
-      let saldoNum = 0;
-      if (typeof rawSaldo === 'number') {
-        saldoNum = rawSaldo;
-      } else if (typeof rawSaldo === 'string') {
-        saldoNum = parseFloat(rawSaldo.replace(/[^0-9.-]+/g, '')) || 0;
-      }
-
       const estNormFin = (extra.estadoAsistencia || extra.estado || s.status || "").toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "");
       const isFreeCancelFin = (estNormFin.includes("con anticip") || estNormFin.includes("anticipad") || estNormFin.includes("centro")) && !estNormFin.includes("sin anticip");
 
+      let montoP = parseMoneyStr(extra.montoPago || extra.montoP);
+      if (montoP === 0 && (extra.pago === "SÍ" || extra.pago === "SI" || extra.pagado === true)) {
+        montoP = precioTotal;
+      }
+
+      // Deuda o Cancelo S/A de esta sesión específica (sin acumular saldos históricos)
+      let deudaSesion = 0;
+      if (!isFreeCancelFin) {
+        if (estNormFin.includes("sin anticip")) {
+          deudaSesion = precioTotal;
+        } else {
+          deudaSesion = Math.max(0, precioTotal - montoP);
+        }
+      }
+
       const cobrarCanceloSA = Boolean((s.therapist as any)?.cobrarCanceloSA);
 
-      if (!isFreeCancelFin && saldoNum < 0) {
-        totalCanceloSAoPendiente += Math.abs(saldoNum);
+      if (deudaSesion > 0) {
+        totalCanceloSAoPendiente += deudaSesion;
         if (!cobrarCanceloSA) {
-          totalCanceloSAoPendienteDeducible += Math.abs(saldoNum);
+          totalCanceloSAoPendienteDeducible += deudaSesion;
         }
       }
 
@@ -148,8 +154,8 @@ export async function getFinanzasMensuales(month: string, fechaDesde?: string, f
         const tData = terapeutasMap.get(tId);
         tData.sesiones += 1;
         tData.ingresoGenerado += precioTotal;
-        if (!isFreeCancelFin && saldoNum < 0) {
-          tData.canceloSAoPendiente += Math.abs(saldoNum);
+        if (deudaSesion > 0) {
+          tData.canceloSAoPendiente += deudaSesion;
         }
 
         if (hasFactura || sessionIva > 0) {
@@ -157,10 +163,10 @@ export async function getFinanzasMensuales(month: string, fechaDesde?: string, f
           tData.ivaPaciente += sessionIva;
         }
 
-        // Si la terapeuta tiene activada la opcion de cobrar sobre Cancelo S/A, se toma el precioTotal integro. Si no, se descuenta la deuda.
+        // Si la terapeuta tiene activada la opcion de cobrar sobre Cancelo S/A, se toma el precioTotal integro. Si no, se descuenta la deuda de esta sesión.
         const ingresoEfectivoSesion = tData.cobrarCanceloSA
           ? precioTotal
-          : Math.max(0, precioTotal - (saldoNum < 0 ? Math.abs(saldoNum) : 0));
+          : Math.max(0, precioTotal - deudaSesion);
 
         if (tData.tipoPago === "Porcentaje") {
           let comisionBase = ingresoEfectivoSesion * ((tData.porcentaje || 0) / 100);

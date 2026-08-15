@@ -172,11 +172,28 @@ export default function SalarioPage() {
               
               ingresoBrutoTotalGenBruto += precioSession;
 
-              let sVal = 0;
-              if (typeof a.saldo === "number") sVal = a.saldo;
-              else if (typeof a.saldo === "string") sVal = parseFloat(a.saldo.replace(/[^0-9.-]+/g, "")) || 0;
-              if (sVal < 0) {
-                canceloSAoPendienteTerapeuta += Math.abs(sVal);
+              const estNormSesion = (a.estado || "").trim().toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "");
+              const isFreeCancelSesion = (estNormSesion.includes("con anticip") || estNormSesion.includes("anticipad") || estNormSesion.includes("centro")) && !estNormSesion.includes("sin anticip");
+
+              let montoPagoSesion = 0;
+              if (a.pago === "SÍ" || a.pago === "SI") {
+                montoPagoSesion = precioSession;
+              } else if (a.metodoPago) {
+                const match = a.metodoPago.match(/\$(\d+(\.\d+)?)/);
+                if (match) montoPagoSesion = parseFloat(match[1]) || 0;
+              }
+
+              let deudaSesion = 0;
+              if (!isFreeCancelSesion) {
+                if (estNormSesion.includes("sin anticip")) {
+                  deudaSesion = precioSession;
+                } else {
+                  deudaSesion = Math.max(0, precioSession - montoPagoSesion);
+                }
+              }
+
+              if (deudaSesion > 0) {
+                canceloSAoPendienteTerapeuta += deudaSesion;
               }
 
               const pName = (a.paciente || a.pacienteNombre || "Paciente Desconocido").trim();
@@ -206,7 +223,7 @@ export default function SalarioPage() {
               }
 
               const cobrarCanceloSA = Boolean(t.cobrarCanceloSA);
-              const ingresoEfectivoSesion = cobrarCanceloSA ? precioSession : Math.max(0, precioSession - (sVal < 0 ? Math.abs(sVal) : 0));
+              const ingresoEfectivoSesion = cobrarCanceloSA ? precioSession : Math.max(0, precioSession - deudaSesion);
 
               if (t.tipoPago === "Porcentaje") {
                 const comisionBase = ingresoEfectivoSesion * ((t.porcentaje || 50) / 100);
