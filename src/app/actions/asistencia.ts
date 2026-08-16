@@ -433,6 +433,7 @@ export async function getAsistenciasDB() {
           area: extra.area || s.patient?.medicoTratante || "-",
           paciente: s.patient?.name || extra.paciente || extra.pacienteNombre || "-",
           pacienteId: s.patient?.id || extra.pacienteId || "",
+          displayId: s.patient?.displayId || extra.displayId || "",
           sexo: s.patient?.sexo || extra.sexo || extra.pacienteSexo || "-",
           edad: s.patient?.age?.toString() || extra.edad || extra.pacienteEdad || "-",
           tipoSesion: extra.tipoSesion || "Individual",

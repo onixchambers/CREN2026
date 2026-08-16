@@ -31,6 +31,7 @@ type Asistencia = {
   area: string;
   paciente: string;
   pacienteId?: string;
+  displayId?: string;
   sexo: string;
   edad: string;
   tipoSesion: string;
@@ -317,6 +318,8 @@ export default function AsistenciaPage() {
           hora: c.hora || (c.horaRegistro && c.horaRegistro !== "-" ? c.horaRegistro : "") || "09:00",
           area: c.area || "-",
           paciente: c.paciente,
+          pacienteId: c.pacienteId || "",
+          displayId: c.displayId || "",
           sexo: c.sexo || "-",
           edad: c.edad || "-",
           terapeuta: c.terapeuta,
@@ -1892,7 +1895,18 @@ export default function AsistenciaPage() {
                   </div>
                   <div className="space-y-1 border-t md:border-t-0 md:border-l border-slate-200 pt-3 md:pt-0 md:pl-4">
                     <h5 className="font-extrabold text-[#1c4d6f] uppercase text-[10px] tracking-wider">DATOS DEL PACIENTE</h5>
-                    <p className="font-extrabold text-slate-900 text-sm">{prefacturaModalData.paciente}</p>
+                    <div className="flex items-center gap-2 flex-wrap">
+                      <p className="font-extrabold text-slate-900 text-sm">{prefacturaModalData.paciente}</p>
+                      {(() => {
+                        const patMatch = pacientes.find(p => p.id === prefacturaModalData.pacienteId || p.paciente === prefacturaModalData.paciente);
+                        const pId = patMatch?.displayId || patMatch?.id || prefacturaModalData.displayId || prefacturaModalData.pacienteId;
+                        return pId ? (
+                          <span className="text-[11px] font-bold text-[#1c4d6f] bg-slate-200/80 px-2 py-0.5 rounded-md border border-slate-300">
+                            ID: {pId}
+                          </span>
+                        ) : null;
+                      })()}
+                    </div>
                     <p className="text-slate-700"><span className="font-semibold text-slate-500">Sexo:</span> {prefacturaModalData.sexo || "—"} | <span className="font-semibold text-slate-500">Edad:</span> {prefacturaModalData.edad || "—"}</p>
                     <p className="text-slate-700"><span className="font-semibold text-slate-500">Terapeuta Responsable:</span> <span className="font-bold text-slate-800">{prefacturaModalData.terapeuta || "LOURDES RINCÓN"}</span></p>
                     <p className="text-slate-700"><span className="font-semibold text-slate-500">Área:</span> {prefacturaModalData.area || "General"}</p>
@@ -1943,18 +1957,11 @@ export default function AsistenciaPage() {
                       <span className="font-bold text-green-700">{prefacturaModalData.pago || prefacturaModalData.montoPago || prefacturaModalData.subtotal}</span>
                     </div>
                     <div className="flex justify-between border-t border-slate-300 pt-1.5 text-sm font-black text-[#1c4d6f]">
-                      <span>Total Prefactura:</span>
+                      <span>Total Recibo:</span>
                       <span>{prefacturaModalData.total}</span>
                     </div>
                   </div>
                 </div>
-
-                {prefacturaModalData.obs && (
-                  <div className="bg-amber-50/60 p-3 rounded-xl border border-amber-200/80 text-slate-700">
-                    <span className="font-bold text-amber-800 block text-[10px] uppercase">Observaciones:</span>
-                    <p className="font-medium text-[11px]">{prefacturaModalData.obs}</p>
-                  </div>
-                )}
               </div>
 
               {/* PIE DE PÁGINA VERDE-AZUL DEGRADADO CREN */}
