@@ -15,6 +15,7 @@ import { exportAsistenciasToDriveAction } from "@/app/actions/excelDriveSync";
 
 type Paciente = {
   id: string;
+  displayId?: string;
   paciente: string;
   sexo: string;
   nac: string;
@@ -351,6 +352,7 @@ export default function AsistenciaPage() {
         let validPatients = res.data;
         const mapped = validPatients.map((p: any) => ({
           id: p.id,
+          displayId: p.displayId || p.id,
           paciente: p.name,
           sexo: p.sexo || "—",
           nac: p.fechaNacimiento || "—",
@@ -1898,10 +1900,11 @@ export default function AsistenciaPage() {
                     <div className="flex items-center gap-2 flex-wrap">
                       <p className="font-extrabold text-slate-900 text-sm">{prefacturaModalData.paciente}</p>
                       {(() => {
-                        const patMatch = pacientes.find(p => p.id === prefacturaModalData.pacienteId || p.paciente === prefacturaModalData.paciente);
-                        const pId = patMatch?.displayId || patMatch?.id || prefacturaModalData.displayId || prefacturaModalData.pacienteId;
+                        const targetName = (prefacturaModalData.paciente || "").trim().toLowerCase();
+                        const patMatch = pacientes.find(p => (p.id && p.id === prefacturaModalData.pacienteId) || (p.paciente && p.paciente.trim().toLowerCase() === targetName));
+                        const pId = patMatch?.displayId || prefacturaModalData.displayId || patMatch?.id || prefacturaModalData.pacienteId;
                         return pId ? (
-                          <span className="text-[11px] font-bold text-[#1c4d6f] bg-slate-200/80 px-2 py-0.5 rounded-md border border-slate-300">
+                          <span className="text-[11px] font-extrabold text-[#1c4d6f] bg-amber-100/90 text-amber-950 px-2 py-0.5 rounded-md border border-amber-300 shadow-2xs">
                             ID: {pId}
                           </span>
                         ) : null;
