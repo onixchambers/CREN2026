@@ -812,7 +812,7 @@ export default function AsistenciaPage() {
   // --- Lógica de Revisión ---
   const handleRevisionToggle = async (a: Asistencia) => {
     const isPorDefinir = (a.metodoPago || "").toLowerCase().replace(/\s+/g, "").includes("pordefinir");
-    const targetMetodo = isPorDefinir ? "Efectivo" : "Por definir";
+    const targetMetodo = isPorDefinir ? "Transferencia" : "Por definir";
 
     const updated: Asistencia = {
       ...a,
@@ -1505,7 +1505,7 @@ export default function AsistenciaPage() {
                           checked={isPorDefinir}
                           onChange={() => handleRevisionToggle(a)}
                           className="w-4 h-4 rounded border-slate-300 text-[#1a5276] focus:ring-[#1a5276] cursor-pointer accent-[#1a5276]"
-                          title={isPorDefinir ? "Desmarcar revisión (Cambia Método de Pago a Efectivo)" : "Marcar gancho (Cambia Método de Pago a Por definir)"}
+                          title={isPorDefinir ? "Desmarcar revisión (Cambia Método de Pago a Transferencia)" : "Marcar gancho (Cambia Método de Pago a Por definir)"}
                         />
                       );
                     })()}
