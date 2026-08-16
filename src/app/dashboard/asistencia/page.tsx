@@ -12,6 +12,8 @@ import { DateInput } from "@/components/DateInput";
 import { AsistenciaForm, AsistenciaFormData } from "@/components/AsistenciaForm";
 import { exportAsistenciasToDriveAction } from "@/app/actions/excelDriveSync";
 
+// Force Vercel redeploy trigger: 2026-08-16T00:09:30-05:00
+
 
 type Paciente = {
   id: string;
