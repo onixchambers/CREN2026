@@ -1052,7 +1052,24 @@ export default function AsistenciaPage() {
     const norm = (st: string) => (st || "").trim().toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "");
 
     if (filtroEstado !== "Todos") {
-      if (norm(a.estado) !== norm(filtroEstado)) match = false;
+      const fNorm = norm(filtroEstado);
+      const aNorm = norm(a.estado);
+
+      if (fNorm.includes("anticip") && !fNorm.includes("sin anticip")) {
+        const isCancelAnticipado = (aNorm.includes("anticip") || aNorm.includes("c/a")) && !aNorm.includes("sin anticip");
+        if (!isCancelAnticipado) match = false;
+      } else if (fNorm.includes("sin anticip") || fNorm.includes("s/a")) {
+        const isCancelSinAnticipado = aNorm.includes("sin anticip") || aNorm.includes("s/a");
+        if (!isCancelSinAnticipado) match = false;
+      } else if (fNorm.includes("centro")) {
+        const isCancelCentro = aNorm.includes("centro");
+        if (!isCancelCentro) match = false;
+      } else if (fNorm.includes("asist")) {
+        const isAsistio = aNorm.includes("asist");
+        if (!isAsistio) match = false;
+      } else {
+        if (aNorm !== fNorm) match = false;
+      }
     }
     if (filtroDesde && a.fecha < filtroDesde) match = false;
     if (filtroHasta && a.fecha > filtroHasta) match = false;
