@@ -170,6 +170,8 @@ export async function saveAsistenciaDB(data: any) {
           if (s.notes) {
             try {
               const n = JSON.parse(s.notes);
+              const sDate = n.fecha || s.date.toISOString().split("T")[0];
+              if (sDate <= "2026-06-30") continue; // Omite historial del 30 junio 2026 o anterior
               const m = parseFloat(n.montoPago || "0");
               const c = parseFloat(n.costoSesion || n.precioTerapia || "0");
               const est = (n.estadoAsistencia || "").toLowerCase();

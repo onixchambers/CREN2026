@@ -215,16 +215,19 @@ export async function getPatients() {
             valoracionesCount++;
           }
 
-          let monto = parseFloat(parsedNotes.montoPago || "0");
-          if ((isNaN(monto) || monto === 0) && parsedNotes.metodoPago) {
+          const sDate = parsedNotes.fecha || s.date.toISOString().split("T")[0];
+          const isBeforeCutoff = sDate && sDate <= "2026-06-30";
+
+          let monto = isBeforeCutoff ? 0 : parseFloat(parsedNotes.montoPago || "0");
+          if (!isBeforeCutoff && (isNaN(monto) || monto === 0) && parsedNotes.metodoPago) {
             const dollarMatches = parsedNotes.metodoPago.match(/\$([\d.]+)/g);
             if (dollarMatches) {
               monto = dollarMatches.reduce((sum: number, val: string) => sum + (parseFloat(val.replace("$", "")) || 0), 0);
             }
           }
 
-          let costo = parseFloat(parsedNotes.costoSesion || parsedNotes.precioTerapia || "0");
-          if ((isNaN(costo) || costo === 0) && isAttended) {
+          let costo = isBeforeCutoff ? 0 : parseFloat(parsedNotes.costoSesion || parsedNotes.precioTerapia || "0");
+          if (!isBeforeCutoff && (isNaN(costo) || costo === 0) && isAttended) {
             costo = monto || parseFloat(p.precioTerapia || "0");
           }
 

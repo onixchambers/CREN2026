@@ -88,6 +88,9 @@ export async function getFinanzasMensuales(month: string, fechaDesde?: string, f
 
       const sessionDateStr = toIsoDateStr(extra.fecha || s.date.toISOString().split("T")[0]);
 
+      // Regla de corte global: del 30 de junio de 2026 o anterior todo se considera $0.00
+      if (sessionDateStr && sessionDateStr <= "2026-06-30") return false;
+
       const estNorm = (extra.estadoAsistencia || extra.estado || s.status || "").trim().toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "");
       const isRegistered = extra.asistenciaGuardada === true || 
                            extra.pagado === "SÍ" || 
