@@ -809,6 +809,25 @@ export default function AsistenciaPage() {
     window.location.href = "/dashboard/pacientes";
   };
 
+  // --- Lógica de Revisión ---
+  const handleRevisionToggle = async (a: Asistencia) => {
+    const isPorDefinir = (a.metodoPago || "").toLowerCase().replace(/\s+/g, "").includes("pordefinir");
+    const targetMetodo = isPorDefinir ? "Efectivo" : "Por definir";
+
+    const updated: Asistencia = {
+      ...a,
+      metodoPago: targetMetodo
+    };
+
+    setAsistencias(prev => prev.map(item => item.id === a.id ? updated : item));
+
+    const dbRes = await saveAsistenciaDB(updated);
+    if (dbRes?.success === false) {
+      alert("Error al actualizar la revisión: " + (dbRes as any).error);
+    }
+    await recargarAsistencias();
+  };
+
   // --- Lógica de Edición ---
   const [editingAsistencia, setEditingAsistencia] = useState<Asistencia | null>(null);
   const [editForm, setEditForm] = useState<any>({});
@@ -1364,6 +1383,7 @@ export default function AsistenciaPage() {
                 <th className="px-1 py-2 border-b border-[#0e2f44] whitespace-nowrap">IVA</th>
                 <th className="px-1 py-2 border-b border-[#0e2f44] whitespace-nowrap">TOTAL</th>
                 <th className="px-1 py-2 border-b border-[#0e2f44] whitespace-nowrap">OBS</th>
+                <th className="px-1 py-2 border-b border-[#0e2f44] whitespace-nowrap">REVISIÓN</th>
                 <th className="px-1 py-2 border-b border-[#0e2f44] whitespace-nowrap">ACCIONES</th>
               </tr>
             </thead>
@@ -1476,6 +1496,20 @@ export default function AsistenciaPage() {
                   <td className="px-1 py-2 font-semibold text-amber-600 text-[11px] whitespace-nowrap">{a.iva || "$0.00"}</td>
                   <td className="px-1 py-2 font-bold text-[#1a5276] text-[11px] whitespace-nowrap">{a.total}</td>
                   <td className="px-1 py-2 text-slate-500 text-[11px] max-w-[80px] truncate" title={a.obs}>{a.obs}</td>
+                  <td className="px-1 py-2 text-center whitespace-nowrap">
+                    {(() => {
+                      const isPorDefinir = (a.metodoPago || "").toLowerCase().replace(/\s+/g, "").includes("pordefinir");
+                      return (
+                        <input
+                          type="checkbox"
+                          checked={isPorDefinir}
+                          onChange={() => handleRevisionToggle(a)}
+                          className="w-4 h-4 rounded border-slate-300 text-[#1a5276] focus:ring-[#1a5276] cursor-pointer accent-[#1a5276]"
+                          title={isPorDefinir ? "Desmarcar revisión (Cambia Método de Pago a Efectivo)" : "Marcar gancho (Cambia Método de Pago a Por definir)"}
+                        />
+                      );
+                    })()}
+                  </td>
                   <td className="px-1 py-2 whitespace-nowrap">
                     <div className="flex items-center justify-center gap-1.5">
                       {((userRole.toUpperCase() !== "TERAPEUTA" && userRole.toUpperCase() !== "INVITADO") || allowTherapistEdit) && (
@@ -1493,7 +1527,7 @@ export default function AsistenciaPage() {
                 </tr>
               )) : (
                   <tr>
-                    <td colSpan={19} className="px-4 py-8 text-center text-slate-400 font-medium">
+                    <td colSpan={20} className="px-4 py-8 text-center text-slate-400 font-medium">
                       Sin registros.
                     </td>
                   </tr>
