@@ -812,6 +812,12 @@ export default function AsistenciaPage() {
   // --- Lógica de Revisión ---
   const handleRevisionToggle = async (a: Asistencia) => {
     const isPorDefinir = (a.metodoPago || "").toLowerCase().replace(/\s+/g, "").includes("pordefinir");
+    
+    if (isPorDefinir) {
+      const confirmDelete = window.confirm("¿Desea eliminar el gancho?");
+      if (!confirmDelete) return;
+    }
+
     const targetMetodo = isPorDefinir ? "Transferencia" : "Por definir";
 
     const updated: Asistencia = {
