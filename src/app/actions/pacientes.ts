@@ -231,6 +231,13 @@ export async function getPatients() {
             costo = monto || parseFloat(p.precioTerapia || "0");
           }
 
+          // Misma lógica que getAsistenciasDB: si pago=SÍ pero monto=0, asumir que pagó el costo completo
+          // Esto cubre casos donde metodoPago es "Por definir $900" pero montoPago está en 0
+          if (!isBeforeCutoff && !isFreeCancel && monto === 0 && costo > 0 &&
+            (parsedNotes.pago === "SÍ" || parsedNotes.pago === "SI" || parsedNotes.pagado === true || parsedNotes.pagado === "true")) {
+            monto = costo;
+          }
+
           if (!isNaN(costo) && costo > 0) {
             pricesSet.add(costo);
             if (isAttended) totalCostoSum += costo;
