@@ -129,8 +129,6 @@ export async function getPatients() {
       let valoracionesCount = 0;
       let totalPagadoSum = 0;
       let totalCostoSum = 0;
-      let saldoSum = 0;         // Suma de saldos individuales guardados en cada sesión
-      let hasSaldoStored = false; // Si alguna sesión tiene saldo guardado explícito
       let lastPaymentDate = "";
       let lastPaymentAmount = 0;
       let lastMetodoPago = p.metodoPago || "Efectivo";
@@ -247,15 +245,6 @@ export async function getPatients() {
             }
           }
 
-          // Leer el saldo guardado explícitamente por el terapeuta en Asistencia
-          if (parsedNotes.saldo !== undefined && parsedNotes.saldo !== null && !isBeforeCutoff) {
-            const savedSaldo = parseFloat(parsedNotes.saldo.toString());
-            if (!isNaN(savedSaldo)) {
-              saldoSum += savedSaldo;
-              hasSaldoStored = true;
-            }
-          }
-
           if (parsedNotes.metodoPago && parsedNotes.metodoPago !== "SÍ" && parsedNotes.metodoPago !== "No") {
             lastMetodoPago = parsedNotes.metodoPago;
           } else if (parsedNotes.metodoPago2) {
@@ -278,8 +267,7 @@ export async function getPatients() {
         ? sortedPrices.map(pr => `${pr}`).join(" / ")
         : (p.precioTerapia && p.precioTerapia !== "500" ? p.precioTerapia : "—");
 
-      // Usar saldo guardado si existe (refleja ediciones en Asistencia), si no, recalcular
-      const saldoCalculado = hasSaldoStored ? saldoSum : (totalPagadoSum - totalCostoSum);
+      const saldoCalculado = totalPagadoSum - totalCostoSum;
 
       // Si medicoTratante es vacio o un admin (ej. onixchambers), pero hay un terapeuta asignado en las sesiones (ej. Karla), asignar a ese terapeuta
       const uniqueTherapists = Array.from(new Set(sessionTherapists));
