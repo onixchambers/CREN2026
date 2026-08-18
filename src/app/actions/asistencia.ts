@@ -446,7 +446,7 @@ export async function getAsistenciasDB() {
         const defaultPrice = parseFloat((s.patient?.precioTerapia || "500").split("/")[0]) || 500;
 
         // Si es una sesión con costo (Asistió o Canceló S/A) y totalVal/montoP es 0 pero hay costoSesion o precioTerapia, recuperar valores
-        if (!isFreeCancel) {
+        if (!isFreeCancel && !isAgendado) {
           const costoS = parseMoneyStr(extra.costoSesion || extra.precioTerapia) || defaultPrice;
           if (costoS > 0) {
             if (totalVal === 0) totalVal = costoS;
