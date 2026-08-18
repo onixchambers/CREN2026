@@ -45,6 +45,7 @@ export default function PacientesPage() {
   const [filtroTerapeuta, setFiltroTerapeuta] = useState("Todos");
   const [filtroMetodoPago, setFiltroMetodoPago] = useState("Todos");
   const [filtroEstado, setFiltroEstado] = useState("Todos");
+  const [filtroSaldo, setFiltroSaldo] = useState("Todos");
   const [bajaModalPatient, setBajaModalPatient] = useState<any | null>(null);
   const [bajaReason, setBajaReason] = useState("");
   const [isSubmittingBaja, setIsSubmittingBaja] = useState(false);
@@ -336,6 +337,13 @@ export default function PacientesPage() {
       if (!matches) return false;
     }
 
+    // 6. Filtro por Saldo
+    if (filtroSaldo !== "Todos") {
+      const saldoNum = parseFloat(p.saldoCalculado || "0");
+      if (filtroSaldo === "Negativos" && saldoNum >= 0) return false;
+      if (filtroSaldo === "Positivos" && saldoNum <= 0) return false;
+    }
+
     return true;
   }).sort((a, b) => (a.name || "").localeCompare(b.name || ""));
 
@@ -526,6 +534,19 @@ export default function PacientesPage() {
                 </select>
               </div>
             )}
+
+            <div className="flex flex-col gap-1 w-full md:w-auto">
+              <label className="text-xs font-bold text-slate-700 uppercase">Saldo:</label>
+              <select
+                value={filtroSaldo}
+                onChange={(e) => setFiltroSaldo(e.target.value)}
+                className="border border-slate-300 rounded px-3 py-2 text-sm outline-none focus:border-[#2980b9] bg-white text-slate-700 min-w-[140px]"
+              >
+                <option value="Todos">Todos</option>
+                <option value="Positivos">✅ Saldos positivos</option>
+                <option value="Negativos">🔴 Saldos negativos</option>
+              </select>
+            </div>
           </div>
         </div>
 
