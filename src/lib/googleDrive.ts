@@ -120,44 +120,29 @@ export async function uploadFileToGoogleDrive(fileBuffer: Buffer, fileName: stri
         } catch (e) {}
 
         if (response.status === 404 || text.includes("El archivo que solicitaste no existe") || text.includes("No se encontró la página")) {
-          return {
-            success: false,
-            error: "La URL de Google Apps Script no encuentra el script (Error 404). Por favor asegúrate de haber pegado el código 'function doPost(e)' en el editor de Google Apps Script, guardar con Ctrl+S y crear una 'Nueva implementación' como Aplicación web con acceso 'Cualquiera'."
-          };
-        }
-
-        if (text.includes("Necesitas acceso") || text.includes("<html") || text.includes("accounts.google.com") || text.includes("google.com/accounts") || response.status === 403) {
-          return {
-            success: false,
-            error: "Permisos de Google Apps Script pendientes: En Google Apps Script, ve a Implementar > Administrar implementaciones > Editar (ícono lápiz). Asegúrate de que 'Ejecutar como' sea 'Yo', 'Quién tiene acceso' sea 'Cualquiera' (Anyone), y en 'Versión' selecciona 'Nueva versión'. Luego haz clic en Implementar y copia la URL completa con el botón 📋 Copiar."
-          };
-        }
-
-        const webViewLink = scriptData?.webViewLink || scriptData?.url || scriptData?.link || scriptData?.fileUrl || "https://drive.google.com";
-        if (scriptData && (scriptData.success === true || (scriptData.fileId && scriptData.success !== false))) {
-          return {
-            success: true,
-            fileId: scriptData.fileId || scriptData.id || "gdrive",
-            fileName: fileName,
-            webViewLink: webViewLink,
-            webContentLink: webViewLink,
-          };
-        } else if (scriptData && scriptData.error) {
-          return {
-            success: false,
-            error: "Error en Google Apps Script: " + scriptData.error
-          };
-        } else if (scriptData && scriptData.success === false) {
-          return {
-            success: false,
-            error: "Google Apps Script devolvió un error de ejecución."
-          };
+          // 404 = misconfigured script, don't fallback — user needs to fix it
+          console.warn("Google Apps Script webhook returned 404. Falling through to Service Account.");
+        } else if (text.includes("Necesitas acceso") || text.includes("<html") || text.includes("accounts.google.com") || text.includes("google.com/accounts") || response.status === 403) {
+          console.warn("Google Apps Script webhook returned 403/permissions error. Falling through to Service Account.");
+        } else {
+          const webViewLink = scriptData?.webViewLink || scriptData?.url || scriptData?.link || scriptData?.fileUrl || "https://drive.google.com";
+          if (scriptData && (scriptData.success === true || (scriptData.fileId && scriptData.success !== false))) {
+            // Webhook succeeded — return the result immediately
+            return {
+              success: true,
+              fileId: scriptData.fileId || scriptData.id || "gdrive",
+              fileName: fileName,
+              webViewLink: webViewLink,
+              webContentLink: webViewLink,
+            };
+          } else {
+            // Webhook returned an error (e.g. "No se recibieron datos de filas válidos") — fall through to Service Account
+            console.warn("Google Apps Script webhook error (falling through to Service Account):", scriptData?.error || "Unknown");
+          }
         }
       } catch (e: any) {
-        return {
-          success: false,
-          error: "Error al conectar con Google Apps Script: " + (e?.message || e)
-        };
+        // Network/connection error with webhook — fall through to Service Account
+        console.warn("Webhook connection error (falling through to Service Account):", e?.message || e);
       }
     }
 
@@ -179,12 +164,66 @@ export async function uploadFileToGoogleDrive(fileBuffer: Buffer, fileName: stri
       return { success: false, error: "Faltan credenciales de Google Drive en Configuración." };
     }
 
-    // 2. Buscar si el archivo ya existe en Google Drive para actualizarlo en lugar de duplicarlo
+    // 3. Resolve or create subfolders inside the root Drive folder based on terapeutaName path
+    let targetFolderId = (settings.googleDriveFolderId && settings.googleDriveFolderId.trim().length > 0)
+      ? settings.googleDriveFolderId.trim()
+      : "";
+
+    if (terapeutaName && terapeutaName.trim().length > 0 && targetFolderId) {
+      const folderParts = terapeutaName.split("/").map((p: string) => p.trim()).filter((p: string) => p.length > 0);
+      for (const folderName of folderParts) {
+        try {
+          // Search for existing subfolder
+          const searchQ = `name='${folderName.replace(/'/g, "\\'")}' and '${targetFolderId}' in parents and mimeType='application/vnd.google-apps.folder' and trashed=false`;
+          const searchRes = await fetch(
+            `https://www.googleapis.com/drive/v3/files?q=${encodeURIComponent(searchQ)}&fields=files(id,name)&supportsAllDrives=true&includeItemsFromAllDrives=true`,
+            {
+              method: "GET",
+              headers: { Authorization: `Bearer ${accessToken}` },
+            }
+          );
+          if (searchRes.ok) {
+            const searchData = await searchRes.json();
+            if (searchData.files && searchData.files.length > 0) {
+              targetFolderId = searchData.files[0].id;
+              continue;
+            }
+          }
+          // Subfolder doesn't exist — create it
+          const createRes = await fetch(
+            "https://www.googleapis.com/drive/v3/files?supportsAllDrives=true&fields=id,name",
+            {
+              method: "POST",
+              headers: {
+                Authorization: `Bearer ${accessToken}`,
+                "Content-Type": "application/json",
+              },
+              body: JSON.stringify({
+                name: folderName,
+                mimeType: "application/vnd.google-apps.folder",
+                parents: [targetFolderId],
+              }),
+            }
+          );
+          if (createRes.ok) {
+            const createData = await createRes.json();
+            targetFolderId = createData.id;
+          }
+        } catch (e) {
+          console.warn("Error creating/finding subfolder:", folderName, e);
+        }
+      }
+    }
+
+    // 4. Search if the file already exists in Google Drive to update it instead of duplicating
     let existingFileId: string | null = null;
     let existingFileUrl: string | null = null;
     try {
+      const fileSearchQ = targetFolderId
+        ? `name='${encodeURIComponent(fileName)}' and '${targetFolderId}' in parents and trashed=false`
+        : `name='${encodeURIComponent(fileName)}' and trashed=false`;
       const searchRes = await fetch(
-        `https://www.googleapis.com/drive/v3/files?q=name='${encodeURIComponent(fileName)}' and trashed=false&fields=files(id,name,webViewLink,webContentLink)&supportsAllDrives=true&includeItemsFromAllDrives=true`,
+        `https://www.googleapis.com/drive/v3/files?q=${encodeURIComponent(fileSearchQ)}&fields=files(id,name,webViewLink,webContentLink)&supportsAllDrives=true&includeItemsFromAllDrives=true`,
         {
           method: "GET",
           headers: { Authorization: `Bearer ${accessToken}` },
@@ -218,8 +257,8 @@ export async function uploadFileToGoogleDrive(fileBuffer: Buffer, fileName: stri
         mimeType: mimeType,
       };
 
-      if (settings.googleDriveFolderId && settings.googleDriveFolderId.trim().length > 0) {
-        metadata.parents = [settings.googleDriveFolderId.trim()];
+      if (targetFolderId) {
+        metadata.parents = [targetFolderId];
       }
 
       const boundary = "-------314159265358979323846";
