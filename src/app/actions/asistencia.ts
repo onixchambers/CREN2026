@@ -477,3 +477,27 @@ export async function getSessionByAgendaId(agendaId: string) {
     return { success: false, error: error.message };
   }
 }
+
+// Actualiza SOLO el metodoPago de una sesión sin tocar ningún otro campo financiero
+export async function updateMetodoPagoOnly(sessionId: string, nuevoMetodoPago: string) {
+  try {
+    const session = await prisma.session.findUnique({ where: { id: sessionId } });
+    if (!session) return { success: false, error: "Sesión no encontrada." };
+
+    let extra: any = {};
+    try { extra = JSON.parse(session.notes || "{}"); } catch(e) {}
+
+    // Solo cambiamos el campo metodoPago, todo lo demás se conserva intacto
+    extra.metodoPago = nuevoMetodoPago;
+
+    await prisma.session.update({
+      where: { id: sessionId },
+      data: { notes: JSON.stringify(extra) }
+    });
+
+    revalidatePath("/dashboard/asistencia");
+    return { success: true };
+  } catch (error: any) {
+    return { success: false, error: error.message };
+  }
+}

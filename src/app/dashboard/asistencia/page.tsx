@@ -5,7 +5,7 @@ import { useRouter } from "next/navigation";
 import { getPatients } from "@/app/actions/pacientes";
 import { getAsistenciasDB } from "@/app/actions/asistencia";
 import { getAgenda, addCita } from "@/app/actions/agenda";
-import { saveAsistenciaDB } from "@/app/actions/asistencia";
+import { saveAsistenciaDB, updateMetodoPagoOnly } from "@/app/actions/asistencia";
 import { deleteCita } from "@/app/actions/agenda";
 import { getTerapeutasFull, getSystemIvaRate, getTherapyPrices, addTherapyPrice, removeTherapyPrice } from "@/app/actions/configuracion";
 import { DateInput } from "@/components/DateInput";
@@ -812,7 +812,7 @@ export default function AsistenciaPage() {
   // --- Lógica de Revisión ---
   const handleRevisionToggle = async (a: Asistencia) => {
     const isPorDefinir = (a.metodoPago || "").toLowerCase().replace(/\s+/g, "").includes("pordefinir");
-    
+
     if (isPorDefinir) {
       const confirmDelete = window.confirm("¿Desea eliminar el gancho?");
       if (!confirmDelete) return;
@@ -820,18 +820,20 @@ export default function AsistenciaPage() {
 
     const targetMetodo = isPorDefinir ? "Transferencia" : "Por definir";
 
-    const updated: Asistencia = {
-      ...a,
-      metodoPago: targetMetodo
-    };
+    // Actualizar solo el metodoPago en la UI localmente
+    setAsistencias(prev => prev.map(item =>
+      item.id === a.id ? { ...item, metodoPago: targetMetodo } : item
+    ));
 
-    setAsistencias(prev => prev.map(item => item.id === a.id ? updated : item));
-
-    const dbRes = await saveAsistenciaDB(updated);
+    // Guardar SOLO el metodoPago en la DB sin recalcular nada más
+    const dbRes = await updateMetodoPagoOnly(a.id, targetMetodo);
     if (dbRes?.success === false) {
       alert("Error al actualizar la revisión: " + (dbRes as any).error);
+      // Revertir el cambio local si falló
+      setAsistencias(prev => prev.map(item =>
+        item.id === a.id ? { ...item, metodoPago: a.metodoPago } : item
+      ));
     }
-    await recargarAsistencias();
   };
 
   // --- Lógica de Edición ---
