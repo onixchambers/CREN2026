@@ -684,6 +684,64 @@ export function AsistenciaForm({
               {(() => {
                 const parseMoney = (val: any) => parseFloat((val || "0").toString().replace(/[^0-9.-]/g, "")) || 0;
                 const saldoPrevioF = parseMoney(formData.saldoDisponible);
+                
+                // Buscar si esta sesión ya existe en la base de datos para no duplicar su costo/pago en el saldo en tiempo real
+                let existingCost = 0;
+                let existingPayment = 0;
+                const patientObj = pacientes.find(p => p.id === formData.pacienteId);
+                if (patientObj && Array.isArray(patientObj.sessions)) {
+                  const matchSession = patientObj.sessions.find((s: any) => {
+                    let sDate = s.date;
+                    if (sDate instanceof Date) {
+                      sDate = sDate.toISOString().split("T")[0];
+                    } else if (typeof sDate === "string") {
+                      sDate = sDate.split("T")[0];
+                    }
+                    let noteDate = sDate;
+                    if (s.notes) {
+                      try {
+                        const parsed = JSON.parse(s.notes);
+                        if (parsed.fecha) noteDate = parsed.fecha;
+                      } catch (e) {}
+                    }
+                    return noteDate === formData.fecha;
+                  });
+
+                  if (matchSession && matchSession.notes) {
+                    try {
+                      const n = JSON.parse(matchSession.notes);
+                      const sDate = n.fecha || (matchSession.date instanceof Date ? matchSession.date.toISOString().split("T")[0] : String(matchSession.date).split("T")[0]);
+                      const isBeforeCutoff = sDate && sDate <= "2026-06-30";
+                      if (!isBeforeCutoff) {
+                        existingPayment = parseFloat(n.montoPago || "0");
+                        if ((isNaN(existingPayment) || existingPayment === 0) && n.metodoPago) {
+                          const dollarMatches = n.metodoPago.match(/\$([\d.]+)/g);
+                          if (dollarMatches) {
+                            existingPayment = dollarMatches.reduce((sum: number, val: string) => sum + (parseFloat(val.replace("$", "")) || 0), 0);
+                          }
+                        }
+
+                        existingCost = parseFloat(n.costoSesion || n.precioTerapia || "0");
+                        const est = (n.estadoAsistencia || "").toLowerCase();
+                        const isAttended = est === "asistio" || est === "cancelo sin anticipacion" || matchSession.status === "COMPLETED";
+                        if ((isNaN(existingCost) || existingCost === 0) && isAttended) {
+                          existingCost = existingPayment || parseFloat(patientObj.precioTerapia || "0");
+                        }
+
+                        const rawEstPago = (n.estadoAsistencia || n.estado || "").toString();
+                        const estNormPago = rawEstPago.toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "");
+                        const isFreeCancelPago = (estNormPago.includes("con anticip") || estNormPago.includes("anticipad") || estNormPago.includes("centro")) && !estNormPago.includes("sin anticip");
+                        if (!isFreeCancelPago && existingPayment === 0 && existingCost > 0 &&
+                          (n.pago === "SÍ" || n.pago === "SI" || n.pagado === true || n.pagado === "true")) {
+                          existingPayment = existingCost;
+                        }
+                      }
+                    } catch (e) {}
+                  }
+                }
+
+                const trueSaldoPrevio = saldoPrevioF - (existingPayment - existingCost);
+
                 const p1 = parseMoney(formData.montoPago);
                 const p2 = showSegundoPago ? parseMoney(formData.montoPago2) : 0;
                 const montoIngresado = p1 + p2;
@@ -692,7 +750,7 @@ export function AsistenciaForm({
                 const isFreeCancel = (estNorm.includes("con anticip") || estNorm.includes("anticipad") || estNorm.includes("centro")) && !estNorm.includes("sin anticip");
 
                 const costoAplica = isFreeCancel ? 0 : costoSesionF;
-                const saldoF = saldoPrevioF + montoIngresado - costoAplica;
+                const saldoF = trueSaldoPrevio + montoIngresado - costoAplica;
                 const isNeg = saldoF < 0;
                 const formattedVal = isNeg ? `-$${Math.abs(saldoF).toFixed(2)}` : `$${saldoF.toFixed(2)}`;
 
