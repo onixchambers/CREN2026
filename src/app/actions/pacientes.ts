@@ -361,7 +361,8 @@ export async function getPatients() {
         totalPagado: totalPagadoSum.toFixed(2),
         totalCosto: totalCostoSum.toFixed(2),
         saldoCalculado: saldoCalculado.toFixed(2),
-        precioTerapia: precioTerapiaDisplay,
+        precioTerapia: p.precioTerapia || "500",
+        precioTerapiaDisplay: precioTerapiaDisplay,
         metodoPago: lastMetodoPago,
         ultima: lastPaymentAmount > 0 
           ? `$${lastPaymentAmount.toFixed(2)}${lastPaymentDate ? ` (${lastPaymentDate})` : ""}`

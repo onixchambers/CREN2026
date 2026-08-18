@@ -591,7 +591,7 @@ export default function PacientesPage() {
               {paginatedPacientes.length > 0 ? paginatedPacientes.map((p) => {
                 const asistencias = p.asistencias || 0;
                 const totalSesiones = parseInt(p.sesiones || p.totalSesiones || "1", 10) || 1;
-                const precio = p.precioTerapia || "—";
+                const precio = p.precioTerapiaDisplay || p.precioTerapia || "—";
 
                 return (
                   <tr key={p.id} className="hover:bg-slate-50 transition-colors cursor-pointer" onClick={() => selectViewingPatient(p)}>
@@ -928,7 +928,7 @@ export default function PacientesPage() {
                     </div>
                     <div className="bg-slate-50 p-3 rounded-xl border border-slate-200">
                       <span className="font-bold text-slate-400 block text-[10px] uppercase">Precio por Terapia:</span>
-                      <span className="text-blue-700 font-extrabold text-sm">${viewingPatient.precioTerapia || "500"}</span>
+                      <span className="text-blue-700 font-extrabold text-sm">${viewingPatient.precioTerapiaDisplay || viewingPatient.precioTerapia || "500"}</span>
                     </div>
                     <div className="bg-slate-50 p-3 rounded-xl border border-slate-200 col-span-2 md:col-span-4">
                       <span className="font-bold text-slate-400 block text-[10px] uppercase mb-1">Saldo Actual:</span>
