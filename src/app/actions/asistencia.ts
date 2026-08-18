@@ -327,7 +327,15 @@ export async function getAsistenciasDB() {
     const tz = settings?.timezone || 'America/Mexico_City';
     const todayStr = new Date().toLocaleDateString("en-CA", { timeZone: tz });
 
+    const tomorrow = new Date();
+    tomorrow.setDate(tomorrow.getDate() + 1);
+
     const sessions = await prisma.session.findMany({
+      where: {
+        date: {
+          lte: tomorrow
+        }
+      },
       select: {
         id: true,
         date: true,
