@@ -17,7 +17,8 @@ export default function LoginPage() {
     setError("");
 
     try {
-      const cleanUser = username.trim();
+      // Limpiar espacios que el autocorrector móvil puede agregar
+      const cleanUser = username.trim().replace(/\s+/g, "");
       const cleanPass = password.trim();
 
       const res = await signIn("credentials", {
@@ -30,7 +31,11 @@ export default function LoginPage() {
         setError("Credenciales incorrectas");
         setLoading(false);
       } else if (res?.ok) {
-        window.location.assign("/dashboard");
+        // Forzar sincronización de cookie antes de redirigir (crítico en móviles)
+        router.refresh();
+        setTimeout(() => {
+          window.location.replace("/dashboard");
+        }, 300);
       } else {
         setError("Error al iniciar sesión. Inténtalo nuevamente.");
         setLoading(false);

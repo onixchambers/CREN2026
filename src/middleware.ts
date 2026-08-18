@@ -5,7 +5,13 @@ import { getToken } from "next-auth/jwt";
 export async function middleware(req: NextRequest) {
   try {
     const secret = process.env.NEXTAUTH_SECRET || "mi-secreto-super-seguro-cren-2026-prod";
-    const token = await getToken({ req, secret });
+
+    // Doble intento: cookie segura (HTTPS) y no segura (HTTP/proxy móvil)
+    let token = await getToken({ req, secret, secureCookie: true });
+    if (!token) {
+      token = await getToken({ req, secret, secureCookie: false });
+    }
+
     const { pathname } = req.nextUrl;
 
     // Protect all /dashboard routes

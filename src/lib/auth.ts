@@ -30,12 +30,16 @@ export const authOptions: NextAuthOptions = {
 
         let isMatch = false;
 
-        // Check bcrypt hash
+        // Verificar bcrypt hash
         if (user.password.startsWith("$2b$") || user.password.startsWith("$2a$")) {
+          // Intentar primero con la contraseña exacta, luego sin espacios (autocorrector móvil)
           isMatch = await bcrypt.compare(cleanPassword, user.password);
+          if (!isMatch && cleanPassword !== credentials.password.trim()) {
+            isMatch = await bcrypt.compare(credentials.password.trim(), user.password);
+          }
         } else {
-          // Check plain text and transparently migrate to bcrypt hash
-          if (user.password === cleanPassword || user.password === credentials.password) {
+          // Texto plano: migrar a bcrypt
+          if (user.password === cleanPassword || user.password === credentials.password.trim()) {
             isMatch = true;
             try {
               const hashedPassword = await bcrypt.hash(cleanPassword, 10);
@@ -64,6 +68,20 @@ export const authOptions: NextAuthOptions = {
   ],
   session: {
     strategy: "jwt",
+    maxAge: 30 * 24 * 60 * 60, // 30 días
+  },
+  cookies: {
+    sessionToken: {
+      name: process.env.NODE_ENV === "production"
+        ? "__Secure-next-auth.session-token"
+        : "next-auth.session-token",
+      options: {
+        httpOnly: true,
+        sameSite: "lax",  // Compatible con iOS Safari y navegadores móviles
+        path: "/",
+        secure: process.env.NODE_ENV === "production",
+      },
+    },
   },
   callbacks: {
     async jwt({ token, user }) {
