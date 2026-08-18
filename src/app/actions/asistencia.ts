@@ -417,31 +417,21 @@ export async function getAsistenciasDB() {
         const displaySesiones = totalCount > 1 ? `${sessionNum}/${totalCount}` : `${sessionNum}`;
 
         const estNorm = (extra.estadoAsistencia || extra.estado || s.status || "").toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "");
-        const isFreeCancel = (estNorm.includes("con anticip") || estNorm.includes("anticipad") || estNorm.includes("centro")) && !estNorm.includes("sin anticip");
+        const mappedEstado = extra.estadoAsistencia || extra.estado || (s.status === "COMPLETED" ? "Asistio" : (s.status === "CANCELLED" ? "Cancelo el centro" : "Agendado"));
+        const isAgendado = mappedEstado.toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "").includes("agendado");
 
-        const isRegistered = extra.asistenciaGuardada === true || 
-                             extra.pagado === "SÍ" || 
-                             extra.pagado === "SI" || 
-                             extra.pagado === true || 
-                             Boolean(extra.metodoPago && extra.metodoPago.trim() !== "") || 
-                             Boolean(extra.montoPago && extra.montoPago !== "0" && extra.montoPago !== "") || 
-                             estNorm.includes("asistio") || 
-                             estNorm.includes("cancelo") || 
-                             s.status === "COMPLETED" || 
-                             s.status === "CANCELLED";
+        const isFreeCancel = !isAgendado && (estNorm.includes("con anticip") || estNorm.includes("anticipad") || estNorm.includes("centro")) && !estNorm.includes("sin anticip");
 
-        const isAgendado = !isRegistered;
-
-        let metodoPagoStr = extra.metodoPago || extra.metodoPagoFinal || extra.metodoPago1 || (isAgendado ? "Por definir" : (isFreeCancel ? "Ninguno" : "Efectivo"));
-        if (isFreeCancel && (metodoPagoStr === "Efectivo" || !extra.metodoPago)) {
+        let metodoPagoStr = isAgendado ? "Ninguno" : (extra.metodoPago || extra.metodoPagoFinal || extra.metodoPago1 || (isFreeCancel ? "Ninguno" : "Efectivo"));
+        if (!isAgendado && isFreeCancel && (metodoPagoStr === "Efectivo" || !extra.metodoPago)) {
           metodoPagoStr = "Ninguno";
         }
-        if (extra.metodoPago2) {
+        if (!isAgendado && extra.metodoPago2) {
           metodoPagoStr = `Mixto (${extra.metodoPago || extra.metodoPago1 || 'P1'}: $${extra.montoPago || 0}, ${extra.metodoPago2}: $${extra.montoPago2 || 0})`;
         }
 
-        let montoP = parseMoneyStr(extra.montoPago);
-        let totalVal = parseMoneyStr(extra.total || extra.subtotal);
+        let montoP = isAgendado ? 0 : parseMoneyStr(extra.montoPago);
+        let totalVal = isAgendado ? 0 : parseMoneyStr(extra.total || extra.subtotal);
 
         const defaultPrice = parseFloat((s.patient?.precioTerapia || "500").split("/")[0]) || 500;
 
@@ -450,23 +440,23 @@ export async function getAsistenciasDB() {
           const costoS = parseMoneyStr(extra.costoSesion || extra.precioTerapia) || defaultPrice;
           if (costoS > 0) {
             if (totalVal === 0) totalVal = costoS;
-            if (montoP === 0 && !isAgendado && (extra.pago === "SÍ" || extra.pago === "SI" || extra.pagado === true)) {
+            if (montoP === 0 && (extra.pago === "SÍ" || extra.pago === "SI" || extra.pagado === true)) {
               montoP = costoS;
             }
           }
         }
 
-        if (!metodoPagoStr.includes("$") && (montoP > 0 || totalVal > 0)) {
+        if (!isAgendado && !metodoPagoStr.includes("$") && (montoP > 0 || totalVal > 0)) {
           const amt = montoP > 0 ? montoP : totalVal;
           metodoPagoStr = `${metodoPagoStr} $${amt}`;
         }
 
-        const costoS = isFreeCancel ? 0 : (parseMoneyStr(extra.costoSesion || extra.precioTerapia) || totalVal || defaultPrice);
+        const costoS = (isFreeCancel || isAgendado) ? 0 : (parseMoneyStr(extra.costoSesion || extra.precioTerapia) || totalVal || defaultPrice);
         const sessionSaldo = (isFreeCancel || isAgendado) ? 0 : (montoP - costoS);
 
-        const solicitaFactura = extra.solicitaFactura === true || extra.solicitaFactura === "true" || extra.solicitaFactura === "Sí" || extra.solicitaFactura === "Si" || extra.solicitaFactura === "S" || extra.fact === "Sí" || extra.fact === "Si" || extra.fact === "S" || extra.fact === true;
-        let subtotalVal = parseMoneyStr(extra.subtotal);
-        let ivaVal = parseMoneyStr(extra.iva);
+        const solicitaFactura = !isAgendado && (extra.solicitaFactura === true || extra.solicitaFactura === "true" || extra.solicitaFactura === "Sí" || extra.solicitaFactura === "Si" || extra.solicitaFactura === "S" || extra.fact === "Sí" || extra.fact === "Si" || extra.fact === "S" || extra.fact === true);
+        let subtotalVal = isAgendado ? 0 : parseMoneyStr(extra.subtotal);
+        let ivaVal = isAgendado ? 0 : parseMoneyStr(extra.iva);
 
         if (solicitaFactura && totalVal > 0) {
           if (ivaVal === 0) ivaVal = totalVal * 0.16;
@@ -479,8 +469,6 @@ export async function getAsistenciasDB() {
         const fuePagado = !isFreeCancel && !isAgendado && (montoP > 0 || totalVal > 0 || extra.pago === "SÍ" || extra.pago === "SI" || extra.pagado === true);
 
         const horaFormatted = (extra.hora || extra.horaRegistro || (s.date ? new Date(s.date).toISOString().split("T")[1]?.substring(0, 5) : "") || "09:00").toString().trim().substring(0, 5);
-
-        const mappedEstado = extra.estadoAsistencia || extra.estado || (s.status === "COMPLETED" ? "Asistio" : (s.status === "CANCELLED" ? "Cancelo el centro" : "Agendado"));
 
         asistencias.push({
           id: s.id,
