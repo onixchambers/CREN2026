@@ -233,10 +233,14 @@ export async function getPatients() {
 
           // Misma lógica que getAsistenciasDB: si pago=SÍ pero monto=0, asumir que pagó el costo completo
           // Esto cubre casos donde metodoPago es "Por definir $900" pero montoPago está en 0
-          if (!isBeforeCutoff && !isFreeCancel && monto === 0 && costo > 0 &&
+          const rawEstPago = (parsedNotes.estadoAsistencia || parsedNotes.estado || "").toString();
+          const estNormPago = rawEstPago.toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "");
+          const isFreeCancelPago = (estNormPago.includes("con anticip") || estNormPago.includes("anticipad") || estNormPago.includes("centro")) && !estNormPago.includes("sin anticip");
+          if (!isBeforeCutoff && !isFreeCancelPago && monto === 0 && costo > 0 &&
             (parsedNotes.pago === "SÍ" || parsedNotes.pago === "SI" || parsedNotes.pagado === true || parsedNotes.pagado === "true")) {
             monto = costo;
           }
+
 
           if (!isNaN(costo) && costo > 0) {
             pricesSet.add(costo);
