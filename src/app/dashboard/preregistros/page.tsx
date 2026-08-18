@@ -233,7 +233,14 @@ export default function PreregistrosPage() {
   };
 
   // Cargar datos de Preregistro llenado por paciente en Ficha ID
-  const handleLoadPreRegData = (preReg: any) => {
+  const handleLoadPreRegData = async (preRegSimple: any) => {
+    const { getPreRegistrationById } = await import("@/app/actions/preregistro");
+    const res = await getPreRegistrationById(preRegSimple.id);
+    if (!res.success || !res.data) {
+      alert("Error al cargar los detalles del consentimiento: " + (res.error || "Desconocido"));
+      return;
+    }
+    const preReg = res.data;
     setSelectedPreReg(preReg);
     const fullName = preReg.name || preReg.nombre || "";
     const { nombres, apellidos } = splitName(fullName);

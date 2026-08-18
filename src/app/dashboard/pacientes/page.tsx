@@ -51,6 +51,23 @@ export default function PacientesPage() {
   const [isSubmittingBaja, setIsSubmittingBaja] = useState(false);
   const [viewingPatient, setViewingPatient] = useState<any>(null);
 
+  const selectViewingPatient = async (p: any) => {
+    if (!p) {
+      setViewingPatient(null);
+      return;
+    }
+    setViewingPatient(p);
+    try {
+      const { getPatientPhoto } = await import("@/app/actions/pacientes");
+      const res = await getPatientPhoto(p.id);
+      if (res.success && res.foto) {
+        setViewingPatient((prev: any) => prev && prev.id === p.id ? { ...prev, foto: res.foto } : prev);
+      }
+    } catch (err) {
+      console.error("Error loading patient photo:", err);
+    }
+  };
+
   // Estados para Documentos y Notas Clínicas (PDF Structure)
   const [modalTab, setModalTab] = useState<"expediente" | "documentos" | "nuevo_documento" | "ver_documento">("expediente");
   const [patientDocs, setPatientDocs] = useState<any[]>([]);
@@ -259,7 +276,7 @@ export default function PacientesPage() {
                 sessionStorage.removeItem("autoOpenNoteMotivo");
                 sessionStorage.removeItem("autoOpenNoteNotas");
 
-                setViewingPatient(p);
+                selectViewingPatient(p);
                 setModalTab("nuevo_documento");
                 setSelectedNoteType(pNoteType);
                 setDocFormData({
@@ -577,7 +594,7 @@ export default function PacientesPage() {
                 const precio = p.precioTerapia || "—";
 
                 return (
-                  <tr key={p.id} className="hover:bg-slate-50 transition-colors cursor-pointer" onClick={() => setViewingPatient(p)}>
+                  <tr key={p.id} className="hover:bg-slate-50 transition-colors cursor-pointer" onClick={() => selectViewingPatient(p)}>
                     <td className="px-2 py-2.5 text-left">
                       <div className="flex items-center gap-2">
                         {p.foto ? (

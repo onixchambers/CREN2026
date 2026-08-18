@@ -153,6 +153,42 @@ export async function getPendingPreRegistrations() {
           { signatureDataUrl: { not: "" } },
         ],
       },
+      select: {
+        id: true,
+        token: true,
+        name: true,
+        fechaNacimiento: true,
+        sexo: true,
+        fechaIngreso: true,
+        estatus: true,
+        origen: true,
+        medicoTratante: true,
+        escuela: true,
+        madreNombre: true,
+        padreNombre: true,
+        otrosNombre: true,
+        madreContacto: true,
+        padreContacto: true,
+        otrosContacto: true,
+        principalMadre: true,
+        principalPadre: true,
+        principalOtros: true,
+        correoPrincipal: true,
+        alergias: true,
+        crisis: true,
+        convulsiones: true,
+        sensibilidad: true,
+        riesgoFuga: true,
+        noSepara: true,
+        otrasAlertas: true,
+        observacionesAdmin: true,
+        ipAddress: true,
+        userAgent: true,
+        cryptoHash: true,
+        status: true,
+        createdAt: true,
+        updatedAt: true
+      },
       orderBy: { updatedAt: "desc" },
     });
     return { success: true, data: list };
@@ -161,6 +197,19 @@ export async function getPendingPreRegistrations() {
     return { success: false, error: "Error al consultar los registros." };
   }
 }
+
+export async function getPreRegistrationById(id: string) {
+  try {
+    const item = await (prisma as any).preRegistration.findUnique({
+      where: { id }
+    });
+    return { success: true, data: item };
+  } catch (error: any) {
+    console.error("Error fetching pre-registration details:", error);
+    return { success: false, error: "Error al consultar los detalles." };
+  }
+}
+
 
 export async function markPreRegistrationAsLoaded(id: string) {
   try {

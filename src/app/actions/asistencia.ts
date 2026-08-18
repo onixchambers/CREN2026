@@ -332,7 +332,8 @@ export async function getAsistenciasDB() {
         patient: true,
         therapist: true
       },
-      orderBy: { date: "asc" }
+      orderBy: { date: "desc" },
+      take: 400
     });
 
     const patientMap: { [key: string]: any[] } = {};

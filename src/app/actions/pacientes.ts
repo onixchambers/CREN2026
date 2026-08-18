@@ -46,6 +46,12 @@ export async function createPatient(data: any) {
 
     const displayId = await generateUniqueDisplayId(prisma);
 
+    let finalFoto = data.foto || null;
+    if (finalFoto && finalFoto.startsWith("data:image/")) {
+      const tempId = displayId || "new_pat";
+      finalFoto = await processAndUploadPhotoToDrive(tempId, finalFoto);
+    }
+
     const patient = await prisma.patient.create({
       data: {
         displayId,
@@ -83,7 +89,7 @@ export async function createPatient(data: any) {
         consentimientoFirmado: data.consentimientoFirmado || false,
         
         observacionesAdmin: data.observacionesAdmin || null,
-        foto: data.foto || null,
+        foto: finalFoto,
         
         // Calcular edad basada en fecha de nacimiento si no viene calculada
         age: data.fechaNacimiento ? calculateAge(data.fechaNacimiento) : null
@@ -114,7 +120,44 @@ export async function getPatients() {
     } catch (e) {}
 
     const patients = await prisma.patient.findMany({
-      include: {
+      select: {
+        id: true,
+        displayId: true,
+        name: true,
+        email: true,
+        phone: true,
+        age: true,
+        fechaNacimiento: true,
+        sexo: true,
+        fechaIngreso: true,
+        estatus: true,
+        origen: true,
+        medicoTratante: true,
+        escuela: true,
+        madreNombre: true,
+        padreNombre: true,
+        otrosNombre: true,
+        madreContacto: true,
+        padreContacto: true,
+        otrosContacto: true,
+        principalMadre: true,
+        principalPadre: true,
+        principalOtros: true,
+        correoPrincipal: true,
+        alergias: true,
+        crisis: true,
+        convulsiones: true,
+        sensibilidad: true,
+        riesgoFuga: true,
+        noSepara: true,
+        otrasAlertas: true,
+        reglamentoFirmado: true,
+        consentimientoFirmado: true,
+        observacionesAdmin: true,
+        precioTerapia: true,
+        metodoPago: true,
+        createdAt: true,
+        updatedAt: true,
         sessions: {
           include: { therapist: true }
         }
@@ -365,6 +408,11 @@ export async function updatePatient(id: string, data: any) {
     const perm = await verifyTherapistPatientPermission();
     if (!perm.allowed) return { success: false, error: perm.error };
 
+    let finalFoto = data.foto || null;
+    if (finalFoto && finalFoto.startsWith("data:image/")) {
+      finalFoto = await processAndUploadPhotoToDrive(id, finalFoto);
+    }
+
     const updated = await prisma.patient.update({
       where: { id },
       data: {
@@ -403,7 +451,7 @@ export async function updatePatient(id: string, data: any) {
         consentimientoFirmado: data.consentimientoFirmado || false,
         
         observacionesAdmin: data.observacionesAdmin || null,
-        foto: data.foto || null,
+        foto: finalFoto,
         
         // Calcular edad basada en fecha de nacimiento si no viene calculada
         age: data.fechaNacimiento ? calculateAge(data.fechaNacimiento) : null
@@ -421,9 +469,10 @@ export async function updatePatient(id: string, data: any) {
 
 export async function updatePatientPhoto(id: string, foto: string) {
   try {
+    const finalFoto = await processAndUploadPhotoToDrive(id, foto);
     const updated = await prisma.patient.update({
       where: { id },
-      data: { foto }
+      data: { foto: finalFoto }
     });
     revalidatePath("/dashboard/pacientes");
     revalidatePath("/dashboard/preregistros");
@@ -431,6 +480,40 @@ export async function updatePatientPhoto(id: string, foto: string) {
   } catch (error: any) {
     console.error("Error updating patient photo:", error);
     return { success: false, error: "Error al actualizar foto de paciente: " + (error?.message || String(error)) };
+  }
+}
+
+async function processAndUploadPhotoToDrive(id: string, foto: string): Promise<string> {
+  if (!foto) return "";
+  if (foto.startsWith("data:image/")) {
+    try {
+      const match = foto.match(/^data:(image\/[a-zA-Z0-9.-]+);base64,(.+)$/);
+      if (match) {
+        const mimeType = match[1];
+        const base64Data = match[2];
+        const fileBuffer = Buffer.from(base64Data, "base64");
+        const fileName = `foto_paciente_${id}.jpg`;
+        const driveRes = await uploadFileToGoogleDrive(fileBuffer, fileName, mimeType, "Fotos_Pacientes");
+        if (driveRes.success && driveRes.fileId) {
+          return `https://lh3.googleusercontent.com/d/${driveRes.fileId}`;
+        }
+      }
+    } catch (e) {
+      console.error("Error uploading patient photo to Google Drive:", e);
+    }
+  }
+  return foto;
+}
+
+export async function getPatientPhoto(id: string) {
+  try {
+    const p = await prisma.patient.findUnique({
+      where: { id },
+      select: { foto: true }
+    });
+    return { success: true, foto: p?.foto || null };
+  } catch (error: any) {
+    return { success: false, error: error?.message || String(error) };
   }
 }
 
