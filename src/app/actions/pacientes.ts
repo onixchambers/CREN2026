@@ -959,9 +959,12 @@ export async function checkDuplicatePatient(data: {
 export async function findPotentialDuplicates() {
   try {
     const all = await prisma.patient.findMany({
-      include: {
-        sessions: true,
-        payments: true
+      select: {
+        id: true,
+        displayId: true,
+        name: true,
+        phone: true,
+        createdAt: true
       },
       orderBy: { createdAt: "desc" }
     });

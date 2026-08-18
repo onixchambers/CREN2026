@@ -799,7 +799,7 @@ export default function PacientesPage() {
                           const img = new Image();
                           img.onload = async () => {
                             const canvas = document.createElement("canvas");
-                            const maxDim = 300;
+                            const maxDim = 160;
                             let width = img.width;
                             let height = img.height;
                             if (width > height) {
@@ -819,7 +819,7 @@ export default function PacientesPage() {
                             let base64 = event.target?.result as string;
                             if (ctx) {
                               ctx.drawImage(img, 0, 0, width, height);
-                              base64 = canvas.toDataURL("image/jpeg", 0.85);
+                              base64 = canvas.toDataURL("image/jpeg", 0.70);
                             }
                             setViewingPatient((prev: any) => ({ ...prev, foto: base64 }));
                             setPacientes((prev) =>

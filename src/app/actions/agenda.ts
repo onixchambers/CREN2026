@@ -14,9 +14,23 @@ export async function getAgenda() {
   try {
     const tz = await getSystemTimezone();
     const sessions = await prisma.session.findMany({
-      include: {
-        patient: true,
-        therapist: true
+      select: {
+        id: true,
+        date: true,
+        status: true,
+        notes: true,
+        patientId: true,
+        therapistId: true,
+        patient: {
+          select: {
+            name: true
+          }
+        },
+        therapist: {
+          select: {
+            name: true
+          }
+        }
       }
     });
 

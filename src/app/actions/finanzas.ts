@@ -46,19 +46,26 @@ export async function getFinanzasMensuales(month: string, fechaDesde?: string, f
       await prisma.$executeRawUnsafe(`ALTER TABLE "User" ADD COLUMN IF NOT EXISTS "porcentajeValoracion" DOUBLE PRECISION DEFAULT 50;`);
     } catch (e) {}
 
-    // 1. Obtener todas las sesiones de la base de datos
+    // 1. Obtener todas las sesiones de la base de datos (con select granular para evitar egress)
     let sessions: any[] = [];
     try {
       sessions = await prisma.session.findMany({
-        include: {
-          patient: true,
-          therapist: true
-        }
-      });
-    } catch (err: any) {
-      sessions = await prisma.session.findMany({
-        include: {
-          patient: true,
+        select: {
+          id: true,
+          date: true,
+          status: true,
+          notes: true,
+          patientId: true,
+          therapistId: true,
+          patient: {
+            select: {
+              id: true,
+              name: true,
+              displayId: true,
+              precioTerapia: true,
+              metodoPago: true
+            }
+          },
           therapist: {
             select: {
               id: true,
@@ -70,8 +77,18 @@ export async function getFinanzasMensuales(month: string, fechaDesde?: string, f
               porcentaje: true,
               salarioBase: true,
               retieneIVA: true,
+              cobrarCanceloSA: true,
+              porcentajeValoracion: true
             }
           }
+        }
+      });
+    } catch (err: any) {
+      console.error("Error fetching sessions in getFinanzasMensuales:", err);
+      sessions = await prisma.session.findMany({
+        include: {
+          patient: true,
+          therapist: true
         }
       });
     }

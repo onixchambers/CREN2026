@@ -328,9 +328,29 @@ export async function getAsistenciasDB() {
     const todayStr = new Date().toLocaleDateString("en-CA", { timeZone: tz });
 
     const sessions = await prisma.session.findMany({
-      include: {
-        patient: true,
-        therapist: true
+      select: {
+        id: true,
+        date: true,
+        status: true,
+        notes: true,
+        patientId: true,
+        therapistId: true,
+        patient: {
+          select: {
+            id: true,
+            name: true,
+            displayId: true,
+            precioTerapia: true,
+            medicoTratante: true,
+            sexo: true,
+            age: true
+          }
+        },
+        therapist: {
+          select: {
+            name: true
+          }
+        }
       },
       orderBy: { date: "desc" },
       take: 400

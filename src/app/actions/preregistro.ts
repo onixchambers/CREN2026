@@ -228,7 +228,10 @@ export async function markPreRegistrationAsLoaded(id: string) {
 
 export async function getPublicSystemTimezone() {
   try {
-    const s = await prisma.systemSettings.findUnique({ where: { id: 1 } });
+    const s = await prisma.systemSettings.findUnique({
+      where: { id: 1 },
+      select: { timezone: true }
+    });
     return s?.timezone || "America/Panama";
   } catch (e) {
     return "America/Panama";

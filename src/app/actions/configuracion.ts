@@ -453,7 +453,10 @@ export async function changeUserPassword(userName: string, currentPassword: stri
 
 export async function getAllowTherapistEdit() {
   try {
-    const s = await prisma.systemSettings.findUnique({ where: { id: 1 } });
+    const s = await prisma.systemSettings.findUnique({
+      where: { id: 1 },
+      select: { allowTherapistEdit: true }
+    });
     return s?.allowTherapistEdit ?? true;
   } catch (e) {
     return true;
@@ -462,7 +465,10 @@ export async function getAllowTherapistEdit() {
 
 export async function getSystemTimezone() {
   try {
-    const s = await prisma.systemSettings.findUnique({ where: { id: 1 } });
+    const s = await prisma.systemSettings.findUnique({
+      where: { id: 1 },
+      select: { timezone: true }
+    });
     return s?.timezone || "America/Mexico_City";
   } catch (e) {
     return "America/Mexico_City";
@@ -532,7 +538,10 @@ export async function updateOwnUserProfile(data: { email?: string; phone?: strin
 
 export async function getTherapyPrices() {
   try {
-    const s = await prisma.systemSettings.findUnique({ where: { id: 1 } });
+    const s = await prisma.systemSettings.findUnique({
+      where: { id: 1 },
+      select: { therapyPrices: true }
+    });
     const raw = (s as any)?.therapyPrices;
     if (raw && typeof raw === "string" && raw.trim()) {
       const parsed = raw.split(",").map(p => parseFloat(p.trim())).filter(p => !isNaN(p) && p >= 0);
@@ -643,7 +652,10 @@ export async function getTherapistsList() {
 export async function getTherapistBroadcastMessage() {
   noStore();
   try {
-    const s = await prisma.systemSettings.findUnique({ where: { id: 1 } });
+    const s = await prisma.systemSettings.findUnique({
+      where: { id: 1 },
+      select: { referenceKeys: true }
+    });
     if (!s || !s.referenceKeys) return { success: true, broadcast: null };
 
     try {

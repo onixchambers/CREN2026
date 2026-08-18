@@ -68,7 +68,7 @@ export default function ConfiguracionPage() {
       const img = new Image();
       img.onload = () => {
         const canvas = document.createElement("canvas");
-        const maxDim = 250;
+        const maxDim = 160;
         let width = img.width;
         let height = img.height;
         if (width > height) {
@@ -87,7 +87,7 @@ export default function ConfiguracionPage() {
         const ctx = canvas.getContext("2d");
         if (ctx) {
           ctx.drawImage(img, 0, 0, width, height);
-          const compressed = canvas.toDataURL("image/jpeg", 0.85);
+          const compressed = canvas.toDataURL("image/jpeg", 0.70);
           callback(compressed);
         } else {
           callback(e.target?.result as string);

@@ -49,10 +49,11 @@ export default function PreregistrosPage() {
     loadInitialData();
     refreshPendingPreRegs();
 
-    // Auto polling cada 3 segundos para detectar registros entrantes en tiempo real
+    // Auto polling cada 20 segundos para detectar registros entrantes en tiempo real (si la ventana está visible)
     const interval = setInterval(() => {
+      if (document.hidden) return;
       refreshPendingPreRegs();
-    }, 3000);
+    }, 20000);
 
     return () => clearInterval(interval);
   }, []);

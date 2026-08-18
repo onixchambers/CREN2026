@@ -101,10 +101,11 @@ export default function HorariosPage() {
       setHoraActual(new Date().toLocaleTimeString('en-US', { hour12: false }));
     }, 1000);
     
-    // Polling auto-refresh de la base de datos cada 10 segundos
+    // Polling auto-refresh de la base de datos cada 30 segundos (si la ventana está visible)
     const syncInterval = setInterval(() => {
+      if (document.hidden) return;
       fetchHorarios(fechaFiltro);
-    }, 10000);
+    }, 30000);
 
     return () => {
       clearInterval(interval);

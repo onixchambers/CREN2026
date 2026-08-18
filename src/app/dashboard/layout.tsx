@@ -166,14 +166,16 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
   useEffect(() => {
     if (showAdminBroadcastModal) {
       const interval = setInterval(() => {
+        if (document.hidden) return;
         refreshBroadcast();
-      }, 4000);
+      }, 15000);
       return () => clearInterval(interval);
     }
 
     const roleUpper = (userRole || "").toUpperCase();
     if (roleUpper === "TERAPEUTA") {
       const interval = setInterval(async () => {
+        if (document.hidden) return;
         try {
           const { getTherapistBroadcastMessage } = await import("@/app/actions/configuracion");
           const bRes = await getTherapistBroadcastMessage();
@@ -184,7 +186,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
             setShowTherapistPopup(false);
           }
         } catch (e) {}
-      }, 5000);
+      }, 45000);
       return () => clearInterval(interval);
     }
   }, [showAdminBroadcastModal, userRole]);
