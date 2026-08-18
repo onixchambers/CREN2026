@@ -1332,16 +1332,7 @@ export default function PacientesPage() {
                               />
                             </div>
                           </div>
-                          <div>
-                            <label className="block text-[10px] font-bold text-slate-500 uppercase mb-1">Notas</label>
-                            <input 
-                              type="text" 
-                              value={docFormData.notasGenerales || docFormData.notas || ""} 
-                              onChange={(e) => setDocFormData({...docFormData, notasGenerales: e.target.value, notas: e.target.value})}
-                              className="w-full text-xs p-2 border border-slate-300 rounded-lg bg-white outline-none font-medium"
-                              placeholder="Notas adicionales..."
-                            />
-                          </div>
+
                         </div>
 
                         {/* CAMPOS ESPECÍFICOS HISTORIA FISIOTERAPIA */}
@@ -1474,16 +1465,7 @@ export default function PacientesPage() {
                                 className="w-full p-2 border border-slate-300 rounded-lg outline-none text-xs" 
                               />
                             </div>
-                            <div>
-                              <label className="block text-[11px] font-medium text-slate-600 mb-1">Notas</label>
-                              <textarea 
-                                rows={4} 
-                                value={docFormData.notas || docFormData.observaciones || ""} 
-                                onChange={(e) => setDocFormData({...docFormData, notas: e.target.value, observaciones: e.target.value, notasGenerales: e.target.value})} 
-                                placeholder="Notas adicionales..." 
-                                className="w-full p-2 border border-slate-300 rounded-lg outline-none text-xs" 
-                              />
-                            </div>
+
                           </>
                         )}
 
