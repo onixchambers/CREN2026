@@ -323,6 +323,10 @@ export async function saveAsistenciaDB(data: any) {
 export async function getAsistenciasDB() {
   noStore();
   try {
+    const settings = await prisma.systemSettings.findUnique({ where: { id: 1 } });
+    const tz = settings?.timezone || 'America/Mexico_City';
+    const todayStr = new Date().toLocaleDateString("en-CA", { timeZone: tz });
+
     const sessions = await prisma.session.findMany({
       include: {
         patient: true,
@@ -351,7 +355,19 @@ export async function getAsistenciasDB() {
                            s.status === "COMPLETED" || 
                            s.status === "CANCELLED";
 
-      if (!isRegistered) return;
+      // Determinar si es una sesión agendada en el pasado o hoy (nunca futuras)
+      let sFecha = extra.fecha;
+      if (!sFecha) {
+        try {
+          sFecha = s.date.toLocaleDateString("en-CA", { timeZone: tz });
+        } catch {
+          sFecha = s.date.toISOString().split("T")[0];
+        }
+      }
+      const isScheduledPastOrToday = sFecha <= todayStr;
+
+      // Si no está registrada y no es una sesión del pasado/hoy, la descartamos
+      if (!isRegistered && !isScheduledPastOrToday) return;
 
       const pKey = s.patientId || s.patient?.name || "desconocido";
       if (!patientMap[pKey]) patientMap[pKey] = [];
@@ -362,7 +378,6 @@ export async function getAsistenciasDB() {
 
     Object.values(patientMap).forEach(records => {
       records.sort((a, b) => new Date(a.s.date).getTime() - new Date(b.s.date).getTime());
-      let runningBalance = 0;
 
       records.forEach((rec, index) => {
         const { s, extra } = rec;
@@ -375,7 +390,20 @@ export async function getAsistenciasDB() {
         const estNorm = (extra.estadoAsistencia || extra.estado || s.status || "").toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "");
         const isFreeCancel = (estNorm.includes("con anticip") || estNorm.includes("anticipad") || estNorm.includes("centro")) && !estNorm.includes("sin anticip");
 
-        let metodoPagoStr = extra.metodoPago || extra.metodoPagoFinal || extra.metodoPago1 || (isFreeCancel ? "Ninguno" : "Efectivo");
+        const isRegistered = extra.asistenciaGuardada === true || 
+                             extra.pagado === "SÍ" || 
+                             extra.pagado === "SI" || 
+                             extra.pagado === true || 
+                             Boolean(extra.metodoPago && extra.metodoPago.trim() !== "") || 
+                             Boolean(extra.montoPago && extra.montoPago !== "0" && extra.montoPago !== "") || 
+                             estNorm.includes("asistio") || 
+                             estNorm.includes("cancelo") || 
+                             s.status === "COMPLETED" || 
+                             s.status === "CANCELLED";
+
+        const isAgendado = !isRegistered;
+
+        let metodoPagoStr = extra.metodoPago || extra.metodoPagoFinal || extra.metodoPago1 || (isAgendado ? "Por definir" : (isFreeCancel ? "Ninguno" : "Efectivo"));
         if (isFreeCancel && (metodoPagoStr === "Efectivo" || !extra.metodoPago)) {
           metodoPagoStr = "Ninguno";
         }
@@ -386,12 +414,14 @@ export async function getAsistenciasDB() {
         let montoP = parseMoneyStr(extra.montoPago);
         let totalVal = parseMoneyStr(extra.total || extra.subtotal);
 
+        const defaultPrice = parseFloat((s.patient?.precioTerapia || "500").split("/")[0]) || 500;
+
         // Si es una sesión con costo (Asistió o Canceló S/A) y totalVal/montoP es 0 pero hay costoSesion o precioTerapia, recuperar valores
         if (!isFreeCancel) {
-          const costoS = parseMoneyStr(extra.costoSesion || extra.precioTerapia);
+          const costoS = parseMoneyStr(extra.costoSesion || extra.precioTerapia) || defaultPrice;
           if (costoS > 0) {
             if (totalVal === 0) totalVal = costoS;
-            if (montoP === 0 && (extra.pago === "SÍ" || extra.pago === "SI" || extra.pagado === true)) {
+            if (montoP === 0 && !isAgendado && (extra.pago === "SÍ" || extra.pago === "SI" || extra.pagado === true)) {
               montoP = costoS;
             }
           }
@@ -402,8 +432,8 @@ export async function getAsistenciasDB() {
           metodoPagoStr = `${metodoPagoStr} $${amt}`;
         }
 
-        const costoS = isFreeCancel ? 0 : (parseMoneyStr(extra.costoSesion || extra.precioTerapia) || totalVal);
-        const sessionSaldo = isFreeCancel ? 0 : (montoP - costoS);
+        const costoS = isFreeCancel ? 0 : (parseMoneyStr(extra.costoSesion || extra.precioTerapia) || totalVal || defaultPrice);
+        const sessionSaldo = (isFreeCancel || isAgendado) ? 0 : (montoP - costoS);
 
         const solicitaFactura = extra.solicitaFactura === true || extra.solicitaFactura === "true" || extra.solicitaFactura === "Sí" || extra.solicitaFactura === "Si" || extra.solicitaFactura === "S" || extra.fact === "Sí" || extra.fact === "Si" || extra.fact === "S" || extra.fact === true;
         let subtotalVal = parseMoneyStr(extra.subtotal);
@@ -417,9 +447,11 @@ export async function getAsistenciasDB() {
           ivaVal = 0;
         }
 
-        const fuePagado = !isFreeCancel && (montoP > 0 || totalVal > 0 || extra.pago === "SÍ" || extra.pago === "SI" || extra.pagado === true);
+        const fuePagado = !isFreeCancel && !isAgendado && (montoP > 0 || totalVal > 0 || extra.pago === "SÍ" || extra.pago === "SI" || extra.pagado === true);
 
         const horaFormatted = (extra.hora || extra.horaRegistro || (s.date ? new Date(s.date).toISOString().split("T")[1]?.substring(0, 5) : "") || "09:00").toString().trim().substring(0, 5);
+
+        const mappedEstado = extra.estadoAsistencia || extra.estado || (s.status === "COMPLETED" ? "Asistio" : (s.status === "CANCELLED" ? "Cancelo el centro" : "Agendado"));
 
         asistencias.push({
           id: s.id,
@@ -433,7 +465,7 @@ export async function getAsistenciasDB() {
           sexo: s.patient?.sexo || extra.sexo || extra.pacienteSexo || "-",
           edad: s.patient?.age?.toString() || extra.edad || extra.pacienteEdad || "-",
           tipoSesion: extra.tipoSesion || "Individual",
-          estado: extra.estadoAsistencia || s.status,
+          estado: mappedEstado,
           sesiones: displaySesiones,
           frecuencia: extra.frecuencia || "Única",
           pago: fuePagado ? "SÍ" : "NO",
@@ -449,6 +481,7 @@ export async function getAsistenciasDB() {
         });
       });
     });
+
 
     asistencias.sort((a, b) => {
       const timeA = new Date(a.fecha).getTime();
