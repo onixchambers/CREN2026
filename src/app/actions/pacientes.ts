@@ -242,7 +242,7 @@ export async function getPatients() {
 
           const rawEst = (parsedNotes.estadoAsistencia || parsedNotes.estado || s.status || "").toString();
           const est = rawEst.toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "");
-          const isAttended = est.includes("asistio") || est.includes("cancelo sin anticipacion") || s.status === "COMPLETED";
+          const isAttended = est.includes("asistio") || est.includes("cancelo sin anticipacion") || est.includes("cancelo s/a") || est.includes("sin anticip") || s.status === "COMPLETED";
           if (isAttended) {
             asistenciasCount++;
             if (therapistName) {
@@ -291,7 +291,7 @@ export async function getPatients() {
             if (isAttended) totalCostoSum += costo;
           }
 
-          if (!isNaN(monto) && monto > 0) {
+          if (!isNinguno && !isNaN(monto) && monto > 0) {
             totalPagadoSum += monto;
             lastPaymentAmount = monto;
             if (parsedNotes.fecha) {

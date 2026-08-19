@@ -1163,11 +1163,21 @@ export default function AsistenciaPage() {
             sVal = totalFinal - iVal;
           }
 
-          const fuePagado = !isFreeCancel && (montoPagado > 0 || (precioTerapia === 0 && (formData.precioTerapia === "0" || formData.precioTerapia === "$0.00")));
+          const isCancel = estNorm.includes("cancelo");
+          const fuePagado = !isFreeCancel && !isCancel && (montoPagado > 0 || (precioTerapia === 0 && (formData.precioTerapia === "0" || formData.precioTerapia === "$0.00")));
 
-          let metodoFinal = metodoPagoFinal || formData.metodoPago || "Efectivo";
-          if (!metodoFinal.includes("$") && totalFinal > 0) {
-            metodoFinal = `${metodoFinal} $${totalFinal}`;
+          let metodoFinal = "";
+          if (montoIngresado === 0 || isCancel) {
+            metodoFinal = "Ninguno";
+          } else {
+            let baseMetodo = metodoPagoFinal || formData.metodoPago || "Efectivo";
+            if (baseMetodo === "Ninguno") {
+              baseMetodo = "Efectivo";
+            }
+            metodoFinal = baseMetodo;
+            if (!metodoFinal.includes("$") && totalFinal > 0) {
+              metodoFinal = `${metodoFinal} $${totalFinal}`;
+            }
           }
 
           const nuevaAsistencia = {

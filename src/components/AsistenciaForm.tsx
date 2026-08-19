@@ -234,6 +234,17 @@ export function AsistenciaForm({
         }
       }
 
+      const targetEstado = normalizeEstadoAsistencia(estadoAsistenciaAgenda);
+      const isAsistio = targetEstado === "Asistio";
+      const precio = p.precioTerapia || formData.precioTerapia || "0";
+      const numericPrice = parseFloat(precio) || 0;
+      const normE = targetEstado.toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "");
+      const isCancel = normE.includes("cancelo");
+
+      if (isCancel) {
+        setShowSegundoPago(false);
+      }
+
       setFormData(prev => ({
         ...prev,
         pacienteId: p.id,
@@ -245,14 +256,11 @@ export function AsistenciaForm({
         area: areaAgenda || prev.area || "Fisioterapia",
         hora: horaAgenda,
         tipoSesion: tipoSesionAgenda,
-        estadoAsistencia: normalizeEstadoAsistencia(estadoAsistenciaAgenda),
-        metodoPago: (() => {
-          const normE = normalizeEstadoAsistencia(estadoAsistenciaAgenda).toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "");
-          const isFC = (normE.includes("con anticip") || normE.includes("anticipad") || normE.includes("centro")) && !normE.includes("sin anticip");
-          return isFC ? "Ninguno" : prev.metodoPago;
-        })(),
+        estadoAsistencia: targetEstado,
+        metodoPago: isCancel ? "Ninguno" : (prev.metodoPago === "Ninguno" ? "Efectivo" : (prev.metodoPago || "Efectivo")),
+        montoPago: isCancel ? "0" : (isAsistio ? numericPrice.toString() : prev.montoPago),
         saldoDisponible: p.saldoCalculado || "0.00",
-        precioTerapia: p.precioTerapia || prev.precioTerapia,
+        precioTerapia: precio,
         numeroSesiones: "1", 
         frecuencia: agendaCitas.find((c: any) => c.paciente === p.paciente) ? (() => {
           const f = (agendaCitas.find((c: any) => c.paciente === p.paciente).frecuencia || "").toLowerCase();
@@ -279,13 +287,44 @@ export function AsistenciaForm({
     } else if (name === "estadoAsistencia") {
       const norm = normalizeEstadoAsistencia(value);
       const sNorm = norm.toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "");
-      const isFreeCancel = (sNorm.includes("con anticip") || sNorm.includes("anticipad") || sNorm.includes("centro")) && !sNorm.includes("sin anticip");
-      setFormData(prev => ({
-        ...prev,
-        estadoAsistencia: value,
-        metodoPago: isFreeCancel ? "Ninguno" : (prev.metodoPago === "Ninguno" ? "Efectivo" : prev.metodoPago),
-        montoPago: isFreeCancel ? "0" : prev.montoPago
-      }));
+      const isCancel = sNorm.includes("cancelo");
+      
+      if (isCancel) {
+        setShowSegundoPago(false);
+        setFormData(prev => ({
+          ...prev,
+          estadoAsistencia: value,
+          metodoPago: "Ninguno",
+          montoPago: "0",
+          metodoPago2: "",
+          montoPago2: ""
+        }));
+      } else if (value === "Asistio") {
+        setFormData(prev => {
+          const precio = parseFloat(prev.precioTerapia) || 0;
+          return {
+            ...prev,
+            estadoAsistencia: value,
+            metodoPago: prev.metodoPago === "Ninguno" ? "Efectivo" : (prev.metodoPago || "Efectivo"),
+            montoPago: precio.toString()
+          };
+        });
+      } else {
+        setFormData(prev => ({
+          ...prev,
+          estadoAsistencia: value
+        }));
+      }
+    } else if (name === "precioTerapia") {
+      setFormData(prev => {
+        const newPrice = value;
+        const isAsistio = prev.estadoAsistencia === "Asistio";
+        return {
+          ...prev,
+          precioTerapia: newPrice,
+          montoPago: isAsistio ? newPrice : prev.montoPago
+        };
+      });
     } else {
       setFormData(prev => ({ ...prev, [name]: value }));
     }
@@ -348,19 +387,30 @@ export function AsistenciaForm({
       subVal = totVal - ivaVal;
     }
 
-    let defaultMetodo = isFreeCancel ? "Ninguno" : "Efectivo";
-    let metodoPagoFinal = formData.metodoPago || defaultMetodo;
-    if (isFreeCancel && (metodoPagoFinal === "Efectivo" || !formData.metodoPago)) {
+    const isCancel = estNorm.includes("cancelo");
+    const isNoPago = montoPagado === 0 || isCancel;
+
+    let metodoPagoFinal = "";
+    if (isNoPago) {
       metodoPagoFinal = "Ninguno";
-    }
-    if (showSegundoPago && formData.metodoPago2) {
-      metodoPagoFinal = `${formData.metodoPago || defaultMetodo} $${p1}\n${formData.metodoPago2} $${p2}`;
-    } else if (showSegundoPago) {
-      metodoPagoFinal = `${formData.metodoPago || defaultMetodo} $${p1}`;
-    } else if (p1 > 0 && formData.metodoPago) {
-      metodoPagoFinal = `${formData.metodoPago} $${p1}`;
-    } else if (formData.metodoPago && !formData.metodoPago.includes("$") && totVal > 0) {
-      metodoPagoFinal = `${formData.metodoPago} $${totVal}`;
+    } else {
+      let defaultMetodo = "Efectivo";
+      let metodoPagoBase = formData.metodoPago || defaultMetodo;
+      if (metodoPagoBase === "Ninguno") {
+        metodoPagoBase = "Efectivo";
+      }
+
+      if (showSegundoPago && formData.metodoPago2) {
+        metodoPagoFinal = `${metodoPagoBase} $${p1}\n${formData.metodoPago2} $${p2}`;
+      } else if (showSegundoPago) {
+        metodoPagoFinal = `${metodoPagoBase} $${p1}`;
+      } else if (p1 > 0) {
+        metodoPagoFinal = `${metodoPagoBase} $${p1}`;
+      } else if (totVal > 0) {
+        metodoPagoFinal = `${metodoPagoBase} $${totVal}`;
+      } else {
+        metodoPagoFinal = metodoPagoBase;
+      }
     }
 
     setDuplicateWarning({ isOpen: false, duplicates: [], isDraft: false });
@@ -548,6 +598,17 @@ export function AsistenciaForm({
                             }
                           }
 
+                          const targetEstado = normalizeEstadoAsistencia(estadoAgenda);
+                          const isAsistio = targetEstado === "Asistio";
+                          const precio = p.precioTerapia || prev.precioTerapia || "0";
+                          const numericPrice = parseFloat(precio) || 0;
+                          const normE = targetEstado.toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "");
+                          const isCancel = normE.includes("cancelo");
+
+                          if (isCancel) {
+                            setShowSegundoPago(false);
+                          }
+
                           setFormData(prev => ({
                             ...prev,
                             fecha: fechaAgenda,
@@ -557,13 +618,15 @@ export function AsistenciaForm({
                             pacienteSexo: normalizeSexo(p.sexo),
                             pacienteEdad: p.edad,
                             saldoDisponible: p.saldoCalculado || "0.00",
-                            precioTerapia: p.precioTerapia || prev.precioTerapia,
+                            precioTerapia: precio,
                             numeroSesiones: "1",
                             hora: horaAgenda,
                             terapeuta: terapeutaAgenda,
                             area: areaAgenda || prev.area || "Fisioterapia",
-                            estadoAsistencia: normalizeEstadoAsistencia(estadoAgenda),
+                            estadoAsistencia: targetEstado,
                             tipoSesion: tipoSesionAgenda,
+                            metodoPago: isCancel ? "Ninguno" : (prev.metodoPago === "Ninguno" ? "Efectivo" : (prev.metodoPago || "Efectivo")),
+                            montoPago: isCancel ? "0" : (isAsistio ? numericPrice.toString() : prev.montoPago),
                             frecuencia: agendaCitas.find((c: any) => c.paciente === p.paciente) ? (() => {
                               const f = (agendaCitas.find((c: any) => c.paciente === p.paciente).frecuencia || "").toLowerCase();
                               return f === "diario" || f === "diaria" ? "Diaria" : f === "semanal" ? "Semanal" : f === "quincenal" ? "Quincenal" : f === "mensual" ? "Mensual" : prev.frecuencia;

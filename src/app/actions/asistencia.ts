@@ -234,16 +234,27 @@ export async function saveAsistenciaDB(data: any) {
     const estadoVal = data.estadoAsistencia || data.estado || "Asistio";
     const estNormVal = estadoVal.toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "");
     const isAsistioVal = estNormVal === "asistio";
+    const isCancelVal = estNormVal.includes("cancelo");
     const isFreeCancel = (estNormVal.includes("con anticip") || estNormVal.includes("anticipad") || estNormVal.includes("centro")) && !estNormVal.includes("sin anticip");
-    const fuePagado = !isFreeCancel && (data.pago === "SÍ" || data.pago === "SI" || data.pagado === true || data.pagado === "SÍ" || (montoP > 0 || (totalVal > 0 && data.montoPago && parseMoneyStr(data.montoPago) > 0)));
 
-    let metodoPagoStr = data.metodoPagoFinal || data.metodoPago || (isFreeCancel ? "Ninguno" : "Efectivo");
-    if (isFreeCancel && (metodoPagoStr === "Efectivo" || (!data.metodoPagoFinal && !data.metodoPago))) {
-      metodoPagoStr = "Ninguno";
+    if (isCancelVal) {
+      montoP = 0;
     }
-    if (!metodoPagoStr.includes("$") && !metodoPagoStr.includes("\n") && (montoP > 0 || totalVal > 0) && metodoPagoStr !== "Ninguno") {
-      const amt = montoP > 0 ? montoP : totalVal;
-      metodoPagoStr = `${metodoPagoStr} $${amt}`;
+
+    const fuePagado = !isFreeCancel && !isCancelVal && (montoP > 0 || (totalVal > 0 && data.montoPago && parseMoneyStr(data.montoPago) > 0) || data.pago === "SÍ" || data.pago === "SI" || data.pagado === true);
+
+    const isNoPagoVal = (montoP === 0 || isCancelVal);
+    let metodoPagoStr = data.metodoPagoFinal || data.metodoPago || "Efectivo";
+    if (isNoPagoVal) {
+      metodoPagoStr = "Ninguno";
+    } else {
+      if (metodoPagoStr === "Ninguno") {
+        metodoPagoStr = "Efectivo";
+      }
+      if (!metodoPagoStr.includes("$") && !metodoPagoStr.includes("\n") && (montoP > 0 || totalVal > 0)) {
+        const amt = montoP > 0 ? montoP : totalVal;
+        metodoPagoStr = `${metodoPagoStr} $${amt}`;
+      }
     }
 
     const saldo = isFreeCancel ? 0 : (montoP - costoS);
@@ -465,7 +476,6 @@ export async function getAsistenciasDB() {
         const sDate = extra.fecha || (s.date instanceof Date ? s.date.toISOString().split("T")[0] : String(s.date).split("T")[0]);
         const isBeforeCutoff = sDate && sDate <= "2026-06-30";
         const sessionSaldo = (isFreeCancel || isAgendado || isBeforeCutoff) ? 0 : (montoP - costoS);
-        runningBalance += sessionSaldo;
 
         const solicitaFactura = !isAgendado && (extra.solicitaFactura === true || extra.solicitaFactura === "true" || extra.solicitaFactura === "Sí" || extra.solicitaFactura === "Si" || extra.solicitaFactura === "S" || extra.fact === "Sí" || extra.fact === "Si" || extra.fact === "S" || extra.fact === true);
         let subtotalVal = isAgendado ? 0 : parseMoneyStr(extra.subtotal);
@@ -504,7 +514,7 @@ export async function getAsistenciasDB() {
           subtotal: "$" + Number(subtotalVal).toFixed(2),
           iva: "$" + Number(ivaVal).toFixed(2),
           total: "$" + Number(totalVal).toFixed(2),
-          saldo: runningBalance,
+          saldo: sessionSaldo,
           obs: extra.obs || "-",
           creadoPor: extra.creadoPor || "-",
           terapeuta: s.therapist?.name || extra.terapeuta || extra.terapeutaNombre || "-"
