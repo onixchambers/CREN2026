@@ -449,7 +449,8 @@ export async function getAsistenciasDB() {
       // Si no está registrada y no es una sesión del pasado/hoy, la descartamos
       if (!isRegistered && !isScheduledPastOrToday) return;
 
-      const pKey = s.patientId || s.patient?.name || "desconocido";
+      const tName = (s.therapist?.name || extra.terapeuta || extra.terapeutaNombre || "desconocido").trim();
+      const pKey = `${s.patientId || s.patient?.name || "desconocido"}_${tName}`;
       if (!patientMap[pKey]) patientMap[pKey] = [];
       patientMap[pKey].push({ s, extra });
     });
