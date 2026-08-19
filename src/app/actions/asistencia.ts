@@ -233,6 +233,7 @@ export async function saveAsistenciaDB(data: any) {
 
     const estadoVal = data.estadoAsistencia || data.estado || "Asistio";
     const estNormVal = estadoVal.toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "");
+    const isAsistioVal = estNormVal === "asistio";
     const isFreeCancel = (estNormVal.includes("con anticip") || estNormVal.includes("anticipad") || estNormVal.includes("centro")) && !estNormVal.includes("sin anticip");
     const fuePagado = !isFreeCancel && (data.pago === "SÍ" || data.pago === "SI" || data.pagado === true || data.pagado === "SÍ" || (montoP > 0 || (totalVal > 0 && data.montoPago && parseMoneyStr(data.montoPago) > 0)));
 
@@ -301,7 +302,7 @@ export async function saveAsistenciaDB(data: any) {
         where: { id: targetSession.id },
         data: {
           date: jsDate,
-          status: estadoVal === "Asistio" ? "COMPLETED" : "CANCELLED",
+          status: isAsistioVal ? "COMPLETED" : "CANCELLED",
           notes: finalNotes
         }
       });
@@ -312,7 +313,7 @@ export async function saveAsistenciaDB(data: any) {
           patientId: patient.id,
           therapistId: therapistId,
           date: jsDate,
-          status: estadoVal === "Asistio" ? "COMPLETED" : "CANCELLED",
+          status: isAsistioVal ? "COMPLETED" : "CANCELLED",
           notes: finalNotes
         }
       });
@@ -446,7 +447,8 @@ export async function getAsistenciasDB() {
           const costoS = parseMoneyStr(extra.costoSesion || extra.precioTerapia) || defaultPrice;
           if (costoS > 0) {
             if (totalVal === 0) totalVal = costoS;
-            if (montoP === 0 && (extra.pago === "SÍ" || extra.pago === "SI" || extra.pagado === true)) {
+            const isNinguno = (metodoPagoStr || "").toLowerCase().includes("ninguno");
+            if (montoP === 0 && !isNinguno && (extra.pago === "SÍ" || extra.pago === "SI" || extra.pagado === true)) {
               montoP = costoS;
             }
           }

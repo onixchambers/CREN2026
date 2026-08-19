@@ -279,7 +279,8 @@ export async function getPatients() {
           const rawEstPago = (parsedNotes.estadoAsistencia || parsedNotes.estado || "").toString();
           const estNormPago = rawEstPago.toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "");
           const isFreeCancelPago = (estNormPago.includes("con anticip") || estNormPago.includes("anticipad") || estNormPago.includes("centro")) && !estNormPago.includes("sin anticip");
-          if (!isBeforeCutoff && !isFreeCancelPago && monto === 0 && costo > 0 &&
+          const isNinguno = (parsedNotes.metodoPago || "").toLowerCase().includes("ninguno");
+          if (!isBeforeCutoff && !isFreeCancelPago && !isNinguno && monto === 0 && costo > 0 &&
             (parsedNotes.pago === "SÍ" || parsedNotes.pago === "SI" || parsedNotes.pagado === true || parsedNotes.pagado === "true")) {
             monto = costo;
           }
