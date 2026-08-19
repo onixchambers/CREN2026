@@ -390,7 +390,11 @@ export default function AgendaPage() {
     
     try {
       const updatedData = { ...selectedCitaForStatus, estado };
-      await updateCita(selectedCitaForStatus.id, updatedData);
+      const res = await updateCita(selectedCitaForStatus.id, updatedData);
+      if (!res.success) {
+        alert(res.error || "Error al actualizar el estado de la cita.");
+        return;
+      }
       setCitas(citas.map(c => c.id === selectedCitaForStatus.id ? updatedData : c));
       
       const sNorm = (estado || "").trim().toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "");
@@ -449,11 +453,16 @@ export default function AgendaPage() {
       const payload: any = { hora: newHora, terapeuta: newTerapeuta };
       if (newFecha) payload.fecha = newFecha;
       
-      // Update locally immediately for optimistic UI
-      setCitas(prev => prev.map(c => c.id === citaId ? { ...c, ...payload } : c));
-      
       // Update in DB
-      await updateCita(citaId, payload);
+      const res = await updateCita(citaId, payload);
+      if (!res.success) {
+        alert(res.error || "Error al mover la cita");
+        // Revert local state by fetching fresh data
+        getAgenda().then(r => { if (r.success && r.data) setCitas(r.data); });
+      } else {
+        // Update locally on success
+        setCitas(prev => prev.map(c => c.id === citaId ? { ...c, ...payload } : c));
+      }
     } catch (error) {
       console.error(error);
       alert("Error al mover la cita");
@@ -1315,8 +1324,12 @@ export default function AgendaPage() {
                   const newCita = pendingMoveCita.newFormData 
                     ? { ...updated, ...pendingMoveCita.newFormData, hora: pendingMoveCita.newHora, terapeuta: pendingMoveCita.newTerapeuta, fecha: pendingMoveCita.newFecha || updated.fecha }
                     : { ...updated, hora: pendingMoveCita.newHora, terapeuta: pendingMoveCita.newTerapeuta, fecha: pendingMoveCita.newFecha || updated.fecha };
-                  await updateCita(updated.id, newCita);
-                  setCitas(citas.map((c: any) => c.id === updated.id ? newCita : c));
+                  const res = await updateCita(updated.id, newCita);
+                  if (!res.success) {
+                    alert(res.error || "Error al mover la cita");
+                  } else {
+                    setCitas(citas.map((c: any) => c.id === updated.id ? newCita : c));
+                  }
                 }
                 setIsConfirmMoveModalOpen(false);
                 setPendingMoveCita(null);
@@ -1334,23 +1347,37 @@ export default function AgendaPage() {
                     c.fecha >= updated.fecha 
                   );
                   
+                  let allSuccess = true;
+                  let lastError = "";
                   for (const fc of futureCitas) {
                     const newCita = pendingMoveCita.newFormData 
                       ? { ...fc, ...pendingMoveCita.newFormData, id: fc.id, fecha: fc.fecha, hora: pendingMoveCita.newHora, terapeuta: pendingMoveCita.newTerapeuta }
                       : { ...fc, hora: pendingMoveCita.newHora, terapeuta: pendingMoveCita.newTerapeuta };
-                    await updateCita(fc.id, newCita);
+                    const res = await updateCita(fc.id, newCita);
+                    if (!res.success) {
+                      allSuccess = false;
+                      lastError = res.error || "Error al mover una de las citas futuras";
+                      break;
+                    }
                     const index = updatedCitas.findIndex((c: any) => c.id === fc.id);
                     if (index !== -1) updatedCitas[index] = newCita;
                   }
                   
-                  const newMainCita = pendingMoveCita.newFormData 
-                    ? { ...updated, ...pendingMoveCita.newFormData, hora: pendingMoveCita.newHora, terapeuta: pendingMoveCita.newTerapeuta, fecha: pendingMoveCita.newFecha || updated.fecha }
-                    : { ...updated, hora: pendingMoveCita.newHora, terapeuta: pendingMoveCita.newTerapeuta, fecha: pendingMoveCita.newFecha || updated.fecha };
-                  await updateCita(updated.id, newMainCita);
-                  const mainIndex = updatedCitas.findIndex((c: any) => c.id === updated.id);
-                  if (mainIndex !== -1) updatedCitas[mainIndex] = newMainCita;
-
-                  setCitas(updatedCitas);
+                  if (allSuccess) {
+                    const newMainCita = pendingMoveCita.newFormData 
+                      ? { ...updated, ...pendingMoveCita.newFormData, hora: pendingMoveCita.newHora, terapeuta: pendingMoveCita.newTerapeuta, fecha: pendingMoveCita.newFecha || updated.fecha }
+                      : { ...updated, hora: pendingMoveCita.newHora, terapeuta: pendingMoveCita.newTerapeuta, fecha: pendingMoveCita.newFecha || updated.fecha };
+                    const res = await updateCita(updated.id, newMainCita);
+                    if (!res.success) {
+                      alert(res.error || "Error al mover la cita");
+                    } else {
+                      const mainIndex = updatedCitas.findIndex((c: any) => c.id === updated.id);
+                      if (mainIndex !== -1) updatedCitas[mainIndex] = newMainCita;
+                      setCitas(updatedCitas);
+                    }
+                  } else {
+                    alert(lastError);
+                  }
                 }
                 setIsConfirmMoveModalOpen(false);
                 setPendingMoveCita(null);

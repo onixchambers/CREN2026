@@ -1571,31 +1571,53 @@ export default function AsistenciaPage() {
                   <td className="px-1 py-2 text-slate-500 text-[11px] max-w-[80px] truncate" title={a.obs}>{a.obs}</td>
                   <td className="px-1 py-2 text-center whitespace-nowrap">
                     {(() => {
+                      const isPastFiveDays = (() => {
+                        if (userRole.toUpperCase() !== "TERAPEUTA") return false;
+                        const d = new Date();
+                        d.setDate(d.getDate() - 5);
+                        const cutoffDateStr = d.toLocaleDateString("en-CA", { timeZone: systemTimezone });
+                        const targetDateStr = (a.fecha || "").substring(0, 10);
+                        return targetDateStr < cutoffDateStr;
+                      })();
                       const isPorDefinir = (a.metodoPago || "").toLowerCase().replace(/\s+/g, "").includes("pordefinir");
                       return (
                         <input
                           type="checkbox"
                           checked={isPorDefinir}
+                          disabled={userRole.toUpperCase() === "TERAPEUTA" && isPastFiveDays}
                           onChange={() => handleRevisionToggle(a)}
-                          className="w-4 h-4 rounded border-slate-300 text-[#1a5276] focus:ring-[#1a5276] cursor-pointer accent-[#1a5276]"
-                          title={isPorDefinir ? "Desmarcar revisión (Cambia Método de Pago a Transferencia)" : "Marcar gancho (Cambia Método de Pago a Por definir)"}
+                          className={`w-4 h-4 rounded border-slate-300 text-[#1a5276] focus:ring-[#1a5276] accent-[#1a5276] ${userRole.toUpperCase() === "TERAPEUTA" && isPastFiveDays ? 'cursor-not-allowed opacity-50' : 'cursor-pointer'}`}
+                          title={isPastFiveDays && userRole.toUpperCase() === "TERAPEUTA" ? "No tienes permisos para modificar sesiones con más de 5 días de antigüedad" : (isPorDefinir ? "Desmarcar revisión (Cambia Método de Pago a Transferencia)" : "Marcar gancho (Cambia Método de Pago a Por definir)")}
                         />
                       );
                     })()}
                   </td>
                   <td className="px-1 py-2 whitespace-nowrap">
-                    <div className="flex items-center justify-center gap-1.5">
-                      {((userRole.toUpperCase() !== "TERAPEUTA" && userRole.toUpperCase() !== "INVITADO") || allowTherapistEdit) && (
-                        <button onClick={() => openEditModal(a)} className="text-slate-400 hover:text-[#1a5276]" title="Editar">
-                          <svg className="w-3.5 h-3.5" fill="currentColor" viewBox="0 0 24 24"><path d="M3 17.25V21h3.75L17.81 9.94l-3.75-3.75L3 17.25zM20.71 7.04c.39-.39.39-1.02 0-1.41l-2.34-2.34c-.39-.39-1.02-.39-1.41 0l-1.83 1.83 3.75 3.75 1.83-1.83z"/></svg>
-                        </button>
-                      )}
-                      {((userRole.toUpperCase() !== "TERAPEUTA" && userRole.toUpperCase() !== "INVITADO") || allowTherapistEdit) && (
-                        <button onClick={() => handleDeleteAsistencia(a.id)} className="text-slate-400 hover:text-red-600" title="Eliminar">
-                          <svg className="w-3.5 h-3.5" fill="currentColor" viewBox="0 0 24 24"><path d="M6 19c0 1.1.9 2 2 2h8c1.1 0 2-.9 2-2V7H6v12zM19 4h-3.5l-1-1h-5l-1 1H5v2h14V4z"/></svg>
-                        </button>
-                      )}
-                    </div>
+                    {(() => {
+                      const isPastFiveDays = (() => {
+                        if (userRole.toUpperCase() !== "TERAPEUTA") return false;
+                        const d = new Date();
+                        d.setDate(d.getDate() - 5);
+                        const cutoffDateStr = d.toLocaleDateString("en-CA", { timeZone: systemTimezone });
+                        const targetDateStr = (a.fecha || "").substring(0, 10);
+                        return targetDateStr < cutoffDateStr;
+                      })();
+
+                      return (
+                        <div className="flex items-center justify-center gap-1.5">
+                          {((userRole.toUpperCase() !== "TERAPEUTA" && userRole.toUpperCase() !== "INVITADO") || (allowTherapistEdit && !isPastFiveDays)) && (
+                            <button onClick={() => openEditModal(a)} className="text-slate-400 hover:text-[#1a5276]" title="Editar">
+                              <svg className="w-3.5 h-3.5" fill="currentColor" viewBox="0 0 24 24"><path d="M3 17.25V21h3.75L17.81 9.94l-3.75-3.75L3 17.25zM20.71 7.04c.39-.39.39-1.02 0-1.41l-2.34-2.34c-.39-.39-1.02-.39-1.41 0l-1.83 1.83 3.75 3.75 1.83-1.83z"/></svg>
+                            </button>
+                          )}
+                          {((userRole.toUpperCase() !== "TERAPEUTA" && userRole.toUpperCase() !== "INVITADO") || (allowTherapistEdit && !isPastFiveDays)) && (
+                            <button onClick={() => handleDeleteAsistencia(a.id)} className="text-slate-400 hover:text-red-600" title="Eliminar">
+                              <svg className="w-3.5 h-3.5" fill="currentColor" viewBox="0 0 24 24"><path d="M6 19c0 1.1.9 2 2 2h8c1.1 0 2-.9 2-2V7H6v12zM19 4h-3.5l-1-1h-5l-1 1H5v2h14V4z"/></svg>
+                            </button>
+                          )}
+                        </div>
+                      );
+                    })()}
                   </td>
                 </tr>
               )) : (
