@@ -198,20 +198,26 @@ export async function saveAsistenciaDB(data: any) {
       if (sum > 0) montoP = sum;
     }
 
-    let targetCost = parseMoneyStr(data.costoSesion || data.precioTerapia);
-    if (targetCost === 0 && targetSession && targetSession.notes) {
+    let targetCost = 0;
+    const rawCostInput = data.costoSesion !== undefined ? data.costoSesion : data.precioTerapia;
+    if (rawCostInput !== undefined && rawCostInput !== null && rawCostInput !== "") {
+      targetCost = parseMoneyStr(rawCostInput);
+    } else if (targetSession && targetSession.notes) {
       try {
         const extraExisting = JSON.parse(targetSession.notes);
         targetCost = parseMoneyStr(extraExisting.costoSesion || extraExisting.precioTerapia || extraExisting.total);
       } catch(e) {}
-    }
-    if (targetCost === 0) {
+    } else {
       targetCost = parseMoneyStr(data.total || data.subtotal);
     }
     const costoS = targetCost;
     const totalInput = parseMoneyStr(data.total);
     const subtotalInput = parseMoneyStr(data.subtotal);
-    const totalVal = totalInput > 0 ? totalInput : (montoP > 0 ? montoP : costoS);
+    
+    // Si el costo de sesión (costoS) se definió explícitamente como 0, el total debe ser 0.
+    const totalVal = (rawCostInput !== undefined && rawCostInput !== null && rawCostInput !== "" && targetCost === 0)
+      ? 0
+      : (totalInput > 0 ? totalInput : (montoP > 0 ? montoP : costoS));
 
     const solicitaFactura = (data.solicitaFactura === true || data.solicitaFactura === "true" || data.solicitaFactura === "Sí" || data.solicitaFactura === "Si" || data.solicitaFactura === "S" || data.fact === "Sí" || data.fact === "Si" || data.fact === "S" || data.fact === true);
 
