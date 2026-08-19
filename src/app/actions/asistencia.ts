@@ -3,6 +3,8 @@
 import { prisma } from "@/lib/prisma";
 import { revalidatePath } from "next/cache";
 import { unstable_noStore as noStore } from "next/cache";
+import { getServerSession } from "next-auth";
+import { authOptions } from "@/lib/auth";
 
 function parseMoneyStr(val: any): number {
   if (typeof val === 'number') return isNaN(val) ? 0 : val;
@@ -14,6 +16,37 @@ function parseMoneyStr(val: any): number {
 
 export async function saveAsistenciaDB(data: any) {
   try {
+    const session = await getServerSession(authOptions);
+    const userRole = ((session?.user as any)?.role || "").toUpperCase();
+    if (userRole === "TERAPEUTA") {
+      const settings = await prisma.systemSettings.findUnique({ where: { id: 1 } });
+      const tz = settings?.timezone || 'America/Mexico_City';
+      const d = new Date();
+      d.setDate(d.getDate() - 5);
+      const cutoffDateStr = d.toLocaleDateString("en-CA", { timeZone: tz });
+      const targetDateStr = (data.fecha || "").substring(0, 10);
+      
+      if (targetDateStr < cutoffDateStr) {
+        return { success: false, error: `No tienes permisos para registrar o modificar asistencias con más de 5 días de antigüedad (Fecha límite: ${cutoffDateStr}).` };
+      }
+      
+      if (data.id && data.id.length > 10) {
+        const existingSession = await prisma.session.findUnique({ where: { id: data.id } });
+        if (existingSession) {
+          let originalDateStr = existingSession.date.toISOString().split("T")[0];
+          if (existingSession.notes) {
+            try {
+              const parsed = JSON.parse(existingSession.notes);
+              if (parsed.fecha) originalDateStr = parsed.fecha;
+            } catch (e) {}
+          }
+          if (originalDateStr < cutoffDateStr) {
+            return { success: false, error: `No tienes permisos para modificar asistencias con más de 5 días de antigüedad (Fecha límite: ${cutoffDateStr}).` };
+          }
+        }
+      }
+    }
+
     const settings = await prisma.systemSettings.findUnique({ where: { id: 1 } });
     const tz = settings?.timezone || 'America/Mexico_City';
 
@@ -580,6 +613,30 @@ export async function getSessionByAgendaId(agendaId: string) {
 // Actualiza SOLO el metodoPago de una sesión sin tocar ningún otro campo financiero
 export async function updateMetodoPagoOnly(sessionId: string, nuevoMetodoPago: string) {
   try {
+    const sessionUser = await getServerSession(authOptions);
+    const userRole = ((sessionUser?.user as any)?.role || "").toUpperCase();
+    if (userRole === "TERAPEUTA") {
+      const settings = await prisma.systemSettings.findUnique({ where: { id: 1 } });
+      const tz = settings?.timezone || 'America/Mexico_City';
+      const d = new Date();
+      d.setDate(d.getDate() - 5);
+      const cutoffDateStr = d.toLocaleDateString("en-CA", { timeZone: tz });
+
+      const dbSession = await prisma.session.findUnique({ where: { id: sessionId } });
+      if (dbSession) {
+        let originalDateStr = dbSession.date.toISOString().split("T")[0];
+        if (dbSession.notes) {
+          try {
+            const parsed = JSON.parse(dbSession.notes);
+            if (parsed.fecha) originalDateStr = parsed.fecha;
+          } catch (e) {}
+        }
+        if (originalDateStr < cutoffDateStr) {
+          return { success: false, error: `No tienes permisos para modificar el método de pago de sesiones con más de 5 días de antigüedad (Fecha límite: ${cutoffDateStr}).` };
+        }
+      }
+    }
+
     const session = await prisma.session.findUnique({ where: { id: sessionId } });
     if (!session) return { success: false, error: "Sesión no encontrada." };
 

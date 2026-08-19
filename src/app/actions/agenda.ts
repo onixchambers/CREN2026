@@ -88,6 +88,19 @@ export async function getAgenda() {
 
 export async function addCita(data: any) {
   try {
+    const session = await getServerSession(authOptions);
+    const userRole = ((session?.user as any)?.role || "").toUpperCase();
+    if (userRole === "TERAPEUTA") {
+      const tz = await getSystemTimezone();
+      const d = new Date();
+      d.setDate(d.getDate() - 5);
+      const cutoffDateStr = d.toLocaleDateString("en-CA", { timeZone: tz });
+      const targetDateStr = (data.fecha || "").substring(0, 10);
+      if (targetDateStr < cutoffDateStr) {
+        return { success: false, error: `No tienes permisos para agregar citas con más de 5 días de antigüedad (Fecha límite: ${cutoffDateStr}).` };
+      }
+    }
+
     const [h, m] = (data.hora || "09:00").split(":").map(Number);
     const totalMins = h * 60 + (m || 0);
     if (isNaN(totalMins) || totalMins < 420 || totalMins > 1320) {
@@ -314,6 +327,35 @@ export async function addCita(data: any) {
 
 export async function updateCita(id: string, data: any) {
   try {
+    const session = await getServerSession(authOptions);
+    const userRole = ((session?.user as any)?.role || "").toUpperCase();
+    if (userRole === "TERAPEUTA") {
+      const tz = await getSystemTimezone();
+      const d = new Date();
+      d.setDate(d.getDate() - 5);
+      const cutoffDateStr = d.toLocaleDateString("en-CA", { timeZone: tz });
+
+      const citaTarget = await prisma.session.findUnique({ where: { id } });
+      if (citaTarget) {
+        let originalDateStr = citaTarget.date.toISOString().split("T")[0];
+        if (citaTarget.notes) {
+          try {
+            const parsed = JSON.parse(citaTarget.notes);
+            if (parsed.fecha) originalDateStr = parsed.fecha;
+          } catch (e) {}
+        }
+        if (originalDateStr < cutoffDateStr) {
+          return { success: false, error: `No tienes permisos para modificar citas con más de 5 días de antigüedad (Fecha límite: ${cutoffDateStr}).` };
+        }
+        if (data.fecha) {
+          const newDateStr = data.fecha.substring(0, 10);
+          if (newDateStr < cutoffDateStr) {
+            return { success: false, error: `No tienes permisos para mover citas a fechas con más de 5 días de antigüedad (Fecha límite: ${cutoffDateStr}).` };
+          }
+        }
+      }
+    }
+
     const citaTarget = await prisma.session.findUnique({ where: { id }, include: { patient: true } });
     const existingNotes = citaTarget?.notes ? (() => { try { return JSON.parse(citaTarget.notes); } catch { return {}; } })() : {};
     
@@ -366,6 +408,21 @@ export async function deleteCita(id: string, deleteFuture: boolean = false) {
       const cita = await prisma.session.findUnique({ where: { id } });
       if (cita?.status !== "Ocupado" && cita?.status !== "No Disponible") {
         return { success: false, error: "No tienes permisos para eliminar citas. Solo el administrador puede hacerlo." };
+      }
+      
+      const tz = await getSystemTimezone();
+      const d = new Date();
+      d.setDate(d.getDate() - 5);
+      const cutoffDateStr = d.toLocaleDateString("en-CA", { timeZone: tz });
+      let originalDateStr = cita?.date.toISOString().split("T")[0];
+      if (cita?.notes) {
+        try {
+          const parsed = JSON.parse(cita.notes);
+          if (parsed.fecha) originalDateStr = parsed.fecha;
+        } catch (e) {}
+      }
+      if (originalDateStr && originalDateStr < cutoffDateStr) {
+        return { success: false, error: `No tienes permisos para eliminar bloqueos con más de 5 días de antigüedad (Fecha límite: ${cutoffDateStr}).` };
       }
     }
 
