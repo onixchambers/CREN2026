@@ -262,6 +262,12 @@ export default function AsistenciaPage() {
   const [terapeutas, setTerapeutas] = useState<string[]>([]);
   const [terapeutasFullData, setTerapeutasFullData] = useState<any[]>([]);
 
+  // Estado para alerta de saldo al prellenar desde agenda
+  const [prefillBalanceAlert, setPrefillBalanceAlert] = useState<{
+    pacienteNombre: string;
+    saldo: number;
+  } | null>(null);
+
   // Predictivo
   const [showDropdown, setShowDropdown] = useState(false);
   const [showSegundoPago, setShowSegundoPago] = useState(false);
@@ -507,6 +513,15 @@ export default function AsistenciaPage() {
              metodoPago: pd.metodoPago || "",
              montoPago: pd.pagado ? (pMatch?.precioTerapia || "400") : ""
           }));
+          if (pMatch) {
+            const saldoNum = parseFloat(pMatch.saldoCalculado) || 0;
+            if (saldoNum !== 0) {
+              setPrefillBalanceAlert({
+                pacienteNombre: pd.pacienteNombre,
+                saldo: saldoNum
+              });
+            }
+          }
           sessionStorage.removeItem("prefillAsistencia");
         } catch (e) {
           console.error(e);
@@ -2071,6 +2086,56 @@ export default function AsistenciaPage() {
               </div>
             </div>
            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Ventana flotante (Modal) de Advertencia de Saldo */}
+      {prefillBalanceAlert && (
+        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-[9999] p-4 animate-in fade-in">
+          <div className="bg-white rounded-2xl shadow-2xl w-full max-w-sm overflow-hidden border border-slate-200 animate-in zoom-in-95 duration-200">
+            <div className="p-6 text-center space-y-4">
+              <div className="flex justify-between items-start">
+                <h4 className="text-xs font-bold text-slate-500 uppercase tracking-wide">Saldo del Paciente</h4>
+                <button 
+                  onClick={() => setPrefillBalanceAlert(null)}
+                  className="text-slate-400 hover:text-slate-600 font-extrabold text-lg cursor-pointer"
+                >
+                  ✕
+                </button>
+              </div>
+              
+              <div className="space-y-2">
+                <p className="text-lg font-black text-slate-800">{prefillBalanceAlert.pacienteNombre}</p>
+                
+                {prefillBalanceAlert.saldo > 0 ? (
+                  <div className="bg-emerald-50 border border-emerald-300 text-emerald-800 rounded-xl p-4">
+                    <span className="block text-xs font-semibold uppercase tracking-wider mb-1">Saldo Positivo</span>
+                    <span className="text-3xl font-black text-emerald-600">
+                      ${prefillBalanceAlert.saldo.toFixed(2)}
+                    </span>
+                  </div>
+                ) : (
+                  <div className="bg-red-50 border border-red-300 text-red-800 rounded-xl p-4">
+                    <span className="block text-xs font-semibold uppercase tracking-wider mb-1">Saldo Negativo (Adeudo)</span>
+                    <span className="text-3xl font-black text-red-600">
+                      -${Math.abs(prefillBalanceAlert.saldo).toFixed(2)}
+                    </span>
+                  </div>
+                )}
+              </div>
+              
+              <button
+                onClick={() => setPrefillBalanceAlert(null)}
+                className={`w-full py-2.5 rounded-xl font-bold text-sm text-white shadow-md transition-all active:scale-95 cursor-pointer ${
+                  prefillBalanceAlert.saldo > 0 
+                    ? 'bg-emerald-600 hover:bg-emerald-700 shadow-emerald-200' 
+                    : 'bg-red-600 hover:bg-red-700 shadow-red-200'
+                }`}
+              >
+                Entendido
+              </button>
+            </div>
           </div>
         </div>
       )}
