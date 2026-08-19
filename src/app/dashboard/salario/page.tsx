@@ -158,6 +158,7 @@ export default function SalarioPage() {
               isFixedRate: boolean;
               fixedRateVal: number;
               tipoSesiones: string[];
+              esquemas: string[];
             }>();
 
             let ingresoBrutoTotalGenBruto = 0;
@@ -240,6 +241,12 @@ export default function SalarioPage() {
                 applyFee = true;
               }
 
+              const sessionScheme = isFixedActive 
+                ? `Honorario Fijo ($${rateConfig.therapistPay.toFixed(2)})` 
+                : t.tipoPago === "Porcentaje" 
+                  ? `Comisión (${isValoracion ? (t.porcentajeValoracion ?? t.porcentaje ?? 50) : (t.porcentaje || 50)}%)`
+                  : "Salario Base";
+
               if (applyFee) {
                 if (t.retieneIVA) {
                   ivaSesionRetenido = comisionBase * 0.16;
@@ -289,7 +296,8 @@ export default function SalarioPage() {
                   crenGanancia: crenGananciaSesion,
                   isFixedRate: isFixedActive,
                   fixedRateVal: isFixedActive ? rateConfig.therapistPay : 0,
-                  tipoSesiones: tipoSesionLabel ? [tipoSesionLabel] : []
+                  tipoSesiones: tipoSesionLabel ? [tipoSesionLabel] : [],
+                  esquemas: [sessionScheme]
                 });
               } else {
                 const item = pacienteMap.get(pName)!;
@@ -302,6 +310,9 @@ export default function SalarioPage() {
                 item.crenGanancia += crenGananciaSesion;
                 if (tipoSesionLabel && !item.tipoSesiones.includes(tipoSesionLabel)) {
                   item.tipoSesiones.push(tipoSesionLabel);
+                }
+                if (!item.esquemas.includes(sessionScheme)) {
+                  item.esquemas.push(sessionScheme);
                 }
               }
             });
@@ -534,14 +545,29 @@ export default function SalarioPage() {
                               ${p.subtotalValor.toLocaleString('es-MX', {minimumFractionDigits: 2})}
                             </td>
                             <td className="py-3 px-4 text-center">
-                              {p.isFixedRate ? (
-                                <span className="px-2 py-0.5 bg-emerald-100 text-emerald-800 rounded font-bold text-[10px]" title="Honorario fijo íntegro configurado por paciente">
-                                  Honorario Fijo (${p.fixedRateVal.toFixed(2)})
-                                </span>
+                              {p.esquemas && p.esquemas.length > 0 ? (
+                                <div className="flex flex-col gap-1 items-center justify-center">
+                                  {p.esquemas.map((sch, sIdx) => {
+                                    const isFixed = sch.includes("Honorario Fijo");
+                                    const isValoracionSch = sch.includes("Comisión") && sch !== `Comisión (${t.porcentaje}%)`;
+                                    return (
+                                      <span 
+                                        key={sIdx} 
+                                        className={`px-2 py-0.5 rounded font-bold text-[10px] whitespace-nowrap block text-center border ${
+                                          isFixed 
+                                            ? 'bg-emerald-100 text-emerald-800 border-emerald-300' 
+                                            : isValoracionSch 
+                                              ? 'bg-amber-100 text-amber-800 border-amber-300' 
+                                              : 'bg-slate-100 text-slate-700 border-slate-200'
+                                        }`}
+                                      >
+                                        {sch}
+                                      </span>
+                                    );
+                                  })}
+                                </div>
                               ) : (
-                                <span className="px-2 py-0.5 bg-slate-100 text-slate-700 rounded font-semibold text-[10px]">
-                                  {t.tipoPago === "Porcentaje" ? `Comisión (${t.porcentaje}%)` : `Salario Base`}
-                                </span>
+                                <span className="text-slate-300 text-[10px]">—</span>
                               )}
                             </td>
                             <td className="py-3 px-4 text-right text-blue-600 font-semibold">
