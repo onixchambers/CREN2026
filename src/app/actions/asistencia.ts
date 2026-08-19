@@ -490,6 +490,14 @@ export async function getAsistenciasDB() {
         const costoS = (isFreeCancel || isAgendado) ? 0 : (parseMoneyStr(extra.costoSesion || extra.precioTerapia) || totalVal || defaultPrice);
         const sDate = extra.fecha || (s.date instanceof Date ? s.date.toISOString().split("T")[0] : String(s.date).split("T")[0]);
         const isBeforeCutoff = sDate && sDate <= "2026-06-30";
+
+        const isNinguno = (metodoPagoStr || "").toLowerCase().includes("ninguno");
+        const fuePagado = !isFreeCancel && !isAgendado && !isNinguno && (montoP > 0 || totalVal > 0 || extra.pago === "SÍ" || extra.pago === "SI" || extra.pagado === true);
+
+        if (fuePagado && montoP === 0) {
+          montoP = costoS;
+        }
+
         const sessionSaldo = (isFreeCancel || isAgendado || isBeforeCutoff) ? 0 : (montoP - costoS);
         runningBalance += sessionSaldo;
 
@@ -504,8 +512,6 @@ export async function getAsistenciasDB() {
           subtotalVal = totalVal;
           ivaVal = 0;
         }
-
-        const fuePagado = !isFreeCancel && !isAgendado && (montoP > 0 || totalVal > 0 || extra.pago === "SÍ" || extra.pago === "SI" || extra.pagado === true);
 
         const horaFormatted = (extra.hora || extra.horaRegistro || (s.date ? new Date(s.date).toISOString().split("T")[1]?.substring(0, 5) : "") || "09:00").toString().trim().substring(0, 5);
 

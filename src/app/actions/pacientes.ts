@@ -276,19 +276,21 @@ export async function getPatients() {
             }
           }
 
-          let costo = isBeforeCutoff ? 0 : parseFloat(parsedNotes.costoSesion || parsedNotes.precioTerapia || "0");
+          let costo = isBeforeCutoff ? 0 : parseFloat(parsedNotes.costoSesion || parsedNotes.precioTerapia || "500");
           if (!isBeforeCutoff && (isNaN(costo) || costo === 0) && isAttended) {
-            costo = monto || parseFloat(p.precioTerapia || "0");
+            costo = monto || parseFloat(p.precioTerapia || "500");
           }
 
           // Misma lógica que getAsistenciasDB: si pago=SÍ pero monto=0, asumir que pagó el costo completo
-          // Esto cubre casos donde metodoPago es "Por definir $900" pero montoPago está en 0
           const rawEstPago = (parsedNotes.estadoAsistencia || parsedNotes.estado || "").toString();
           const estNormPago = rawEstPago.toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "");
           const isFreeCancelPago = (estNormPago.includes("con anticip") || estNormPago.includes("anticipad") || estNormPago.includes("centro") || estNormPago.includes("recuperado")) && !estNormPago.includes("sin anticip");
           const isNinguno = (parsedNotes.metodoPago || "").toLowerCase().includes("ninguno");
-          if (!isBeforeCutoff && !isFreeCancelPago && !isNinguno && monto === 0 && costo > 0 &&
-            (parsedNotes.pago === "SÍ" || parsedNotes.pago === "SI" || parsedNotes.pagado === true || parsedNotes.pagado === "true")) {
+          
+          const fuePagado = !isFreeCancelPago && isAttended && !isNinguno &&
+            (monto > 0 || costo > 0 || parsedNotes.pago === "SÍ" || parsedNotes.pago === "SI" || parsedNotes.pagado === true || parsedNotes.pagado === "true");
+
+          if (!isBeforeCutoff && fuePagado && monto === 0) {
             monto = costo;
           }
 
