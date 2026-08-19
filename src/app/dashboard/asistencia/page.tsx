@@ -918,13 +918,26 @@ export default function AsistenciaPage() {
       setEditForm((prev: any) => ({ ...prev, [name]: (e.target as HTMLInputElement).checked }));
     } else if (name === "estado") {
       const sNorm = (value || "").toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "");
-      const isFreeCancel = (sNorm.includes("con anticip") || sNorm.includes("anticipad") || sNorm.includes("centro")) && !sNorm.includes("sin anticip");
-      setEditForm((prev: any) => ({
-        ...prev,
-        estado: value,
-        metodoPago: isFreeCancel ? "Ninguno" : (prev.metodoPago === "Ninguno" ? "Efectivo" : prev.metodoPago),
-        montoPago: isFreeCancel ? "0" : prev.montoPago
-      }));
+      const isCancelOrRecovered = sNorm.includes("cancelo") || sNorm.includes("recuperado");
+      
+      if (isCancelOrRecovered) {
+        setShowEditSegundoPago(false);
+        setEditForm((prev: any) => ({
+          ...prev,
+          estado: value,
+          metodoPago: "Ninguno",
+          montoPago: "0",
+          metodoPago2: "",
+          montoPago2: ""
+        }));
+      } else {
+        setEditForm((prev: any) => ({
+          ...prev,
+          estado: value,
+          metodoPago: prev.metodoPago === "Ninguno" ? "Efectivo" : (prev.metodoPago || "Efectivo"),
+          montoPago: prev.montoPago === "0" ? "" : prev.montoPago
+        }));
+      }
     } else {
       setEditForm((prev: any) => ({ ...prev, [name]: value }));
     }
@@ -945,7 +958,7 @@ export default function AsistenciaPage() {
     const ivaPct = await getSystemIvaRate();
     const ivaDec = (ivaPct || 16) / 100;
     const estNormEdit = (editForm.estado || "").toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "");
-    const isFreeCancelEdit = (estNormEdit.includes("con anticip") || estNormEdit.includes("anticipad") || estNormEdit.includes("centro")) && !estNormEdit.includes("sin anticip");
+    const isFreeCancelEdit = (estNormEdit.includes("con anticip") || estNormEdit.includes("anticipad") || estNormEdit.includes("centro") || estNormEdit.includes("recuperado")) && !estNormEdit.includes("sin anticip");
 
     let totVal = isFreeCancelEdit ? 0 : (precioTerapiaNum > 0 ? precioTerapiaNum : montoPagado);
     let subVal = totVal;
@@ -963,16 +976,24 @@ export default function AsistenciaPage() {
       return found || defaultVal;
     };
 
-    let defaultEditMetodo = isFreeCancelEdit ? "Ninguno" : "Efectivo";
-    let m1Method = cleanMethod(editForm.metodoPago, defaultEditMetodo);
-    let editMetodoPagoFinal = isFreeCancelEdit ? "Ninguno" : `${m1Method} $${m1}`;
-
-    if (!isFreeCancelEdit && showEditSegundoPago && editForm.metodoPago2 && m2 > 0) {
-      let m2Method = cleanMethod(editForm.metodoPago2, "Transferencia");
-      editMetodoPagoFinal = `${m1Method} $${m1}\n${m2Method} $${m2}`;
+    const isCancelEdit = estNormEdit.includes("cancelo") || estNormEdit.includes("recuperado");
+    let editMetodoPagoFinal = "";
+    if (montoPagado === 0 || isCancelEdit) {
+      editMetodoPagoFinal = "Ninguno";
+    } else {
+      let defaultEditMetodo = "Efectivo";
+      let m1Method = cleanMethod(editForm.metodoPago, defaultEditMetodo);
+      if (m1Method === "Ninguno") {
+        m1Method = "Efectivo";
+      }
+      editMetodoPagoFinal = `${m1Method} $${m1}`;
+      if (showEditSegundoPago && editForm.metodoPago2 && m2 > 0) {
+        let m2Method = cleanMethod(editForm.metodoPago2, "Transferencia");
+        editMetodoPagoFinal = `${m1Method} $${m1}\n${m2Method} $${m2}`;
+      }
     }
 
-    const fuePagado = !isFreeCancelEdit && (montoPagado >= precioTerapiaNum || editForm.pago === "SÍ");
+    const fuePagado = !isFreeCancelEdit && !isCancelEdit && (montoPagado >= precioTerapiaNum || editForm.pago === "SÍ");
 
     let asisActualizada: any = null;
     const nuevasAsistencias = asistencias.map(a => {
@@ -1450,8 +1471,8 @@ export default function AsistenciaPage() {
                   <td className="px-1 py-2 text-slate-500 text-[11px]">{a.edad}</td>
                   <td className="px-1 py-2 text-slate-500 text-[11px] whitespace-nowrap">{a.tipoSesion}</td>
                   <td className="px-1 py-2 whitespace-nowrap">
-                    <span className={`px-1.5 py-0.5 rounded text-[9.5px] font-bold whitespace-nowrap ${(a.estado || "").toLowerCase().includes("centro") ? 'bg-[#fef08a] text-[#78350f] border border-amber-300' : (a.estado || "").toLowerCase().includes("sin anticipa") ? 'bg-red-100 text-red-900 border border-red-300' : (a.estado || "").toLowerCase().includes("anticipad") || (a.estado || "").toLowerCase().includes("con anticipa") ? 'bg-orange-100 text-orange-900 border border-orange-300' : (a.estado || "").toLowerCase().includes("asist") ? 'bg-slate-200 text-slate-800 border border-slate-300' : 'bg-emerald-100 text-emerald-900 border border-emerald-400'}`}>
-                      {(a.estado || "").toLowerCase().includes("centro") ? 'Canceló el centro' : (a.estado || "").toLowerCase().includes("sin anticipa") ? 'Canceló S/A' : (a.estado || "").toLowerCase().includes("anticipad") || (a.estado || "").toLowerCase().includes("con anticipa") ? 'Canceló C/A' : (a.estado || "").toLowerCase().includes("asist") ? 'Asistió' : a.estado}
+                    <span className={`px-1.5 py-0.5 rounded text-[9.5px] font-bold whitespace-nowrap ${(a.estado || "").toLowerCase().includes("centro") ? 'bg-[#fef08a] text-[#78350f] border border-amber-300' : (a.estado || "").toLowerCase().includes("sin anticipa") ? 'bg-red-100 text-red-900 border border-red-300' : (a.estado || "").toLowerCase().includes("anticipad") || (a.estado || "").toLowerCase().includes("con anticipa") ? 'bg-orange-100 text-orange-900 border border-orange-300' : (a.estado || "").toLowerCase().includes("recuperado") ? 'bg-gray-100 text-gray-600 border border-gray-300' : (a.estado || "").toLowerCase().includes("asist") ? 'bg-slate-200 text-slate-800 border border-slate-300' : 'bg-emerald-100 text-emerald-900 border border-emerald-400'}`}>
+                      {(a.estado || "").toLowerCase().includes("centro") ? 'Canceló el centro' : (a.estado || "").toLowerCase().includes("sin anticipa") ? 'Canceló S/A' : (a.estado || "").toLowerCase().includes("anticipad") || (a.estado || "").toLowerCase().includes("con anticipa") ? 'Canceló C/A' : (a.estado || "").toLowerCase().includes("recuperado") ? 'Recuperado' : (a.estado || "").toLowerCase().includes("asist") ? 'Asistió' : a.estado}
                     </span>
                   </td>
                   <td className="px-1 py-2 text-slate-500 text-[11px] whitespace-nowrap">{a.frecuencia || "Única"}</td>
@@ -1660,6 +1681,7 @@ export default function AsistenciaPage() {
                     <option value="Cancelo el centro">Canceló el centro</option>
                     <option value="Alta">Alta</option>
                     <option value="Baja">Baja</option>
+                    <option value="Recuperado">Recuperado</option>
                   </select>
                 </div>
                 

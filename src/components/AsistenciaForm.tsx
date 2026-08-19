@@ -56,6 +56,7 @@ export const normalizeEstadoAsistencia = (val: string) => {
   if (s.includes("con anticipacion") || s.includes("anticipad") || s.includes("con anticipa")) return "Cancelo con anticipacion";
   if (s.includes("asist") || s === "asistio" || s === "asistió") return "Asistio";
   if (s.includes("agend") || s === "agendado") return "Agendado";
+  if (s.includes("recuperado")) return "Recuperado";
   return "Asistio";
 };
 
@@ -123,7 +124,7 @@ export function AsistenciaForm({
     if (initialData) {
       const normEstado = initialData.estadoAsistencia ? normalizeEstadoAsistencia(initialData.estadoAsistencia) : "";
       const estNormInit = normEstado.toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "");
-      const isFreeCancelInit = (estNormInit.includes("con anticip") || estNormInit.includes("anticipad") || estNormInit.includes("centro")) && !estNormInit.includes("sin anticip");
+      const isFreeCancelInit = (estNormInit.includes("con anticip") || estNormInit.includes("anticipad") || estNormInit.includes("centro") || estNormInit.includes("recuperado")) && !estNormInit.includes("sin anticip");
       
       let resolvedArea = initialData.area;
       if (!resolvedArea && (initialData.terapeuta || userRole.toUpperCase() === "TERAPEUTA")) {
@@ -239,9 +240,9 @@ export function AsistenciaForm({
       const precio = p.precioTerapia || formData.precioTerapia || "0";
       const numericPrice = parseFloat(precio) || 0;
       const normE = targetEstado.toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "");
-      const isCancel = normE.includes("cancelo");
+      const isCancelOrRecovered = normE.includes("cancelo") || normE.includes("recuperado");
 
-      if (isCancel) {
+      if (isCancelOrRecovered) {
         setShowSegundoPago(false);
       }
 
@@ -257,8 +258,8 @@ export function AsistenciaForm({
         hora: horaAgenda,
         tipoSesion: tipoSesionAgenda,
         estadoAsistencia: targetEstado,
-        metodoPago: isCancel ? "Ninguno" : (prev.metodoPago === "Ninguno" ? "Efectivo" : (prev.metodoPago || "Efectivo")),
-        montoPago: isCancel ? "0" : (isAsistio ? numericPrice.toString() : prev.montoPago),
+        metodoPago: isCancelOrRecovered ? "Ninguno" : (prev.metodoPago === "Ninguno" ? "Efectivo" : (prev.metodoPago || "Efectivo")),
+        montoPago: isCancelOrRecovered ? "0" : (isAsistio ? numericPrice.toString() : prev.montoPago),
         saldoDisponible: p.saldoCalculado || "0.00",
         precioTerapia: precio,
         numeroSesiones: "1", 
@@ -287,9 +288,9 @@ export function AsistenciaForm({
     } else if (name === "estadoAsistencia") {
       const norm = normalizeEstadoAsistencia(value);
       const sNorm = norm.toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "");
-      const isCancel = sNorm.includes("cancelo");
+      const isCancelOrRecovered = sNorm.includes("cancelo") || sNorm.includes("recuperado");
       
-      if (isCancel) {
+      if (isCancelOrRecovered) {
         setShowSegundoPago(false);
         setFormData(prev => ({
           ...prev,
@@ -306,13 +307,15 @@ export function AsistenciaForm({
             ...prev,
             estadoAsistencia: value,
             metodoPago: prev.metodoPago === "Ninguno" ? "Efectivo" : (prev.metodoPago || "Efectivo"),
-            montoPago: precio.toString()
+            montoPago: prev.montoPago === "0" ? "" : prev.montoPago
           };
         });
       } else {
         setFormData(prev => ({
           ...prev,
-          estadoAsistencia: value
+          estadoAsistencia: value,
+          metodoPago: prev.metodoPago === "Ninguno" ? "Efectivo" : (prev.metodoPago || "Efectivo"),
+          montoPago: prev.montoPago === "0" ? "" : prev.montoPago
         }));
       }
     } else if (name === "precioTerapia") {
@@ -359,7 +362,7 @@ export function AsistenciaForm({
     const precioTerapia = parseMoney(formData.precioTerapia);
 
     const estNorm = normalizeEstadoAsistencia(formData.estadoAsistencia || "").toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "");
-    const isFreeCancel = (estNorm.includes("con anticip") || estNorm.includes("anticipad") || estNorm.includes("centro")) && !estNorm.includes("sin anticip");
+    const isFreeCancel = (estNorm.includes("con anticip") || estNorm.includes("anticipad") || estNorm.includes("centro") || estNorm.includes("recuperado")) && !estNorm.includes("sin anticip");
 
     const isPagoEmpty = formData.montoPago === undefined || formData.montoPago === null || formData.montoPago.toString().trim() === "";
 
@@ -794,7 +797,7 @@ export function AsistenciaForm({
 
                         const rawEstPago = (n.estadoAsistencia || n.estado || "").toString();
                         const estNormPago = rawEstPago.toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "");
-                        const isFreeCancelPago = (estNormPago.includes("con anticip") || estNormPago.includes("anticipad") || estNormPago.includes("centro")) && !estNormPago.includes("sin anticip");
+                        const isFreeCancelPago = (estNormPago.includes("con anticip") || estNormPago.includes("anticipad") || estNormPago.includes("centro") || estNormPago.includes("recuperado")) && !estNormPago.includes("sin anticip");
                         if (!isFreeCancelPago && existingPayment === 0 && existingCost > 0 &&
                           (n.pago === "SÍ" || n.pago === "SI" || n.pagado === true || n.pagado === "true")) {
                           existingPayment = existingCost;
@@ -811,7 +814,7 @@ export function AsistenciaForm({
                 const montoIngresado = p1 + p2;
                 const costoSesionF = parseMoney(formData.precioTerapia);
                 const estNorm = normalizeEstadoAsistencia(formData.estadoAsistencia || "").toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "");
-                const isFreeCancel = (estNorm.includes("con anticip") || estNorm.includes("anticipad") || estNorm.includes("centro")) && !estNorm.includes("sin anticip");
+                const isFreeCancel = (estNorm.includes("con anticip") || estNorm.includes("anticipad") || estNorm.includes("centro") || estNorm.includes("recuperado")) && !estNorm.includes("sin anticip");
 
                 const costoAplica = isFreeCancel ? 0 : costoSesionF;
                 const saldoF = trueSaldoPrevio + montoIngresado - costoAplica;
@@ -836,6 +839,7 @@ export function AsistenciaForm({
                 <option value="Cancelo el centro">Canceló el centro</option>
                 <option value="Alta">Alta</option>
                 <option value="Baja">Baja</option>
+                <option value="Recuperado">Recuperado</option>
               </select>
             </div>
           </div>
@@ -851,7 +855,7 @@ export function AsistenciaForm({
               <div className="flex items-center gap-2">
                 {(() => {
                   const estNorm = normalizeEstadoAsistencia(formData.estadoAsistencia || "").toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "");
-                  const isFreeCancel = (estNorm.includes("con anticip") || estNorm.includes("anticipad") || estNorm.includes("centro")) && !estNorm.includes("sin anticip");
+                  const isFreeCancel = (estNorm.includes("con anticip") || estNorm.includes("anticipad") || estNorm.includes("centro") || estNorm.includes("recuperado")) && !estNorm.includes("sin anticip");
                   const isNinguno = formData.metodoPago === "Ninguno" || isFreeCancel;
                   return (
                     <select name="metodoPago" value={formData.metodoPago} onChange={handleChange} className={`flex-1 text-sm p-2 border border-slate-300 rounded focus:border-[#2980b9] outline-none ${isNinguno ? 'bg-gray-500/20 text-slate-800 font-medium' : 'text-slate-900 bg-white'}`}>
@@ -929,7 +933,7 @@ export function AsistenciaForm({
               const montoIngresado = p1 + p2;
               const precioTerapia = parseFloat((formData.precioTerapia || "0").replace(/[^0-9.-]/g, ""));
               const estNorm = normalizeEstadoAsistencia(formData.estadoAsistencia || "").toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "");
-              const isFreeCancel = (estNorm.includes("con anticip") || estNorm.includes("anticipad") || estNorm.includes("centro")) && !estNorm.includes("sin anticip");
+              const isFreeCancel = (estNorm.includes("con anticip") || estNorm.includes("anticipad") || estNorm.includes("centro") || estNorm.includes("recuperado")) && !estNorm.includes("sin anticip");
 
               let montoEfectivo = montoIngresado;
               if (!isFreeCancel && montoIngresado === 0 && precioTerapia > 0 && !formData.montoPago) {

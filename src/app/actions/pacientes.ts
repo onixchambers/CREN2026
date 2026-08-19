@@ -278,7 +278,7 @@ export async function getPatients() {
           // Esto cubre casos donde metodoPago es "Por definir $900" pero montoPago está en 0
           const rawEstPago = (parsedNotes.estadoAsistencia || parsedNotes.estado || "").toString();
           const estNormPago = rawEstPago.toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "");
-          const isFreeCancelPago = (estNormPago.includes("con anticip") || estNormPago.includes("anticipad") || estNormPago.includes("centro")) && !estNormPago.includes("sin anticip");
+          const isFreeCancelPago = (estNormPago.includes("con anticip") || estNormPago.includes("anticipad") || estNormPago.includes("centro") || estNormPago.includes("recuperado")) && !estNormPago.includes("sin anticip");
           const isNinguno = (parsedNotes.metodoPago || "").toLowerCase().includes("ninguno");
           if (!isBeforeCutoff && !isFreeCancelPago && !isNinguno && monto === 0 && costo > 0 &&
             (parsedNotes.pago === "SÍ" || parsedNotes.pago === "SI" || parsedNotes.pagado === true || parsedNotes.pagado === "true")) {

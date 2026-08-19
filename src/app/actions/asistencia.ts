@@ -234,8 +234,8 @@ export async function saveAsistenciaDB(data: any) {
     const estadoVal = data.estadoAsistencia || data.estado || "Asistio";
     const estNormVal = estadoVal.toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "");
     const isAsistioVal = estNormVal === "asistio";
-    const isCancelVal = estNormVal.includes("cancelo");
-    const isFreeCancel = (estNormVal.includes("con anticip") || estNormVal.includes("anticipad") || estNormVal.includes("centro")) && !estNormVal.includes("sin anticip");
+    const isCancelVal = estNormVal.includes("cancelo") || estNormVal.includes("recuperado");
+    const isFreeCancel = (estNormVal.includes("con anticip") || estNormVal.includes("anticipad") || estNormVal.includes("centro") || estNormVal.includes("recuperado")) && !estNormVal.includes("sin anticip");
 
     if (isCancelVal) {
       montoP = 0;
@@ -440,7 +440,7 @@ export async function getAsistenciasDB() {
         const mappedEstado = extra.estadoAsistencia || extra.estado || (s.status === "COMPLETED" ? "Asistio" : (s.status === "CANCELLED" ? "Cancelo el centro" : "Agendado"));
         const isAgendado = mappedEstado.toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "").includes("agendado");
 
-        const isFreeCancel = !isAgendado && (estNorm.includes("con anticip") || estNorm.includes("anticipad") || estNorm.includes("centro")) && !estNorm.includes("sin anticip");
+        const isFreeCancel = !isAgendado && (estNorm.includes("con anticip") || estNorm.includes("anticipad") || estNorm.includes("centro") || estNorm.includes("recuperado")) && !estNorm.includes("sin anticip");
 
         let metodoPagoStr = isAgendado ? "Ninguno" : (extra.metodoPago || extra.metodoPagoFinal || extra.metodoPago1 || (isFreeCancel ? "Ninguno" : "Efectivo"));
         if (!isAgendado && isFreeCancel && (metodoPagoStr === "Efectivo" || !extra.metodoPago)) {
