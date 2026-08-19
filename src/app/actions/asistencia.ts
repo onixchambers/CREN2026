@@ -476,6 +476,7 @@ export async function getAsistenciasDB() {
         const sDate = extra.fecha || (s.date instanceof Date ? s.date.toISOString().split("T")[0] : String(s.date).split("T")[0]);
         const isBeforeCutoff = sDate && sDate <= "2026-06-30";
         const sessionSaldo = (isFreeCancel || isAgendado || isBeforeCutoff) ? 0 : (montoP - costoS);
+        runningBalance += sessionSaldo;
 
         const solicitaFactura = !isAgendado && (extra.solicitaFactura === true || extra.solicitaFactura === "true" || extra.solicitaFactura === "Sí" || extra.solicitaFactura === "Si" || extra.solicitaFactura === "S" || extra.fact === "Sí" || extra.fact === "Si" || extra.fact === "S" || extra.fact === true);
         let subtotalVal = isAgendado ? 0 : parseMoneyStr(extra.subtotal);
@@ -514,7 +515,7 @@ export async function getAsistenciasDB() {
           subtotal: "$" + Number(subtotalVal).toFixed(2),
           iva: "$" + Number(ivaVal).toFixed(2),
           total: "$" + Number(totalVal).toFixed(2),
-          saldo: sessionSaldo,
+          saldo: runningBalance,
           obs: extra.obs || "-",
           creadoPor: extra.creadoPor || "-",
           terapeuta: s.therapist?.name || extra.terapeuta || extra.terapeutaNombre || "-"
