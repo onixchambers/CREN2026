@@ -142,6 +142,16 @@ export async function getFinanzasMensuales(month: string, fechaDesde?: string, f
     const ivaPct = (sysSettings?.ivaRate !== undefined && sysSettings?.ivaRate !== null) ? sysSettings.ivaRate : 16;
     const ivaDec = ivaPct / 100;
 
+    let fixedHonorarios: any = { enabled: false, rates: {} };
+    if (sysSettings?.notes) {
+      try {
+        const parsed = JSON.parse(sysSettings.notes);
+        if (parsed.patientFixedHonorarios) {
+          fixedHonorarios = parsed.patientFixedHonorarios;
+        }
+      } catch (e) {}
+    }
+
     monthSessions.forEach(s => {
       let extra: any = {};
       try {
@@ -201,6 +211,7 @@ export async function getFinanzasMensuales(month: string, fechaDesde?: string, f
           pago: 0,
           tipoPago: s.therapist?.tipoPago || "Porcentaje",
           porcentaje: s.therapist?.porcentaje || 0,
+          porcentajeValoracion: s.therapist?.porcentajeValoracion ?? (s.therapist?.porcentaje ?? 50),
           salarioBase: s.therapist?.salarioBase || 0,
           retieneIVA: s.therapist?.retieneIVA || false,
           cobrarCanceloSA: cobrarCanceloSA,
@@ -229,8 +240,27 @@ export async function getFinanzasMensuales(month: string, fechaDesde?: string, f
           ? precioTotal
           : Math.max(0, precioTotal - deudaSesion);
 
-        if (tData.tipoPago === "Porcentaje") {
-          let comisionBase = ingresoEfectivoSesion * ((tData.porcentaje || 0) / 100);
+        const pName = (s.patient?.name || extra.paciente || extra.pacienteNombre || "Paciente Desconocido").trim();
+        const pNameLower = pName.toLowerCase();
+        const rateConfig = fixedHonorarios?.enabled ? fixedHonorarios?.rates?.[pNameLower] : null;
+        const isFixedActive = rateConfig && rateConfig.enabled !== false && typeof rateConfig.therapistPay === "number";
+
+        const tipoSesionLabel = (extra.tipoSesion || extra.tipoServicio || extra.servicio || "").trim();
+        const isValoracion = tipoSesionLabel.toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "").includes("valoraci");
+
+        let comisionBase = 0;
+        let applyFee = false;
+
+        if (isFixedActive) {
+          comisionBase = rateConfig.therapistPay;
+          applyFee = true;
+        } else if (tData.tipoPago === "Porcentaje") {
+          const pct = isValoracion ? (tData.porcentajeValoracion ?? tData.porcentaje ?? 50) : (tData.porcentaje || 50);
+          comisionBase = ingresoEfectivoSesion * (pct / 100);
+          applyFee = true;
+        }
+
+        if (applyFee) {
           if (tData.retieneIVA) {
             const ivaDelTerapeuta = comisionBase * ivaDec;
             tData.pago += (comisionBase + ivaDelTerapeuta);

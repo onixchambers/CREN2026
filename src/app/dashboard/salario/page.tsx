@@ -225,8 +225,22 @@ export default function SalarioPage() {
               const cobrarCanceloSA = Boolean(t.cobrarCanceloSA);
               const ingresoEfectivoSesion = cobrarCanceloSA ? precioSession : Math.max(0, precioSession - deudaSesion);
 
-              if (t.tipoPago === "Porcentaje") {
-                const comisionBase = ingresoEfectivoSesion * ((t.porcentaje || 50) / 100);
+              const tipoSesionLabel = (a.tipoSesion || a.tipoServicio || a.servicio || "").trim();
+              const isValoracion = tipoSesionLabel.toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "").includes("valoraci");
+
+              let comisionBase = 0;
+              let applyFee = false;
+
+              if (isFixedActive) {
+                comisionBase = rateConfig.therapistPay;
+                applyFee = true;
+              } else if (t.tipoPago === "Porcentaje") {
+                const pct = isValoracion ? (t.porcentajeValoracion ?? t.porcentaje ?? 50) : (t.porcentaje || 50);
+                comisionBase = ingresoEfectivoSesion * (pct / 100);
+                applyFee = true;
+              }
+
+              if (applyFee) {
                 if (t.retieneIVA) {
                   ivaSesionRetenido = comisionBase * 0.16;
                   pagoSesionTerapeuta = comisionBase + ivaSesionRetenido;
@@ -262,7 +276,6 @@ export default function SalarioPage() {
 
               // Map paciente
               const deudaVal = typeof a.saldo === "number" && a.saldo < 0 ? Math.abs(a.saldo) : 0;
-              const tipoSesionLabel = (a.tipoSesion || a.tipoServicio || a.servicio || "").trim();
 
               if (!pacienteMap.has(pName)) {
                 pacienteMap.set(pName, {
