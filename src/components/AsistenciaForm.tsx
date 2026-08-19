@@ -659,6 +659,7 @@ export function AsistenciaForm({
                   return isNaN(num) ? "" : num.toString();
                 })()} onChange={handleChange} className="w-full text-sm p-2 border border-slate-300 rounded focus:border-[#2980b9] outline-none text-slate-700 bg-white font-medium">
                   <option value="">Seleccionar precio...</option>
+                  <option value="0">$0.00</option>
                   {therapyPrices.map(p => (
                     <option key={p} value={p.toString()}>${p.toFixed(2)}</option>
                   ))}

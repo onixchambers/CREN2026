@@ -937,8 +937,10 @@ export default function AsistenciaPage() {
     const m2 = showEditSegundoPago ? parseFloat(editForm.montoPago2 || "0") : 0;
     const montoPagado = m1 + m2;
 
-    const rawPrecio = (editForm.subtotal || editingAsistencia.precioTerapia || editingAsistencia.costoSesion || "").toString().replace(/[^0-9.]/g, "");
-    const precioTerapiaNum = parseFloat(rawPrecio) || (montoPagado > 0 ? montoPagado : 0);
+    const rawPrecio = (editForm.subtotal !== undefined && editForm.subtotal !== null && editForm.subtotal !== "")
+      ? editForm.subtotal.toString().replace(/[^0-9.]/g, "")
+      : (editingAsistencia.precioTerapia || editingAsistencia.costoSesion || "").toString().replace(/[^0-9.]/g, "");
+    const precioTerapiaNum = isNaN(parseFloat(rawPrecio)) ? 0 : parseFloat(rawPrecio);
 
     const ivaPct = await getSystemIvaRate();
     const ivaDec = (ivaPct || 16) / 100;
@@ -1663,6 +1665,7 @@ export default function AsistenciaPage() {
                     className="w-full text-sm p-2 border border-slate-300 rounded focus:border-[#2980b9] outline-none text-slate-700 font-medium bg-white"
                   >
                     <option value="">Seleccionar precio...</option>
+                    <option value="0">$0.00</option>
                     {(() => {
                       const numVal = parseFloat((editForm.subtotal || "0").toString().replace(/[^0-9.]/g, ""));
                       const list = [...therapyPrices];
