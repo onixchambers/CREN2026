@@ -15,7 +15,7 @@ interface PatientOption {
   id: string;
   name: string;
   displayId: string;
-  estatus?: string;
+  estatus?: string | null;
 }
 
 interface FundPayment {
