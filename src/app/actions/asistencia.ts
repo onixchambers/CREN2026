@@ -426,6 +426,21 @@ export async function getAsistenciasDB() {
     Object.values(patientMap).forEach(records => {
       records.sort((a, b) => new Date(a.s.date).getTime() - new Date(b.s.date).getTime());
 
+      // Encontrar el último índice de sesión activa (no agendada ni cancelación gratuita)
+      let latestActiveIndex = -1;
+      records.forEach((rec, index) => {
+        const { s, extra } = rec;
+        const estNorm = (extra.estadoAsistencia || extra.estado || s.status || "").toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "");
+        const mappedEstado = extra.estadoAsistencia || extra.estado || (s.status === "COMPLETED" ? "Asistio" : (s.status === "CANCELLED" ? "Cancelo el centro" : "Agendado"));
+        const isAgendado = mappedEstado.toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "").includes("agendado");
+        const isFreeCancel = !isAgendado && (estNorm.includes("con anticip") || estNorm.includes("anticipad") || estNorm.includes("centro") || estNorm.includes("recuperado")) && !estNorm.includes("sin anticip");
+        if (!isAgendado && !isFreeCancel) {
+          latestActiveIndex = index;
+        }
+      });
+      const targetIndex = latestActiveIndex !== -1 ? latestActiveIndex : (records.length - 1);
+      const startIndexInAsistencias = asistencias.length;
+
       let runningBalance = 0;
 
       records.forEach((rec, index) => {
@@ -515,12 +530,16 @@ export async function getAsistenciasDB() {
           subtotal: "$" + Number(subtotalVal).toFixed(2),
           iva: "$" + Number(ivaVal).toFixed(2),
           total: "$" + Number(totalVal).toFixed(2),
-          saldo: runningBalance,
+          saldo: 0,
           obs: extra.obs || "-",
           creadoPor: extra.creadoPor || "-",
           terapeuta: s.therapist?.name || extra.terapeuta || extra.terapeutaNombre || "-"
         });
       });
+
+      if (asistencias.length > startIndexInAsistencias && targetIndex >= 0) {
+        asistencias[startIndexInAsistencias + targetIndex].saldo = runningBalance;
+      }
     });
 
 
