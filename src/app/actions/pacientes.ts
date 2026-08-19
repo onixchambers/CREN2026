@@ -115,9 +115,16 @@ export async function createPatient(data: any) {
 export async function getPatients() {
   noStore();
   try {
+    let globalFunds: any[] = [];
     try {
-      await autoAssignMissingDisplayIds();
-    } catch (e) {}
+      const settings = await prisma.systemSettings.findUnique({ where: { id: 1 } });
+      if (settings?.referenceKeys) {
+        const parsed = JSON.parse(settings.referenceKeys);
+        globalFunds = parsed.globalFunds || [];
+      }
+    } catch (e) {
+      console.error("Error loading global funds in getPatients:", e);
+    }
 
     const patients = await prisma.patient.findMany({
       select: {
@@ -370,6 +377,37 @@ export async function getPatients() {
           : "—"
       };
     });
+
+    // POST-PROCESS SHARED GLOBAL FUNDS
+    if (globalFunds.length > 0) {
+      globalFunds.forEach((fund: any) => {
+        const linkedIds = fund.patientIds || [];
+        if (linkedIds.length === 0) return;
+
+        // Find linked patients in the mapped array
+        const linkedPatients = mapped.filter((p: any) => linkedIds.includes(p.id));
+        if (linkedPatients.length === 0) return;
+
+        // Sum individual payments and costs
+        const sumLinkedPagos = linkedPatients.reduce((sum: number, p: any) => sum + (parseFloat(p.totalPagado) || 0), 0);
+        const sumLinkedCostos = linkedPatients.reduce((sum: number, p: any) => sum + (parseFloat(p.totalCosto) || 0), 0);
+
+        // Sum global payments directly deposited into the fund
+        const fundPaymentsSum = (fund.payments || []).reduce((sum: number, p: any) => sum + (parseFloat(p.amount) || 0), 0);
+
+        // Consolidated balance: Global Deposits + Sibling Payments - Sibling Costs
+        const consolidatedBalance = fundPaymentsSum + sumLinkedPagos - sumLinkedCostos;
+
+        // Overwrite balance and add fund metadata for each sibling
+        mapped.forEach((p: any) => {
+          if (linkedIds.includes(p.id)) {
+            p.saldoCalculado = consolidatedBalance.toFixed(2);
+            p.globalFundId = fund.id;
+            p.globalFundName = fund.name;
+          }
+        });
+      });
+    }
 
     return { success: true, data: mapped };
   } catch (error) {
