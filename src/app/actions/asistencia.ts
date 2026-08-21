@@ -552,7 +552,6 @@ export async function getAsistenciasDB() {
           metodoPagoStr = `${metodoPagoStr} $${amt}`;
         }
 
-        const costoS = (isFreeCancel || isAgendado) ? 0 : (parseMoneyStr(extra.costoSesion || extra.precioTerapia) || totalVal || defaultPrice);
         const sDate = extra.fecha || (s.date instanceof Date ? s.date.toISOString().split("T")[0] : String(s.date).split("T")[0]);
         const isBeforeCutoff = sDate && sDate <= "2026-06-30";
 

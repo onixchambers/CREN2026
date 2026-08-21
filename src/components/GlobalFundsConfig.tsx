@@ -28,11 +28,27 @@ interface FundPayment {
   createdAt: string;
 }
 
+interface FundUsage {
+  id: string;
+  date: string;
+  hora?: string;
+  patientId: string;
+  patientName: string;
+  therapistName: string;
+  area: string;
+  cost: number;
+  estado: string;
+}
+
 interface GlobalFund {
   id: string;
   name: string;
   patientIds: string[];
   payments: FundPayment[];
+  totalAbonado?: number;
+  totalConsumido?: number;
+  saldoDisponible?: number;
+  usages?: FundUsage[];
 }
 
 export function GlobalFundsConfig() {
@@ -42,6 +58,7 @@ export function GlobalFundsConfig() {
   
   // UI views / forms
   const [activeTab, setActiveTab] = useState<"LIST" | "FORM_FUND" | "FORM_PAY" | "TRANSACTIONS">("LIST");
+  const [historySubTab, setHistorySubTab] = useState<"ABONOS" | "CONSUMOS">("ABONOS");
   const [selectedFund, setSelectedFund] = useState<GlobalFund | null>(null);
   
   // Form state: Fund
