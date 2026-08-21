@@ -415,6 +415,17 @@ export async function getAsistenciasDB() {
       take: 400
     });
 
+    let globalFunds: any[] = [];
+    try {
+      const sysSettings = await prisma.systemSettings.findUnique({ where: { id: 1 } });
+      if (sysSettings && sysSettings.referenceKeys) {
+        const parsed = JSON.parse(sysSettings.referenceKeys);
+        if (Array.isArray(parsed.globalFunds)) {
+          globalFunds = parsed.globalFunds;
+        }
+      }
+    } catch (e) {}
+
     const patientMap: { [key: string]: any[] } = {};
 
     sessions.forEach(s => {
@@ -503,10 +514,30 @@ export async function getAsistenciasDB() {
         let totalVal = isAgendado ? 0 : parseMoneyStr(extra.total || extra.subtotal);
 
         const defaultPrice = parseFloat((s.patient?.precioTerapia || "500").split("/")[0]) || 500;
+        const costoS = (isFreeCancel || isAgendado) ? 0 : (parseMoneyStr(extra.costoSesion || extra.precioTerapia) || totalVal || defaultPrice);
+
+        // Check if patient belongs to a prepaid family fund (GlobalFund)
+        const patientId = s.patientId;
+        const patientName = s.patient?.name || extra.paciente || extra.pacienteNombre;
+        const linkedFund = globalFunds.find((f: any) => {
+          if (!Array.isArray(f.patientIds)) return false;
+          return (patientId && f.patientIds.includes(patientId)) ||
+                 (patientName && f.patientIds.some((pid: string) => pid === patientId));
+        });
+
+        const isFundPrepaid = Boolean(linkedFund && Array.isArray(linkedFund.payments) && linkedFund.payments.length > 0);
+
+        if (!isFreeCancel && !isAgendado && isFundPrepaid) {
+          const isExplicitNinguno = (metodoPagoStr || "").toLowerCase().includes("ninguno");
+          const isNoPaymentRecorded = (montoP === 0 && !extra.metodoPago2);
+          if (isNoPaymentRecorded || extra.metodoPago === "Fondo Familiar" || extra.metodoPago === "Abono" || isExplicitNinguno) {
+            metodoPagoStr = "Fondo Familiar";
+            montoP = costoS;
+          }
+        }
 
         // Si es una sesión con costo (Asistió o Canceló S/A) y totalVal/montoP es 0 pero hay costoSesion o precioTerapia, recuperar valores
         if (!isFreeCancel && !isAgendado) {
-          const costoS = parseMoneyStr(extra.costoSesion || extra.precioTerapia) || defaultPrice;
           if (costoS > 0) {
             if (totalVal === 0) totalVal = costoS;
             const isNinguno = (metodoPagoStr || "").toLowerCase().includes("ninguno");

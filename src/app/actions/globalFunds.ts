@@ -23,15 +23,105 @@ export async function getGlobalFunds() {
     const s = await prisma.systemSettings.findUnique({ where: { id: 1 } });
     if (!s || !s.referenceKeys) return { success: true, funds: [] };
 
+    let rawFunds: any[] = [];
     try {
       const parsed = JSON.parse(s.referenceKeys);
-      return {
-        success: true,
-        funds: parsed.globalFunds || []
-      };
+      rawFunds = parsed.globalFunds || [];
     } catch (e) {
       return { success: true, funds: [] };
     }
+
+    if (rawFunds.length === 0) return { success: true, funds: [] };
+
+    // Gather all linked patient IDs
+    const allLinkedPatientIds: string[] = [];
+    rawFunds.forEach((f: any) => {
+      if (Array.isArray(f.patientIds)) {
+        f.patientIds.forEach((pid: string) => {
+          if (pid && !allLinkedPatientIds.includes(pid)) allLinkedPatientIds.push(pid);
+        });
+      }
+    });
+
+    // Query sessions for linked patients to calculate therapy consumptions
+    let patientSessions: any[] = [];
+    if (allLinkedPatientIds.length > 0) {
+      patientSessions = await prisma.session.findMany({
+        where: {
+          patientId: { in: allLinkedPatientIds }
+        },
+        include: {
+          patient: { select: { id: true, name: true, precioTerapia: true } },
+          therapist: { select: { id: true, name: true } }
+        },
+        orderBy: { date: 'asc' }
+      });
+    }
+
+    const funds = rawFunds.map((fund: any) => {
+      const linkedIds = fund.patientIds || [];
+      const totalAbonado = (fund.payments || []).reduce((sum: number, p: any) => sum + (parseFloat(p.amount) || 0), 0);
+
+      const fundSessions = patientSessions.filter(s => linkedIds.includes(s.patientId));
+      const usages: any[] = [];
+      let totalConsumido = 0;
+
+      fundSessions.forEach(s => {
+        let extra: any = {};
+        if (s.notes) {
+          try {
+            extra = JSON.parse(s.notes);
+          } catch (e) {}
+        }
+
+        const estNorm = (extra.estadoAsistencia || extra.estado || s.status || "").toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "");
+        const isAgendado = estNorm.includes("agendado");
+        const isFreeCancel = !isAgendado && (estNorm.includes("con anticip") || estNorm.includes("anticipad") || estNorm.includes("centro") || estNorm.includes("recuperado")) && !estNorm.includes("sin anticip");
+
+        if (!isAgendado && !isFreeCancel) {
+          const parseMoneyStr = (val: any) => parseFloat((val || "0").toString().replace(/[^0-9.-]/g, "")) || 0;
+          const defaultPrice = parseFloat((s.patient?.precioTerapia || "500").split("/")[0]) || 500;
+          const costoS = parseMoneyStr(extra.costoSesion || extra.precioTerapia) || defaultPrice;
+          
+          const p1 = parseMoneyStr(extra.montoPago);
+          const p2 = parseMoneyStr(extra.montoPago2);
+          const directPay = p1 + p2;
+
+          const sDate = extra.fecha || (s.date instanceof Date ? s.date.toISOString().split("T")[0] : String(s.date).split("T")[0]);
+          const isBeforeCutoff = sDate && sDate <= "2026-06-30";
+
+          if (!isBeforeCutoff) {
+            const netConsumption = costoS - directPay;
+            if (netConsumption > 0) {
+              totalConsumido += netConsumption;
+              usages.push({
+                id: s.id,
+                date: sDate,
+                hora: extra.hora || extra.horaRegistro || "09:00",
+                patientId: s.patientId,
+                patientName: s.patient?.name || extra.pacienteNombre || "Paciente",
+                therapistName: s.therapist?.name || extra.terapeutaNombre || "Terapeuta",
+                area: extra.area || s.area || "Terapia",
+                cost: netConsumption,
+                estado: extra.estadoAsistencia || "Asistió"
+              });
+            }
+          }
+        }
+      });
+
+      const saldoDisponible = totalAbonado - totalConsumido;
+
+      return {
+        ...fund,
+        totalAbonado,
+        totalConsumido,
+        saldoDisponible,
+        usages
+      };
+    });
+
+    return { success: true, funds };
   } catch (error: any) {
     console.error("Error fetching global funds:", error);
     return { success: false, error: error?.message || "Error al obtener fondos globales" };

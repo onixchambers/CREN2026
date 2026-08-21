@@ -202,22 +202,21 @@ export function GlobalFundsConfig() {
 
   const handleViewTransactions = (fund: GlobalFund) => {
     setSelectedFund(fund);
+    setHistorySubTab("ABONOS");
     setStatusMsg(null);
     setActiveTab("TRANSACTIONS");
   };
 
-  const handleDeleteTransaction = async (payId: string) => {
+  const handleDeleteTransaction = async (paymentId: string) => {
     if (!selectedFund) return;
-    if (!window.confirm("¿Estás seguro de que deseas eliminar este abono? El saldo del fondo se reajustará de forma inmediata.")) {
-      return;
-    }
+    if (!window.confirm("¿Estás seguro de que deseas eliminar este abono?")) return;
+
     setActionLoading(true);
     setStatusMsg(null);
     try {
-      const res = await deletePaymentFromFund(selectedFund.id, payId);
+      const res = await deletePaymentFromFund(selectedFund.id, paymentId);
       if (res.success) {
-        setStatusMsg({ type: "success", text: "Abono eliminado." });
-        // Recargar datos y actualizar el fondo seleccionado en la vista
+        setStatusMsg({ type: "success", text: "Abono eliminado con éxito." });
         const fundsRes = await getGlobalFunds();
         if (fundsRes.success && fundsRes.funds) {
           setFunds(fundsRes.funds);
@@ -291,12 +290,16 @@ export function GlobalFundsConfig() {
                 <th className="py-3.5 px-4">FONDO / FAMILIA</th>
                 <th className="py-3.5 px-4">PACIENTES VINCULADOS</th>
                 <th className="py-3.5 px-4 text-right">TOTAL ABONADO</th>
+                <th className="py-3.5 px-4 text-right">SALDO DISPONIBLE</th>
                 <th className="py-3.5 px-4 text-center">ACCIONES</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-slate-100 font-medium text-slate-700">
               {funds.map((f) => {
-                const totalAbonado = (f.payments || []).reduce((sum, p) => sum + (p.amount || 0), 0);
+                const totalAbonado = f.totalAbonado !== undefined ? f.totalAbonado : (f.payments || []).reduce((sum, p) => sum + (p.amount || 0), 0);
+                const saldoDisp = f.saldoDisponible !== undefined ? f.saldoDisponible : totalAbonado;
+                const isNeg = saldoDisp < 0;
+
                 const linkedNames = f.patientIds.map(id => {
                   const pat = patients.find(p => p.id === id);
                   return pat ? pat.name : "Paciente Desconocido";
@@ -317,8 +320,13 @@ export function GlobalFundsConfig() {
                         ))}
                       </div>
                     </td>
-                    <td className="py-3 px-4 text-right font-bold text-slate-900 text-sm">
+                    <td className="py-3 px-4 text-right font-bold text-slate-800 text-sm">
                       ${totalAbonado.toLocaleString("es-MX", { minimumFractionDigits: 2 })}
+                    </td>
+                    <td className="py-3 px-4 text-right font-black text-sm">
+                      <span className={`px-2.5 py-1 rounded-lg ${isNeg ? 'bg-red-50 text-red-700 border border-red-200' : 'bg-emerald-50 text-emerald-700 border border-emerald-200'}`}>
+                        {isNeg ? `-$${Math.abs(saldoDisp).toLocaleString("es-MX", { minimumFractionDigits: 2 })}` : `$${saldoDisp.toLocaleString("es-MX", { minimumFractionDigits: 2 })}`}
+                      </span>
                     </td>
                     <td className="py-3 px-4">
                       <div className="flex justify-center items-center gap-2">
@@ -334,7 +342,7 @@ export function GlobalFundsConfig() {
                           type="button"
                           onClick={() => handleViewTransactions(f)}
                           className="px-2 py-1 bg-blue-50 text-blue-700 border border-blue-200 rounded font-bold hover:bg-blue-100 transition-colors"
-                          title="Historial de Abonos"
+                          title="Historial de Movimientos"
                         >
                           📜 Historial ({f.payments?.length || 0})
                         </button>
@@ -363,8 +371,8 @@ export function GlobalFundsConfig() {
 
               {funds.length === 0 && (
                 <tr>
-                  <td colSpan={4} className="py-8 text-center text-slate-400 font-semibold">
-                    No hay fondos familiares registrados.
+                  <td colSpan={5} className="py-8 text-center text-slate-400 italic">
+                    No hay fondos familiares registrados. Haz clic en <strong>"+ Nuevo Fondo Familiar"</strong> para comenzar.
                   </td>
                 </tr>
               )}
@@ -373,12 +381,12 @@ export function GlobalFundsConfig() {
         </div>
       )}
 
-      {/* FORM: CREATE OR EDIT FUND */}
+      {/* FORM: CREATE / EDIT FUND */}
       {activeTab === "FORM_FUND" && (
         <form onSubmit={handleSaveFund} className="space-y-4 max-w-xl bg-slate-50 p-5 rounded-2xl border border-slate-200 animate-in zoom-in-95 duration-200">
           <div className="flex items-center justify-between border-b pb-2 mb-2">
             <h4 className="font-bold text-[#1a5276] text-sm">
-              {selectedFund ? "Editar Fondo Familiar" : "Crear Nuevo Fondo Familiar"}
+              {selectedFund ? `Editar Fondo: ${selectedFund.name}` : "Crear Nuevo Fondo Familiar"}
             </h4>
             <button type="button" onClick={() => setActiveTab("LIST")} className="text-slate-400 hover:text-slate-600 font-bold">✕</button>
           </div>
@@ -388,51 +396,50 @@ export function GlobalFundsConfig() {
               <label className="block text-xs font-bold text-slate-600 uppercase mb-1">Nombre del Fondo / Familia</label>
               <input 
                 type="text" 
-                placeholder="Ej. Familia Robles Olvera" 
+                placeholder="Ej. Familia Robles Olvera / Hermanos Torres" 
                 value={fundName} 
-                onChange={(e) => setFundName(e.target.value)} 
-                className="w-full text-xs p-2.5 border border-slate-300 rounded-lg outline-none focus:border-[#1a5276] bg-white font-medium text-slate-900"
+                onChange={(e) => setFundName(e.target.value)}
+                className="w-full text-sm p-2.5 border border-slate-300 rounded-lg outline-none focus:border-[#1a5276] bg-white font-medium text-slate-900"
                 required
               />
             </div>
 
             <div>
-              <label className="block text-xs font-bold text-slate-600 uppercase mb-1 flex justify-between items-center">
-                <span>Vincular Pacientes</span>
-                <span className="text-[10px] text-blue-600 font-bold bg-blue-50 px-1.5 py-0.5 rounded border border-blue-100">
-                  Seleccionados: {selectedPatientIds.length}
-                </span>
+              <label className="block text-xs font-bold text-slate-600 uppercase mb-1">
+                Seleccionar Pacientes Vinculados ({selectedPatientIds.length})
               </label>
-              
               <input 
                 type="text" 
-                placeholder="🔍 Buscar paciente por nombre..." 
-                value={patientSearch} 
-                onChange={(e) => setPatientSearch(e.target.value)} 
-                className="w-full text-xs p-2 border border-slate-300 rounded-lg outline-none focus:border-[#1a5276] bg-white font-medium text-slate-900 mb-2"
+                placeholder="Buscar paciente para vincular..." 
+                value={patientSearch}
+                onChange={(e) => setPatientSearch(e.target.value)}
+                className="w-full text-xs p-2 border border-slate-300 rounded-lg outline-none focus:border-[#1a5276] bg-white mb-2"
               />
 
-              <div className="max-h-48 overflow-y-auto border border-slate-200 rounded-lg divide-y divide-slate-100 bg-white p-2">
-                {filteredPatients.map(p => {
-                  const isChecked = selectedPatientIds.includes(p.id);
+              <div className="max-h-48 overflow-y-auto border border-slate-200 rounded-lg bg-white p-2 space-y-1">
+                {filteredPatients.map((p) => {
+                  const isSelected = selectedPatientIds.includes(p.id);
                   return (
-                    <label key={p.id} className="flex items-center gap-2.5 py-1.5 px-2 hover:bg-slate-50 rounded cursor-pointer transition-colors text-xs">
-                      <input 
-                        type="checkbox" 
-                        checked={isChecked} 
-                        onChange={() => togglePatientSelection(p.id)}
-                        className="w-4 h-4 rounded text-blue-600 border-slate-300 cursor-pointer"
-                      />
-                      <div className="flex flex-col">
-                        <span className="font-bold text-slate-800">{p.name}</span>
-                        <span className="text-[9px] text-slate-400 font-mono">ID: {p.displayId} {p.estatus && `(${p.estatus})`}</span>
+                    <div 
+                      key={p.id}
+                      onClick={() => togglePatientSelection(p.id)}
+                      className={`flex items-center justify-between p-2 rounded-lg text-xs cursor-pointer transition-colors ${
+                        isSelected ? "bg-blue-50 border border-blue-200 text-blue-900 font-bold" : "hover:bg-slate-50 text-slate-700"
+                      }`}
+                    >
+                      <div className="flex items-center gap-2">
+                        <input 
+                          type="checkbox" 
+                          checked={isSelected}
+                          readOnly 
+                          className="rounded text-[#1a5276] focus:ring-[#1a5276]" 
+                        />
+                        <span>{p.name}</span>
                       </div>
-                    </label>
+                      <span className="text-[10px] text-slate-400 font-mono">ID: {p.displayId}</span>
+                    </div>
                   );
                 })}
-                {filteredPatients.length === 0 && (
-                  <p className="text-center py-4 text-slate-400 text-xs italic">No se encontraron pacientes.</p>
-                )}
               </div>
             </div>
           </div>
@@ -540,65 +547,171 @@ export function GlobalFundsConfig() {
         </form>
       )}
 
-      {/* VIEW: TRANSACTIONS LIST */}
-      {activeTab === "TRANSACTIONS" && selectedFund && (
-        <div className="space-y-4 bg-slate-50 p-5 rounded-2xl border border-slate-200 animate-in zoom-in-95 duration-200">
-          <div className="flex items-center justify-between border-b pb-2 mb-2">
-            <div>
-              <h4 className="font-bold text-[#1a5276] text-sm">
-                Historial de Abonos - {selectedFund.name}
-              </h4>
-              <p className="text-[10px] text-slate-400 font-medium">Lista de depósitos realizados a esta cuenta familiar</p>
-            </div>
-            <button type="button" onClick={() => setActiveTab("LIST")} className="px-4 py-1.5 bg-slate-200 hover:bg-slate-300 text-slate-700 font-bold text-xs rounded-lg transition text-slate-700">
-              Volver
-            </button>
-          </div>
+      {/* VIEW: TRANSACTIONS / USAGES LIST */}
+      {activeTab === "TRANSACTIONS" && selectedFund && (() => {
+        const totAbonado = selectedFund.totalAbonado !== undefined ? selectedFund.totalAbonado : (selectedFund.payments || []).reduce((sum, p) => sum + (p.amount || 0), 0);
+        const totConsumido = selectedFund.totalConsumido !== undefined ? selectedFund.totalConsumido : 0;
+        const sDisponible = selectedFund.saldoDisponible !== undefined ? selectedFund.saldoDisponible : (totAbonado - totConsumido);
+        const isNeg = sDisponible < 0;
 
-          <div className="overflow-x-auto border border-slate-200 rounded-xl bg-white">
-            <table className="w-full text-left text-xs">
-              <thead className="bg-[#0e2f44] text-white uppercase text-[9px] tracking-wider font-extrabold">
-                <tr>
-                  <th className="py-2.5 px-3">FECHA</th>
-                  <th className="py-2.5 px-3">MÉTODO</th>
-                  <th className="py-2.5 px-3 text-right">MONTO</th>
-                  <th className="py-2.5 px-3">NOTAS</th>
-                  <th className="py-2.5 px-3">REGISTRÓ</th>
-                  <th className="py-2.5 px-3 text-center">ELIMINAR</th>
-                </tr>
-              </thead>
-              <tbody className="divide-y divide-slate-100 font-medium text-slate-600">
-                {(selectedFund.payments || []).map((p) => (
-                  <tr key={p.id} className="hover:bg-slate-50">
-                    <td className="py-2 px-3 whitespace-nowrap font-bold text-slate-800">{p.date}</td>
-                    <td className="py-2 px-3 whitespace-nowrap">{p.method}</td>
-                    <td className="py-2 px-3 text-right font-extrabold text-emerald-600">${p.amount.toFixed(2)}</td>
-                    <td className="py-2 px-3 max-w-[200px] truncate" title={p.notes}>{p.notes || "—"}</td>
-                    <td className="py-2 px-3 whitespace-nowrap text-slate-400 font-mono text-[10px]">{p.registeredBy}</td>
-                    <td className="py-2 px-3 text-center">
-                      <button
-                        type="button"
-                        onClick={() => handleDeleteTransaction(p.id)}
-                        disabled={actionLoading}
-                        className="text-red-500 hover:text-red-700 font-bold p-1 rounded transition-colors disabled:opacity-50"
-                      >
-                        ✕
-                      </button>
-                    </td>
-                  </tr>
-                ))}
-                {(!selectedFund.payments || selectedFund.payments.length === 0) && (
-                  <tr>
-                    <td colSpan={6} className="py-6 text-center text-slate-400 italic">
-                      No se han registrado abonos en este fondo.
-                    </td>
-                  </tr>
-                )}
-              </tbody>
-            </table>
+        return (
+          <div className="space-y-4 bg-slate-50 p-5 rounded-2xl border border-slate-200 animate-in zoom-in-95 duration-200">
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b pb-3">
+              <div>
+                <h4 className="font-bold text-[#1a5276] text-base">
+                  Historial de Movimientos - <span className="underline">{selectedFund.name}</span>
+                </h4>
+                <p className="text-xs text-slate-500 font-medium">Registro completo de abonos recibidos y consumos por terapias</p>
+              </div>
+              <button type="button" onClick={() => setActiveTab("LIST")} className="px-4 py-1.5 bg-slate-200 hover:bg-slate-300 text-slate-700 font-bold text-xs rounded-lg transition self-start sm:self-auto">
+                ← Volver a Lista
+              </button>
+            </div>
+
+            {/* TARJETAS RESUMEN DE SALDOS */}
+            <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+              <div className="bg-white p-3.5 rounded-xl border border-slate-200 shadow-2xs">
+                <span className="block text-[10px] font-bold text-slate-400 uppercase">Total Abonado</span>
+                <span className="text-lg font-black text-slate-800">
+                  ${totAbonado.toLocaleString("es-MX", { minimumFractionDigits: 2 })}
+                </span>
+              </div>
+              <div className="bg-white p-3.5 rounded-xl border border-slate-200 shadow-2xs">
+                <span className="block text-[10px] font-bold text-slate-400 uppercase">Consumido en Terapias</span>
+                <span className="text-lg font-black text-amber-600">
+                  -${totConsumido.toLocaleString("es-MX", { minimumFractionDigits: 2 })}
+                </span>
+              </div>
+              <div className={`p-3.5 rounded-xl border shadow-2xs ${isNeg ? 'bg-red-50 border-red-200 text-red-900' : 'bg-emerald-50 border-emerald-200 text-emerald-900'}`}>
+                <span className="block text-[10px] font-bold uppercase tracking-wide">Saldo Disponible Restante</span>
+                <span className={`text-xl font-black ${isNeg ? 'text-red-700' : 'text-emerald-700'}`}>
+                  {isNeg ? `-$${Math.abs(sDisponible).toLocaleString("es-MX", { minimumFractionDigits: 2 })}` : `$${sDisponible.toLocaleString("es-MX", { minimumFractionDigits: 2 })}`}
+                </span>
+              </div>
+            </div>
+
+            {/* SUB-TABS: ABONOS VS CONSUMOS */}
+            <div className="flex gap-2 border-b border-slate-200 pb-2 pt-2">
+              <button
+                type="button"
+                onClick={() => setHistorySubTab("ABONOS")}
+                className={`px-4 py-2 text-xs font-bold rounded-lg transition ${
+                  historySubTab === "ABONOS"
+                    ? "bg-[#1a5276] text-white shadow-xs"
+                    : "bg-white text-slate-600 hover:bg-slate-100 border border-slate-200"
+                }`}
+              >
+                📥 Abonos Recibidos ({selectedFund.payments?.length || 0})
+              </button>
+              <button
+                type="button"
+                onClick={() => setHistorySubTab("CONSUMOS")}
+                className={`px-4 py-2 text-xs font-bold rounded-lg transition ${
+                  historySubTab === "CONSUMOS"
+                    ? "bg-[#1a5276] text-white shadow-xs"
+                    : "bg-white text-slate-600 hover:bg-slate-100 border border-slate-200"
+                }`}
+              >
+                📤 Consumos por Terapias ({selectedFund.usages?.length || 0})
+              </button>
+            </div>
+
+            {/* TABLA DE ABONOS RECIBIDOS */}
+            {historySubTab === "ABONOS" && (
+              <div className="overflow-x-auto border border-slate-200 rounded-xl bg-white">
+                <table className="w-full text-left text-xs">
+                  <thead className="bg-[#0e2f44] text-white uppercase text-[9px] tracking-wider font-extrabold">
+                    <tr>
+                      <th className="py-2.5 px-3">FECHA</th>
+                      <th className="py-2.5 px-3">MÉTODO</th>
+                      <th className="py-2.5 px-3 text-right">MONTO</th>
+                      <th className="py-2.5 px-3">NOTAS</th>
+                      <th className="py-2.5 px-3">REGISTRÓ</th>
+                      <th className="py-2.5 px-3 text-center">ELIMINAR</th>
+                    </tr>
+                  </thead>
+                  <tbody className="divide-y divide-slate-100 font-medium text-slate-600">
+                    {(selectedFund.payments || []).map((p) => (
+                      <tr key={p.id} className="hover:bg-slate-50">
+                        <td className="py-2 px-3 whitespace-nowrap font-bold text-slate-800">{p.date}</td>
+                        <td className="py-2 px-3 whitespace-nowrap">{p.method}</td>
+                        <td className="py-2 px-3 text-right font-extrabold text-emerald-600">+${p.amount.toFixed(2)}</td>
+                        <td className="py-2 px-3 max-w-[200px] truncate" title={p.notes}>{p.notes || "—"}</td>
+                        <td className="py-2 px-3 whitespace-nowrap text-slate-400 font-mono text-[10px]">{p.registeredBy}</td>
+                        <td className="py-2 px-3 text-center">
+                          <button
+                            type="button"
+                            onClick={() => handleDeleteTransaction(p.id)}
+                            disabled={actionLoading}
+                            className="text-red-500 hover:text-red-700 font-bold p-1 rounded transition-colors disabled:opacity-50"
+                          >
+                            ✕
+                          </button>
+                        </td>
+                      </tr>
+                    ))}
+                    {(!selectedFund.payments || selectedFund.payments.length === 0) && (
+                      <tr>
+                        <td colSpan={6} className="py-6 text-center text-slate-400 italic">
+                          No se han registrado abonos en este fondo.
+                        </td>
+                      </tr>
+                    )}
+                  </tbody>
+                </table>
+              </div>
+            )}
+
+            {/* TABLA DE CONSUMOS POR TERAPIAS */}
+            {historySubTab === "CONSUMOS" && (
+              <div className="overflow-x-auto border border-slate-200 rounded-xl bg-white">
+                <table className="w-full text-left text-xs">
+                  <thead className="bg-[#0e2f44] text-white uppercase text-[9px] tracking-wider font-extrabold">
+                    <tr>
+                      <th className="py-2.5 px-3">FECHA Y HORA</th>
+                      <th className="py-2.5 px-3">PACIENTE QUE LA UTILIZÓ</th>
+                      <th className="py-2.5 px-3">TERAPEUTA / ÁREA</th>
+                      <th className="py-2.5 px-3 text-right">COSTO DESCONTADO</th>
+                      <th className="py-2.5 px-3 text-center">ESTADO</th>
+                    </tr>
+                  </thead>
+                  <tbody className="divide-y divide-slate-100 font-medium text-slate-600">
+                    {(selectedFund.usages || []).map((u) => (
+                      <tr key={u.id} className="hover:bg-slate-50">
+                        <td className="py-2 px-3 whitespace-nowrap font-bold text-slate-800">
+                          {u.date} <span className="text-[10px] text-slate-400 font-normal">({u.hora || "09:00"})</span>
+                        </td>
+                        <td className="py-2 px-3 font-bold text-blue-900">
+                          {u.patientName}
+                        </td>
+                        <td className="py-2 px-3">
+                          <span className="font-semibold text-slate-700">{u.therapistName}</span>
+                          <span className="text-[10px] text-slate-400 block">{u.area}</span>
+                        </td>
+                        <td className="py-2 px-3 text-right font-extrabold text-red-600">
+                          -${u.cost.toFixed(2)}
+                        </td>
+                        <td className="py-2 px-3 text-center">
+                          <span className="bg-emerald-50 text-emerald-700 border border-emerald-200 px-2 py-0.5 rounded text-[10px] font-bold">
+                            {u.estado}
+                          </span>
+                        </td>
+                      </tr>
+                    ))}
+                    {(!selectedFund.usages || selectedFund.usages.length === 0) && (
+                      <tr>
+                        <td colSpan={5} className="py-6 text-center text-slate-400 italic">
+                          Aún no hay consumos registrados por terapias de los miembros de este fondo.
+                        </td>
+                      </tr>
+                    )}
+                  </tbody>
+                </table>
+              </div>
+            )}
           </div>
-        </div>
-      )}
+        );
+      })()}
     </div>
   );
 }
