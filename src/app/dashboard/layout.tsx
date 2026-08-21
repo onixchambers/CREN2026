@@ -272,12 +272,12 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
     { name: "Estado de Cuenta", path: "/dashboard/finanzas", adminOnly: true },
     { name: "Dashboard", path: "/dashboard", adminOnly: true },
     { name: "Terapeutas", path: "/dashboard/terapeutas", adminOnly: true },
-    { name: "Honorarios", path: "/dashboard/honorarios", adminOnly: true },
     { name: "Salario", path: "/dashboard/salario", adminOnly: true },
-    { name: "Reportes", path: "/dashboard/reportes", adminOnly: true },
+    { name: "Reportes Anuales", path: "/dashboard/reportes", adminOnly: true },
     { name: "Estado Resultados", path: "/dashboard/estado-resultados", adminOnly: true },
     { name: "Contraseña", path: "/dashboard/contrasena", adminOnly: false },
-    { name: "Configuración", path: "/dashboard/configuracion", adminOnly: true },
+    { name: "Configuración\nHonorarios", path: "/dashboard/honorarios", adminOnly: true },
+    { name: "Configuración\nde Sistema", path: "/dashboard/configuracion", adminOnly: true },
   ];
 
   // Filter tabs based on role permissions
@@ -426,13 +426,21 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
               <Link
                 key={tab.path}
                 href={tab.path}
-                className={`px-4 py-2.5 text-xs font-semibold whitespace-nowrap border-b-2 transition-all flex items-center gap-1.5 ${
+                className={`px-4 py-2 text-xs font-semibold whitespace-nowrap border-b-2 transition-all flex items-center justify-center text-center gap-1.5 ${
                   isActive
                     ? "border-emerald-400 text-white bg-white/10 font-bold"
                     : "border-transparent text-slate-300 hover:text-white hover:bg-white/5"
                 }`}
               >
-                {tab.name}
+                {tab.name.includes("\n") ? (
+                  <span className="flex flex-col items-center justify-center leading-tight">
+                    {tab.name.split("\n").map((line, idx) => (
+                      <span key={idx}>{line}</span>
+                    ))}
+                  </span>
+                ) : (
+                  tab.name
+                )}
               </Link>
             );
           })}
