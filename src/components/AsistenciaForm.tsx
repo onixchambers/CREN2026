@@ -4,6 +4,8 @@ import { DateInput } from "@/components/DateInput";
 import { getSystemIvaRate } from "@/app/actions/configuracion";
 import { checkDuplicatePatient } from "@/app/actions/pacientes";
 import { DuplicateWarningModal } from "@/components/DuplicateWarningModal";
+import { TransferVerificationModal } from "@/components/TransferVerificationModal";
+import { CREN_BANK_INFO } from "@/lib/constants/bancos";
 
 export type AsistenciaFormData = {
   fecha: string;
@@ -30,6 +32,12 @@ export type AsistenciaFormData = {
   frecuencia: string;
   solicitaFactura: boolean;
   observaciones: string;
+  agendaId?: string;
+  claveRastreo?: string;
+  bancoEmisor?: string;
+  bancoEmisorClave?: string;
+  cuentaBeneficiaria?: string;
+  bancoReceptor?: string;
 };
 
 interface AsistenciaFormProps {
@@ -113,6 +121,7 @@ export function AsistenciaForm({
   const [availableAreas, setAvailableAreas] = useState<string[]>(availableAreasInput);
   const [showDropdown, setShowDropdown] = useState(false);
   const [showSegundoPago, setShowSegundoPago] = useState(false);
+  const [showTransferModal, setShowTransferModal] = useState(false);
   const [verTodosLosPacientes, setVerTodosLosPacientes] = useState(false);
   const [duplicateWarning, setDuplicateWarning] = useState<{
     isOpen: boolean;
@@ -972,6 +981,44 @@ export function AsistenciaForm({
                   <div className="w-9"></div>
                 </div>
               )}
+
+              {/* BLOQUE DE VERIFICACIÓN SPEI SI ES TRANSFERENCIA */}
+              {(formData.metodoPago === "Transferencia" || formData.metodoPago2 === "Transferencia") && (
+                <div className="bg-blue-50/80 border border-blue-200 p-3 rounded-xl flex items-center justify-between text-xs mt-2 animate-in zoom-in-95 duration-150">
+                  <div className="flex items-center gap-2.5">
+                    <div className="w-8 h-8 rounded-lg bg-blue-600/10 border border-blue-300 text-blue-700 font-black flex items-center justify-center text-sm">
+                      🏦
+                    </div>
+                    <div>
+                      <div className="font-extrabold text-blue-950 flex items-center gap-2">
+                        <span>Transferencia SPEI a {CREN_BANK_INFO.banco}</span>
+                        <span className="font-mono text-[10px] bg-blue-100 text-blue-800 px-1.5 py-0.5 rounded border border-blue-200 font-bold">
+                          CLABE: {CREN_BANK_INFO.cuentaBeneficiaria}
+                        </span>
+                      </div>
+                      <div className="text-[10px] text-blue-700 font-medium">
+                        {formData.claveRastreo ? (
+                          <span className="font-bold text-emerald-800 flex items-center gap-1">
+                            <span>✓ SPEI Capturado:</span>
+                            <span className="font-mono">{formData.claveRastreo}</span>
+                            <span>({formData.bancoEmisor || "Banco"})</span>
+                          </span>
+                        ) : (
+                          <span>Ingresa la Clave de Rastreo SPEI para verificar el comprobante en Banxico CEP</span>
+                        )}
+                      </div>
+                    </div>
+                  </div>
+
+                  <button
+                    type="button"
+                    onClick={() => setShowTransferModal(true)}
+                    className="px-3 py-1.5 bg-[#1a5276] hover:bg-[#0e2f44] text-white font-bold text-xs rounded-lg shadow-2xs transition flex items-center gap-1.5 cursor-pointer shrink-0"
+                  >
+                    <span>🔍</span> {formData.claveRastreo ? "Ver CEP / Banxico" : "Validar Transferencia"}
+                  </button>
+                </div>
+              )}
             </div>
           </div>
 
@@ -1117,6 +1164,25 @@ export function AsistenciaForm({
           </div>
         </div>
       )}
+
+      <TransferVerificationModal
+        isOpen={showTransferModal}
+        onClose={() => setShowTransferModal(false)}
+        montoDefault={formData.montoPago || formData.precioTerapia || "500.00"}
+        fechaDefault={formData.fecha || hoy}
+        claveRastreoInitial={formData.claveRastreo || ""}
+        bancoEmisorInitial={formData.bancoEmisor || "AZTECA"}
+        onSaveVerification={(vData) => {
+          setFormData(prev => ({
+            ...prev,
+            claveRastreo: vData.claveRastreo,
+            bancoEmisor: vData.bancoEmisor,
+            bancoEmisorClave: vData.bancoEmisorClave,
+            cuentaBeneficiaria: vData.cuentaBeneficiaria,
+            bancoReceptor: vData.bancoReceptor
+          }));
+        }}
+      />
     </div>
   );
 }

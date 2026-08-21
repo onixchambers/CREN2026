@@ -319,6 +319,11 @@ export async function saveAsistenciaDB(data: any) {
       metodoPago: metodoPagoStr,
       metodoPago2: data.metodoPago2 || "",
       montoPago2: data.montoPago2 || "",
+      claveRastreo: data.claveRastreo || "",
+      bancoEmisor: data.bancoEmisor || "",
+      bancoEmisorClave: data.bancoEmisorClave || "",
+      cuentaBeneficiaria: data.cuentaBeneficiaria || "002180700861407112",
+      bancoReceptor: data.bancoReceptor || "BANAMEX",
       frecuencia: data.frecuencia || "Única",
       horaRegistro: (() => {
         // Usar la hora agendada de la cita (de la session existente en agenda)
