@@ -243,7 +243,7 @@ export function PatientFixedHonorariosConfig() {
                           <span className="font-bold text-slate-500">$</span>
                           <input
                             type="number"
-                            step="10"
+                            step="any"
                             value={rateConfig.therapistPay}
                             onChange={(e) => updatePatientRate(p.name, "therapistPay", parseFloat(e.target.value) || 0)}
                             className="w-28 border border-slate-300 rounded-lg px-2.5 py-1.5 font-bold text-emerald-700 outline-none focus:border-emerald-600 bg-white"

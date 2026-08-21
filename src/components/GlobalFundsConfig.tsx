@@ -473,8 +473,8 @@ export function GlobalFundsConfig() {
                 <span className="absolute left-3 top-2.5 text-slate-500 font-bold">$</span>
                 <input 
                   type="number" 
-                  step="100" 
-                  min="1" 
+                  step="any" 
+                  min="0.01" 
                   placeholder="Ej. 10000" 
                   value={payAmount} 
                   onChange={(e) => setPayAmount(e.target.value)}

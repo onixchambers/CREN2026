@@ -1904,7 +1904,7 @@ export default function AsistenciaPage() {
               <div className="flex gap-2">
                 <input
                   type="number"
-                  step="50"
+                  step="any"
                   min="0"
                   placeholder="Ej. 0.00 o 1200"
                   value={newPriceInput}
