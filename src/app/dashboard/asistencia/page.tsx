@@ -11,6 +11,8 @@ import { getTerapeutasFull, getSystemIvaRate, getTherapyPrices, addTherapyPrice,
 import { DateInput } from "@/components/DateInput";
 import { AsistenciaForm, AsistenciaFormData } from "@/components/AsistenciaForm";
 import { exportAsistenciasToDriveAction } from "@/app/actions/excelDriveSync";
+import { TransferVerificationModal } from "@/components/TransferVerificationModal";
+import { CREN_BANK_INFO } from "@/lib/constants/bancos";
 
 // Force Vercel redeploy trigger: 2026-08-16T00:09:30-05:00
 
@@ -854,6 +856,7 @@ export default function AsistenciaPage() {
   // --- Lógica de Edición ---
   const [editingAsistencia, setEditingAsistencia] = useState<Asistencia | null>(null);
   const [editForm, setEditForm] = useState<any>({});
+  const [showEditTransferModal, setShowEditTransferModal] = useState(false);
 
   const openEditModal = (a: Asistencia) => {
     if (userRole.toUpperCase() === "TERAPEUTA" && !allowTherapistEdit) {
@@ -896,6 +899,23 @@ export default function AsistenciaPage() {
       }
     }
 
+    let claveRastreoInit = (a as any).claveRastreo || "";
+    let bancoEmisorInit = (a as any).bancoEmisor || "";
+    let bancoEmisorClaveInit = (a as any).bancoEmisorClave || "";
+    let cuentaBeneficiariaInit = (a as any).cuentaBeneficiaria || CREN_BANK_INFO.cuentaBeneficiaria;
+    let bancoReceptorInit = (a as any).bancoReceptor || CREN_BANK_INFO.banco;
+
+    if ((!claveRastreoInit || !bancoEmisorInit) && (a as any).notes) {
+      try {
+        const parsed = JSON.parse((a as any).notes);
+        if (parsed.claveRastreo) claveRastreoInit = parsed.claveRastreo;
+        if (parsed.bancoEmisor) bancoEmisorInit = parsed.bancoEmisor;
+        if (parsed.bancoEmisorClave) bancoEmisorClaveInit = parsed.bancoEmisorClave;
+        if (parsed.cuentaBeneficiaria) cuentaBeneficiariaInit = parsed.cuentaBeneficiaria;
+        if (parsed.bancoReceptor) bancoReceptorInit = parsed.bancoReceptor;
+      } catch(e) {}
+    }
+
     const getFormattedHora = (rawHora?: string, rawHoraReg?: string) => {
       let h = (rawHora || rawHoraReg || "").trim();
       if (!h || h === "-") return "09:00";
@@ -920,6 +940,11 @@ export default function AsistenciaPage() {
       montoPago: baseMonto || (a.montoPago || ""),
       metodoPago2: baseMetodo2 || "Transferencia",
       montoPago2: baseMonto2 || "",
+      claveRastreo: claveRastreoInit,
+      bancoEmisor: bancoEmisorInit,
+      bancoEmisorClave: bancoEmisorClaveInit,
+      cuentaBeneficiaria: cuentaBeneficiariaInit,
+      bancoReceptor: bancoReceptorInit,
       fact: a.fact === "Sí",
       subtotal: initialPrecio,
       obs: a.obs,
@@ -1026,6 +1051,11 @@ export default function AsistenciaPage() {
           montoPago: m1.toString(),
           metodoPago2: showEditSegundoPago ? editForm.metodoPago2 : "",
           montoPago2: showEditSegundoPago ? m2.toString() : "",
+          claveRastreo: editForm.claveRastreo || "",
+          bancoEmisor: editForm.bancoEmisor || "",
+          bancoEmisorClave: editForm.bancoEmisorClave || "",
+          cuentaBeneficiaria: editForm.cuentaBeneficiaria || CREN_BANK_INFO.cuentaBeneficiaria,
+          bancoReceptor: editForm.bancoReceptor || CREN_BANK_INFO.banco,
           costoSesion: precioTerapiaNum.toString(),
           precioTerapia: precioTerapiaNum.toString(),
           solicitaFactura: Boolean(editForm.fact),
@@ -1856,6 +1886,45 @@ export default function AsistenciaPage() {
                     </div>
                   </div>
                 )}
+
+                {/* BLOQUE DE VERIFICACIÓN SPEI EN EDICIÓN SI ES TRANSFERENCIA O MIXTO */}
+                {(editForm.metodoPago === "Transferencia" || (showEditSegundoPago && editForm.metodoPago2 === "Transferencia") || editForm.metodoPago === "Mixto") && (
+                  <div className="bg-blue-50/80 border border-blue-200 p-3 rounded-xl flex items-center justify-between text-xs animate-in zoom-in-95 duration-150">
+                    <div className="flex items-center gap-2.5">
+                      <div className="w-8 h-8 rounded-lg bg-blue-600/10 border border-blue-300 text-blue-700 font-black flex items-center justify-center text-sm">
+                        🏦
+                      </div>
+                      <div>
+                        <div className="font-extrabold text-blue-950 flex items-center gap-2">
+                          <span>Transferencia SPEI a {CREN_BANK_INFO.banco}</span>
+                          <span className="font-mono text-[10px] bg-blue-100 text-blue-800 px-1.5 py-0.5 rounded border border-blue-200 font-bold">
+                            CLABE: {CREN_BANK_INFO.cuentaBeneficiaria}
+                          </span>
+                        </div>
+                        <div className="text-[10px] text-blue-700 font-medium">
+                          {editForm.claveRastreo ? (
+                            <span className="font-bold text-emerald-800 flex items-center gap-1">
+                              <span>✓ SPEI Capturado:</span>
+                              <span className="font-mono">{editForm.claveRastreo}</span>
+                              <span>({editForm.bancoEmisor || "Banco"})</span>
+                            </span>
+                          ) : (
+                            <span>Ingresa la Clave de Rastreo SPEI para verificar el comprobante en Banxico CEP</span>
+                          )}
+                        </div>
+                      </div>
+                    </div>
+
+                    <button
+                      type="button"
+                      onClick={() => setShowEditTransferModal(true)}
+                      className="px-3 py-1.5 bg-[#1a5276] hover:bg-[#0e2f44] text-white font-bold text-xs rounded-lg shadow-2xs transition flex items-center gap-1.5 cursor-pointer shrink-0"
+                    >
+                      <span>🔍</span> {editForm.claveRastreo ? "Ver CEP / Banxico" : "Validar Transferencia"}
+                    </button>
+                  </div>
+                )}
+
                 {/* SOLICITAR FACTURA DESPLAZADO A LA DERECHA */}
                 <div className="flex justify-end items-center gap-1.5 mt-1.5 pr-1">
                   <input type="checkbox" name="fact" id="edit_fact_chk" checked={editForm.fact} onChange={handleEditChange} className="w-3.5 h-3.5 rounded border-slate-300 accent-[#1a5276] cursor-pointer" />
@@ -1866,7 +1935,7 @@ export default function AsistenciaPage() {
                   <textarea 
                     name="obs" 
                     value={editForm.obs} 
-                    onChange={handleEditChange} 
+                    onChange={(e) => setEditForm((prev: any) => ({ ...prev, obs: e.target.value }))} 
                     onInput={(e) => {
                       const target = e.target as HTMLTextAreaElement;
                       target.style.height = 'auto';
@@ -1887,6 +1956,25 @@ export default function AsistenciaPage() {
           </div>
         </div>
       )}
+
+      <TransferVerificationModal
+        isOpen={showEditTransferModal}
+        onClose={() => setShowEditTransferModal(false)}
+        montoDefault={editForm.montoPago || editForm.subtotal || "500.00"}
+        fechaDefault={editForm.fecha || new Date().toISOString().split("T")[0]}
+        claveRastreoInitial={editForm.claveRastreo || ""}
+        bancoEmisorInitial={editForm.bancoEmisor || "AZTECA"}
+        onSaveVerification={(vData) => {
+          setEditForm((prev: any) => ({
+            ...prev,
+            claveRastreo: vData.claveRastreo,
+            bancoEmisor: vData.bancoEmisor,
+            bancoEmisorClave: vData.bancoEmisorClave,
+            cuentaBeneficiaria: vData.cuentaBeneficiaria,
+            bancoReceptor: vData.bancoReceptor
+          }));
+        }}
+      />
       {/* MODAL GESTIÓN DE PRECIOS DE TERAPIA (SOLO ADMIN) */}
       {showAddPriceModal && (
         <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4 animate-in fade-in">
