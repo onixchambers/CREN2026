@@ -203,21 +203,8 @@ export function TransferVerificationModal({
           </div>
 
           {/* ACCIONES DIRECTAS DE BANXICO */}
-          <div className="bg-blue-50/70 border border-blue-200/80 p-4 rounded-2xl space-y-3">
-            <div className="flex items-center justify-between">
-              <span className="text-xs font-extrabold text-blue-900 flex items-center gap-1.5">
-                <span>🌐</span> Herramientas de Consulta Banxico CEP
-              </span>
-              <button
-                type="button"
-                onClick={handleCopyPayload}
-                className="text-[10px] bg-blue-100 hover:bg-blue-200 text-blue-900 border border-blue-300 font-bold px-2 py-1 rounded-lg transition"
-              >
-                {copied ? "✓ Payload Copiado" : "📋 Copiar Datos consulta"}
-              </button>
-            </div>
-
-            <div className="grid grid-cols-2 gap-2 pt-1">
+          <div className="bg-blue-50/70 border border-blue-200/80 p-3.5 rounded-2xl">
+            <div className="grid grid-cols-2 gap-2">
               <button
                 type="button"
                 onClick={handleOpenBanxicoCEP}
