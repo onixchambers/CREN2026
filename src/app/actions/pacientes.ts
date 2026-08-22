@@ -8,7 +8,13 @@ import { authOptions } from "@/lib/auth";
 import { uploadFileToGoogleDrive } from "@/lib/googleDrive";
 import { generateClinicalNotePdfBase64 } from "@/lib/pdfGenerator";
 import { generateUniqueDisplayId } from "@/lib/displayId";
-import { logAuditAction } from "@/app/actions/auditLog";
+function parseMoneyStr(val: any): number {
+  if (typeof val === 'number') return isNaN(val) ? 0 : val;
+  if (!val) return 0;
+  const cleaned = String(val).replace(/[^0-9.-]/g, '');
+  const num = parseFloat(cleaned);
+  return isNaN(num) ? 0 : num;
+}
 
 async function verifyTherapistPatientPermission() {
   const session = await getServerSession(authOptions);
