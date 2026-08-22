@@ -136,6 +136,28 @@ export function AsistenciaForm({
     patientName: string;
   } | null>(null);
 
+  const getPatientDefaultTherapyPrice = (patientId: string, patientName: string): string => {
+    const targetId = (patientId || "").trim();
+    const targetName = (patientName || "").trim().toLowerCase();
+    const pObj = pacientes.find(p => (targetId && p.id === targetId) || (targetName && ((p.paciente || "").trim().toLowerCase() === targetName || (p.name || "").trim().toLowerCase() === targetName)));
+    if (!pObj || !Array.isArray(pObj.sessions) || pObj.sessions.length === 0) {
+      return "0.00";
+    }
+
+    const pastSessions = [...pObj.sessions].sort((a: any, b: any) => new Date(b.date).getTime() - new Date(a.date).getTime());
+    const lastSession = pastSessions[0];
+    let rawPrice = "0";
+    if (lastSession.notes) {
+      try {
+        const n = JSON.parse(lastSession.notes);
+        rawPrice = n.precioTerapia || n.costoSesion || n.total || n.subtotal || "0";
+      } catch(e) {}
+    }
+
+    const num = parseFloat(String(rawPrice).replace(/[^0-9.-]/g, ""));
+    return isNaN(num) ? "0.00" : (num > 0 ? num.toString() : "0.00");
+  };
+
   const calculateDynamicSaldo = () => {
     const parseMoney = (val: any) => parseFloat((val || "0").toString().replace(/[^0-9.-]/g, "")) || 0;
     const saldoPrevioF = parseMoney(formData.saldoDisponible);
@@ -368,7 +390,7 @@ export function AsistenciaForm({
 
       const targetEstado = normalizeEstadoAsistencia(estadoAsistenciaAgenda);
       const isAsistio = targetEstado === "Asistio";
-      const precio = p.precioTerapia || formData.precioTerapia || "0";
+      const precio = getPatientDefaultTherapyPrice(p.id, p.paciente);
       const numericPrice = parseFloat(precio) || 0;
       const normE = targetEstado.toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "");
       const isCancelOrRecovered = normE.includes("cancelo") || normE.includes("recuperado");

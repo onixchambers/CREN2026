@@ -251,7 +251,39 @@ export default function AsistenciaPage() {
     const offset = d.getTimezoneOffset() * 60000;
     return new Date(d.getTime() - offset).toISOString().split("T")[0];
   };
-  
+
+  const getPatientDefaultTherapyPrice = (patientId: string, patientName: string, asistenciasList: any[]): string => {
+    if (!asistenciasList || asistenciasList.length === 0) return "0.00";
+    const targetId = (patientId || "").trim();
+    const targetName = (patientName || "").trim().toLowerCase();
+    const patientSessions = asistenciasList.filter((a: any) => {
+      if (targetId && a.pacienteId === targetId) return true;
+      const aName = (a.paciente || a.pacienteNombre || "").trim().toLowerCase();
+      if (targetName && aName && (aName === targetName || aName.includes(targetName) || targetName.includes(aName))) return true;
+      return false;
+    });
+
+    // Escenario 1: Primera vez que se atiende al paciente -> 0.00
+    if (patientSessions.length === 0) {
+      return "0.00";
+    }
+
+    // Escenario 2: Ya se había atendido con anterioridad -> Precio que tenía en la terapia anterior
+    const lastSession = patientSessions[0];
+    let rawPrice = "0";
+    if (lastSession.precioTerapia !== undefined && lastSession.precioTerapia !== null && String(lastSession.precioTerapia).trim() !== "") {
+      rawPrice = String(lastSession.precioTerapia);
+    } else if (lastSession.costoSesion !== undefined && lastSession.costoSesion !== null && String(lastSession.costoSesion).trim() !== "") {
+      rawPrice = String(lastSession.costoSesion);
+    } else if (lastSession.total !== undefined && lastSession.total !== null && String(lastSession.total).trim() !== "") {
+      rawPrice = String(lastSession.total);
+    } else if (lastSession.subtotal !== undefined && lastSession.subtotal !== null && String(lastSession.subtotal).trim() !== "") {
+      rawPrice = String(lastSession.subtotal);
+    }
+
+    const num = parseFloat(rawPrice.replace(/[^0-9.-]/g, ""));
+    return isNaN(num) ? "0.00" : (num > 0 ? num.toString() : "0.00");
+  };
   const [filtroDesde, setFiltroDesde] = useState("");
   const [filtroHasta, setFiltroHasta] = useState("");
   const [filtroEstado, setFiltroEstado] = useState("Todos");
@@ -352,7 +384,9 @@ export default function AsistenciaPage() {
         };
       });
       setAsistencias(mapped);
+      return mapped;
     }
+    return [];
   };
 
   useEffect(() => {
@@ -427,7 +461,7 @@ export default function AsistenciaPage() {
       }
 
       // Cargar asistencias reales de la BD
-      await recargarAsistencias();
+      const asistenciasDb = await recargarAsistencias();
 
       const prefill = sessionStorage.getItem("prefillAsistencia");
       if (prefill) {
@@ -494,6 +528,7 @@ export default function AsistenciaPage() {
             }
           }
 
+          const defaultPrecioPrefill = getPatientDefaultTherapyPrice(pMatch ? pMatch.id : "", pd.pacienteNombre, asistenciasDb);
           setFormData(prev => ({
              ...prev,
              agendaId: pd.agendaId,
@@ -511,9 +546,9 @@ export default function AsistenciaPage() {
              numeroSesiones: pd.numeroSesiones,
              frecuencia: mapFrecuencia(pd.frecuencia),
              saldoDisponible: pMatch ? pMatch.saldoCalculado : "0.00",
-             precioTerapia: pMatch && pMatch.precioTerapia ? pMatch.precioTerapia : prev.precioTerapia,
+             precioTerapia: defaultPrecioPrefill,
              metodoPago: pd.metodoPago || "",
-             montoPago: pd.pagado ? (pMatch?.precioTerapia || "400") : ""
+             montoPago: pd.pagado ? (defaultPrecioPrefill !== "0.00" ? defaultPrecioPrefill : "") : ""
           }));
           if (pMatch) {
             const saldoNum = parseFloat(pMatch.saldoCalculado) || 0;
@@ -578,6 +613,7 @@ export default function AsistenciaPage() {
          tipoSesionAgenda = citaHoy.tipoServicio || tipoSesionAgenda;
       }
 
+      const defaultPrecioChange = getPatientDefaultTherapyPrice(p.id, p.paciente, asistencias);
       setFormData({
         ...formData,
         pacienteId: p.id,
@@ -589,7 +625,7 @@ export default function AsistenciaPage() {
         hora: horaAgenda,
         tipoSesion: tipoSesionAgenda,
         saldoDisponible: p.saldoCalculado || "0.00",
-        precioTerapia: p.precioTerapia || formData.precioTerapia,
+        precioTerapia: defaultPrecioChange,
         numeroSesiones: displaySesiones,
         frecuencia: (() => {
           const cita = agendaCitas.find((c: any) => c.paciente === p.paciente);
