@@ -1957,7 +1957,15 @@ export default function AsistenciaPage() {
       <TransferVerificationModal
         isOpen={showEditTransferModal}
         onClose={() => setShowEditTransferModal(false)}
-        montoDefault={editForm.montoPago || editForm.subtotal || "500.00"}
+        montoDefault={(() => {
+          const p1 = parseFloat(String(editForm.montoPago || "0").replace(/[^0-9.-]/g, "")) || 0;
+          const p2 = parseFloat(String(editForm.montoPago2 || "0").replace(/[^0-9.-]/g, "")) || 0;
+          const sub = parseFloat(String(editForm.subtotal || "0").replace(/[^0-9.-]/g, "")) || 0;
+          if (p1 > 0) return p1;
+          if (p2 > 0) return p2;
+          if (sub > 0) return sub;
+          return "500.00";
+        })()}
         fechaDefault={editForm.fecha || new Date().toISOString().split("T")[0]}
         claveRastreoInitial={editForm.claveRastreo || ""}
         bancoEmisorInitial={editForm.bancoEmisor || "AZTECA"}
@@ -1968,7 +1976,8 @@ export default function AsistenciaPage() {
             bancoEmisor: vData.bancoEmisor,
             bancoEmisorClave: vData.bancoEmisorClave,
             cuentaBeneficiaria: vData.cuentaBeneficiaria,
-            bancoReceptor: vData.bancoReceptor
+            bancoReceptor: vData.bancoReceptor,
+            montoPago: prev.montoPago && parseFloat(prev.montoPago) > 0 ? prev.montoPago : vData.monto.toString()
           }));
         }}
       />

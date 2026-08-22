@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { BANCOS_MEXICO, CREN_BANK_INFO, BancoSPEI } from "@/lib/constants/bancos";
 
 interface TransferVerificationModalProps {
@@ -36,6 +36,17 @@ export function TransferVerificationModal({
   const [fecha, setFecha] = useState(fechaDefault);
   const [montoStr, setMontoStr] = useState(String(montoDefault));
   const [copied, setCopied] = useState(false);
+
+  useEffect(() => {
+    if (isOpen) {
+      setClaveRastreo(claveRastreoInitial || "");
+      setBancoEmisorNombre(bancoEmisorInitial || "AZTECA");
+      setFecha(fechaDefault || new Date().toISOString().split("T")[0]);
+      
+      const parsedMonto = parseFloat(String(montoDefault).replace(/[^0-9.-]/g, "")) || 0;
+      setMontoStr(parsedMonto > 0 ? parsedMonto.toString() : "500.00");
+    }
+  }, [isOpen, montoDefault, fechaDefault, claveRastreoInitial, bancoEmisorInitial]);
 
   if (!isOpen) return null;
 

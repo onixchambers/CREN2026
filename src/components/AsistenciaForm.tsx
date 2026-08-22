@@ -1165,7 +1165,15 @@ export function AsistenciaForm({
       <TransferVerificationModal
         isOpen={showTransferModal}
         onClose={() => setShowTransferModal(false)}
-        montoDefault={formData.montoPago || formData.precioTerapia || "500.00"}
+        montoDefault={(() => {
+          const p1 = parseFloat(String(formData.montoPago || "0").replace(/[^0-9.-]/g, "")) || 0;
+          const p2 = parseFloat(String(formData.montoPago2 || "0").replace(/[^0-9.-]/g, "")) || 0;
+          const sub = parseFloat(String(formData.precioTerapia || "0").replace(/[^0-9.-]/g, "")) || 0;
+          if (p1 > 0) return p1;
+          if (p2 > 0) return p2;
+          if (sub > 0) return sub;
+          return "500.00";
+        })()}
         fechaDefault={formData.fecha || hoy}
         claveRastreoInitial={formData.claveRastreo || ""}
         bancoEmisorInitial={formData.bancoEmisor || "AZTECA"}
@@ -1176,7 +1184,8 @@ export function AsistenciaForm({
             bancoEmisor: vData.bancoEmisor,
             bancoEmisorClave: vData.bancoEmisorClave,
             cuentaBeneficiaria: vData.cuentaBeneficiaria,
-            bancoReceptor: vData.bancoReceptor
+            bancoReceptor: vData.bancoReceptor,
+            montoPago: prev.montoPago && parseFloat(prev.montoPago) > 0 ? prev.montoPago : vData.monto.toString()
           }));
         }}
       />
