@@ -247,9 +247,9 @@ export async function saveAsistenciaDB(data: any) {
     const totalInput = parseMoneyStr(data.total);
     const subtotalInput = parseMoneyStr(data.subtotal);
     
-    // Si el costo de sesión (costoS) se definió explícitamente como 0, el total debe ser 0.
-    const totalVal = (rawCostInput !== undefined && rawCostInput !== null && rawCostInput !== "" && targetCost === 0)
-      ? 0
+    // Si se definió explícitamente costoSesion o precioTerapia, el total debe ser igual al costo
+    const totalVal = (rawCostInput !== undefined && rawCostInput !== null && rawCostInput !== "")
+      ? targetCost
       : (totalInput > 0 ? totalInput : (montoP > 0 ? montoP : costoS));
 
     const solicitaFactura = (data.solicitaFactura === true || data.solicitaFactura === "true" || data.solicitaFactura === "Sí" || data.solicitaFactura === "Si" || data.solicitaFactura === "S" || data.fact === "Sí" || data.fact === "Si" || data.fact === "S" || data.fact === true);
@@ -627,7 +627,18 @@ export async function getAsistenciasDB() {
           saldo: 0,
           obs: extra.obs || "-",
           creadoPor: extra.creadoPor || "-",
-          terapeuta: s.therapist?.name || extra.terapeuta || extra.terapeutaNombre || "-"
+          terapeuta: s.therapist?.name || extra.terapeuta || extra.terapeutaNombre || "-",
+          precioTerapia: extra.precioTerapia || extra.costoSesion || (totalVal > 0 ? totalVal.toString() : ""),
+          costoSesion: extra.costoSesion || extra.precioTerapia || (totalVal > 0 ? totalVal.toString() : ""),
+          montoPago: extra.montoPago || (montoP > 0 ? montoP.toString() : ""),
+          montoPago2: extra.montoPago2 || "",
+          metodoPago2: extra.metodoPago2 || "",
+          claveRastreo: extra.claveRastreo || "",
+          bancoEmisor: extra.bancoEmisor || "",
+          bancoEmisorClave: extra.bancoEmisorClave || "",
+          cuentaBeneficiaria: extra.cuentaBeneficiaria || "",
+          bancoReceptor: extra.bancoReceptor || "",
+          notes: s.notes
         });
       });
 

@@ -51,7 +51,16 @@ type Asistencia = {
   total: string;
   saldo?: number;
   precioTerapia?: string;
+  costoSesion?: string;
   montoPago?: string;
+  montoPago2?: string;
+  metodoPago2?: string;
+  claveRastreo?: string;
+  bancoEmisor?: string;
+  bancoEmisorClave?: string;
+  cuentaBeneficiaria?: string;
+  bancoReceptor?: string;
+  notes?: string;
   paqueteActual?: number;
   obs: string;
   creadoPor?: string;
@@ -961,7 +970,12 @@ export default function AsistenciaPage() {
       return "09:00";
     };
 
-    const initialPrecio = a.precioTerapia || a.costoSesion || (a.total || a.subtotal || "").replace(/[^0-9.]/g, "");
+    const rawP = parseFloat((a.precioTerapia || a.costoSesion || (a.total || a.subtotal || "").replace(/[^0-9.]/g, "")).toString());
+    const initialPrecio = isNaN(rawP) ? "0" : rawP.toString();
+
+    let rawMonto = (a.montoPago !== undefined && a.montoPago !== null && a.montoPago !== "") ? a.montoPago.toString() : baseMonto;
+    const numMonto = parseFloat(rawMonto.replace(/[^0-9.]/g, ""));
+    const initialMonto = isNaN(numMonto) ? "" : numMonto.toString();
 
     setShowEditSegundoPago(isMixto);
     setEditForm({
@@ -973,7 +987,7 @@ export default function AsistenciaPage() {
       sesiones: a.sesiones,
       pago: a.pago || "SÍ",
       metodoPago: baseMetodo,
-      montoPago: baseMonto || (a.montoPago || ""),
+      montoPago: initialMonto,
       metodoPago2: baseMetodo2 || "Transferencia",
       montoPago2: baseMonto2 || "",
       claveRastreo: claveRastreoInit,
@@ -1793,8 +1807,8 @@ export default function AsistenciaPage() {
                   <select
                     name="subtotal"
                     value={(() => {
-                      const numStr = (editForm.subtotal || "").toString().replace(/[^0-9.]/g, "");
-                      return numStr;
+                      const numVal = parseFloat((editForm.subtotal || "0").toString().replace(/[^0-9.]/g, ""));
+                      return isNaN(numVal) ? "0" : numVal.toString();
                     })()}
                     onChange={handleEditChange}
                     className="w-full text-sm p-2 border border-slate-300 rounded focus:border-[#2980b9] outline-none text-slate-700 font-medium bg-white"
