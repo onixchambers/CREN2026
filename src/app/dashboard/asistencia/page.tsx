@@ -1969,6 +1969,8 @@ export default function AsistenciaPage() {
         fechaDefault={editForm.fecha || new Date().toISOString().split("T")[0]}
         claveRastreoInitial={editForm.claveRastreo || ""}
         bancoEmisorInitial={editForm.bancoEmisor || "AZTECA"}
+        cuentaBeneficiariaInitial={editForm.cuentaBeneficiaria || CREN_BANK_INFO.cuentaBeneficiaria}
+        bancoReceptorInitial={editForm.bancoReceptor || CREN_BANK_INFO.banco}
         onSaveVerification={(vData) => {
           setEditForm((prev: any) => ({
             ...prev,

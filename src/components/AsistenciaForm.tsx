@@ -1177,6 +1177,8 @@ export function AsistenciaForm({
         fechaDefault={formData.fecha || hoy}
         claveRastreoInitial={formData.claveRastreo || ""}
         bancoEmisorInitial={formData.bancoEmisor || "AZTECA"}
+        cuentaBeneficiariaInitial={formData.cuentaBeneficiaria || CREN_BANK_INFO.cuentaBeneficiaria}
+        bancoReceptorInitial={formData.bancoReceptor || CREN_BANK_INFO.banco}
         onSaveVerification={(vData) => {
           setFormData(prev => ({
             ...prev,

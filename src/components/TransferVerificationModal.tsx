@@ -10,6 +10,8 @@ interface TransferVerificationModalProps {
   fechaDefault?: string;
   claveRastreoInitial?: string;
   bancoEmisorInitial?: string;
+  cuentaBeneficiariaInitial?: string;
+  bancoReceptorInitial?: string;
   onSaveVerification: (data: {
     claveRastreo: string;
     bancoEmisor: string;
@@ -29,10 +31,15 @@ export function TransferVerificationModal({
   fechaDefault = new Date().toISOString().split("T")[0],
   claveRastreoInitial = "",
   bancoEmisorInitial = "AZTECA",
+  cuentaBeneficiariaInitial = CREN_BANK_INFO.cuentaBeneficiaria,
+  bancoReceptorInitial = CREN_BANK_INFO.banco,
   onSaveVerification
 }: TransferVerificationModalProps) {
   const [claveRastreo, setClaveRastreo] = useState(claveRastreoInitial);
   const [bancoEmisorNombre, setBancoEmisorNombre] = useState(bancoEmisorInitial);
+  const [cuentaBeneficiaria, setCuentaBeneficiaria] = useState(cuentaBeneficiariaInitial);
+  const [bancoReceptor, setBancoReceptor] = useState(bancoReceptorInitial);
+  const [isEditingCuenta, setIsEditingCuenta] = useState(false);
   const [fecha, setFecha] = useState(fechaDefault);
   const [montoStr, setMontoStr] = useState(String(montoDefault));
   const [copied, setCopied] = useState(false);
@@ -41,12 +48,14 @@ export function TransferVerificationModal({
     if (isOpen) {
       setClaveRastreo(claveRastreoInitial || "");
       setBancoEmisorNombre(bancoEmisorInitial || "AZTECA");
+      setCuentaBeneficiaria(cuentaBeneficiariaInitial || CREN_BANK_INFO.cuentaBeneficiaria);
+      setBancoReceptor(bancoReceptorInitial || CREN_BANK_INFO.banco);
       setFecha(fechaDefault || new Date().toISOString().split("T")[0]);
       
       const parsedMonto = parseFloat(String(montoDefault).replace(/[^0-9.-]/g, "")) || 0;
       setMontoStr(parsedMonto > 0 ? parsedMonto.toString() : "500.00");
     }
-  }, [isOpen, montoDefault, fechaDefault, claveRastreoInitial, bancoEmisorInitial]);
+  }, [isOpen, montoDefault, fechaDefault, claveRastreoInitial, bancoEmisorInitial, cuentaBeneficiariaInitial, bancoReceptorInitial]);
 
   if (!isOpen) return null;
 
@@ -60,8 +69,8 @@ export function TransferVerificationModal({
       emisor: selectedBancoObj.clave,
       bancoEmisorNombre: selectedBancoObj.nombre,
       receptor: CREN_BANK_INFO.claveSpei,
-      bancoReceptor: CREN_BANK_INFO.banco,
-      cuentaBeneficiaria: CREN_BANK_INFO.cuentaBeneficiaria,
+      bancoReceptor: bancoReceptor,
+      cuentaBeneficiaria: cuentaBeneficiaria,
       monto: parseFloat(montoStr) || 0
     }, null, 2);
 
@@ -86,8 +95,8 @@ export function TransferVerificationModal({
       claveRastreo: claveRastreo.trim(),
       bancoEmisor: selectedBancoObj.nombre,
       bancoEmisorClave: selectedBancoObj.clave,
-      cuentaBeneficiaria: CREN_BANK_INFO.cuentaBeneficiaria,
-      bancoReceptor: CREN_BANK_INFO.banco,
+      cuentaBeneficiaria: cuentaBeneficiaria.trim() || CREN_BANK_INFO.cuentaBeneficiaria,
+      bancoReceptor: bancoReceptor.trim() || CREN_BANK_INFO.banco,
       monto: m,
       fecha,
       verificado: Boolean(claveRastreo.trim())
@@ -123,20 +132,58 @@ export function TransferVerificationModal({
           {/* CREN BENEFICIARIO BANNER */}
           <div className="bg-slate-50 border border-slate-200 p-4 rounded-2xl space-y-2">
             <div className="flex items-center justify-between text-[11px] font-bold text-slate-500 uppercase tracking-wider">
-              <span>Cuenta Beneficiaria CREN (Receptora)</span>
-              <span className="bg-blue-100 text-blue-800 px-2 py-0.5 rounded-full font-extrabold">{CREN_BANK_INFO.banco}</span>
+              <span>Cuenta Beneficiaria (Receptora)</span>
+              <div className="flex items-center gap-1.5">
+                <button
+                  type="button"
+                  onClick={() => setIsEditingCuenta(!isEditingCuenta)}
+                  className="text-[10px] text-blue-700 hover:text-blue-900 bg-blue-50 border border-blue-200 px-2 py-0.5 rounded font-bold transition-colors"
+                >
+                  {isEditingCuenta ? "✓ Listo" : "✏️ Editar Cuenta"}
+                </button>
+                <span className="bg-blue-100 text-blue-800 px-2 py-0.5 rounded-full font-extrabold">{bancoReceptor}</span>
+              </div>
             </div>
-            <div className="font-mono font-black text-slate-900 text-base flex items-center gap-2">
-              <span>{CREN_BANK_INFO.cuentaBeneficiaria}</span>
-              <button
-                type="button"
-                onClick={() => navigator.clipboard.writeText(CREN_BANK_INFO.cuentaBeneficiaria)}
-                className="text-[10px] bg-white border border-slate-300 hover:bg-slate-100 px-2 py-0.5 rounded font-sans font-bold text-slate-600 transition-colors"
-                title="Copiar CLABE CREN"
-              >
-                📋 Copiar CLABE
-              </button>
-            </div>
+
+            {isEditingCuenta ? (
+              <div className="grid grid-cols-12 gap-2 pt-1 animate-in fade-in duration-150">
+                <div className="col-span-8">
+                  <label className="block text-[9px] font-bold text-slate-500 uppercase mb-0.5">CLABE / Cuenta Receptora</label>
+                  <input
+                    type="text"
+                    value={cuentaBeneficiaria}
+                    onChange={(e) => setCuentaBeneficiaria(e.target.value)}
+                    placeholder="002180700861407112"
+                    className="w-full text-xs p-2 border border-slate-300 rounded-lg outline-none font-mono font-bold text-slate-900 bg-white focus:border-[#1a5276]"
+                  />
+                </div>
+                <div className="col-span-4">
+                  <label className="block text-[9px] font-bold text-slate-500 uppercase mb-0.5">Banco Receptor</label>
+                  <select
+                    value={bancoReceptor}
+                    onChange={(e) => setBancoReceptor(e.target.value)}
+                    className="w-full text-xs p-2 border border-slate-300 rounded-lg outline-none font-bold text-slate-900 bg-white focus:border-[#1a5276]"
+                  >
+                    {BANCOS_MEXICO.map(b => (
+                      <option key={b.clave} value={b.nombre}>{b.nombre}</option>
+                    ))}
+                  </select>
+                </div>
+              </div>
+            ) : (
+              <div className="font-mono font-black text-slate-900 text-base flex items-center justify-between">
+                <span className="tracking-tight">{cuentaBeneficiaria}</span>
+                <button
+                  type="button"
+                  onClick={() => navigator.clipboard.writeText(cuentaBeneficiaria)}
+                  className="text-[10px] bg-white border border-slate-300 hover:bg-slate-100 px-2 py-0.5 rounded font-sans font-bold text-slate-600 transition-colors"
+                  title="Copiar CLABE"
+                >
+                  📋 Copiar CLABE
+                </button>
+              </div>
+            )}
+
             <div className="text-[10px] text-slate-500 font-medium">{CREN_BANK_INFO.titular}</div>
           </div>
 
