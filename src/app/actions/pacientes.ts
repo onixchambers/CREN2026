@@ -271,32 +271,45 @@ export async function getPatients() {
             valoracionesCount++;
           }
 
+          const rawEstPago = (parsedNotes.estadoAsistencia || parsedNotes.estado || "").toString();
+          const estNormPago = rawEstPago.toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "");
+          const isFreeCancelPago = (estNormPago.includes("con anticip") || estNormPago.includes("anticipad") || estNormPago.includes("centro") || estNormPago.includes("recuperado")) && !estNormPago.includes("sin anticip");
+          const isNinguno = (parsedNotes.metodoPago || "").toLowerCase().includes("ninguno");
+
           const sDate = parsedNotes.fecha || s.date.toISOString().split("T")[0];
           const isBeforeCutoff = sDate && sDate <= "2026-06-30";
 
           let monto = isBeforeCutoff ? 0 : parseFloat(parsedNotes.montoPago || "0");
-          if (!isBeforeCutoff && (isNaN(monto) || monto === 0) && parsedNotes.metodoPago) {
+          if (!isBeforeCutoff && (isNaN(monto) || monto === 0) && parsedNotes.metodoPago && !isNinguno) {
             const dollarMatches = parsedNotes.metodoPago.match(/\$([\d.]+)/g);
             if (dollarMatches) {
               monto = dollarMatches.reduce((sum: number, val: string) => sum + (parseFloat(val.replace("$", "")) || 0), 0);
             }
           }
 
-          const hasExplicitCost = !isBeforeCutoff && (
-            (parsedNotes.costoSesion !== undefined && parsedNotes.costoSesion !== null && String(parsedNotes.costoSesion).trim() !== "") ||
-            (parsedNotes.precioTerapia !== undefined && parsedNotes.precioTerapia !== null && String(parsedNotes.precioTerapia).trim() !== "")
-          );
-          let costo = isBeforeCutoff ? 0 : (hasExplicitCost ? parseMoneyStr(parsedNotes.costoSesion || parsedNotes.precioTerapia) : parseFloat((p.precioTerapia || "500").split("/")[0]) || 500);
-          if (!isBeforeCutoff && !hasExplicitCost && (isNaN(costo) || costo === 0) && isAttended) {
-            costo = monto || parseFloat((p.precioTerapia || "500").split("/")[0]) || 500;
+          const hasPrecioTerapia = !isBeforeCutoff && parsedNotes.precioTerapia !== undefined && parsedNotes.precioTerapia !== null && String(parsedNotes.precioTerapia).trim() !== "";
+          const hasCostoSesion = !isBeforeCutoff && parsedNotes.costoSesion !== undefined && parsedNotes.costoSesion !== null && String(parsedNotes.costoSesion).trim() !== "";
+          const hasTotal = !isBeforeCutoff && parsedNotes.total !== undefined && parsedNotes.total !== null && String(parsedNotes.total).trim() !== "";
+
+          let costo = 0;
+          if (isBeforeCutoff || isFreeCancelPago) {
+            costo = 0;
+          } else if (hasPrecioTerapia) {
+            costo = parseMoneyStr(parsedNotes.precioTerapia);
+          } else if (hasCostoSesion && parseMoneyStr(parsedNotes.costoSesion) > 0) {
+            costo = parseMoneyStr(parsedNotes.costoSesion);
+          } else if (hasTotal && parseMoneyStr(parsedNotes.total) > 0) {
+            costo = parseMoneyStr(parsedNotes.total);
+          } else if (hasCostoSesion) {
+            costo = parseMoneyStr(parsedNotes.costoSesion);
+          } else {
+            costo = monto > 0 ? monto : (parseFloat((p.precioTerapia || "500").split("/")[0]) || 500);
           }
 
-          // Misma lógica que getAsistenciasDB: si pago=SÍ pero monto=0, asumir que pagó el costo completo
-          const rawEstPago = (parsedNotes.estadoAsistencia || parsedNotes.estado || "").toString();
-          const estNormPago = rawEstPago.toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "");
-          const isFreeCancelPago = (estNormPago.includes("con anticip") || estNormPago.includes("anticipad") || estNormPago.includes("centro") || estNormPago.includes("recuperado")) && !estNormPago.includes("sin anticip");
-          const isNinguno = (parsedNotes.metodoPago || "").toLowerCase().includes("ninguno");
-          
+          if (!isBeforeCutoff && isAttended && costo === 0 && monto > 0 && !hasPrecioTerapia) {
+            costo = monto;
+          }
+
           const fuePagado = !isFreeCancelPago && isAttended && !isNinguno &&
             (monto > 0 || costo > 0 || parsedNotes.pago === "SÍ" || parsedNotes.pago === "SI" || parsedNotes.pagado === true || parsedNotes.pagado === "true");
 
@@ -304,13 +317,12 @@ export async function getPatients() {
             monto = costo;
           }
 
-
           if (!isNaN(costo) && costo > 0) {
             pricesSet.add(costo);
             if (isAttended) totalCostoSum += costo;
           }
 
-          if (!isNinguno && !isNaN(monto) && monto > 0) {
+          if (!isNinguno && !isNaN(monto) && monto > 0 && isAttended) {
             totalPagadoSum += monto;
             lastPaymentAmount = monto;
             if (parsedNotes.fecha) {
