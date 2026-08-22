@@ -276,9 +276,13 @@ export async function getPatients() {
             }
           }
 
-          let costo = isBeforeCutoff ? 0 : parseFloat(parsedNotes.costoSesion || parsedNotes.precioTerapia || "500");
-          if (!isBeforeCutoff && (isNaN(costo) || costo === 0) && isAttended) {
-            costo = monto || parseFloat(p.precioTerapia || "500");
+          const hasExplicitCost = !isBeforeCutoff && (
+            (parsedNotes.costoSesion !== undefined && parsedNotes.costoSesion !== null && String(parsedNotes.costoSesion).trim() !== "") ||
+            (parsedNotes.precioTerapia !== undefined && parsedNotes.precioTerapia !== null && String(parsedNotes.precioTerapia).trim() !== "")
+          );
+          let costo = isBeforeCutoff ? 0 : (hasExplicitCost ? parseMoneyStr(parsedNotes.costoSesion || parsedNotes.precioTerapia) : parseFloat((p.precioTerapia || "500").split("/")[0]) || 500);
+          if (!isBeforeCutoff && !hasExplicitCost && (isNaN(costo) || costo === 0) && isAttended) {
+            costo = monto || parseFloat((p.precioTerapia || "500").split("/")[0]) || 500;
           }
 
           // Misma lógica que getAsistenciasDB: si pago=SÍ pero monto=0, asumir que pagó el costo completo

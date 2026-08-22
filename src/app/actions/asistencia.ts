@@ -519,7 +519,23 @@ export async function getAsistenciasDB() {
         let totalVal = isAgendado ? 0 : parseMoneyStr(extra.total || extra.subtotal);
 
         const defaultPrice = parseFloat((s.patient?.precioTerapia || "500").split("/")[0]) || 500;
-        const costoS = (isFreeCancel || isAgendado) ? 0 : (parseMoneyStr(extra.costoSesion || extra.precioTerapia) || totalVal || defaultPrice);
+        let costoS = 0;
+        if (isFreeCancel || isAgendado) {
+          costoS = 0;
+        } else {
+          const hasCostoSesion = extra.costoSesion !== undefined && extra.costoSesion !== null && String(extra.costoSesion).trim() !== "";
+          const hasPrecioTerapia = extra.precioTerapia !== undefined && extra.precioTerapia !== null && String(extra.precioTerapia).trim() !== "";
+          const hasTotal = extra.total !== undefined && extra.total !== null && String(extra.total).trim() !== "";
+          if (hasCostoSesion) {
+            costoS = parseMoneyStr(extra.costoSesion);
+          } else if (hasPrecioTerapia) {
+            costoS = parseMoneyStr(extra.precioTerapia);
+          } else if (hasTotal) {
+            costoS = parseMoneyStr(extra.total);
+          } else {
+            costoS = totalVal > 0 ? totalVal : defaultPrice;
+          }
+        }
 
         // Check if patient belongs to a prepaid family fund (GlobalFund)
         const patientId = s.patientId;

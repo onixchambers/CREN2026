@@ -158,8 +158,17 @@ export async function getFinanzasMensuales(month: string, fechaDesde?: string, f
         if (s.notes) extra = JSON.parse(s.notes);
       } catch (e) {}
 
-      const montoPaid = parseFloat(extra.total || extra.montoPago || extra.costoSesion || s.patient?.precioTerapia || "0");
-      const precioTotal = isNaN(montoPaid) ? 0 : montoPaid;
+      let rawCost: any = undefined;
+      if (extra.costoSesion !== undefined && extra.costoSesion !== null && String(extra.costoSesion).trim() !== "") {
+        rawCost = extra.costoSesion;
+      } else if (extra.precioTerapia !== undefined && extra.precioTerapia !== null && String(extra.precioTerapia).trim() !== "") {
+        rawCost = extra.precioTerapia;
+      } else if (extra.total !== undefined && extra.total !== null && String(extra.total).trim() !== "") {
+        rawCost = extra.total;
+      } else {
+        rawCost = s.patient?.precioTerapia || "0";
+      }
+      const precioTotal = parseMoneyStr(rawCost);
 
       const estNormFin = (extra.estadoAsistencia || extra.estado || s.status || "").toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "");
       const isFreeCancelFin = (estNormFin.includes("con anticip") || estNormFin.includes("anticipad") || estNormFin.includes("centro")) && !estNormFin.includes("sin anticip");

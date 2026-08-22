@@ -81,7 +81,9 @@ export async function getGlobalFunds() {
         if (!isAgendado && !isFreeCancel) {
           const parseMoneyStr = (val: any) => parseFloat((val || "0").toString().replace(/[^0-9.-]/g, "")) || 0;
           const defaultPrice = parseFloat((s.patient?.precioTerapia || "500").split("/")[0]) || 500;
-          const costoS = parseMoneyStr(extra.costoSesion || extra.precioTerapia) || defaultPrice;
+          const hasCosto = (extra.costoSesion !== undefined && extra.costoSesion !== null && String(extra.costoSesion).trim() !== "") ||
+                           (extra.precioTerapia !== undefined && extra.precioTerapia !== null && String(extra.precioTerapia).trim() !== "");
+          const costoS = hasCosto ? parseMoneyStr(extra.costoSesion || extra.precioTerapia) : defaultPrice;
           
           const p1 = parseMoneyStr(extra.montoPago);
           const p2 = parseMoneyStr(extra.montoPago2);
