@@ -1129,38 +1129,7 @@ export function AsistenciaForm({
         onConfirmSaveAnyway={() => handleGuardar(duplicateWarning.isDraft, true)}
       />
 
-      {balanceAlert && balanceAlert.show && (
-        <div className={`fixed bottom-5 right-5 z-[9999] p-4 rounded-2xl shadow-2xl border flex flex-col gap-2 min-w-[300px] max-w-sm animate-in slide-in-from-bottom-5 fade-in duration-300 ${balanceAlert.type === "positive" ? 'bg-emerald-50 text-emerald-950 border-emerald-300 shadow-emerald-200/50' : 'bg-red-50 text-red-950 border-red-300 shadow-red-200/50'}`}>
-          <div className="flex justify-between items-start gap-4">
-            <div className="flex items-center gap-2 font-black text-xs uppercase tracking-wider">
-              {balanceAlert.type === "positive" ? (
-                <>
-                  <span className="text-xl">💰</span>
-                  <span className="text-emerald-900">Saldo a Favor</span>
-                </>
-              ) : (
-                <>
-                  <span className="text-xl">⚠️</span>
-                  <span className="text-red-900 font-extrabold">Saldo Pendiente</span>
-                </>
-              )}
-            </div>
-            <button 
-              type="button" 
-              onClick={() => setBalanceAlert(null)} 
-              className={`font-black text-xs p-1 rounded-full hover:bg-black/5 transition-colors ${balanceAlert.type === "positive" ? 'text-emerald-500 hover:text-emerald-700' : 'text-red-500 hover:text-red-700'}`}
-            >
-              ✕
-            </button>
-          </div>
-          <div className="text-xs font-semibold leading-relaxed">
-            El paciente <span className="font-black underline decoration-2">{balanceAlert.patientName}</span> cuenta con el siguiente saldo:
-          </div>
-          <div className={`text-2xl font-black tracking-tight ${balanceAlert.type === "positive" ? 'text-emerald-600' : 'text-red-600'}`}>
-            {balanceAlert.type === "positive" ? `+$${balanceAlert.amount.toFixed(2)}` : `-$${balanceAlert.amount.toFixed(2)}`}
-          </div>
-        </div>
-      )}
+
 
       <TransferVerificationModal
         isOpen={showTransferModal}
