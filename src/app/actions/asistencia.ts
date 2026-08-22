@@ -523,15 +523,18 @@ export async function getAsistenciasDB() {
         if (isFreeCancel || isAgendado) {
           costoS = 0;
         } else {
-          const hasCostoSesion = extra.costoSesion !== undefined && extra.costoSesion !== null && String(extra.costoSesion).trim() !== "";
           const hasPrecioTerapia = extra.precioTerapia !== undefined && extra.precioTerapia !== null && String(extra.precioTerapia).trim() !== "";
+          const hasCostoSesion = extra.costoSesion !== undefined && extra.costoSesion !== null && String(extra.costoSesion).trim() !== "";
           const hasTotal = extra.total !== undefined && extra.total !== null && String(extra.total).trim() !== "";
-          if (hasCostoSesion) {
-            costoS = parseMoneyStr(extra.costoSesion);
-          } else if (hasPrecioTerapia) {
+
+          if (hasPrecioTerapia) {
             costoS = parseMoneyStr(extra.precioTerapia);
-          } else if (hasTotal) {
+          } else if (hasCostoSesion && parseMoneyStr(extra.costoSesion) > 0) {
+            costoS = parseMoneyStr(extra.costoSesion);
+          } else if (hasTotal && parseMoneyStr(extra.total) > 0) {
             costoS = parseMoneyStr(extra.total);
+          } else if (hasCostoSesion) {
+            costoS = parseMoneyStr(extra.costoSesion);
           } else {
             costoS = totalVal > 0 ? totalVal : defaultPrice;
           }
