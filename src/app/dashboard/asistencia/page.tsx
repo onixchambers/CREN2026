@@ -1889,38 +1889,35 @@ export default function AsistenciaPage() {
 
                 {/* BLOQUE DE VERIFICACIÓN SPEI EN EDICIÓN SI ES TRANSFERENCIA O MIXTO */}
                 {(editForm.metodoPago === "Transferencia" || (showEditSegundoPago && editForm.metodoPago2 === "Transferencia") || editForm.metodoPago === "Mixto") && (
-                  <div className="bg-blue-50/80 border border-blue-200 p-3 rounded-xl flex items-center justify-between text-xs animate-in zoom-in-95 duration-150">
-                    <div className="flex items-center gap-2.5">
-                      <div className="w-8 h-8 rounded-lg bg-blue-600/10 border border-blue-300 text-blue-700 font-black flex items-center justify-center text-sm">
-                        🏦
-                      </div>
-                      <div>
-                        <div className="font-extrabold text-blue-950 flex items-center gap-2">
-                          <span>Transferencia SPEI a {CREN_BANK_INFO.banco}</span>
-                          <span className="font-mono text-[10px] bg-blue-100 text-blue-800 px-1.5 py-0.5 rounded border border-blue-200 font-bold">
-                            CLABE: {CREN_BANK_INFO.cuentaBeneficiaria}
-                          </span>
-                        </div>
-                        <div className="text-[10px] text-blue-700 font-medium">
-                          {editForm.claveRastreo ? (
-                            <span className="font-bold text-emerald-800 flex items-center gap-1">
-                              <span>✓ SPEI Capturado:</span>
-                              <span className="font-mono">{editForm.claveRastreo}</span>
-                              <span>({editForm.bancoEmisor || "Banco"})</span>
-                            </span>
-                          ) : (
-                            <span>Ingresa la Clave de Rastreo SPEI para verificar el comprobante en Banxico CEP</span>
-                          )}
-                        </div>
-                      </div>
+                  <div className="col-span-2 bg-blue-50/90 border border-blue-200 p-3.5 rounded-2xl flex flex-col items-center justify-center text-center gap-2 animate-in zoom-in-95 duration-150 shadow-2xs">
+                    <div className="flex flex-wrap items-center justify-center gap-1.5 text-xs">
+                      <span className="text-base">🏦</span>
+                      <span className="font-extrabold text-blue-950 text-xs">Transferencia SPEI a {CREN_BANK_INFO.banco}</span>
+                      <span className="font-mono text-[10px] bg-blue-100 text-blue-900 px-2 py-0.5 rounded-md border border-blue-300 font-black">
+                        CLABE: {CREN_BANK_INFO.cuentaBeneficiaria}
+                      </span>
+                    </div>
+
+                    <div className="text-[11px] text-slate-800 font-medium">
+                      {editForm.claveRastreo ? (
+                        <span className="font-black text-emerald-900 bg-emerald-100/90 px-2.5 py-1 rounded-lg border border-emerald-300 inline-flex flex-wrap items-center justify-center gap-1 text-[11px]">
+                          <span>✓ SPEI Capturado:</span>
+                          <span className="font-mono text-xs">{editForm.claveRastreo}</span>
+                          <span className="text-[10px] text-emerald-800 font-bold">({editForm.bancoEmisor || "Banco"})</span>
+                        </span>
+                      ) : (
+                        <span className="text-blue-900 font-semibold text-[10px]">
+                          Ingresa la Clave de Rastreo para verificar el comprobante en Banxico CEP
+                        </span>
+                      )}
                     </div>
 
                     <button
                       type="button"
                       onClick={() => setShowEditTransferModal(true)}
-                      className="px-3 py-1.5 bg-[#1a5276] hover:bg-[#0e2f44] text-white font-bold text-xs rounded-lg shadow-2xs transition flex items-center gap-1.5 cursor-pointer shrink-0"
+                      className="mt-0.5 px-4 py-1.5 bg-[#1a5276] hover:bg-[#0e2f44] text-white font-extrabold text-xs rounded-xl shadow-xs transition flex items-center justify-center gap-1.5 cursor-pointer"
                     >
-                      <span>🔍</span> {editForm.claveRastreo ? "Ver CEP / Banxico" : "Validar Transferencia"}
+                      <span>🔍</span> {editForm.claveRastreo ? "Ver / Modificar CEP Banxico" : "Validar Transferencia SPEI"}
                     </button>
                   </div>
                 )}
